@@ -3,28 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Centro de Comando</title>
+    <title>AGENTE RIG | Operações Globo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 </head>
 <body>
     <header>
         <div class="logo-area">
             <h1>AGENTE RIG</h1>
-            <p>Gestão Integrada de Transportes • Globo</p>
+            <p>Comando de Transportes • Rio de Janeiro</p>
         </div>
         <div class="header-actions">
-            <input type="file" id="upload-mapa" accept=".csv, .xlsx, .xls" hidden>
-            <button class="btn-primary" onclick="document.getElementById('upload-mapa').click()">📲 Carregar Planilha (Excel/CSV)</button>
+            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
+            <button class="btn-primary" onclick="document.getElementById('upload-mapa').click()">📥 Importar Relatório Mapa</button>
         </div>
     </header>
 
     <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Mapa de Atendimentos</button>
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento Real-Time</button>
         <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador de Rotas</button>
         <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Consultor de Normas</button>
     </nav>
@@ -33,39 +31,44 @@
         <div id="secao-mapa" class="aba-conteudo">
             <div class="layout-mapa">
                 <aside class="sidebar">
-                    <div class="kpi-mini">Atendimentos: <strong id="total-atendimentos">0</strong></div>
-                    <div id="lista-atendimentos" class="lista-scroll"><p class="aviso">Aguardando dados...</p></div>
+                    <div class="status-box">
+                        <div class="kpi">Atendimentos: <strong id="total-atendimentos">0</strong></div>
+                        <div class="kpi">Alertas Críticos: <strong id="alertas-seguranca" style="color:#ff4444">0</strong></div>
+                    </div>
+                    <div id="lista-atendimentos" class="lista-scroll">
+                        <p class="aviso">Aguardando dados do Excel...</p>
+                    </div>
                 </aside>
-                <div id="map"></div>
+                <div id="map">
+                    <div class="legenda-mapa">
+                        <div><span class="dot azul"></span> Atendimento</div>
+                        <div><span class="dot vermelho"></span> Alerta Segurança (COR/PM)</div>
+                        <div><span class="dot amarelo"></span> Alerta Climático</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="secao-rotas" class="aba-conteudo" style="display:none;">
             <div class="container-central">
-                <h2>Análise de Rota e Risco</h2>
+                <h2>Planejador de Trajeto</h2>
                 <div class="form-grupo">
-                    <input type="text" id="origem" placeholder="Endereço de Saída">
-                    <input type="text" id="destino" placeholder="Endereço de Chegada">
-                    <button class="btn-comando" onclick="calcularRotaManual()">Analisar Trajeto</button>
+                    <input type="text" id="origem" placeholder="Origem">
+                    <input type="text" id="destino" placeholder="Destino">
+                    <button class="btn-comando" onclick="alert('Calculando melhor rota via Linha Amarela/Brasil...')">Traçar</button>
                 </div>
-                <div id="painel-instrucoes" class="box-resposta"></div>
             </div>
         </div>
 
         <div id="secao-normas" class="aba-conteudo" style="display:none;">
             <div class="container-central">
-                <h2>Consultor de Normas Inteligente</h2>
+                <h2>Consultor de Normas Globo</h2>
                 <div class="botoes-rapidos">
-                    <button onclick="perguntaRapida('MOPP')">Certificação MOPP</button>
-                    <button onclick="perguntaRapida('TNO')">Regras TNO</button>
-                    <button onclick="perguntaRapida('Jornada')">Controle de Jornada</button>
-                    <button onclick="perguntaRapida('Monitoramento')">Monitoramento RIG</button>
+                    <button onclick="consultar('MOPP')">MOPP</button>
+                    <button onclick="consultar('TNO')">TNO</button>
+                    <button onclick="consultar('Jornada')">Jornada</button>
                 </div>
-                <div class="form-grupo">
-                    <input type="text" id="pergunta" placeholder="Digite sua dúvida operacional...">
-                    <button class="btn-comando" onclick="consultarIA()">Consultar</button>
-                </div>
-                <div id="resposta-ia" class="box-resposta">Aguardando consulta...</div>
+                <div id="resposta-ia" class="box-resposta">Consulte acima.</div>
             </div>
         </div>
     </main>
