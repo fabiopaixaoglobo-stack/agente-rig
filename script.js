@@ -1,14 +1,23 @@
+// Configuração do Mapa
 const map = L.map('map').setView([-22.9068, -43.1729], 11);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Esri/Globo'
 }).addTo(map);
 
+// Alternar entre abas
 function alternarAba(abaId) {
     document.querySelectorAll('.aba-conteudo').forEach(div => div.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('ativo'));
     document.getElementById('secao-' + abaId).style.display = 'block';
+    
+    // Atualiza o botão clicado
+    const bts = document.querySelectorAll('.tab-btn');
+    bts.forEach(b => { if(b.innerText.toLowerCase().includes(abaId.slice(0,3))) b.classList.add('ativo'); });
+
     if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 200);
 }
 
+// Upload e Processamento Excel
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -33,43 +42,38 @@ async function processarComAtraso(dados) {
         const prog = item['Programa'] || "";
         const produto = prog.includes('-') ? prog.split('-')[1].split('/')[0].trim() : prog;
 
-        // Adiciona na lista lateral
+        // Adiciona card na lista rolável
         lista.innerHTML += `
             <div class="atendimento-item">
                 <span class="alerta-cor">SINCRO RIG</span><br>
                 <strong>${produto}</strong><br>
-                🚗 ${item['Motorista'] || 'Externo'}<br>
+                👤 ${item['Motorista'] || 'Externo'}<br>
                 📍 ${endereco}
             </div>`;
 
-        // Plotagem com intervalo de 1.5s para evitar o erro de bloqueio
-        if (endereco && i < 10) { // Testando com os 10 primeiros
-            await new Promise(resolve => setTimeout(resolve, 1500));
+        // Plotagem com intervalo de 2.5s para não ser bloqueado pelo servidor de mapas
+        if (endereco && i < 15) {
+            await new Promise(r => setTimeout(r, 2500));
             buscarNoMapa(endereco, produto);
         }
     }
-    // Adiciona alertas de segurança automáticos
-    plotarRiscos();
 }
 
 async function buscarNoMapa(end, info) {
     try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${end}, Rio de Janeiro`);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(end)}, Rio de Janeiro`;
+        const res = await fetch(url);
         const d = await res.json();
-        if (d.length > 0) {
+        if (d && d.length > 0) {
             L.marker([d[0].lat, d[0].lon]).addTo(map)
-             .bindPopup(`<b>${info}</b><br>${end}`);
+             .bindPopup(`<b>${info}</b><br>${end}`).openPopup();
         }
-    } catch (e) { console.log("Limite de busca atingido."); }
+    } catch (e) { console.log("Limite atingido."); }
 }
 
-function plotarRiscos() {
-    // Simulação COR/PMERJ/OTT
-    const riscos = [
-        { lat: -22.861, lon: -43.255, msg: "COR-RJ: Acidente Av. Brasil (Altura Manguinhos)" },
-        { lat: -22.922, lon: -43.235, msg: "OTT: Operação Policial em andamento na região" }
-    ];
-    riscos.forEach(r => {
-        L.circle([r.lat, r.lon], {color: 'red', radius: 1000}).addTo(map).bindPopup(r.msg);
-    });
+function consultar(t) {
+    const r = document.getElementById('res-norma');
+    if(t === 'MOPP') r.innerText = "RIG: Curso MOPP deve estar em dia na CNH. Exigido Kit de emergência.";
+    if(t === 'TNO') r.innerText = "RIG: Transporte Noturno: Checar descanso e iluminação da rota.";
+    if(t === 'Jornada') r.innerText = "RIG: Jornada máxima de 5h30 ao volante sem pausa.";
 }
