@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Operações Globo</title>
+    <title>AGENTE RIG | Inteligência Operacional</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,16 +13,16 @@
     <header>
         <div class="logo-area">
             <h1>AGENTE RIG</h1>
-            <p>Monitoramento Logístico Integrado</p>
+            <p>Centro de Inteligência de Transportes</p>
         </div>
         <div class="header-actions">
             <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-primary" style="background:var(--gold); padding:8px 15px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;" onclick="document.getElementById('upload-mapa').click()">📥 Importar Mapa Excel</button>
+            <button class="btn-primary" onclick="document.getElementById('upload-mapa').click()">📥 Importar Dados Operacionais</button>
         </div>
     </header>
 
     <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento Real-Time</button>
         <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
         <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Normas</button>
     </nav>
@@ -33,36 +33,39 @@
                 <aside class="sidebar">
                     <div class="sidebar-perfil"></div>
                     
-                    <div style="padding: 10px; border-bottom: 1px solid #30363d; font-size: 0.9rem;">
-                        Atendimentos: <strong id="total-atendimentos">0</strong>
+                    <div class="monitor-status">
+                        <div class="status-item">📡 Scan Segurança: <span class="verde">ATIVO</span></div>
+                        <div class="status-item">🚗 Veículos (Janela 2h): <strong id="total-atendimentos">0</strong></div>
+                        <div class="status-item">⚠️ Incidentes: <strong id="total-alertas">0</strong></div>
                     </div>
 
                     <div id="lista-atendimentos" class="lista-scroll">
-                        <p style="color:#8b949e; text-align:center;">Carregue o arquivo .xlsx para visualizar os motoristas.</p>
+                        <p style="padding:15px; font-size:0.8rem; color:#8b949e;">Sistema monitorando ocorrências nas últimas 2 horas...</p>
                     </div>
                 </aside>
-                <div id="map"></div>
-            </div>
-        </div>
-
-        <div id="secao-rotas" class="aba-conteudo" style="display:none; padding:40px; text-align:center;">
-            <div style="background:var(--card); padding:20px; border-radius:8px; max-width:600px; margin:auto;">
-                <h2>Planejador de Rotas</h2>
-                <input type="text" id="origem" placeholder="Endereço de Origem" style="width:90%; padding:10px; margin-bottom:10px; background:#0d1117; border:1px solid #30363d; color:white;">
-                <input type="text" id="destino" placeholder="Endereço de Destino" style="width:90%; padding:10px; margin-bottom:10px; background:#0d1117; border:1px solid #30363d; color:white;">
-                <button onclick="alert('Calculando rota inteligente...')" style="background:var(--accent); color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">Analisar Percurso</button>
-            </div>
-        </div>
-
-        <div id="secao-normas" class="aba-conteudo" style="display:none; padding:40px; text-align:center;">
-            <div style="background:var(--card); padding:20px; border-radius:8px; max-width:600px; margin:auto;">
-                <h2>Consultor de Normas</h2>
-                <div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px;">
-                    <button onclick="consultar('MOPP')" style="padding:5px 15px; cursor:pointer;">MOPP</button>
-                    <button onclick="consultar('TNO')" style="padding:5px 15px; cursor:pointer;">TNO</button>
-                    <button onclick="consultar('Jornada')" style="padding:5px 15px; cursor:pointer;">Jornada</button>
+                <div id="map">
+                    <div class="legenda-mapa">
+                        <div><span class="dot azul"></span> Veículo Ativo</div>
+                        <div><span class="dot vermelho"></span> Risco Segurança (OTT/PM)</div>
+                        <div><span class="dot amarelo"></span> Alerta Climático</div>
+                    </div>
                 </div>
-                <div id="res-norma" style="background:#0d1117; padding:15px; border-radius:4px; color:var(--accent);">Selecione um tópico acima.</div>
+            </div>
+        </div>
+
+        <div id="secao-rotas" class="aba-conteudo" style="display:none; padding:40px;">
+            <div class="container-central">
+                <h2>Cálculo de Rota Segura</h2>
+                <input type="text" id="origem" placeholder="Origem">
+                <input type="text" id="destino" placeholder="Destino">
+                <button class="btn-comando">Analisar Pontos de Calor</button>
+            </div>
+        </div>
+
+        <div id="secao-normas" class="aba-conteudo" style="display:none; padding:40px;">
+            <div class="container-central">
+                <h2>Consultor Legislativo</h2>
+                <div id="res-norma">Aguardando consulta operacional.</div>
             </div>
         </div>
     </main>
