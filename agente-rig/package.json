@@ -1,1 +1,10 @@
-package.json
+{
+  "name": "agente-rig",
+  "version": "1.0.0",
+  "description": "Sistema de Gestão Integrada de Transportes",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "dependencies": {}
+}
