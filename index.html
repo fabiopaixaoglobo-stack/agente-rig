@@ -1,56 +1,32 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <title>AGENTE RIG | Rota Inteligente</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente RIG - Gestão de Transportes</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="logo">
-      <span class="shield">🛡️</span>
-      <div>
-        <h1>AGENTE RIG</h1>
-        <p>Gestão Integrada de Transportes</p>
-      </div>
-    </div>
+    <header>
+        <h1>Agente RIG - Monitoramento Integrado</h1>
+        <p>Gestão de Operações e Segurança Logística</p>
+    </header>
 
-    <div class="status">
-      <span class="dot"></span>
-      SISTEMA OPERACIONAL • OP-RJ-404
-    </div>
-  </header>
+    <main>
+        <section id="kpi-panel">
+            <div class="card"><h3>IQT</h3><p id="iqt-val">--%</p></div>
+            <div class="card"><h3>TCO</h3><p id="tco-val">R$ --</p></div>
+            <div class="card"><h3>Status Frota</h3><p id="frota-val">Operacional</p></div>
+        </section>
 
-  <main>
-    <nav class="tabs">
-      <button class="active">Monitoramento de Rotas</button>
-      <button>Consultor de Normas</button>
-    </nav>
+        <section id="consultor">
+            <h2>Consultor de Normas</h2>
+            <input type="text" id="pergunta" placeholder="Ex: Regras para transporte de carga perigosa...">
+            <button onclick="consultarNorma()">Consultar</button>
+            <div id="resposta-consultor">Aguardando consulta...</div>
+        </section>
+    </main>
 
-    <section class="grid">
-      <div class="card">
-        <img src="assets/rig-bg.jpg" alt="Centro de Comando IA" />
-        <h3>Centro de Comando</h3>
-
-        <label>Origem</label>
-        <input placeholder="Av. Brasil, 5000 - Rio de Janeiro" />
-
-        <label>Destino</label>
-        <input placeholder="Centro, Niterói - RJ" />
-
-        <button class="primary">Analisar Rota</button>
-      </div>
-
-      <div class="card center">
-        <h3>Aguardando parâmetros</h3>
-        <p>Insira origem e destino para iniciar a análise.</p>
-      </div>
-
-      <div class="card center">
-        <h3>Mapa da rota</h3>
-        <p>Aguardando coordenadas da rota…</p>
-      </div>
-    </section>
-  </main>
+    <script src="script.js"></script>
 </body>
 </html>
