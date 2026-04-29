@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Inteligência Operacional</title>
+    <title>AGENTE RIG | Intelligence System</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,63 +13,74 @@
     <header>
         <div class="logo-area">
             <h1>AGENTE RIG</h1>
-            <p>Centro de Inteligência de Transportes</p>
+            <p>Logística & Segurança Operacional</p>
         </div>
         <div class="header-actions">
             <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-primary" onclick="document.getElementById('upload-mapa').click()">📥 Importar Dados Operacionais</button>
+            <button class="btn-import" onclick="document.getElementById('upload-mapa').click()">📥 Importar Base Operacional</button>
         </div>
     </header>
 
     <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento Real-Time</button>
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
         <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
         <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Normas</button>
     </nav>
 
     <main id="conteudo-principal">
         <div id="secao-mapa" class="aba-conteudo">
-            <div class="layout-mapa">
+            <div class="layout-grid">
                 <aside class="sidebar">
                     <div class="sidebar-perfil"></div>
-                    
-                    <div class="monitor-status">
-                        <div class="status-item">📡 Scan Segurança: <span class="verde">ATIVO</span></div>
-                        <div class="status-item">🚗 Veículos (Janela 2h): <strong id="total-atendimentos">0</strong></div>
-                        <div class="status-item">⚠️ Incidentes: <strong id="total-alertas">0</strong></div>
+                    <div class="status-panel">
+                        <div class="status-row"><span>Status:</span> <span class="online">ONLINE</span></div>
+                        <div class="status-row"><span>Veículos em Janela:</span> <strong id="total-ativos">0</strong></div>
+                        <div class="status-row"><span>Riscos Detectados:</span> <strong id="total-alertas">0</strong></div>
                     </div>
-
                     <div id="lista-atendimentos" class="lista-scroll">
-                        <p style="padding:15px; font-size:0.8rem; color:#8b949e;">Sistema monitorando ocorrências nas últimas 2 horas...</p>
+                        <p class="empty-msg">Aguardando importação de dados...</p>
                     </div>
                 </aside>
                 <div id="map">
-                    <div class="legenda-mapa">
-                        <div><span class="dot azul"></span> Veículo Ativo</div>
-                        <div><span class="dot vermelho"></span> Risco Segurança (OTT/PM)</div>
-                        <div><span class="dot amarelo"></span> Alerta Climático</div>
+                    <div class="map-overlay">
+                        <div class="legend-item"><span class="dot blue"></span> Veículo Ativo</div>
+                        <div class="legend-item"><span class="dot red"></span> Incidente Segurança</div>
+                        <div class="legend-item"><span class="dot orange"></span> Alerta Climático</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="secao-rotas" class="aba-conteudo" style="display:none; padding:40px;">
-            <div class="container-central">
-                <h2>Cálculo de Rota Segura</h2>
-                <input type="text" id="origem" placeholder="Origem">
-                <input type="text" id="destino" placeholder="Destino">
-                <button class="btn-comando">Analisar Pontos de Calor</button>
+        <div id="secao-rotas" class="aba-conteudo" style="display:none;">
+            <div class="view-container">
+                <div class="card-painel">
+                    <h2>Planejador de Rota Segura</h2>
+                    <p>Análise de pontos de calor e zonas de exclusão (COR/OTT).</p>
+                    <div class="input-group">
+                        <input type="text" id="origem" placeholder="Ponto de Partida (Ex: Estúdios Globo)">
+                        <input type="text" id="destino" placeholder="Destino Final">
+                        <button class="btn-action" onclick="simularRota()">Analisar Percurso</button>
+                    </div>
+                    <div id="feedback-rota" class="feedback-box"></div>
+                </div>
             </div>
         </div>
 
-        <div id="secao-normas" class="aba-conteudo" style="display:none; padding:40px;">
-            <div class="container-central">
-                <h2>Consultor Legislativo</h2>
-                <div id="res-norma">Aguardando consulta operacional.</div>
+        <div id="secao-normas" class="aba-conteudo" style="display:none;">
+            <div class="view-container">
+                <div class="card-painel">
+                    <h2>Consultor de Normas Integrado</h2>
+                    <div class="quick-chips">
+                        <button onclick="consultarManual('MOPP')">MOPP</button>
+                        <button onclick="consultarManual('TNO')">TNO</button>
+                        <button onclick="consultarManual('Jornada')">Jornada</button>
+                        <button onclick="consultarManual('Velocidade')">Velocidade</button>
+                    </div>
+                    <div id="feedback-normas" class="feedback-box">Selecione uma norma para consulta imediata.</div>
+                </div>
             </div>
         </div>
     </main>
-
     <script src="script.js"></script>
 </body>
 </html>
