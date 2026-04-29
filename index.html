@@ -5,73 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AGENTE RIG | Operações Globo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <div class="logo-area">
             <h1>AGENTE RIG</h1>
-            <p>Comando de Transportes • Rio de Janeiro</p>
+            <p>Monitoramento Logístico Integrado</p>
         </div>
         <div class="header-actions">
             <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-primary" onclick="document.getElementById('upload-mapa').click()">📥 Importar Relatório Mapa</button>
+            <button class="btn-primary" style="background:var(--gold); padding:8px 15px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;" onclick="document.getElementById('upload-mapa').click()">📥 Importar Mapa Excel</button>
         </div>
     </header>
 
     <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento Real-Time</button>
-        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador de Rotas</button>
-        <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Consultor de Normas</button>
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
+        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Normas</button>
     </nav>
 
     <main id="conteudo-principal">
         <div id="secao-mapa" class="aba-conteudo">
             <div class="layout-mapa">
                 <aside class="sidebar">
-                    <div class="status-box">
-                        <div class="kpi">Atendimentos: <strong id="total-atendimentos">0</strong></div>
-                        <div class="kpi">Alertas Críticos: <strong id="alertas-seguranca" style="color:#ff4444">0</strong></div>
+                    <div class="sidebar-perfil"></div>
+                    
+                    <div style="padding: 10px; border-bottom: 1px solid #30363d; font-size: 0.9rem;">
+                        Atendimentos: <strong id="total-atendimentos">0</strong>
                     </div>
+
                     <div id="lista-atendimentos" class="lista-scroll">
-                        <p class="aviso">Aguardando dados do Excel...</p>
+                        <p style="color:#8b949e; text-align:center;">Carregue o arquivo .xlsx para visualizar os motoristas.</p>
                     </div>
                 </aside>
-                <div id="map">
-                    <div class="legenda-mapa">
-                        <div><span class="dot azul"></span> Atendimento</div>
-                        <div><span class="dot vermelho"></span> Alerta Segurança (COR/PM)</div>
-                        <div><span class="dot amarelo"></span> Alerta Climático</div>
-                    </div>
-                </div>
+                <div id="map"></div>
             </div>
         </div>
 
-        <div id="secao-rotas" class="aba-conteudo" style="display:none;">
-            <div class="container-central">
-                <h2>Planejador de Trajeto</h2>
-                <div class="form-grupo">
-                    <input type="text" id="origem" placeholder="Origem">
-                    <input type="text" id="destino" placeholder="Destino">
-                    <button class="btn-comando" onclick="alert('Calculando melhor rota via Linha Amarela/Brasil...')">Traçar</button>
-                </div>
+        <div id="secao-rotas" class="aba-conteudo" style="display:none; padding:40px; text-align:center;">
+            <div style="background:var(--card); padding:20px; border-radius:8px; max-width:600px; margin:auto;">
+                <h2>Planejador de Rotas</h2>
+                <input type="text" id="origem" placeholder="Endereço de Origem" style="width:90%; padding:10px; margin-bottom:10px; background:#0d1117; border:1px solid #30363d; color:white;">
+                <input type="text" id="destino" placeholder="Endereço de Destino" style="width:90%; padding:10px; margin-bottom:10px; background:#0d1117; border:1px solid #30363d; color:white;">
+                <button onclick="alert('Calculando rota inteligente...')" style="background:var(--accent); color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">Analisar Percurso</button>
             </div>
         </div>
 
-        <div id="secao-normas" class="aba-conteudo" style="display:none;">
-            <div class="container-central">
-                <h2>Consultor de Normas Globo</h2>
-                <div class="botoes-rapidos">
-                    <button onclick="consultar('MOPP')">MOPP</button>
-                    <button onclick="consultar('TNO')">TNO</button>
-                    <button onclick="consultar('Jornada')">Jornada</button>
+        <div id="secao-normas" class="aba-conteudo" style="display:none; padding:40px; text-align:center;">
+            <div style="background:var(--card); padding:20px; border-radius:8px; max-width:600px; margin:auto;">
+                <h2>Consultor de Normas</h2>
+                <div style="display:flex; gap:10px; justify-content:center; margin-bottom:20px;">
+                    <button onclick="consultar('MOPP')" style="padding:5px 15px; cursor:pointer;">MOPP</button>
+                    <button onclick="consultar('TNO')" style="padding:5px 15px; cursor:pointer;">TNO</button>
+                    <button onclick="consultar('Jornada')" style="padding:5px 15px; cursor:pointer;">Jornada</button>
                 </div>
-                <div id="resposta-ia" class="box-resposta">Consulte acima.</div>
+                <div id="res-norma" style="background:#0d1117; padding:15px; border-radius:4px; color:var(--accent);">Selecione um tópico acima.</div>
             </div>
         </div>
     </main>
+
     <script src="script.js"></script>
 </body>
 </html>
