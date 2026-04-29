@@ -1,82 +1,94 @@
-// 1. Mapa de Satélite
+// Configuração do Mapa de Satélite
 const map = L.map('map').setView([-22.9068, -43.1729], 11);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri'
+    attribution: 'Esri/COR-RJ'
 }).addTo(map);
 
-let controleRota;
+// Ícones Personalizados
+const iconeAtendimento = L.divIcon({className: 'marker-azul'});
+const iconeAlerta = L.divIcon({className: 'marker-vermelho'});
 
-// 2. Alternar Abas (Corrigido)
+// 1. Alternar Abas
 function alternarAba(abaId) {
     document.querySelectorAll('.aba-conteudo').forEach(div => div.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('ativo'));
-    
     document.getElementById('secao-' + abaId).style.display = 'block';
-    const btnAtivo = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText.toLowerCase().includes(abaId));
-    if(btnAtivo) btnAtivo.classList.add('ativo');
-
-    if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 300);
+    if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 200);
 }
 
-// 3. Carregar Excel ou CSV
+// 2. Leitura do Excel
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const reader = new FileReader();
-
     reader.onload = function(event) {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, {type: 'array'});
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-        exibirAtendimentos(jsonData);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+        processarAtendimentos(jsonData);
     };
     reader.readAsArrayBuffer(file);
 });
 
-function exibirAtendimentos(dados) {
+// 3. Plotagem no Mapa (Geocoding)
+async function processarAtendimentos(dados) {
     const lista = document.getElementById('lista-atendimentos');
     lista.innerHTML = '';
     document.getElementById('total-atendimentos').innerText = dados.length;
 
-    dados.forEach(item => {
-        let prog = item['Programa'] || "";
-        let produto = prog.includes('-') ? prog.split('-')[1].split('/')[0].trim() : prog;
+    for (let item of dados) {
+        const endereco = item['Localidade + Endereço'];
+        const motorista = item['Motorista'] || 'Não informado';
+        const prog = item['Programa'] || "";
+        const produto = prog.includes('-') ? prog.split('-')[1].split('/')[0].trim() : prog;
 
+        // Adiciona na lista lateral
         lista.innerHTML += `
             <div class="atendimento-item">
-                <strong>Produto: ${produto}</strong><br>
-                👤 ${item['Motorista'] || 'N/A'}<br>
-                🚗 ${item['Placa Veículo'] || 'N/A'}<br>
-                📍 ${item['Localidade + Endereço'] || 'Sem endereço'}
+                <strong>${produto}</strong><br>
+                🚗 ${motorista} | ${item['Placa Veículo'] || ''}<br>
+                📍 ${endereco}
             </div>`;
+
+        // Tenta plotar no mapa (Geocoding limitado para evitar travar o navegador)
+        if (endereco && dados.indexOf(item) < 15) { // Limitamos os 15 primeiros para teste rápido
+            buscarCoordenadas(endereco, `${produto} - ${motorista}`);
+        }
+    }
+    plotarOcorrenciasSeguranca();
+}
+
+async function buscarCoordenadas(endereco, info) {
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${endereco}, Rio de Janeiro`);
+        const data = await response.json();
+        if (data.length > 0) {
+            L.marker([data[0].lat, data[0].lon])
+             .addTo(map)
+             .bindPopup(`<b>Atendimento:</b><br>${info}<br>📍 ${endereco}`);
+        }
+    } catch (err) { console.error("Erro no mapa:", err); }
+}
+
+// 4. Camada de Ocorrências (Simulação COR/OTT/PM)
+function plotarOcorrenciasSeguranca() {
+    const ocorrencias = [
+        { lat: -22.86, lon: -43.25, tipo: "Interdição COR-RJ: Acidente na Av. Brasil", cor: "red" },
+        { lat: -22.92, lon: -43.23, tipo: "Alerta OTT: Presença Policial em Vigário Geral", cor: "orange" },
+        { lat: -23.00, lon: -43.35, tipo: "Clima: Forte chuva na região da Barra/Recreio", cor: "yellow" }
+    ];
+
+    ocorrencias.forEach(oc => {
+        L.circle([oc.lat, oc.lon], { color: oc.cor, fillOpacity: 0.5, radius: 800 })
+         .addTo(map)
+         .bindPopup(`<b>ALERTA DE SEGURANÇA:</b><br>${oc.tipo}`);
     });
+    document.getElementById('alertas-seguranca').innerText = ocorrencias.length;
 }
 
-// 4. Planejador de Rotas
-function calcularRotaManual() {
-    const orig = document.getElementById('origem').value;
-    const dest = document.getElementById('destino').value;
-    const painel = document.getElementById('painel-instrucoes');
-    
-    if(!orig || !dest) return alert("Por favor, preencha os dois campos.");
-    
-    painel.innerHTML = `<strong>RIG Analisando:</strong> Rota de ${orig} para ${dest}... <br><br> 
-    Verificando alertas de segurança e restrições de tráfego na região do Rio de Janeiro.`;
-}
-
-// 5. Consultor Inteligente
-function perguntaRapida(texto) {
-    document.getElementById('pergunta').value = texto;
-    consultarIA();
-}
-
-function consultarIA() {
-    const p = document.getElementById('pergunta').value.toLowerCase();
+function consultar(t) {
     const r = document.getElementById('resposta-ia');
-    
-    if(p.includes("mopp")) r.innerText = "RIG: Obrigatório portar certificado MOPP e Kit de emergência para produtos perigosos.";
-    else if(p.includes("tno")) r.innerText = "RIG: Transporte Noturno (TNO) exige descanso prévio e monitoramento ativo 24h.";
-    else if(p.includes("jornada")) r.innerText = "RIG: Máximo de 5h30 de volante. Pausa obrigatória de 30 minutos.";
-    else if(p.includes("monitoramento")) r.innerText = "RIG: Todos os veículos devem estar com GPS ativo no sistema Globo Transportes.";
-    else r.innerText = "RIG: Não localizei esta norma específica. Tente os botões rápidos acima.";
+    if(t === 'MOPP') r.innerHTML = "<b>RIG:</b> Condutor deve possuir curso MOPP averbado e veículo com sinalização de risco.";
+    if(t === 'TNO') r.innerHTML = "<b>RIG:</b> Transporte Noturno exige rotas iluminadas e paradas apenas em pontos homologados.";
+    if(t === 'Jornada') r.innerHTML = "<b>RIG:</b> Máximo 5h30 volante. Repouso de 11h entre jornadas.";
 }
