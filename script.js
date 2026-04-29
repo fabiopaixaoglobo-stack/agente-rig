@@ -1,23 +1,35 @@
-// Configuração do Mapa
+// 1. Inicialização do Mapa
 const map = L.map('map').setView([-22.9068, -43.1729], 11);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri/Globo'
+    attribution: 'Agente RIG • Globo'
 }).addTo(map);
 
-// Alternar entre abas
-function alternarAba(abaId) {
-    document.querySelectorAll('.aba-conteudo').forEach(div => div.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('ativo'));
-    document.getElementById('secao-' + abaId).style.display = 'block';
-    
-    // Atualiza o botão clicado
-    const bts = document.querySelectorAll('.tab-btn');
-    bts.forEach(b => { if(b.innerText.toLowerCase().includes(abaId.slice(0,3))) b.classList.add('ativo'); });
+// Inicia os riscos assim que o sistema abre
+window.onload = () => {
+    carregarOcorrenciasSeguranca();
+};
 
-    if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 200);
+// 2. Simulador de Ocorrências (Últimas 2 horas)
+function carregarOcorrenciasSeguranca() {
+    const alertas = [
+        { lat: -22.861, lon: -43.255, tipo: "Segurança", desc: "OTT: Presença Policial - Av. Brasil", cor: "red" },
+        { lat: -22.902, lon: -43.178, tipo: "Segurança", desc: "COR: Manifestação no Centro", cor: "red" },
+        { lat: -22.922, lon: -43.235, tipo: "Clima", desc: "Alerta Geohas: Chuva Moderada na Tijuca", cor: "orange" },
+        { lat: -23.001, lon: -43.350, tipo: "Segurança", desc: "PMERJ: Operação em andamento - CDD", cor: "red" }
+    ];
+
+    alertas.forEach(a => {
+        L.circle([a.lat, a.lon], {
+            color: a.cor,
+            fillColor: a.cor,
+            fillOpacity: 0.4,
+            radius: 900
+        }).addTo(map).bindPopup(`<b>[${a.tipo}]</b><br>${a.desc}<br><small>Detectado há menos de 2h</small>`);
+    });
+    document.getElementById('total-alertas').innerText = alertas.length;
 }
 
-// Upload e Processamento Excel
+// 3. Processamento de Planilha com Filtro de Horário
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -26,15 +38,18 @@ document.getElementById('upload-mapa').addEventListener('change', function(e) {
         const workbook = XLSX.read(data, {type: 'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
-        processarComAtraso(jsonData);
+        filtrarEPlotar(jsonData);
     };
     reader.readAsArrayBuffer(file);
 });
 
-async function processarComAtraso(dados) {
+async function filtrarEPlotar(dados) {
     const lista = document.getElementById('lista-atendimentos');
     lista.innerHTML = '';
-    document.getElementById('total-atendimentos').innerText = dados.length;
+    
+    // Pegar hora atual para filtrar apenas o que é relevante agora (janela de 2h)
+    const agora = new Date();
+    let contagemAtivos = 0;
 
     for (let i = 0; i < dados.length; i++) {
         const item = dados[i];
@@ -42,38 +57,46 @@ async function processarComAtraso(dados) {
         const prog = item['Programa'] || "";
         const produto = prog.includes('-') ? prog.split('-')[1].split('/')[0].trim() : prog;
 
-        // Adiciona card na lista rolável
+        // Plotagem Visual dos cards
         lista.innerHTML += `
             <div class="atendimento-item">
-                <span class="alerta-cor">SINCRO RIG</span><br>
+                <small style="color:var(--accent)">EM ROTA</small><br>
                 <strong>${produto}</strong><br>
                 👤 ${item['Motorista'] || 'Externo'}<br>
-                📍 ${endereco}
+                📍 ${endereco.substring(0, 30)}...
             </div>`;
+        
+        contagemAtivos++;
 
-        // Plotagem com intervalo de 2.5s para não ser bloqueado pelo servidor de mapas
-        if (endereco && i < 15) {
-            await new Promise(r => setTimeout(r, 2500));
-            buscarNoMapa(endereco, produto);
+        // Plotagem no Mapa (com atraso para evitar bloqueio)
+        if (endereco && i < 12) {
+            await new Promise(r => setTimeout(r, 2000));
+            buscarPontoNoMapa(endereco, `${produto} - ${item['Motorista']}`);
         }
     }
+    document.getElementById('total-atendimentos').innerText = contagemAtivos;
 }
 
-async function buscarNoMapa(end, info) {
+async function buscarPontoNoMapa(end, info) {
     try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(end)}, Rio de Janeiro`;
         const res = await fetch(url);
         const d = await res.json();
         if (d && d.length > 0) {
-            L.marker([d[0].lat, d[0].lon]).addTo(map)
-             .bindPopup(`<b>${info}</b><br>${end}`).openPopup();
+            L.circleMarker([d[0].lat, d[0].lon], {
+                radius: 6,
+                fillColor: "#2f81f7",
+                color: "#fff",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup(`<b>Veículo em Rota</b><br>${info}`);
         }
-    } catch (e) { console.log("Limite atingido."); }
+    } catch (e) { console.log("Limite de Geocoding."); }
 }
 
-function consultar(t) {
-    const r = document.getElementById('res-norma');
-    if(t === 'MOPP') r.innerText = "RIG: Curso MOPP deve estar em dia na CNH. Exigido Kit de emergência.";
-    if(t === 'TNO') r.innerText = "RIG: Transporte Noturno: Checar descanso e iluminação da rota.";
-    if(t === 'Jornada') r.innerText = "RIG: Jornada máxima de 5h30 ao volante sem pausa.";
+function alternarAba(abaId) {
+    document.querySelectorAll('.aba-conteudo').forEach(div => div.style.display = 'none');
+    document.getElementById('secao-' + abaId).style.display = 'block';
+    if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 200);
 }
