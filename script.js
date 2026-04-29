@@ -1,48 +1,72 @@
-// Inicializa o Mapa centrado no Rio de Janeiro (Versão Satélite)
-const map = L.map('map').setView([-22.9068, -43.1729], 12);
-
+// 1. Inicialização do Mapa
+const map = L.map('map').setView([-22.9068, -43.1729], 11);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    attribution: 'Esri'
 }).addTo(map);
 
+let controleRota;
+
+// 2. Navegação entre Abas
+function alternarAba(abaId) {
+    document.querySelectorAll('.aba-conteudo').forEach(div => div.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('ativo'));
+    
+    document.getElementById('secao-' + abaId).style.display = 'block';
+    event.target.classList.add('ativo');
+    
+    if (abaId === 'mapa') setTimeout(() => map.invalidateSize(), 200);
+}
+
+// 3. Processamento de Planilha (Mapa)
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
     const file = e.target.files[0];
     Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-            processarDados(results.data);
+            exibirAtendimentos(results.data);
         }
     });
 });
 
-function processarDados(dados) {
-    const agora = new Date();
-    const umaHoraDepois = new Date(agora.getTime() + (60 * 60 * 1000));
-    
-    const listaHtml = document.getElementById('lista-atendimentos');
-    listaHtml.innerHTML = '';
-    let contAg = 0, contProx = 0;
+function exibirAtendimentos(dados) {
+    const lista = document.getElementById('lista-atendimentos');
+    lista.innerHTML = '';
+    document.getElementById('total-atendimentos').innerText = dados.length;
 
     dados.forEach(item => {
-        // Formata o Nome do Produto (Programa)
-        let programaFull = item['Programa'] || "";
-        let produto = programaFull.includes('-') ? programaFull.split('-')[1].split('/')[0].trim() : programaFull;
+        let prog = item['Programa'] || "";
+        let produto = prog.includes('-') ? prog.split('-')[1].split('/')[0].trim() : prog;
 
-        // Lógica de Horário (Simplificada para demonstração)
-        // Aqui você compararia item['Data Hora'] com a variável 'agora'
-        
-        const card = `
+        lista.innerHTML += `
             <div class="atendimento-item">
                 <strong>Produto: ${produto}</strong><br>
-                👤 ${item['Motorista']} (${item['Prestador do veículo']})<br>
-                🚗 ${item['Tipo de Veículo']} | ${item['Placa']}<br>
+                👤 ${item['Motorista']}<br>
+                🚗 ${item['Placa']} | ${item['Tipo de Veículo']}<br>
                 📍 ${item['Localidade + Endereço']}
-            </div>
-        `;
-        listaHtml.innerHTML += card;
-        
-        // Simulação de plotagem no mapa (Necessita Coordenadas ou serviço de Geocoding)
-        // L.marker([-22.9, -43.2]).addTo(map).bindPopup(`<b>${produto}</b><br>${item['Motorista']}`);
+            </div>`;
     });
+}
+
+// 4. Lógica de Rotas Manuais
+function calcularRotaManual() {
+    const orig = document.getElementById('origem').value;
+    const dest = document.getElementById('destino').value;
+    if(!orig || !dest) return alert("Preencha origem e destino!");
+    
+    alert(`Agente RIG: Iniciando cálculo de rota para ${dest}. Verificando condições de tráfego...`);
+}
+
+// 5. Consultor de Normas
+function consultarIA() {
+    const pergunta = document.getElementById('pergunta').value.toLowerCase();
+    const resp = document.getElementById('resposta-ia');
+    
+    if(pergunta.includes("mopp")) {
+        resp.innerText = "RIG: Para MOPP, o condutor deve ter o curso na CNH e o veículo deve portar o Kit de Emergência completo.";
+    } else if(pergunta.includes("jornada")) {
+        resp.innerText = "RIG: Lei 13.103: Máximo 5h30 de direção contínua, seguida de 30 min de descanso.";
+    } else {
+        resp.innerText = "RIG: Consultando manuais Globo... Tente termos como 'MOPP', 'Jornada' ou 'Velocidade'.";
+    }
 }
