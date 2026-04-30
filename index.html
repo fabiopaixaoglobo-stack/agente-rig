@@ -2,51 +2,44 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Operações Logísticas</title>
+    <title>AGENTE RIG | Painel Operacional</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <div class="header-logo">
-            <h1>AGENTE RIG</h1>
-            <p>Sincronismo de Segurança & Transportes</p>
-        </div>
-        <div class="header-actions">
-            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
-        </div>
+        <h1>AGENTE RIG</h1>
+        <input type="file" id="upload-mapa" accept=".xlsx" hidden>
+        <button onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
     </header>
 
-    <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
-        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor de Normas</button>
-    </nav>
-
-    <main id="app-container">
-<aside class="sidebar">
-            <h3>Veículos & Ocorrências</h3>
-            <div id="lista-veiculos">Carregue a base para visualizar...</div>
-        </aside>
+    <div class="app-layout">
         <aside class="sidebar">
-            <h3>Veículos & Ocorrências</h3>
-            <div id="lista-veiculos">Carregue a base para visualizar...</div>
+            <nav>
+                <button class="tab-btn" onclick="showTab('mapa')">📍 Monitoramento</button>
+                <button class="tab-btn" onclick="showTab('rotas')">🛣️ Planejador</button>
+                <button class="tab-btn" onclick="showTab('normas')">💬 Consultor</button>
+            </nav>
+            <div id="lista-veiculos" class="card">
+                <h3>Ocorrências</h3>
+                <div id="dados-excel">Aguardando base...</div>
+            </div>
         </aside>
 
-        <section id="secao-mapa" class="aba-conteudo">
-            <div id="map"></div>
-        </section>
-
-        <section id="secao-rotas" class="aba-conteudo" style="display:none;">
-            <div class="painel-interno">
-                <h2>Análise de Trajeto Seguro</h2>
-                <div id="feedback-rota" class="feedback-box">Pronto para análise de pontos de calor.</div>
-            </div>
-        </section>
-    </main>
-
+        <main class="content-area">
+            <section id="mapa" class="aba-conteudo ativo">
+                <div id="map"></div>
+            </section>
+            <section id="rotas" class="aba-conteudo">
+                <h2>Análise de Trajeto</h2>
+                <div class="card">Módulo em desenvolvimento.</div>
+            </section>
+            <section id="normas" class="aba-conteudo">
+                <h2>Consultor de Normas</h2>
+                <div class="card">Módulo em desenvolvimento.</div>
+            </section>
+        </main>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
