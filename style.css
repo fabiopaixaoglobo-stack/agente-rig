@@ -1,70 +1,13 @@
-:root { --bg: #0d1117; --card: #161b22; --accent: #2f81f7; --border: #30363d; --text: #c9d1d9; }
+:root { --bg: #050a0f; --panel: #0d1117; --accent: #2f81f7; --border: #1f242c; --text: #e6edf3; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
 
-header { 
-    height: 120px; 
-    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/rig-bg.jpg'); 
-    background-size: cover; 
-    background-position: center; 
-    padding: 0 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent);
-}
+header { height: 70px; background: #000; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+.app-layout { display: flex; height: calc(100vh - 70px); }
+.sidebar { width: 300px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; }
+.content-area { flex: 1; position: relative; }
+#map { width: 100%; height: 100%; }
 
-.abas-navegacao { display: flex; background: #010409; border-bottom: 1px solid var(--border); }
-.tab-btn { flex: 1; padding: 15px; border: none; background: none; color: var(--text); cursor: pointer; }
-.tab-btn.ativo { border-bottom: 3px solid var(--accent); background: #21262d; color: white; }
-
-#app-container { 
-    display: flex; 
-    height: calc(100vh - 180px); /* Ajusta para deixar espaço para o cabeçalho e abas */
-    width: 100%;
-}
-.sidebar { 
-    width: 300px; 
-    background: #161b22; 
-    border-right: 1px solid #30363d; 
-    padding: 20px; 
-    color: #c9d1d9; 
-    overflow-y: auto; 
-}
-#secao-mapa { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    position: relative; 
-}
-
-#map { 
-    width: 100%; 
-    height: 100%; /* Isso garante que o mapa tenha altura */
-    min-height: 400px; 
-}
-
-.painel-interno { padding: 40px; }
-.feedback-box { background: var(--card); padding: 20px; border-left: 4px solid var(--accent); }
-/* Organização da lateral e mapa */
-#app-container {
-    display: flex;
-    height: calc(100vh - 180px);
-    width: 100%;
-}
-
-.sidebar {
-    width: 300px;
-    background: #161b22;
-    border-right: 1px solid #30363d;
-    padding: 20px;
-    color: #c9d1d9;
-    flex-shrink: 0;
-    overflow-y: auto;
-}
-
-#secao-mapa {
-    flex: 1;
-    position: relative;
-    height: 100%;
-}
-
-#map {
-    width: 100%;
-    height: 100%;
-}
+.aba-conteudo { display: none; height: 100%; }
+.aba-conteudo.ativo { display: block; }
+.tab-btn { display: block; width: 100%; padding: 15px; background: none; border: none; color: white; text-align: left; cursor: pointer; border-bottom: 1px solid #333; }
+.card { margin-top: 20px; background: #161b22; padding: 15px; }
