@@ -2,75 +2,19 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>AGENTE RIG – Rota Inteligente</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AGENTE RIG — Rota Inteligente</title>
 
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- App -->
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-
-<header class="topbar">
-  <div class="brand">
-    <img src="assets/agente-rig-hero.png">
-    <div>
-      <h1>AGENTE RIG</h1>
-      <span>Rota Inteligente Globo</span>
-    </div>
-  </div>
-
-  <div class="status">
-    <span class="dot"></span> Sistema Operacional
-  </div>
-</header>
-
-<nav class="tabs">
-  <button class="active" onclick="showTab('monitoramento', this)">Monitoramento</button>
-  <button onclick="showTab('planejador', this)">Planejador</button>
-  <button onclick="showTab('normas', this)">Normas</button>
-</nav>
-
-<main>
-
-<!-- MONITORAMENTO -->
-<section id="monitoramento" class="tab active">
-  <aside class="sidebar">
-    <img src="assets/agente-rig-hero.png" class="mini-hero">
-
-    <input type="file" id="upload" accept=".xlsx,.xls,.csv">
-
-    <div id="resumo">
-      <h3>Resumo da Base</h3>
-      <div id="dadosResumo">Nenhum dado carregado</div>
-    </div>
-  </aside>
-
-  <div id="map"></div>
-</section>
-
-<!-- PLANEJADOR -->
-<section id="planejador" class="tab">
-  <div id="mapPlanejador"></div>
-</section>
-
-<!-- NORMAS -->
-<section id="normas" class="tab">
-  <div class="chat">
-    <div class="msg bot">Olá! Pergunte sobre normas de transporte.</div>
-  </div>
-
-  <div class="chat-input">
-    <input id="pergunta" placeholder="Digite sua pergunta...">
-    <button onclick="responder()">Enviar</button>
-  </div>
-</section>
-
-</main>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="script.js"></script>
-
-</body>
-</html>
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="shield">🛡️</div>
+      <div class="brandText">
