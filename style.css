@@ -6,22 +6,35 @@
     --text: #c9d1d9;
 }
 
-body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+body { margin: 0; font-family: sans-serif; background: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
 
-/* Header e Sidebar com imagem integrada */
-header { background: url('caminho-da-sua-imagem.jpg') no-repeat center; background-size: cover; height: 80px; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent); }
+/* Cabeçalho com imagem estendida e escurecida */
+header {
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('rig-bg.jpg');
+    background-size: cover;
+    background-position: left top; /* Garante que começa na esquerda/topo */
+    height: 100px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px;
+    border-bottom: 2px solid var(--accent);
+}
 
-.main-container { display: flex; flex: 1; overflow: hidden; }
+.app-container { display: flex; flex: 1; overflow: hidden; }
 
-/* Sidebar com a imagem */
-.sidebar { width: 300px; background: var(--card-bg); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+.sidebar { width: 350px; background: var(--card-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
 
-/* Chat Estilo Replit */
-#chat-container { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+/* Chat estilo Replit */
+#chat-container { display: flex; flex-direction: column; height: 100%; }
 #chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-.message { padding: 10px; border-radius: 6px; font-size: 0.9rem; max-width: 85%; }
-.user-msg { background: var(--accent); align-self: flex-end; color: white; }
+.message { padding: 10px; border-radius: 6px; font-size: 0.9rem; max-width: 90%; }
+.user-msg { background: var(--accent); align-self: flex-end; }
 .bot-msg { background: var(--border); align-self: flex-start; }
 
-.chat-input { padding: 10px; display: flex; gap: 5px; background: var(--bg-dark); }
-.chat-input input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); color: white; padding: 8px; border-radius: 4px; }
+.chat-input { padding: 10px; display: flex; gap: 5px; border-top: 1px solid var(--border); }
+.chat-input input { flex: 1; background: var(--bg-dark); border: 1px solid var(--border); color: white; padding: 10px; }
+
+/* Mapa */
+.map-area { flex: 1; position: relative; }
+#map { height: 100%; width: 100%; z-index: 1; }
