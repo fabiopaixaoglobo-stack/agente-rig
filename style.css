@@ -6,3 +6,16 @@ header { height: 120px; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,
 .sidebar { background: var(--card); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
 #map { width: 100%; height: 100%; }
 .btn-import { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; }
+#app-container {
+    display: flex;
+    height: calc(100vh - 120px);
+}
+
+.sidebar {
+    width: 300px;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    padding: 20px;
+    overflow-y: auto;
+    color: #c9d1d9;
+}
