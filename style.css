@@ -6,7 +6,11 @@ header {
     background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('rig-bg.jpg'); 
     background-size: cover; 
     background-position: left top; 
-    padding: 0 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent);
+    padding: 0 25px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 2px solid var(--accent);
 }
 
 .abas-navegacao { display: flex; background: #010409; border-bottom: 1px solid var(--border); }
