@@ -1,99 +1,27 @@
 :root {
-    --bg: #0d1a33; /* Azul Marinho Profissional (Replit) */
-    --card: #14213d; /* Azul mais claro p/ contraste */
-    --accent: #fca311; /* Amarelo Ouro p/ botões (Replit) */
-    --text: #e5e5e5; /* Cinza Claro p/ leitura */
-    --gold: #fca311;
+    --bg-dark: #0d1117;
+    --card-bg: #161b22;
+    --border: #30363d;
+    --accent: #2f81f7;
+    --text: #c9d1d9;
 }
 
-body {
-    background-color: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte profissional */
-    margin: 0;
-    overflow: hidden; /* Impede quebra de tela */
-    height: 100vh;
-}
+body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg-dark); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
 
-header {
-    background: #000814;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid #30363d;
-}
+/* Header e Sidebar com imagem integrada */
+header { background: url('caminho-da-sua-imagem.jpg') no-repeat center; background-size: cover; height: 80px; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent); }
 
-header h1 { font-size: 1.1rem; color: white; margin: 0; }
-header p { font-size: 0.75rem; color: var(--gold); margin: 0; }
+.main-container { display: flex; flex: 1; overflow: hidden; }
 
-.btn-primary {
-    background: var(--gold);
-    color: #000;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
+/* Sidebar com a imagem */
+.sidebar { width: 300px; background: var(--card-bg); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
 
-.layout-mapa {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 120px);
-}
+/* Chat Estilo Replit */
+#chat-container { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+#chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.message { padding: 10px; border-radius: 6px; font-size: 0.9rem; max-width: 85%; }
+.user-msg { background: var(--accent); align-self: flex-end; color: white; }
+.bot-msg { background: var(--border); align-self: flex-start; }
 
-.sidebar {
-    background: var(--card);
-    border-right: 1px solid #30363d;
-    display: flex;
-    flex-direction: column;
-}
-
-/* SIDEBAR ESTILO REPLIT COM IMAGEM NOVA */
-.sidebar-perfil {
-    width: 100%;
-    height: 180px;
-    background: url('assets/rig-bg.jpg') no-repeat center center;
-    background-size: cover;
-    border-bottom: 3px solid var(--accent);
-}
-
-.lista-scroll {
-    flex: 1;
-    overflow-y: auto; /* Rolagem lateral corrigida */
-    padding: 15px;
-}
-
-/* CORREÇÃO DO TAMANHO DA FONTE APÓS CARREGAR PLANILHA */
-.atendimento-item {
-    background: #0d1a33;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    border-left: 4px solid var(--accent);
-    font-size: 0.82rem; /* Fonte menor e legível */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-#map { width: 100%; height: 100%; }
-
-/* LEGENDA NO MAPA SATÉLITE */
-.map-overlay {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(0,0,0,0.8);
-    padding: 8px 12px;
-    border-radius: 6px;
-    z-index: 1000;
-    border: 1px solid #30363d;
-    font-size: 0.7rem;
-}
-.legend-item { display: flex; align-items: center; margin-bottom: 4px; }
-.dot { height: 8px; width: 8px; border-radius: 50%; margin-right: 8px; display: inline-block; }
-.blue { background: #2f81f7; } .red { background: #ff4444; }
-
-/* ABAS */
-.abas-navegacao { display: flex; background: #14213d; }
-.tab-btn { flex: 1; padding: 12px; background: none; border: none; color: #8b949e; cursor: pointer; border-bottom: 3px solid transparent; }
-.tab-btn.ativo { border-bottom-color: var(--accent); color: white; background: #21262d; }
+.chat-input { padding: 10px; display: flex; gap: 5px; background: var(--bg-dark); }
+.chat-input input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); color: white; padding: 8px; border-radius: 4px; }
