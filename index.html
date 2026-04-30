@@ -2,53 +2,24 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Operações Logísticas</title>
+    <title>AGENTE RIG | Operações</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <div class="header-content">
-            <h1>AGENTE RIG</h1>
-            <p>Sincronismo de Segurança & Transportes</p>
-        </div>
-        <div class="header-actions">
-            <input type="file" id="upload-mapa" accept=".xlsx, .csv" hidden>
-            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
-        </div>
+        <h1>AGENTE RIG</h1>
+        <button class="btn-import" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
+        <input type="file" id="upload-mapa" accept=".xlsx, .csv" hidden>
     </header>
 
-    <nav class="abas-navegacao">
-        <button class="tab-btn active" onclick="showTab('secao-mapa', this)">📍 Monitoramento</button>
-        <button class="tab-btn" onclick="showTab('secao-rotas', this)">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="showTab('secao-normas', this)">💬 Consultor RIG</button>
-    </nav>
-
-    <main id="app-container">
-        <section id="secao-mapa" class="tab-content active">
-            <div id="map"></div>
-        </section>
-
-        <section id="secao-rotas" class="tab-content">
-            <div class="painel">
-                <h2>Análise de Trajeto</h2>
-                <input type="text" id="origem" placeholder="Origem">
-                <input type="text" id="destino" placeholder="Destino">
-                <button onclick="analisarRota()">Analisar Riscos</button>
-                <div id="feedback-rota" class="feedback">Aguardando dados...</div>
-            </div>
-        </section>
-
-        <section id="secao-normas" class="tab-content">
-            <div class="painel">
-                <h2>Consultor de Normas (TNO/MOPP)</h2>
-                <input type="file" id="upload-norma" accept=".pdf, .txt" hidden>
-                <button onclick="document.getElementById('upload-norma').click()">📂 Subir Manual PDF</button>
-                <div id="feedback-normas" class="feedback">Suba um manual para iniciar consulta.</div>
-            </div>
-        </section>
-    </main>
+    <div class="layout-grid">
+        <aside class="sidebar" id="painel-dados">
+            <h3>Veículos & Ocorrências</h3>
+            <div id="lista-veiculos">Carregue a base para visualizar...</div>
+        </aside>
+        <main id="map"></main>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
