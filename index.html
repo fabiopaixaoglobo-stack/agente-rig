@@ -2,11 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AGENTE RIG | Operações Logísticas</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,28 +14,43 @@
         </div>
         <div class="header-actions">
             <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base Excel</button>
+            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
         </div>
     </header>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <div id="chat-container">
-                <div id="chat-messages">
-                    <div class="message bot-msg">Sistema Agente RIG Online. Pronto para análise de dados.</div>
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="chat-box" placeholder="Consultar sistema...">
-                    <button onclick="enviarMensagem()">></button>
-                </div>
-            </div>
-        </aside>
+    <nav class="abas-navegacao">
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
+        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor de Normas</button>
+    </nav>
 
-        <main class="map-area">
+    <main id="conteudo-principal">
+        <section id="secao-mapa" class="aba-conteudo">
             <div id="map"></div>
-        </main>
-    </div>
+        </section>
 
+        <section id="secao-rotas" class="aba-conteudo" style="display:none;">
+            <div class="painel-interno">
+                <h2>Análise de Trajeto Seguro</h2>
+                <div class="input-group">
+                    <input type="text" id="origem" placeholder="Ponto de Origem">
+                    <input type="text" id="destino" placeholder="Destino Final">
+                    <button onclick="analisarRota()">Analisar Rota com Risco</button>
+                </div>
+                <div id="feedback-rota" class="feedback-box">Pronto para análise.</div>
+            </div>
+        </section>
+
+        <section id="secao-normas" class="aba-conteudo" style="display:none;">
+            <div class="chat-container">
+                <div id="chat-messages"><div class="msg bot">Olá, como posso ajudar com as normas hoje?</div></div>
+                <div class="chat-input"><input type="text" id="chat-box" placeholder="Digite sua dúvida..."> <button onclick="enviarMensagem()">></button></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
