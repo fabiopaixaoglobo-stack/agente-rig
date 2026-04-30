@@ -1,13 +1,90 @@
-:root { --bg: #050a0f; --panel: #0d1117; --accent: #2f81f7; --border: #1f242c; --text: #e6edf3; }
-body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+:root {
+    --bg: #050a0f;
+    --panel: #0d1117;
+    --accent: #2f81f7;
+    --text: #e6edf3;
+}
 
-header { height: 70px; background: #000; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
-.app-layout { display: flex; height: calc(100vh - 70px); }
-.sidebar { width: 300px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; }
-.content-area { flex: 1; position: relative; }
-#map { width: 100%; height: 100%; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial;
+}
 
-.aba-conteudo { display: none; height: 100%; }
-.aba-conteudo.ativo { display: block; }
-.tab-btn { display: block; width: 100%; padding: 15px; background: none; border: none; color: white; text-align: left; cursor: pointer; border-bottom: 1px solid #333; }
-.card { margin-top: 20px; background: #161b22; padding: 15px; }
+/* HEADER */
+header {
+    height: 70px;
+    background: #000;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+/* NAV */
+.abas-navegacao {
+    display: flex;
+    background: var(--panel);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    color: white;
+    cursor: pointer;
+}
+
+.tab-btn:hover {
+    background: #161b22;
+}
+
+.tab-btn.ativo {
+    background: var(--accent);
+}
+
+/* CONTEÚDO */
+.aba-conteudo {
+    display: none;
+    height: calc(100vh - 110px);
+}
+
+.aba-conteudo.ativo {
+    display: block;
+}
+
+/* MAPA */
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* PAINEL */
+.painel {
+    padding: 20px;
+}
+
+input {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+    width: 250px;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+    border: none;
+    background: var(--accent);
+    color: white;
+}
+
+#feedback-rota,
+#feedback-normas {
+    margin-top: 15px;
+    padding: 10px;
+    background: #161b22;
+}
