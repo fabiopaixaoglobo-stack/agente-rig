@@ -1,20 +1,22 @@
-:root { --bg: #0d1117; --card: #161b22; --accent: #2f81f7; --border: #30363d; --text: #c9d1d9; }
+:root { --bg: #0d1117; --card: #161b22; --accent: #fca311; --text: #e5e5e5; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
 
 header { 
-    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('rig-bg.jpg'); 
-    background-size: cover; background-position: center; height: 120px; 
-    padding: 0 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent);
+    height: 120px; 
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('rig-bg.jpg'); 
+    background-size: cover; background-position: top; 
+    padding: 0 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent);
 }
 
-.abas-navegacao { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
-.tab-btn { flex: 1; padding: 15px; border: none; background: none; color: var(--text); cursor: pointer; }
-.tab-btn.ativo { border-bottom: 3px solid var(--accent); background: #21262d; }
+.nav-tabs { display: flex; background: #000; border-bottom: 1px solid #30363d; }
+.tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #8b949e; cursor: pointer; }
+.tab-btn.active { color: white; border-bottom: 2px solid var(--accent); }
 
-#map { height: calc(100vh - 180px); width: 100%; }
-.painel-interno { padding: 40px; max-width: 600px; }
-.chat-container { display: flex; flex-direction: column; height: 70vh; padding: 20px; }
-#chat-messages { flex: 1; overflow-y: auto; background: var(--card); padding: 15px; border-radius: 8px; }
-.msg { padding: 10px; margin: 5px; border-radius: 5px; }
-.bot { background: #21262d; align-self: flex-start; }
-.user { background: var(--accent); align-self: flex-end; }
+.tab-content { flex: 1; position: relative; }
+.hidden { display: none; }
+#map { height: 100%; width: 100%; }
+
+.chat-wrapper { height: 70vh; display: flex; flex-direction: column; padding: 20px; }
+#chat-msgs { flex: 1; background: var(--card); padding: 15px; overflow-y: auto; }
+.chat-input { display: flex; gap: 5px; margin-top: 10px; }
+.chat-input input { flex: 1; padding: 10px; }
