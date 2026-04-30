@@ -1,71 +1,89 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Operações Logísticas</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <title>AGENTE RIG | Operações Logísticas</title>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-<header>
-    <div>
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <img src="assets/agente-rig-hero.png" alt="Agente RIG" />
+      <div>
         <h1>AGENTE RIG</h1>
         <p>Gestão Inteligente de Transportes</p>
+      </div>
     </div>
 
     <div>
-        <input type="file" id="upload-mapa" accept=".xlsx,.xls,.csv" hidden>
-        <button onclick="document.getElementById('upload-mapa').click()">📥 Importar Base</button>
+      <input type="file" id="upload-mapa" accept=".xlsx,.xls,.csv" hidden />
+      <button onclick="document.getElementById('upload-mapa').click()">
+        📥 Importar Base
+      </button>
     </div>
-</header>
+  </header>
 
-<nav class="abas-navegacao">
-    <button class="tab-btn ativo" onclick="showTab('secao-mapa')">📍 Monitoramento</button>
-    <button class="tab-btn" onclick="showTab('secao-rotas')">🛣️ Planejador</button>
-    <button class="tab-btn" onclick="showTab('secao-normas')">📘 Normas</button>
-</nav>
+  <!-- NAVEGAÇÃO -->
+  <nav class="abas-navegacao">
+    <button class="tab-btn ativo" onclick="showTab('secao-mapa', this)">
+      📍 Monitoramento
+    </button>
+    <button class="tab-btn" onclick="showTab('secao-rotas', this)">
+      🛣️ Planejador
+    </button>
+    <button class="tab-btn" onclick="showTab('secao-normas', this)">
+      📘 Normas
+    </button>
+  </nav>
 
-<main>
+  <!-- CONTEÚDO -->
+  <main>
 
     <!-- MAPA -->
     <section id="secao-mapa" class="aba-conteudo ativo">
-        <div id="map"></div>
+      <div id="map"></div>
     </section>
 
     <!-- ROTAS -->
     <section id="secao-rotas" class="aba-conteudo">
-        <div class="painel">
-            <h2>Planejamento de Rota</h2>
-            <input type="text" id="origem" placeholder="Origem">
-            <input type="text" id="destino" placeholder="Destino">
-            <button onclick="analisarRota()">Analisar</button>
-            <div id="feedback-rota">Aguardando análise...</div>
-        </div>
+      <div class="painel">
+        <h2>Planejamento de Rota</h2>
+        <input type="text" placeholder="Origem" />
+        <input type="text" placeholder="Destino" />
+        <button onclick="analisarRota()">Analisar</button>
+        <div id="feedback-rota">Aguardando análise...</div>
+      </div>
     </section>
 
     <!-- NORMAS -->
     <section id="secao-normas" class="aba-conteudo">
-        <div class="painel">
-            <h2>Consulta de Normas</h2>
-            <button onclick="consultarManual('MOPP')">MOPP</button>
-            <button onclick="consultarManual('TNO')">TNO</button>
-            <div id="feedback-normas">Selecione uma norma</div>
-        </div>
+      <div class="painel">
+        <h2>Consulta de Normas</h2>
+        <button onclick="consultarManual('MOPP')">MOPP</button>
+        <button onclick="consultarManual('TNO')">TNO</button>
+        <div id="feedback-normas">Selecione uma norma</div>
+      </div>
     </section>
 
-</main>
+  </main>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="script.js"></script>
+  <!-- SCRIPTS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 
 </body>
 </html>
