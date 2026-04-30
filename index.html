@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGENTE RIG | Operações Logísticas</title>
+    <title>AGENTE RIG | Inteligência em Transportes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="logo-area">
-            <h1>AGENTE RIG</h1>
-            <p>Sincronismo de Segurança & Transportes Integrados</p>
-        </div>
-        <div class="header-actions">
-            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
-            <button class="btn-import" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base Excel</button>
+    <header class="header-bg">
+        <div class="header-content">
+            <div class="logo-area">
+                <h1>AGENTE RIG</h1>
+                <p>Sincronismo de Segurança & Logística</p>
+            </div>
+            <div class="header-actions">
+                <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
+                <button class="btn-import" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base Operacional</button>
+            </div>
         </div>
     </header>
 
     <nav class="abas-navegacao">
         <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
         <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Consultor de Normas (Manual 2.3)</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor RIG (Chat)</button>
     </nav>
 
     <main id="conteudo-principal">
@@ -33,54 +35,52 @@
                 <aside class="sidebar">
                     <div class="sidebar-perfil"></div>
                     <div class="status-panel">
-                        <div class="status-row"><span>Scanner RIG:</span> <span class="online">ONLINE</span></div>
-                        <div class="status-row"><span>API Fogo Cruzado:</span> <span class="api-status warning" id="api-fogo">Aguardando Key</span></div>
-                        <div class="status-row"><span>API ISP-RJ:</span> <span class="api-status warning" id="api-isp">Aguardando Key</span></div>
-                        <div class="status-row" style="margin-top: 10px; border-top: 1px solid #30363d; padding-top: 5px;">
-                            <span>Veículos em Rota (2h):</span> <strong id="total-ativos">0</strong>
-                        </div>
+                        <div class="status-row"><span>RIG Crawler:</span> <span class="online">ATIVO</span></div>
+                        <div class="status-row"><span>Segurança Pública:</span> <span class="active-status">CONECTADO</span></div>
+                        <div class="status-row" style="margin-top:8px;"><span>Atendimentos na Base:</span> <strong id="total-ativos">0</strong></div>
                     </div>
                     <div id="lista-atendimentos" class="lista-scroll">
-                        <p class="empty-msg">Aguardando dados operacionais...</p>
+                        <p class="empty-msg">Carregue a planilha para visualizar a frota.</p>
                     </div>
                 </aside>
                 <div id="map">
                     <div class="map-overlay">
-                        <div class="legend-item"><span class="dot blue"></span> Veículo em Rota</div>
-                        <div class="legend-item"><span class="dot red"></span> Segurança (Fogo Cruzado/ISP)</div>
-                        <div class="legend-item"><span class="dot orange"></span> Trânsito/Clima</div>
+                        <div class="legend-item"><span class="dot blue"></span> Veículo</div>
+                        <div class="legend-item"><span class="dot red"></span> Ocorrência (2h)</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="secao-rotas" class="aba-conteudo" style="display:none;">
-            <div class="view-container">
+            <div class="view-container split-view">
                 <div class="card-painel">
-                    <h2>Análise de Trajeto Seguro</h2>
-                    <p style="font-size: 0.8rem; color: #8b949e;">Integração com bases do ISP-RJ e Histórico de Risco.</p>
+                    <h2>Planejador de Rota Segura</h2>
                     <div class="input-group">
-                        <input type="text" id="origem" placeholder="Ponto de Origem">
-                        <input type="text" id="destino" placeholder="Destino Final">
-                        <button class="btn-action" onclick="analisarRota()">Analisar Rota com Camada de Risco</button>
+                        <input type="text" id="origem" placeholder="Origem (Ex: Curicica)">
+                        <input type="text" id="destino" placeholder="Destino (Ex: Laranjeiras)">
+                        <button class="btn-action" onclick="executarPlanejamento()">Traçar Rota e Analisar Riscos</button>
                     </div>
-                    <div id="feedback-rota" class="feedback-box">Pronto para análise de pontos de calor.</div>
+                    <div id="feedback-rota" class="feedback-box">Aguardando definição de trajeto...</div>
                 </div>
             </div>
         </div>
 
         <div id="secao-normas" class="aba-conteudo" style="display:none;">
-            <div class="view-container">
-                <div class="card-painel">
-                    <h2>Base de Conhecimento: Manual 2.3</h2>
-                    <p style="font-size: 0.8rem; color: #8b949e;">Diretrizes oficiais para Transporte de Pessoas e Pequenas Cargas.</p>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-window">
+                    <div class="msg bot">Olá Fábio! Sou o Consultor RIG. Como posso ajudar com o Manual 2.3 hoje?</div>
+                </div>
+                <div class="chat-input-area">
                     <div class="quick-chips">
-                        <button onclick="consultarManual('TNO')">Regras TNO</button>
-                        <button onclick="consultarManual('Jornada')">Jornada/Motorista</button>
-                        <button onclick="consultarManual('Segurança')">Segurança/Sinistro</button>
-                        <button onclick="consultarManual('Veiculo')">Padrão Veículos</button>
+                        <button onclick="enviarDuvida('Regras de TNO')">TNO</button>
+                        <button onclick="enviarDuvida('Jornada do Motorista')">Jornada</button>
+                        <button onclick="enviarDuvida('Procedimento de Sinistro')">Sinistros</button>
                     </div>
-                    <div id="feedback-normas" class="feedback-box">Selecione um tópico para consultar o Manual 2.3.</div>
+                    <div class="input-row">
+                        <input type="text" id="user-query" placeholder="Digite sua dúvida sobre as normas...">
+                        <button onclick="processarChat()">Enviar</button>
+                    </div>
                 </div>
             </div>
         </div>
