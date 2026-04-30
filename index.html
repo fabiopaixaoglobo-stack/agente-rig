@@ -1,174 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
   <title>AGENTE RIG — Rota Inteligente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  <!-- App -->
-  <link rel="stylesheet" href="style.css" />
+  <!-- XLSX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="shield">🛡️</div>
-      <div class="brandText">
-        <div class="brandTitle">AGENTE RIG <span class="muted">— ROTA INTELIGENTE</span></div>
-        <div class="brandSub">Gestão Integrada de Transportes</div>
-      </div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🛡️</div>
+    <div>
+      <h1>AGENTE RIG — ROTA INTELIGENTE</h1>
+      <span>Gestão Integrada de Transportes</span>
+    </div>
+  </div>
+
+  <div class="status">
+    <span class="dot"></span> SISTEMA OPERACIONAL
+    <span class="badge">OP-RJ-404</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="monitoramento">MONITORAMENTO</button>
+  <button class="tab-btn" data-tab="planejador">PLANEJADOR</button>
+  <button class="tab-btn" data-tab="normas">NORMAS</button>
+</nav>
+
+<!-- HERO (background + hero image) -->
+<section class="hero">
+  <div class="hero-overlay"></div>
+  <img src="assets/agente-rig-hero.png" class="hero-image">
+</section>
+
+<main>
+
+<!-- ================= MONITORAMENTO ================= -->
+<section id="monitoramento" class="tab-section active">
+
+  <aside class="sidebar">
+    <h2>Importação da Base</h2>
+
+    <button id="btn-upload">📥 Importar Base (XLSX)</button>
+    <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden>
+
+    <div id="dadosResumo" class="resumo-box">
+      Nenhuma base carregada
     </div>
 
-    <div class="topRight">
-      <div class="status">
-        <span class="dot"></span>
-        SISTEMA OPERACIONAL
-      </div>
-      <div class="codeTag">OP-RJ-404</div>
+    <h3>Filtro por Programa</h3>
+    <select id="filtroPrograma"></select>
+  </aside>
+
+  <section class="map-area">
+    <div class="map-header">
+      <h2>Monitoramento de Rotas</h2>
+      <button id="btn-centralizar">Centralizar</button>
     </div>
-  </header>
+    <div id="map"></div>
+  </section>
 
-  <!-- TABS -->
-  <nav class="tabs">
-    <button class="tabBtn active" data-tab="tab-monitoramento">MONITORAMENTO</button>
-    <button class="tabBtn" data-tab="tab-planejador">PLANEJADOR</button>
-    <button class="tabBtn" data-tab="tab-normas">NORMAS</button>
-  </nav>
+</section>
 
-  <main class="main">
+<!-- ================= PLANEJADOR ================= -->
+<section id="planejador" class="tab-section">
+  <h2>Planejador de Rotas</h2>
+  <p>Base pronta para desenhar rotas, riscos e ocorrências.</p>
+  <div id="map-planejador"></div>
+</section>
 
-    <!-- MONITORAMENTO -->
-    <section id="tab-monitoramento" class="tabPane active">
-      <aside class="sidebar">
-        <div class="panel heroPanel">
-          <img class="heroImg" src="assets/agente-rig-hero.png" alt="AGENTE RIG" />
-          <div class="heroTitle">Centro de Comando</div>
-          <div class="heroSub">IA • Rota • Segurança</div>
-        </div>
+<!-- ================= NORMAS ================= -->
+<section id="normas" class="tab-section">
+  <h2>Consultor de Normas</h2>
 
-        <div class="panel">
-          <div class="panelTitle">Importação da Base</div>
+  <div class="chat">
+    <div class="msg bot">Olá! Pergunte sobre normas de transporte.</div>
+  </div>
 
-          <!-- ✅ APENAS 1 INPUT -->
-          <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden />
-          <button id="btn-upload" class="btn btnPrimary">📥 Importar Base (XLSX)</button>
+  <div class="chat-input">
+    <input id="perguntaNorma" placeholder="Digite sua pergunta...">
+    <button id="btnPerguntarNorma">Enviar</button>
+  </div>
+</section>
 
-          <div id="dadosResumo" class="summaryBox">Nenhum arquivo carregado</div>
-        </div>
+</main>
 
-        <div class="panel">
-          <div class="panelTitle">Filtros</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
 
-          <label class="label">Programa</label>
-          <select id="filtro-programa" class="select">
-            <option value="">Todos</option>
-          </select>
-
-          <label class="label">Bairro</label>
-          <select id="filtro-bairro" class="select">
-            <option value="">Todos</option>
-          </select>
-
-          <label class="label">Tipo de Veículo</label>
-          <select id="filtro-tipo" class="select">
-            <option value="">Todos</option>
-          </select>
-
-          <button id="btn-limpar" class="btn btnGhost">Limpar filtros</button>
-        </div>
-
-        <div class="panel grow">
-          <div class="panelTitle">Atendimentos (amostra)</div>
-          <div id="listaAtendimentos" class="listBox"></div>
-        </div>
-      </aside>
-
-      <section class="mapArea">
-        <div class="mapHeader">
-          <div class="mapHeaderTitle">Monitoramento de Rotas</div>
-          <div class="mapHeaderRight">
-            <button id="btn-centralizar" class="btn btnGhostSmall">Centralizar</button>
-          </div>
-        </div>
-
-        <div id="map" class="map"></div>
-
-        <div class="mapFooter">
-          <div class="pill" id="pill-status">Pronto</div>
-          <div class="pill muted" id="pill-geo">Geolocalização: “bairro (aprox.)” + cache</div>
-        </div>
-      </section>
-    </section>
-
-    <!-- PLANEJADOR -->
-    <section id="tab-planejador" class="tabPane">
-      <div class="planner">
-        <div class="plannerLeft">
-          <div class="panel">
-            <div class="panelTitle">Parâmetros da Rota</div>
-
-            <label class="label">Origem (endereço ou bairro)</label>
-            <input id="origem" class="input" placeholder="Ex.: Estúdios Globo, Curicica" />
-
-            <label class="label">Destino (endereço ou bairro)</label>
-            <input id="destino" class="input" placeholder="Ex.: Copacabana Palace, Copacabana" />
-
-            <button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
-            <div id="plannerFeedback" class="summaryBox">Informe origem e destino.</div>
-
-            <div class="hint">
-              *A rota usa serviços públicos na internet (geocodificação e roteamento). Se a rede corporativa bloquear, o mapa continua funcionando e você pode usar o monitoramento.
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panelTitle">Ocorrências (simulado)</div>
-            <div class="hint">Nesta versão, as ocorrências do percurso são simuladas para validar a interface.</div>
-            <button id="btn-gerar-ocorrencias" class="btn btnGhost">Gerar ocorrências (simulado)</button>
-          </div>
-        </div>
-
-        <div class="plannerRight">
-          <div id="mapPlanner" class="map"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- NORMAS (chatbot UI) -->
-    <section id="tab-normas" class="tabPane">
-      <div class="normasWrap">
-        <div class="panel normasPanel">
-          <div class="panelTitle">Consultor de Normas (modo chat)</div>
-
-          <div id="chat" class="chatBox">
-            <div class="msg bot">
-              Olá! Pode perguntar livremente sobre normas e procedimentos (ex.: MOPP, TNO, “documentos obrigatórios”, “equipamentos do veículo”, etc.).
-            </div>
-          </div>
-
-          <div class="chatInputRow">
-            <input id="pergunta" class="input" placeholder="Digite sua pergunta..." />
-            <button id="btn-enviar" class="btn btnPrimary">Enviar</button>
-          </div>
-
-          <div class="hint">
-            *Nesta versão, o chat responde com uma base de respostas simuladas (para validar o formato). Depois podemos conectar a um banco de normas real.
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- libs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- app -->
-  <script src="script.js"></script>
 </body>
 </html>
