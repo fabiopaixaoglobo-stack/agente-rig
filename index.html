@@ -2,47 +2,52 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>AGENTE RIG | Operações</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGENTE RIG | Operações Logísticas</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <div class="logo">
+        <div class="header-logo">
             <h1>AGENTE RIG</h1>
-            <p>Sincronismo de Segurança & Logística</p>
+            <p>Sincronismo de Segurança & Transportes</p>
         </div>
-        <input type="file" id="upload-mapa" accept=".xlsx, .csv" hidden>
-        <button onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Excel</button>
+        <div class="header-actions">
+            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
+            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
+        </div>
     </header>
 
-    <nav class="nav-tabs">
-        <button class="tab-btn active" onclick="showTab('mapa')">📍 Monitoramento</button>
-        <button class="tab-btn" onclick="showTab('rotas')">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="showTab('normas')">💬 Consultor RIG</button>
+    <nav class="abas-navegacao">
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
+        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor de Normas</button>
     </nav>
 
-    <main>
-        <section id="mapa" class="tab-content">
+    <main id="app-container">
+        <section id="secao-mapa" class="aba-conteudo">
             <div id="map"></div>
         </section>
 
-        <section id="rotas" class="tab-content hidden">
-            <div class="card">
-                <h2>Planejador de Rota</h2>
-                <input type="text" placeholder="Origem">
-                <input type="text" placeholder="Destino">
-                <button onclick="alert('Analisando riscos...')">Analisar</button>
+        <section id="secao-rotas" class="aba-conteudo" style="display:none;">
+            <div class="painel-interno">
+                <h2>Análise de Trajeto Seguro</h2>
+                <input type="text" id="origem" placeholder="Ponto de Origem">
+                <input type="text" id="destino" placeholder="Destino Final">
+                <button onclick="analisarRota()">Analisar Rota com Risco</button>
+                <div id="feedback-rota" class="feedback-box">Pronto para análise de pontos de calor.</div>
             </div>
         </section>
 
-        <section id="normas" class="tab-content hidden">
-            <div class="chat-wrapper">
-                <div id="chat-msgs"></div>
-                <div class="chat-input">
-                    <input type="text" id="msg-input" placeholder="Consultar manual...">
-                    <button onclick="sendMessage()">Enviar</button>
+        <section id="secao-normas" class="aba-conteudo" style="display:none;">
+            <div class="painel-interno">
+                <h2>Base de Conhecimento Operacional</h2>
+                <div class="quick-chips">
+                    <button onclick="consultarManual('MOPP')">MOPP</button>
+                    <button onclick="consultarManual('TNO')">TNO</button>
                 </div>
+                <div id="feedback-normas" class="feedback-box">Consulte as normas da transportadora aqui.</div>
             </div>
         </section>
     </main>
