@@ -18,3 +18,157 @@
     <div class="brand">
       <div class="shield">🛡️</div>
       <div class="brandText">
+        <div class="brandTitle">AGENTE RIG <span class="muted">— ROTA INTELIGENTE</span></div>
+        <div class="brandSub">Gestão Integrada de Transportes</div>
+      </div>
+    </div>
+
+    <div class="topRight">
+      <div class="status">
+        <span class="dot"></span>
+        SISTEMA OPERACIONAL
+      </div>
+      <div class="codeTag">OP-RJ-404</div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tabBtn active" data-tab="tab-monitoramento">MONITORAMENTO</button>
+    <button class="tabBtn" data-tab="tab-planejador">PLANEJADOR</button>
+    <button class="tabBtn" data-tab="tab-normas">NORMAS</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- MONITORAMENTO -->
+    <section id="tab-monitoramento" class="tabPane active">
+      <aside class="sidebar">
+        <div class="panel heroPanel">
+          <img class="heroImg" src="assets/agente-rig-hero.png" alt="AGENTE RIG" />
+          <div class="heroTitle">Centro de Comando</div>
+          <div class="heroSub">IA • Rota • Segurança</div>
+        </div>
+
+        <div class="panel">
+          <div class="panelTitle">Importação da Base</div>
+
+          <!-- ✅ APENAS 1 INPUT -->
+          <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden />
+          <button id="btn-upload" class="btn btnPrimary">📥 Importar Base (XLSX)</button>
+
+          <div id="dadosResumo" class="summaryBox">Nenhum arquivo carregado</div>
+        </div>
+
+        <div class="panel">
+          <div class="panelTitle">Filtros</div>
+
+          <label class="label">Programa</label>
+          <select id="filtro-programa" class="select">
+            <option value="">Todos</option>
+          </select>
+
+          <label class="label">Bairro</label>
+          <select id="filtro-bairro" class="select">
+            <option value="">Todos</option>
+          </select>
+
+          <label class="label">Tipo de Veículo</label>
+          <select id="filtro-tipo" class="select">
+            <option value="">Todos</option>
+          </select>
+
+          <button id="btn-limpar" class="btn btnGhost">Limpar filtros</button>
+        </div>
+
+        <div class="panel grow">
+          <div class="panelTitle">Atendimentos (amostra)</div>
+          <div id="listaAtendimentos" class="listBox"></div>
+        </div>
+      </aside>
+
+      <section class="mapArea">
+        <div class="mapHeader">
+          <div class="mapHeaderTitle">Monitoramento de Rotas</div>
+          <div class="mapHeaderRight">
+            <button id="btn-centralizar" class="btn btnGhostSmall">Centralizar</button>
+          </div>
+        </div>
+
+        <div id="map" class="map"></div>
+
+        <div class="mapFooter">
+          <div class="pill" id="pill-status">Pronto</div>
+          <div class="pill muted" id="pill-geo">Geolocalização: “bairro (aprox.)” + cache</div>
+        </div>
+      </section>
+    </section>
+
+    <!-- PLANEJADOR -->
+    <section id="tab-planejador" class="tabPane">
+      <div class="planner">
+        <div class="plannerLeft">
+          <div class="panel">
+            <div class="panelTitle">Parâmetros da Rota</div>
+
+            <label class="label">Origem (endereço ou bairro)</label>
+            <input id="origem" class="input" placeholder="Ex.: Estúdios Globo, Curicica" />
+
+            <label class="label">Destino (endereço ou bairro)</label>
+            <input id="destino" class="input" placeholder="Ex.: Copacabana Palace, Copacabana" />
+
+            <button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
+            <div id="plannerFeedback" class="summaryBox">Informe origem e destino.</div>
+
+            <div class="hint">
+              *A rota usa serviços públicos na internet (geocodificação e roteamento). Se a rede corporativa bloquear, o mapa continua funcionando e você pode usar o monitoramento.
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelTitle">Ocorrências (simulado)</div>
+            <div class="hint">Nesta versão, as ocorrências do percurso são simuladas para validar a interface.</div>
+            <button id="btn-gerar-ocorrencias" class="btn btnGhost">Gerar ocorrências (simulado)</button>
+          </div>
+        </div>
+
+        <div class="plannerRight">
+          <div id="mapPlanner" class="map"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NORMAS (chatbot UI) -->
+    <section id="tab-normas" class="tabPane">
+      <div class="normasWrap">
+        <div class="panel normasPanel">
+          <div class="panelTitle">Consultor de Normas (modo chat)</div>
+
+          <div id="chat" class="chatBox">
+            <div class="msg bot">
+              Olá! Pode perguntar livremente sobre normas e procedimentos (ex.: MOPP, TNO, “documentos obrigatórios”, “equipamentos do veículo”, etc.).
+            </div>
+          </div>
+
+          <div class="chatInputRow">
+            <input id="pergunta" class="input" placeholder="Digite sua pergunta..." />
+            <button id="btn-enviar" class="btn btnPrimary">Enviar</button>
+          </div>
+
+          <div class="hint">
+            *Nesta versão, o chat responde com uma base de respostas simuladas (para validar o formato). Depois podemos conectar a um banco de normas real.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- app -->
+  <script src="script.js"></script>
+</body>
+</html>
