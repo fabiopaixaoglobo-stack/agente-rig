@@ -1,21 +1,21 @@
-:root { --bg: #0d1117; --card: #161b22; --border: #30363d; --accent: #2f81f7; }
-body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: #c9d1d9; font-family: sans-serif; }
+:root { --bg: #0d1117; --card: #161b22; --accent: #2f81f7; --border: #30363d; --text: #c9d1d9; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
 
-header { height: 120px; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('rig-bg.jpg');
-.layout-grid { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 120px); }
-.sidebar { background: var(--card); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
+header { 
+    height: 120px; 
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/rig-bg.jpg'); 
+    background-size: cover; 
+    background-position: center; 
+    padding: 0 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent);
+}
+
+.abas-navegacao { display: flex; background: #010409; border-bottom: 1px solid var(--border); }
+.tab-btn { flex: 1; padding: 15px; border: none; background: none; color: var(--text); cursor: pointer; }
+.tab-btn.ativo { border-bottom: 3px solid var(--accent); background: #21262d; color: white; }
+
+#app-container { display: flex; height: calc(100vh - 180px); }
+.sidebar { width: 300px; background: var(--card); border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
 #map { width: 100%; height: 100%; }
-.btn-import { background: var(--accent); color: white; border: none; padding: 10px; cursor: pointer; }
-#app-container {
-    display: flex;
-    height: calc(100vh - 120px);
-}
 
-.sidebar {
-    width: 300px;
-    background: #161b22;
-    border-right: 1px solid #30363d;
-    padding: 20px;
-    overflow-y: auto;
-    color: #c9d1d9;
-}
+.painel-interno { padding: 40px; }
+.feedback-box { background: var(--card); padding: 20px; border-left: 4px solid var(--accent); }
