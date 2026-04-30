@@ -1,90 +1,107 @@
 :root {
-    --bg: #050a0f;
-    --panel: #0d1117;
-    --accent: #2f81f7;
-    --text: #e6edf3;
+  --bg: #050a0f;
+  --panel: #0d1117;
+  --accent: #2f81f7;
+  --text: #e6edf3;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: Arial;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: var(--text);
+  background: url("assets/rig-bg.jpg") center / cover no-repeat fixed;
 }
 
 /* HEADER */
 header {
-    height: 70px;
-    background: #000;
-    border-bottom: 2px solid var(--accent);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
+  height: 70px;
+  background: rgba(0,0,0,0.85);
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
 }
 
-/* NAV */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-area img {
+  height: 40px;
+}
+
+/* NAVEGAÇÃO */
 .abas-navegacao {
-    display: flex;
-    background: var(--panel);
+  display: flex;
+  background: var(--panel);
 }
 
 .tab-btn {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    background: none;
-    color: white;
-    cursor: pointer;
+  flex: 1;
+  padding: 14px;
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
 }
 
 .tab-btn:hover {
-    background: #161b22;
+  background: #161b22;
 }
 
 .tab-btn.ativo {
-    background: var(--accent);
+  background: var(--accent);
 }
 
 /* CONTEÚDO */
 .aba-conteudo {
-    display: none;
-    height: calc(100vh - 110px);
+  display: none;
+  height: calc(100vh - 140px);
 }
 
 .aba-conteudo.ativo {
-    display: block;
+  display: block;
 }
 
 /* MAPA */
 #map {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 /* PAINEL */
 .painel {
-    padding: 20px;
+  padding: 25px;
+  max-width: 420px;
 }
 
 input {
-    display: block;
-    margin: 10px 0;
-    padding: 10px;
-    width: 250px;
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  width: 100%;
 }
 
 button {
-    padding: 10px 15px;
-    cursor: pointer;
-    border: none;
-    background: var(--accent);
-    color: white;
+  padding: 10px 15px;
+  cursor: pointer;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-weight: bold;
 }
 
 #feedback-rota,
 #feedback-normas {
-    margin-top: 15px;
-    padding: 10px;
-    background: #161b22;
+  margin-top: 15px;
+  padding: 10px;
+  background: #161b22;
 }
