@@ -1,62 +1,45 @@
-let map;
+let map, mapPlanejador;
 
 document.addEventListener("DOMContentLoaded", () => {
-
-  // MAPA
   map = L.map("map").setView([-22.9068, -43.1729], 12);
+  mapPlanejador = L.map("mapPlanejador").setView([-22.9068, -43.1729], 12);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap"
-  }).addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+    .addTo(map)
+    .addTo(mapPlanejador);
 
-  // UPLOAD
-  const upload = document.getElementById("upload-mapa");
-
-  upload.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet);
-
-      console.log("Dados carregados:", json);
-      alert(`Arquivo carregado com ${json.length} registros`);
-    };
-
-    reader.readAsArrayBuffer(file);
-  });
+  document.getElementById("upload").addEventListener("change", carregarBase);
 });
 
-// CONTROLE DE ABAS
 function showTab(id, btn) {
-  document.querySelectorAll(".aba-conteudo").forEach(sec =>
-    sec.classList.remove("ativo")
-  );
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
 
-  document.querySelectorAll(".tab-btn").forEach(b =>
-    b.classList.remove("ativo")
-  );
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
 
-  document.getElementById(id).classList.add("ativo");
-  btn.classList.add("ativo");
-
-  if (id === "secao-mapa") {
-    setTimeout(() => map.invalidateSize(), 200);
-  }
+  setTimeout(() => {
+    map.invalidateSize();
+    mapPlanejador.invalidateSize();
+  }, 200);
 }
 
-// FUNÇÕES
-function analisarRota() {
-  document.getElementById("feedback-rota").innerText =
-    "Rota analisada: risco moderado identificado.";
+function carregarBase(e) {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const wb = XLSX.read(new Uint8Array(evt.target.result), { type: "array" });
+    const dados = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    document.getElementById("dadosResumo").innerText =
+      `Veículos carregados: ${dados.length}`;
+  };
+  reader.readAsArrayBuffer(e.target.files[0]);
 }
 
-function consultarManual(tipo) {
-  document.getElementById("feedback-normas").innerText =
-    `Norma ${tipo} carregada com sucesso.`;
+function responder() {
+  const pergunta = document.getElementById("pergunta").value;
+  if (!pergunta) return;
+
+  const chat = document.querySelector(".chat");
+  chat.innerHTML += `<div class="msg user">${pergunta}</div>`;
+  chat.innerHTML += `<div class="msg bot">Resposta simulada para normas.</div>`;
 }
