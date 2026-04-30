@@ -1,17 +1,24 @@
 const map = L.map('map').setView([-22.9068, -43.1729], 12);
-// Força o mapa a aparecer assim que o script carregar
-setTimeout(function() { map.invalidateSize(); }, 500);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+function showTab(id) {
+    document.querySelectorAll('.aba-conteudo').forEach(a => a.classList.remove('ativo'));
+    document.getElementById(id).classList.add('ativo');
+    if(id === 'mapa') map.invalidateSize();
+}
+
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
-    const file = e.target.files[0];
     const reader = new FileReader();
-    reader.onload = (event) => {
-        // Simulação de carregamento de dados
-        document.getElementById('lista-veiculos').innerHTML = `
-            <div class="veiculo"><b>Veículo GLO-102</b><br>Status: Em trânsito<br>Risco: Baixo</div>
-            <div class="veiculo" style="margin-top:10px;"><b>Veículo GLO-550</b><br>Status: Parado<br>Risco: ⚠️ Atenção</div>
-        `;
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        
+        const container = document.getElementById('dados-excel');
+        container.innerHTML = ''; 
+        jsonData.forEach(row => {
+            container.innerHTML += `<div style="border-bottom:1px solid #333; padding:5px 0;">${JSON.stringify(row)}</div>`;
+        });
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(e.target.files[0]);
 });
