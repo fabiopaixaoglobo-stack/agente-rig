@@ -2,28 +2,46 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>AGENTE RIG | Operações</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGENTE RIG | Operações Logísticas</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>AGENTE RIG</h1>
-        <button class="btn-import" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
-        <input type="file" id="upload-mapa" accept=".xlsx, .csv" hidden>
+        <div class="header-logo">
+            <h1>AGENTE RIG</h1>
+            <p>Sincronismo de Segurança & Transportes</p>
+        </div>
+        <div class="header-actions">
+            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
+            <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
+        </div>
     </header>
 
-    <div class="layout-grid">
-        <aside class="sidebar" id="painel-dados">
+    <nav class="abas-navegacao">
+        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
+        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor de Normas</button>
+    </nav>
+
+    <main id="app-container">
+        <aside class="sidebar">
             <h3>Veículos & Ocorrências</h3>
             <div id="lista-veiculos">Carregue a base para visualizar...</div>
         </aside>
-        <main id="map"></main>
-        <aside class="sidebar" id="painel-dados">
-            <h3>Veículos & Ocorrências</h3>
-            <div id="lista-veiculos">Carregue a base para visualizar...</div>
-        </aside>
-    </div>
+
+        <section id="secao-mapa" class="aba-conteudo">
+            <div id="map"></div>
+        </section>
+
+        <section id="secao-rotas" class="aba-conteudo" style="display:none;">
+            <div class="painel-interno">
+                <h2>Análise de Trajeto Seguro</h2>
+                <div id="feedback-rota" class="feedback-box">Pronto para análise de pontos de calor.</div>
+            </div>
+        </section>
+    </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
