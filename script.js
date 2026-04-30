@@ -1,4 +1,6 @@
 const map = L.map('map').setView([-22.9068, -43.1729], 12);
+// Força o mapa a aparecer assim que o script carregar
+setTimeout(function() { map.invalidateSize(); }, 500);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 document.getElementById('upload-mapa').addEventListener('change', function(e) {
