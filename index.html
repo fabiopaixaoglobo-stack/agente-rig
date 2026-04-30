@@ -2,46 +2,70 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>AGENTE RIG | Painel Operacional</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGENTE RIG | Operações Logísticas</title>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <header>
+
+<header>
+    <div>
         <h1>AGENTE RIG</h1>
-        <input type="file" id="upload-mapa" accept=".xlsx" hidden>
-        <button onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
-    </header>
-
-    <div class="app-layout">
-        <aside class="sidebar">
-            <nav>
-                <button class="tab-btn" onclick="showTab('mapa')">📍 Monitoramento</button>
-                <button class="tab-btn" onclick="showTab('rotas')">🛣️ Planejador</button>
-                <button class="tab-btn" onclick="showTab('normas')">💬 Consultor</button>
-            </nav>
-            <div id="lista-veiculos" class="card">
-                <h3>Ocorrências</h3>
-                <div id="dados-excel">Aguardando base...</div>
-            </div>
-        </aside>
-
-        <main class="content-area">
-            <section id="mapa" class="aba-conteudo ativo">
-                <div id="map"></div>
-            </section>
-            <section id="rotas" class="aba-conteudo">
-                <h2>Análise de Trajeto</h2>
-                <div class="card">Módulo em desenvolvimento.</div>
-            </section>
-            <section id="normas" class="aba-conteudo">
-                <h2>Consultor de Normas</h2>
-                <div class="card">Módulo em desenvolvimento.</div>
-            </section>
-        </main>
+        <p>Gestão Inteligente de Transportes</p>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+
+    <div>
+        <input type="file" id="upload-mapa" accept=".xlsx,.xls,.csv" hidden>
+        <button onclick="document.getElementById('upload-mapa').click()">📥 Importar Base</button>
+    </div>
+</header>
+
+<nav class="abas-navegacao">
+    <button class="tab-btn ativo" onclick="showTab('secao-mapa')">📍 Monitoramento</button>
+    <button class="tab-btn" onclick="showTab('secao-rotas')">🛣️ Planejador</button>
+    <button class="tab-btn" onclick="showTab('secao-normas')">📘 Normas</button>
+</nav>
+
+<main>
+
+    <!-- MAPA -->
+    <section id="secao-mapa" class="aba-conteudo ativo">
+        <div id="map"></div>
+    </section>
+
+    <!-- ROTAS -->
+    <section id="secao-rotas" class="aba-conteudo">
+        <div class="painel">
+            <h2>Planejamento de Rota</h2>
+            <input type="text" id="origem" placeholder="Origem">
+            <input type="text" id="destino" placeholder="Destino">
+            <button onclick="analisarRota()">Analisar</button>
+            <div id="feedback-rota">Aguardando análise...</div>
+        </div>
+    </section>
+
+    <!-- NORMAS -->
+    <section id="secao-normas" class="aba-conteudo">
+        <div class="painel">
+            <h2>Consulta de Normas</h2>
+            <button onclick="consultarManual('MOPP')">MOPP</button>
+            <button onclick="consultarManual('TNO')">TNO</button>
+            <div id="feedback-normas">Selecione uma norma</div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+
 </body>
 </html>
