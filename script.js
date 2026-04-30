@@ -1,152 +1,105 @@
-// 1. MAPA INICIAL E CAMADA GOOGLE/ESRI
 const map = L.map('map').setView([-22.9068, -43.1729], 11);
-// Utilizando base que emula o aspecto geográfico de satélite/ruas para clareza logística
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Agente RIG Intelligence | Base Geográfica'
-}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{y}/{x}{r}.png').addTo(map);
 
-// 2. INTEGRAÇÃO DE APIs DE SEGURANÇA (Arquitetura)
-window.onload = () => {
-    carregarDadosSeguranca();
-};
+// SIMULAÇÃO DE DADOS DE SEGURANÇA (Crawler)
+let ocorrencias = [
+    { lat: -22.861, lon: -43.255, tipo: "Fogo Cruzado: Disparos relatados há 45min" },
+    { lat: -22.922, lon: -43.235, tipo: "ISP-RJ: Área de atenção tática" }
+];
 
-async function carregarDadosSeguranca() {
-    /* NOTA TÉCNICA (AGENTE RIG): 
-    Para ativar as conexões reais, insira as chaves (Tokens) nas variáveis abaixo.
-    Sem as chaves, o sistema usará a matriz de risco histórica embutida.
-    */
-    const FOGO_CRUZADO_TOKEN = ''; // Inserir Token Bearer
-    const ISP_RJ_ENDPOINT = ''; // Inserir URL do CSV/JSON do ISP
-
-    let alertasAtuais = [];
-
-    if (FOGO_CRUZADO_TOKEN) {
-        // Exemplo de chamada real Fogo Cruzado (requer backend p/ evitar erro de CORS)
-        document.getElementById('api-fogo').className = 'api-status active';
-        document.getElementById('api-fogo').innerText = 'Conectado';
-        // fetch('https://api.fogocruzado.org.br/v2/...', { headers: {'Authorization': `Bearer ${FOGO_CRUZADO_TOKEN}`} })
-    } else {
-        // Fallback: Matriz de risco tático simulada (Últimas 2h)
-        alertasAtuais.push(
-            { lat: -22.860, lon: -43.250, msg: "RIG ALERTA: Zona de exclusão dinâmica (Av. Brasil/Manguinhos).", cor: "#f85149" },
-            { lat: -22.920, lon: -43.230, msg: "RIG ALERTA: Restrição de circulação detectada (Tijuca).", cor: "#f85149" },
-            { lat: -23.000, lon: -43.340, msg: "CLIMA: Retenção por acúmulo de água (Recreio).", cor: "#d29922" }
-        );
-    }
-
-    // Plotagem dos alertas no mapa
-    alertasAtuais.forEach(a => {
-        L.circle([a.lat, a.lon], { color: a.cor, fillOpacity: 0.4, radius: 1200 }).addTo(map).bindPopup(a.msg);
-    });
-}
-
-// 3. PROCESSAMENTO DE EXCEL E JANELA DE TEMPO
-document.getElementById('upload-mapa').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        const data = new Uint8Array(evt.target.result);
-        const wb = XLSX.read(data, {type: 'array'});
-        const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        processarFrotaAtiva(raw);
-    };
-    reader.readAsArrayBuffer(file);
+ocorrencias.forEach(o => {
+    L.circleMarker([o.lat, o.lon], { radius: 10, color: 'red', fillOpacity: 0.6 }).addTo(map).bindPopup(o.tipo);
 });
 
-async function processarFrotaAtiva(dados) {
-    const lista = document.getElementById('lista-atendimentos');
-    const agora = new Date();
-    let count = 0;
-    lista.innerHTML = '';
+// PROCESSAMENTO EXCEL SEM VALIDAÇÃO DE DATA
+document.getElementById('upload-mapa').addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        const wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+        const dados = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        exibirAtendimentos(dados);
+    };
+    reader.readAsArrayBuffer(e.target.files[0]);
+});
 
-    for (let item of dados) {
-        // Validação da Janela Operacional
-        const inicio = new Date(item['Data Hora']);
-        const fim = new Date(item['Data Hora2'] || item['Data Hora']);
+function exibirAtendimentos(dados) {
+    const lista = document.getElementById('lista-atendimentos');
+    lista.innerHTML = '';
+    let count = 0;
+
+    dados.forEach(item => {
+        // Removida a validação de data: agora todos os atendimentos da planilha aparecem
+        const motorista = item['Motorista'] || "Não informado";
+        const local = item['Localidade + Endereço'] || "Endereço não disponível";
         
-        if (agora >= inicio && agora <= fim) {
-            const end = item['Localidade + Endereço'];
-            lista.innerHTML += `
-                <div class="card-veiculo">
-                    <span style="color:#3fb950; font-size:10px; font-weight:bold;">● EM OPERAÇÃO</span><br>
-                    <strong>${item['Programa'] || 'Atendimento Logístico'}</strong><br>
-                    🚗 ${item['Motorista']} | ${item['Placa Veículo'] || 'S/P'}<br>
-                    📍 ${end.substring(0, 35)}...
-                </div>`;
-            
-            count++;
-            // Geocoding controlado para evitar bloqueio da API do Nominatim
-            if (count <= 10) { 
-                await new Promise(r => setTimeout(r, 2200));
-                await plotarGeocoding(end, item['Motorista']);
-            }
-        }
-    }
+        const card = document.createElement('div');
+        card.className = 'card-veiculo';
+        card.innerHTML = `
+            <strong>${item['Programa'] || 'Serviço'}</strong><br>
+            🚗 ${motorista}<br>
+            📍 ${local.substring(0, 40)}...
+        `;
+        lista.appendChild(card);
+        count++;
+        
+        // Plotagem simples para teste (os 10 primeiros)
+        if(count < 10 && local) plotarSimples(local, motorista);
+    });
     document.getElementById('total-ativos').innerText = count;
 }
 
-async function plotarGeocoding(end, motorista) {
+async function plotarSimples(end, mot) {
     try {
-        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(end)}, Rio de Janeiro`);
-        const d = await r.json();
-        if (d[0]) {
-            L.circleMarker([d[0].lat, d[0].lon], { radius: 7, fillColor: "#2f81f7", color: "#fff", fillOpacity: 0.9 }).addTo(map).bindPopup(`<b>Motorista:</b> ${motorista}`);
-        }
-    } catch (e) { console.error("Erro no Geocoding:", e); }
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(end)}, Rio de Janeiro`);
+        const d = await res.json();
+        if(d[0]) L.marker([d[0].lat, d[0].lon]).addTo(map).bindPopup(`Motorista: ${mot}`);
+    } catch(e){}
 }
 
-// 4. NAVEGAÇÃO DE ABAS
+// LÓGICA DO PLANEJADOR (VISUAL NO MAPA)
+async function executarPlanejamento() {
+    const orig = document.getElementById('origem').value;
+    const dest = document.getElementById('destino').value;
+    const fb = document.getElementById('feedback-rota');
+    
+    fb.innerHTML = "🔍 Agente RIG rastreando ocorrências no trajeto...";
+    
+    // Simulação visual de rota no mapa
+    setTimeout(() => {
+        fb.innerHTML = `✅ <b>Análise Completa:</b> Trajeto via Linha Amarela possui 1 alerta de segurança (Fogo Cruzado) próximo a Bonsucesso. Sugerimos monitoramento em tempo real do IQT.`;
+        // Aqui entraria o L.Routing.control para desenhar a linha real
+    }, 1500);
+}
+
+// LÓGICA DO CHATBOT DE NORMAS
+function processarChat() {
+    const input = document.getElementById('user-query');
+    if(!input.value) return;
+    enviarDuvida(input.value);
+    input.value = '';
+}
+
+function enviarDuvida(texto) {
+    const win = document.getElementById('chat-messages');
+    
+    // Mensagem do Usuário
+    win.innerHTML += `<div class="msg user">${texto}</div>`;
+    
+    // Lógica de Resposta da IA (Baseada no Manual 2.3)
+    setTimeout(() => {
+        let resposta = "Entendi sua dúvida. Com base no Manual 2.3, este procedimento exige atenção ao checklist de segurança. Deseja saber os próximos passos sobre a jornada ou sobre o uso do app?";
+        
+        if(texto.includes("TNO")) resposta = "O TNO (Transporte Noturno) exige descanso mínimo de 11h entre jornadas e verificação de fadiga. Posso te mostrar como registrar isso no sistema?";
+        
+        win.innerHTML += `<div class="msg bot">${resposta}</div>`;
+        win.scrollTop = win.scrollHeight;
+    }, 1000);
+}
+
 function alternarAba(id) {
     document.querySelectorAll('.aba-conteudo').forEach(a => a.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
     document.getElementById('secao-' + id).style.display = 'block';
     event.currentTarget.classList.add('ativo');
-    if (id === 'mapa') setTimeout(() => map.invalidateSize(), 200);
-}
-
-// 5. ANÁLISE DE ROTA
-function analisarRota() {
-    const o = document.getElementById('origem').value;
-    const d = document.getElementById('destino').value;
-    const fb = document.getElementById('feedback-rota');
-    if(!o || !d) return alert("Insira Origem e Destino.");
-    
-    fb.innerHTML = `
-        <strong style="color:var(--accent);">Scanner Tático de Rota:</strong><br><br>
-        Origem: ${o}<br>Destino: ${d}<br><br>
-        <em>Análise:</em> O trajeto principal intercepta 1 zona de exclusão baseada nos dados compilados (Fogo Cruzado/ISP). Sugerido acionamento de plano de contingência e monitoramento via IQT.
-    `;
-}
-
-// 6. BASE DE CONHECIMENTO (Manual 2.3)
-function consultarManual(topico) {
-    const fb = document.getElementById('feedback-normas');
-    
-    const db = {
-        'TNO': `
-            <strong style="color:var(--accent);">Transporte Noturno (TNO)</strong><br><br>
-            • Aplicável a viagens de média/longa distância realizadas entre 22h e 05h.<br>
-            • Obrigatório cumprimento rigoroso dos intervalos de descanso do condutor.<br>
-            • Exige aprovação prévia e monitoramento ativo do Centro de Comando (RIG).
-        `,
-        'Jornada': `
-            <strong style="color:var(--accent);">Jornada e Condutores</strong><br><br>
-            • Cumprimento irrestrito da Lei 13.103 (Lei dos Caminhoneiros/Motoristas).<br>
-            • Tempo máximo de direção ininterrupta: 5 horas e meia.<br>
-            • Pausa obrigatória de 30 minutos a cada ciclo de direção.
-        `,
-        'Segurança': `
-            <strong style="color:var(--accent);">Segurança e Sinistros</strong><br><br>
-            • Desvios de rota motivados por trânsito ou segurança devem ser reportados imediatamente.<br>
-            • Em áreas de risco (cruzamento com dados do ISP/Fogo Cruzado), o veículo não deve realizar paradas não programadas.<br>
-            • Acionamento de órgãos públicos (190) em caso de iminência de sinistro.
-        `,
-        'Veiculo': `
-            <strong style="color:var(--accent);">Padrão de Veículos e Cargas</strong><br><br>
-            • Acomodação de pequenas cargas no porta-malas; proibido no habitáculo de passageiros.<br>
-            • Veículo deve estar com documentação regular, apólices de seguro vigentes e rastreamento ativado para composição do IQT.
-        `
-    };
-    
-    fb.innerHTML = db[topico] || "Tópico não mapeado no Manual 2.3.";
+    if(id === 'mapa') setTimeout(() => map.invalidateSize(), 200);
 }
