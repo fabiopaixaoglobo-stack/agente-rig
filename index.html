@@ -13,7 +13,7 @@
     <header>
         <div class="logo-area">
             <h1>AGENTE RIG</h1>
-            <p>Sincronismo de Segurança & Transportes</p>
+            <p>Sincronismo de Segurança & Transportes Integrados</p>
         </div>
         <div class="header-actions">
             <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
@@ -24,7 +24,7 @@
     <nav class="abas-navegacao">
         <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
         <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Consultor</button>
+        <button class="tab-btn" onclick="alternarAba('normas')">⚖️ Consultor de Normas (Manual 2.3)</button>
     </nav>
 
     <main id="conteudo-principal">
@@ -34,8 +34,11 @@
                     <div class="sidebar-perfil"></div>
                     <div class="status-panel">
                         <div class="status-row"><span>Scanner RIG:</span> <span class="online">ONLINE</span></div>
-                        <div class="status-row"><span>Monitoramento (2h):</span> <strong id="total-ativos">0</strong></div>
-                        <div class="status-row"><span>Riscos Identificados:</span> <strong id="total-alertas">0</strong></div>
+                        <div class="status-row"><span>API Fogo Cruzado:</span> <span class="api-status warning" id="api-fogo">Aguardando Key</span></div>
+                        <div class="status-row"><span>API ISP-RJ:</span> <span class="api-status warning" id="api-isp">Aguardando Key</span></div>
+                        <div class="status-row" style="margin-top: 10px; border-top: 1px solid #30363d; padding-top: 5px;">
+                            <span>Veículos em Rota (2h):</span> <strong id="total-ativos">0</strong>
+                        </div>
                     </div>
                     <div id="lista-atendimentos" class="lista-scroll">
                         <p class="empty-msg">Aguardando dados operacionais...</p>
@@ -44,8 +47,8 @@
                 <div id="map">
                     <div class="map-overlay">
                         <div class="legend-item"><span class="dot blue"></span> Veículo em Rota</div>
-                        <div class="legend-item"><span class="dot red"></span> Incidente Segurança</div>
-                        <div class="legend-item"><span class="dot orange"></span> Alerta Climático</div>
+                        <div class="legend-item"><span class="dot red"></span> Segurança (Fogo Cruzado/ISP)</div>
+                        <div class="legend-item"><span class="dot orange"></span> Trânsito/Clima</div>
                     </div>
                 </div>
             </div>
@@ -55,6 +58,7 @@
             <div class="view-container">
                 <div class="card-painel">
                     <h2>Análise de Trajeto Seguro</h2>
+                    <p style="font-size: 0.8rem; color: #8b949e;">Integração com bases do ISP-RJ e Histórico de Risco.</p>
                     <div class="input-group">
                         <input type="text" id="origem" placeholder="Ponto de Origem">
                         <input type="text" id="destino" placeholder="Destino Final">
@@ -68,14 +72,15 @@
         <div id="secao-normas" class="aba-conteudo" style="display:none;">
             <div class="view-container">
                 <div class="card-painel">
-                    <h2>Base de Conhecimento Operacional</h2>
+                    <h2>Base de Conhecimento: Manual 2.3</h2>
+                    <p style="font-size: 0.8rem; color: #8b949e;">Diretrizes oficiais para Transporte de Pessoas e Pequenas Cargas.</p>
                     <div class="quick-chips">
-                        <button onclick="consultarManual('MOPP')">MOPP</button>
-                        <button onclick="consultarManual('TNO')">TNO</button>
-                        <button onclick="consultarManual('Jornada')">Jornada</button>
-                        <button onclick="consultarManual('Segurança')">Segurança</button>
+                        <button onclick="consultarManual('TNO')">Regras TNO</button>
+                        <button onclick="consultarManual('Jornada')">Jornada/Motorista</button>
+                        <button onclick="consultarManual('Segurança')">Segurança/Sinistro</button>
+                        <button onclick="consultarManual('Veiculo')">Padrão Veículos</button>
                     </div>
-                    <div id="feedback-normas" class="feedback-box">Consulte as normas da transportadora aqui.</div>
+                    <div id="feedback-normas" class="feedback-box">Selecione um tópico para consultar o Manual 2.3.</div>
                 </div>
             </div>
         </div>
