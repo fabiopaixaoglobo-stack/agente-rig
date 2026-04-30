@@ -9,45 +9,43 @@
 </head>
 <body>
     <header>
-        <div class="header-logo">
+        <div class="header-content">
             <h1>AGENTE RIG</h1>
             <p>Sincronismo de Segurança & Transportes</p>
         </div>
         <div class="header-actions">
-            <input type="file" id="upload-mapa" accept=".xlsx, .xls, .csv" hidden>
+            <input type="file" id="upload-mapa" accept=".xlsx, .csv" hidden>
             <button class="btn-sync" onclick="document.getElementById('upload-mapa').click()">📥 Sincronizar Base</button>
         </div>
     </header>
 
     <nav class="abas-navegacao">
-        <button class="tab-btn ativo" onclick="alternarAba('mapa')">📍 Monitoramento</button>
-        <button class="tab-btn" onclick="alternarAba('rotas')">🛣️ Planejador</button>
-        <button class="tab-btn" onclick="alternarAba('normas')">💬 Consultor de Normas</button>
+        <button class="tab-btn active" onclick="showTab('secao-mapa', this)">📍 Monitoramento</button>
+        <button class="tab-btn" onclick="showTab('secao-rotas', this)">🛣️ Planejador</button>
+        <button class="tab-btn" onclick="showTab('secao-normas', this)">💬 Consultor RIG</button>
     </nav>
 
     <main id="app-container">
-        <section id="secao-mapa" class="aba-conteudo">
+        <section id="secao-mapa" class="tab-content active">
             <div id="map"></div>
         </section>
 
-        <section id="secao-rotas" class="aba-conteudo" style="display:none;">
-            <div class="painel-interno">
-                <h2>Análise de Trajeto Seguro</h2>
-                <input type="text" id="origem" placeholder="Ponto de Origem">
-                <input type="text" id="destino" placeholder="Destino Final">
-                <button onclick="analisarRota()">Analisar Rota com Risco</button>
-                <div id="feedback-rota" class="feedback-box">Pronto para análise de pontos de calor.</div>
+        <section id="secao-rotas" class="tab-content">
+            <div class="painel">
+                <h2>Análise de Trajeto</h2>
+                <input type="text" id="origem" placeholder="Origem">
+                <input type="text" id="destino" placeholder="Destino">
+                <button onclick="analisarRota()">Analisar Riscos</button>
+                <div id="feedback-rota" class="feedback">Aguardando dados...</div>
             </div>
         </section>
 
-        <section id="secao-normas" class="aba-conteudo" style="display:none;">
-            <div class="painel-interno">
-                <h2>Base de Conhecimento Operacional</h2>
-                <div class="quick-chips">
-                    <button onclick="consultarManual('MOPP')">MOPP</button>
-                    <button onclick="consultarManual('TNO')">TNO</button>
-                </div>
-                <div id="feedback-normas" class="feedback-box">Consulte as normas da transportadora aqui.</div>
+        <section id="secao-normas" class="tab-content">
+            <div class="painel">
+                <h2>Consultor de Normas (TNO/MOPP)</h2>
+                <input type="file" id="upload-norma" accept=".pdf, .txt" hidden>
+                <button onclick="document.getElementById('upload-norma').click()">📂 Subir Manual PDF</button>
+                <div id="feedback-normas" class="feedback">Suba um manual para iniciar consulta.</div>
             </div>
         </section>
     </main>
