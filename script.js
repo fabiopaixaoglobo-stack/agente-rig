@@ -1,103 +1,86 @@
-let map;
+let map, mapPlanejador;
 let markers = [];
-let base = [];
+let layerSeguranca = L.layerGroup();
+let layerTransito = L.layerGroup();
+let layerClima = L.layerGroup();
 
-/* ===== INIT ===== */
+/* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initMapa();
-  initUpload();
-  initCentralizar();
+  initPlanejador();
+  initNormas();
 });
 
-/* ===== ABAS ===== */
+/* ================= ABAS ================= */
 function initTabs() {
   document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active"));
 
       btn.classList.add("active");
       document.getElementById(btn.dataset.tab).classList.add("active");
 
-      if (map) setTimeout(() => map.invalidateSize(), 200);
-    });
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+        if (mapPlanejador) mapPlanejador.invalidateSize();
+      }, 200);
+    };
   });
 }
 
-/* ===== MAPA ===== */
+/* ================= MAPA ================= */
 function initMapa() {
   map = L.map("map").setView([-22.9068, -43.1729], 11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  layerSeguranca.addTo(map);
+  layerTransito.addTo(map);
+  layerClima.addTo(map);
+
+  // Segurança
+  L.circleMarker([-22.91, -43.18], { color: "red" })
+    .bindPopup("Alerta de Segurança")
+    .addTo(layerSeguranca);
+
+  // Trânsito
+  L.circleMarker([-22.93, -43.21], { color: "orange" })
+    .bindPopup("Congestionamento")
+    .addTo(layerTransito);
+
+  // Clima
+  L.circleMarker([-22.88, -43.16], { color: "blue" })
+    .bindPopup("Chuva Moderada")
+    .addTo(layerClima);
 }
 
-/* ===== CENTRALIZAR ===== */
-function initCentralizar() {
-  document.getElementById("btn-centralizar").addEventListener("click", () => {
-    if (markers.length === 0) return;
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), { padding: [40,40] });
-  });
-}
+/* ================= PLANEJADOR ================= */
+function initPlanejador() {
+  mapPlanejador = L.map("map-planejador").setView([-22.9068, -43.1729], 11);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapPlanejador);
 
-/* ===== UPLOAD ===== */
-function initUpload() {
-  const btn = document.getElementById("btn-upload");
-  const input = document.getElementById("upload-mapa");
+  document.getElementById("btn-tracar").onclick = () => {
+    const rota = L.polyline(
+      [[-22.91, -43.18], [-22.89, -43.12]],
+      { color: "#f5a623", weight: 4 }
+    ).addTo(mapPlanejador);
 
-  btn.onclick = () => input.click();
-  input.onchange = e => carregarPlanilha(e.target.files[0]);
-}
-
-function carregarPlanilha(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-    base = rows
-      .filter(r => r["Placa Veículo"] && String(r["Tipo de Veículo"]).toUpperCase() !== "AJUDANTE")
-      .map(r => ({
-        programa: extrairPrograma(r["Programa"]),
-        lat: -22.85 - Math.random() * 0.2,
-        lng: -43.1 - Math.random() * 0.25
-      }));
-
-    renderMapa();
-    renderFiltro();
-    document.getElementById("dadosResumo").innerHTML = `Total de veículos: ${base.length}`;
+    mapPlanejador.fitBounds(rota.getBounds());
   };
-  reader.readAsArrayBuffer(file);
 }
 
-/* ===== MAPA ===== */
-function renderMapa(filtro="TODOS") {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+/* ================= NORMAS ================= */
+function initNormas() {
+  const chat = document.getElementById("chatNormas");
+  const input = document.getElementById("perguntaNorma");
 
-  base
-    .filter(b => filtro === "TODOS" || b.programa === filtro)
-    .forEach(b => {
-      const m = L.marker([b.lat, b.lng]).addTo(map);
-      markers.push(m);
-    });
-}
+  document.getElementById("btnPerguntarNorma").onclick = () => {
+    if (!input.value) return;
 
-/* ===== FILTRO ===== */
-function renderFiltro() {
-  const sel = document.getElementById("filtroPrograma");
-  const programas = [...new Set(base.map(b => b.programa))];
-
-  sel.innerHTML = `<option value="TODOS">Todos</option>` +
-    programas.map(p => `<option>${p}</option>`).join("");
-
-  sel.onchange = () => renderMapa(sel.value);
-}
-
-/* ===== PROGRAMA ===== */
-function extrairPrograma(v) {
-  if (!v) return "SEM PROGRAMA";
-  const p = String(v).split(" - ").pop();
-  return p.split("/")[0].replace(/\d{4}.*/, "").trim();
+    chat.innerHTML += `<div class="msg user">${input.value}</div>`;
+    chat.innerHTML += `<div class="msg bot">Resposta simulada conforme base normativa.</div>`;
+    input.value = "";
+    chat.scrollTop = chat.scrollHeight;
+  };
 }
