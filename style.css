@@ -1,37 +1,65 @@
 * { box-sizing: border-box; }
 
-body {
+html, body {
+  height: 100%;
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   background: #050b17;
   color: #e6edf3;
 }
 
-/* ===== TOPO ===== */
+/* ================= TOPO ================= */
 .topbar {
-  height: 72px;
-  background: #0b1220;
+  height: 68px;
+  background: linear-gradient(90deg, #0b1220, #060b14);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
 }
 
-.brand {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+.brand h1 {
+  font-size: 18px;
+  margin: 0;
+  letter-spacing: 1px;
 }
 
-.tabs {
+.brand span {
+  font-size: 12px;
+  color: #9fb3c8;
+}
+
+.status {
+  font-size: 12px;
   display: flex;
-  gap: 12px;
-  padding: 14px 20px;
+  align-items: center;
+  gap: 8px;
+}
+
+.status .dot {
+  width: 8px;
+  height: 8px;
+  background: #2ecc71;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: .3; }
+  100% { opacity: 1; }
+}
+
+/* ================= ABAS ================= */
+.tabs {
+  padding: 10px 20px;
+  display: flex;
+  gap: 10px;
 }
 
 .tab-btn {
-  padding: 10px 20px;
-  border-radius: 20px;
+  padding: 8px 18px;
+  border-radius: 18px;
   background: rgba(255,255,255,.08);
   border: none;
   color: #fff;
@@ -43,51 +71,60 @@ body {
   color: #000;
 }
 
-/* ===== HERO ===== */
+/* ================= HERO ================= */
 .hero {
   position: relative;
-  height: 260px;
-  background: url("assets/rig-bg.jpg") center center / cover no-repeat;
+  height: 220px;              /* ✅ CONTROLADO */
+  background: url("assets/rig-bg.jpg") center/cover no-repeat;
   overflow: hidden;
 }
 
-.hero-overlay {
+.hero::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(5,11,23,.85), rgba(5,11,23,.35));
+  background: linear-gradient(
+    to right,
+    rgba(5,11,23,.9),
+    rgba(5,11,23,.4)
+  );
+  z-index: 1;
 }
 
-.hero-image {
+.hero img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* ✅ ocupa TODO o espaço */
-  z-index: 1;
+  object-fit: cover;          /* ✅ ocupa todo espaço */
+  z-index: 0;
 }
 
-/* ===== SEÇÕES ===== */
-.tab-section { display: none; }
-.tab-section.active { display: flex; }
+/* ================= LAYOUT PRINCIPAL ================= */
+main {
+  height: calc(100vh - 68px - 52px - 220px);
+}
 
+.tab-section {
+  display: none;
+  height: 100%;
+}
+
+.tab-section.active {
+  display: flex;
+}
+
+/* ================= MONITORAMENTO ================= */
 #monitoramento {
-  height: calc(100vh - 346px);
+  display: flex;
 }
 
-/* ===== SIDEBAR ===== */
 .sidebar {
   width: 320px;
-  padding: 16px;
   background: #0f1626;
+  padding: 16px;
 }
 
-.resumo-box {
-  margin-top: 12px;
-  padding: 10px;
-  background: rgba(255,255,255,.06);
-}
-
-/* ===== MAPA ===== */
 .map-area {
   flex: 1;
   display: flex;
@@ -95,26 +132,54 @@ body {
 }
 
 .map-header {
+  padding: 10px;
   display: flex;
   justify-content: space-between;
-  padding: 12px;
+  align-items: center;
 }
 
-#map, #map-planejador {
+#map {
+  flex: 1;                    /* ✅ MAPA CRESCE */
+}
+
+/* ================= PLANEJADOR ================= */
+#planejador {
+  flex-direction: column;
+  padding: 16px;
+}
+
+.planejador-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#map-planejador {
   flex: 1;
 }
 
-/* ===== CHAT ===== */
+/* ================= NORMAS ================= */
+#normas {
+  flex-direction: column;
+  padding: 16px;
+}
+
 .chat {
-  height: 300px;
+  flex: 1;
   background: #0f1626;
   padding: 12px;
-  overflow: auto;
+  overflow-y: auto;
 }
 
 .msg.bot {
   background: #1b2438;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 6px;
   margin-bottom: 6px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
