@@ -2,32 +2,25 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>AGENTE RIG — Rota Inteligente</title>
+  <title>AGENTE RIG — Rota Inteligente Globo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-  <!-- XLSX -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <header class="topbar">
   <div class="brand">
-    <div class="logo">🛡️</div>
-    <div>
-      <h1>AGENTE RIG — ROTA INTELIGENTE</h1>
-      <span>Gestão Integrada de Transportes</span>
-    </div>
+    <h1>AGENTE RIG — ROTA INTELIGENTE GLOBO</h1>
+    <span>Gestão Integrada de Transportes</span>
   </div>
 
   <div class="status">
-    <span class="dot"></span> SISTEMA OPERACIONAL
-    <span class="badge">OP-RJ-404</span>
+    <span class="dot"></span>
+    SISTEMA OPERACIONAL | OP-RJ-404
   </div>
 </header>
 
@@ -37,29 +30,25 @@
   <button class="tab-btn" data-tab="normas">NORMAS</button>
 </nav>
 
-<!-- HERO (background + hero image) -->
 <section class="hero">
-  <div class="hero-overlay"></div>
-  <img src="assets/agente-rig-hero.png" class="hero-image">
+  <img src="assets/agente-rig-hero.png" alt="AGENTE RIG">
 </section>
 
 <main>
 
-<!-- ================= MONITORAMENTO ================= -->
+<!-- MONITORAMENTO -->
 <section id="monitoramento" class="tab-section active">
-
   <aside class="sidebar">
-    <h2>Importação da Base</h2>
-
-    <button id="btn-upload">📥 Importar Base (XLSX)</button>
-    <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden>
-
-    <div id="dadosResumo" class="resumo-box">
-      Nenhuma base carregada
-    </div>
+    <button id="btn-upload">Importar Base (XLSX)</button>
+    <input type="file" id="upload-mapa" hidden>
 
     <h3>Filtro por Programa</h3>
     <select id="filtroPrograma"></select>
+
+    <h3>Camadas</h3>
+    <label><input type="checkbox" id="chk-seguranca" checked> Segurança</label><br>
+    <label><input type="checkbox" id="chk-transito" checked> Trânsito</label><br>
+    <label><input type="checkbox" id="chk-clima" checked> Clima</label>
   </aside>
 
   <section class="map-area">
@@ -69,26 +58,31 @@
     </div>
     <div id="map"></div>
   </section>
-
 </section>
 
-<!-- ================= PLANEJADOR ================= -->
+<!-- PLANEJADOR -->
 <section id="planejador" class="tab-section">
   <h2>Planejador de Rotas</h2>
-  <p>Base pronta para desenhar rotas, riscos e ocorrências.</p>
+
+  <div class="planejador-form">
+    <input id="origem" placeholder="Endereço de origem">
+    <input id="destino" placeholder="Endereço de destino">
+    <button id="btn-tracar">Traçar Rota</button>
+  </div>
+
   <div id="map-planejador"></div>
 </section>
 
-<!-- ================= NORMAS ================= -->
+<!-- NORMAS -->
 <section id="normas" class="tab-section">
-  <h2>Consultor de Normas</h2>
+  <h2>Consultor de Normas RIG</h2>
 
-  <div class="chat">
-    <div class="msg bot">Olá! Pergunte sobre normas de transporte.</div>
+  <div class="chat" id="chatNormas">
+    <div class="msg bot">Sistema operacional. Pergunte sobre TNO, Cargas 2026 ou Checklist.</div>
   </div>
 
   <div class="chat-input">
-    <input id="perguntaNorma" placeholder="Digite sua pergunta...">
+    <input id="perguntaNorma" placeholder="Digite sua dúvida sobre normas...">
     <button id="btnPerguntarNorma">Enviar</button>
   </div>
 </section>
@@ -97,6 +91,5 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
-
 </body>
 </html>
