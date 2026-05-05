@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarUpload();
   carregarBasesSimuladas();
   renderizarCamadasSimuladas();
-  
+
   // Funções restauradas:
   inicializarAbas();
   inicializarPlanejador();
@@ -173,7 +173,7 @@ function processarPlanilha(e) {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const linhas = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    BASE_ATENDIMENTOS = normalizarPlanilha(linhas);
+BASE_ATENDIMENTOS = normalizarPlanilha(linhas);
 
     preencherDropdownsFiltro(BASE_ATENDIMENTOS);
     atualizarResumo(BASE_ATENDIMENTOS);
@@ -296,7 +296,8 @@ const BAIRROS_COORDS = {
   "cascadura": { lat: -22.878, lng: -43.324 },
   "piedade": { lat: -22.890, lng: -43.308 },
   "ilha do governador": { lat: -22.809, lng: -43.208 },
-  "galeao": { lat: -22.812, lng: -43.243 },
+
+"galeao": { lat: -22.812, lng: -43.243 },
   "galeão": { lat: -22.812, lng: -43.243 },
   "penha": { lat: -22.834, lng: -43.276 },
   "olaria": { lat: -22.844, lng: -43.262 },
@@ -434,7 +435,8 @@ function formatarResumo(obj) {
 
 function renderizarLista(lista) {
   const el = document.getElementById("listaAtendimentos");
-  el.innerHTML = lista.map(i => `
+
+el.innerHTML = lista.map(i => `
     <div class="card">
       <div class="linha1">
         <span>${i.programa}</span>
@@ -510,7 +512,7 @@ function inicializarPlanejador() {
         .addTo(MAPA_PLANNER).bindPopup("<b>COR-RIO:</b> Via Interditada - Acidente");
       L.circleMarker([-22.88, -43.28], { color: "blue", radius: 8, fillOpacity: 0.8 })
         .addTo(MAPA_PLANNER).bindPopup("<b>PMERJ:</b> Operação Policial Ativa");
-      
+
       MAPA_PLANNER.setView([-22.92, -43.20], 11);
     });
   }
@@ -528,7 +530,7 @@ function inicializarPlanejador() {
       }
 
       feedback.innerHTML = 'Buscando coordenadas (Nominatim API)...';
-      
+
       // Busca Origem
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origem + ', Rio de Janeiro, Brasil')}`)
         .then(res => res.json())
@@ -536,7 +538,7 @@ function inicializarPlanejador() {
           if(!dataOrig.length) throw new Error("Endereço de Origem não encontrado.");
           const lat1 = parseFloat(dataOrig[0].lat);
           const lon1 = parseFloat(dataOrig[0].lon);
-          
+
           feedback.innerHTML = 'Buscando destino (Nominatim API)...';
           return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino + ', Rio de Janeiro, Brasil')}`)
             .then(res => res.json())
@@ -544,22 +546,23 @@ function inicializarPlanejador() {
               if(!dataDest.length) throw new Error("Endereço de Destino não encontrado.");
               const lat2 = parseFloat(dataDest[0].lat);
               const lon2 = parseFloat(dataDest[0].lon);
-              
+
               feedback.innerHTML = 'Calculando rota real (OSRM)...';
-              return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`)
+
+return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`)
                 .then(res => res.json())
                 .then(routeData => {
                   if(!routeData.routes || !routeData.routes.length) throw new Error("Rota não suportada.");
-                  
+
                   const coords = routeData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]); // OSRM retorna lon,lat
                   const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
                   const duracaoMin = Math.round(routeData.routes[0].duration / 60);
-                  
+
                   // Calcular custo com base no modal e definir ícone
                   const modalSelect = document.getElementById("modal-rota");
                   const fator = modalSelect ? parseFloat(modalSelect.value) : 1.5;
                   const custo = (distanciaKm * fator + 5).toFixed(2);
-                  
+
                   let emoji = '🚗';
                   if(fator === 3.0) emoji = '🚐';
                   if(fator === 4.5) emoji = '🚚';
@@ -626,7 +629,8 @@ function inicializarChatbot() {
       } else if(txt.includes("documento") || txt.includes("cnh")) {
         resposta = "<b>[Norma de Transporte]:</b> O motorista deve portar CNH válida na categoria do veículo, CRLV atualizado e, dependendo da carga, nota fiscal e manifesto.";
       } else if(txt.includes("equipamento") || txt.includes("epi") || txt.includes("segurança")) {
-        resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
+
+resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
       } else if(txt.includes("acidente")) {
         resposta = "<b>[Procedimento Geral]:</b> Em caso de acidente: 1) Sinalize a via. 2) Comunique o Centro de Comando imediatamente via Rádio/App. 3) Acione o socorro (192/193) se houver vítimas.";
       } else if(txt.includes("contrato") && txt.includes("br3")) {
@@ -649,3 +653,4 @@ function inicializarChatbot() {
     });
   }
 }
+

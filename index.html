@@ -1,3 +1,5 @@
+---
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -6,7 +8,7 @@
   <title>AGENTE RIG — Rota Inteligente</title>
 
   <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css?v=2" />
 
   <!-- App -->
   <link rel="stylesheet" href="style.css?v=2" />
@@ -125,7 +127,7 @@
               <option value="6.0">Ônibus</option>
             </select>
 
-            <button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
+<button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
             <div id="plannerFeedback" class="summaryBox">Informe origem e destino.</div>
 
             <div class="hint">
@@ -156,7 +158,7 @@
             <div class="msg bot">
               Olá! Pode perguntar livremente sobre normas e procedimentos (ex.: MOPP, TNO, “documentos obrigatórios”, “equipamentos do veículo”, etc.).
             </div>
-            
+
             <div class="chatSugestoes">
               <button class="pillBtn" onclick="document.getElementById('pergunta').value='O que é MOPP?'; document.getElementById('btn-enviar').click();">O que é MOPP?</button>
               <button class="pillBtn" onclick="document.getElementById('pergunta').value='Documentos obrigatórios'; document.getElementById('btn-enviar').click();">Documentos obrigatórios</button>
@@ -187,3 +189,4 @@
   <script src="script.js?v=2"></script>
 </body>
 </html>
+
