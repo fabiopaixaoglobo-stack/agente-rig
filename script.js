@@ -245,25 +245,43 @@ const BAIRROS_COORDS = {
   "jardim botanico": { lat: -22.967, lng: -43.228 },
   "jardim botânico": { lat: -22.967, lng: -43.228 },
   "leblon": { lat: -22.984, lng: -43.223 },
+  "ipanema": { lat: -22.984, lng: -43.204 },
   "copacabana": { lat: -22.971, lng: -43.182 },
   "botafogo": { lat: -22.951, lng: -43.180 },
+  "flamengo": { lat: -22.935, lng: -43.177 },
+  "laranjeiras": { lat: -22.933, lng: -43.186 },
   "tijuca": { lat: -22.933, lng: -43.238 },
+  "vila isabel": { lat: -22.914, lng: -43.245 },
+  "maracana": { lat: -22.912, lng: -43.230 },
+  "maracanã": { lat: -22.912, lng: -43.230 },
+  "meier": { lat: -22.901, lng: -43.280 },
+  "méier": { lat: -22.901, lng: -43.280 },
+  "engenho de dentro": { lat: -22.894, lng: -43.294 },
   "centro": { lat: -22.906, lng: -43.172 },
   "bangu": { lat: -22.879, lng: -43.465 },
   "campo grande": { lat: -22.900, lng: -43.559 },
-  "madureira": { lat: -22.871, lng: -43.336 }
+  "santa cruz": { lat: -22.923, lng: -43.684 },
+  "madureira": { lat: -22.871, lng: -43.336 },
+  "recreio": { lat: -23.018, lng: -43.468 },
+  "recreio dos bandeirantes": { lat: -23.018, lng: -43.468 },
+  "niteroi": { lat: -22.883, lng: -43.103 },
+  "niterói": { lat: -22.883, lng: -43.103 },
+  "são gonçalo": { lat: -22.826, lng: -43.053 },
+  "duque de caxias": { lat: -22.785, lng: -43.311 },
+  "nova iguaçu": { lat: -22.757, lng: -43.460 }
 };
 
 function gerarLatitudeSimulada(bairro) {
   const b = String(bairro).toLowerCase().replace(/['"´`]/g, "").trim();
-  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lat + (Math.random() - 0.5) * 0.015;
-  return -22.90 - Math.random() * 0.15; // default
+  // jitter de 0.005 = ~500 metros (não cai na água)
+  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lat + (Math.random() - 0.5) * 0.005;
+  return -22.906 + (Math.random() - 0.5) * 0.01; // default para o Centro
 }
 
 function gerarLongitudeSimulada(bairro) {
   const b = String(bairro).toLowerCase().replace(/['"´`]/g, "").trim();
-  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lng + (Math.random() - 0.5) * 0.015;
-  return -43.10 - Math.random() * 0.20; // default
+  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lng + (Math.random() - 0.5) * 0.005;
+  return -43.172 + (Math.random() - 0.5) * 0.01; // default para o Centro
 }
 
 /* =======================
@@ -470,36 +488,64 @@ function inicializarPlanejador() {
         return;
       }
 
-      feedback.innerHTML = 'Calculando rota e simulando custos...';
+      feedback.innerHTML = 'Buscando coordenadas (Nominatim API)...';
       
-      setTimeout(() => {
-        // Limpa rota anterior (mantém as ocorrencias)
-        MAPA_PLANNER.eachLayer((layer) => {
-          if (layer instanceof L.Polyline) {
-            MAPA_PLANNER.removeLayer(layer);
-          }
+      // Busca Origem
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origem + ', Rio de Janeiro, Brasil')}`)
+        .then(res => res.json())
+        .then(dataOrig => {
+          if(!dataOrig.length) throw new Error("Endereço de Origem não encontrado.");
+          const lat1 = parseFloat(dataOrig[0].lat);
+          const lon1 = parseFloat(dataOrig[0].lon);
+          
+          feedback.innerHTML = 'Buscando destino (Nominatim API)...';
+          return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino + ', Rio de Janeiro, Brasil')}`)
+            .then(res => res.json())
+            .then(dataDest => {
+              if(!dataDest.length) throw new Error("Endereço de Destino não encontrado.");
+              const lat2 = parseFloat(dataDest[0].lat);
+              const lon2 = parseFloat(dataDest[0].lon);
+              
+              feedback.innerHTML = 'Calculando rota real (OSRM)...';
+              return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(routeData => {
+                  if(!routeData.routes || !routeData.routes.length) throw new Error("Rota não suportada.");
+                  
+                  const coords = routeData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]); // OSRM retorna lon,lat
+                  const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
+                  const duracaoMin = Math.round(routeData.routes[0].duration / 60);
+                  
+                  // Calcular custo com base no modal
+                  const modalSelect = document.getElementById("modal-rota");
+                  const fator = modalSelect ? parseFloat(modalSelect.value) : 1.5;
+                  const custo = (distanciaKm * fator + 5).toFixed(2);
+
+                  // Limpa rota anterior (mantém as ocorrencias simuladas)
+                  MAPA_PLANNER.eachLayer((layer) => {
+                    if (layer instanceof L.Polyline || (layer instanceof L.Marker && !layer._popup.getContent().includes("PMERJ") && !layer._popup.getContent().includes("COR-RIO") && !layer._popup.getContent().includes("OTT-RJ"))) {
+                      MAPA_PLANNER.removeLayer(layer);
+                    }
+                  });
+
+                  // Desenha rota real no mapa
+                  L.marker([lat1, lon1]).addTo(MAPA_PLANNER).bindPopup('Origem: ' + origem).openPopup();
+                  L.marker([lat2, lon2]).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
+                  L.polyline(coords, {color: '#f5a623', weight: 6}).addTo(MAPA_PLANNER);
+                  MAPA_PLANNER.fitBounds([[Math.min(lat1, lat2), Math.min(lon1, lon2)], [Math.max(lat1, lat2), Math.max(lon1, lon2)]], {padding: [30,30]});
+
+                  feedback.innerHTML = `
+                    <strong style="color:var(--good)">✔ Rota Real traçada com sucesso!</strong><br>
+                    <b>Distância:</b> ${distanciaKm} km<br>
+                    <b>Tempo Estimado:</b> ${duracaoMin} min<br>
+                    <b>Custo (Modal):</b> R$ ${custo}
+                  `;
+                });
+            });
+        })
+        .catch(err => {
+          feedback.innerHTML = `<span style="color:#ef4444"><b>Erro:</b> ${err.message}</span><br><span style="font-size:11px">Lembre-se de ser específico (Ex: "Estúdios Globo, Jacarepaguá")</span>`;
         });
-
-        // Coordenadas simuladas para a rota
-        const lat1 = -22.90 + (Math.random() * 0.1);
-        const lon1 = -43.20 + (Math.random() * 0.1);
-        const lat2 = -22.95 + (Math.random() * 0.1);
-        const lon2 = -43.25 + (Math.random() * 0.1);
-
-        L.marker([lat1, lon1]).addTo(MAPA_PLANNER).bindPopup('Origem: ' + origem).openPopup();
-        L.marker([lat2, lon2]).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
-        L.polyline([[lat1, lon1], [lat2, lon2]], {color: '#f5a623', weight: 6}).addTo(MAPA_PLANNER);
-        MAPA_PLANNER.fitBounds([[lat1, lon1], [lat2, lon2]]);
-
-        const distancia = (Math.random() * 15 + 5).toFixed(1);
-        const custoSimulado = (Math.random() * 50 + 20).toFixed(2);
-        
-        feedback.innerHTML = `
-          <strong style="color:var(--good)">✔ Rota traçada!</strong><br>
-          <b>Distância:</b> ${distancia} km<br>
-          <b>Custo Estimado (Uber):</b> R$ ${custoSimulado}
-        `;
-      }, 1000);
     });
   }
 }
