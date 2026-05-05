@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarAbas();
   inicializarPlanejador();
   inicializarChatbot();
+  inicializarFiltros();
 });
 
 /* =======================
@@ -174,6 +175,7 @@ function processarPlanilha(e) {
 
     BASE_ATENDIMENTOS = normalizarPlanilha(linhas);
 
+    preencherDropdownsFiltro(BASE_ATENDIMENTOS);
     atualizarResumo(BASE_ATENDIMENTOS);
     renderizarLista(BASE_ATENDIMENTOS);
     plotarAtendimentosNoMapa(BASE_ATENDIMENTOS);
@@ -202,8 +204,8 @@ function normalizarPlanilha(linhas) {
       bairro: extrairBairro(l["Localidade + Endereço"]),
       programa: extrairPrograma(l["Programa"]),
       placa,
-      lat: gerarLatitudeSimulada(),
-      lng: gerarLongitudeSimulada()
+      lat: gerarLatitudeSimulada(extrairBairro(l["Localidade + Endereço"])),
+      lng: gerarLongitudeSimulada(extrairBairro(l["Localidade + Endereço"]))
     };
   }).filter(Boolean);
 }
@@ -232,22 +234,44 @@ function extrairPrograma(v) {
 }
 
 /* =======================
-   COORDENADAS SIMULADAS
+   COORDENADAS SIMULADAS POR BAIRRO
 ======================= */
+const BAIRROS_COORDS = {
+  "guaratiba": { lat: -22.986, lng: -43.593 },
+  "curicica": { lat: -22.955, lng: -43.398 },
+  "jacarepagua": { lat: -22.956, lng: -43.364 },
+  "jacarepaguá": { lat: -22.956, lng: -43.364 },
+  "barra da tijuca": { lat: -23.000, lng: -43.366 },
+  "jardim botanico": { lat: -22.967, lng: -43.228 },
+  "jardim botânico": { lat: -22.967, lng: -43.228 },
+  "leblon": { lat: -22.984, lng: -43.223 },
+  "copacabana": { lat: -22.971, lng: -43.182 },
+  "botafogo": { lat: -22.951, lng: -43.180 },
+  "tijuca": { lat: -22.933, lng: -43.238 },
+  "centro": { lat: -22.906, lng: -43.172 },
+  "bangu": { lat: -22.879, lng: -43.465 },
+  "campo grande": { lat: -22.900, lng: -43.559 },
+  "madureira": { lat: -22.871, lng: -43.336 }
+};
 
-function gerarLatitudeSimulada() {
-  return -22.85 - Math.random() * 0.15;
+function gerarLatitudeSimulada(bairro) {
+  const b = String(bairro).toLowerCase().replace(/['"´`]/g, "").trim();
+  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lat + (Math.random() - 0.5) * 0.015;
+  return -22.90 - Math.random() * 0.15; // default
 }
 
-function gerarLongitudeSimulada() {
-  return -43.10 - Math.random() * 0.20;
+function gerarLongitudeSimulada(bairro) {
+  const b = String(bairro).toLowerCase().replace(/['"´`]/g, "").trim();
+  if(BAIRROS_COORDS[b]) return BAIRROS_COORDS[b].lng + (Math.random() - 0.5) * 0.015;
+  return -43.10 - Math.random() * 0.20; // default
 }
 
 /* =======================
-   MAPA – ATENDIMENTOS
+   MAPA – ATENDIMENTOS E FILTROS
 ======================= */
 
 function plotarAtendimentosNoMapa(lista) {
+  CAMADA_VEICULOS.clearLayers();
   lista.forEach(a => {
     const marker = L.marker([a.lat, a.lng]).bindPopup(`
       <b>${a.programa}</b><br>
@@ -259,6 +283,57 @@ function plotarAtendimentosNoMapa(lista) {
 
     CAMADA_VEICULOS.addLayer(marker);
   });
+}
+
+function inicializarFiltros() {
+  const selectProg = document.getElementById("filtro-programa");
+  const selectBairro = document.getElementById("filtro-bairro");
+  const selectTipo = document.getElementById("filtro-tipo");
+  const btnLimpar = document.getElementById("btn-limpar");
+
+  if(!selectProg) return;
+
+  function aplicarFiltros() {
+    const p = selectProg.value;
+    const b = selectBairro.value;
+    const t = selectTipo.value;
+
+    const filtrados = BASE_ATENDIMENTOS.filter(a => {
+      const matchP = p === "" || a.programa === p;
+      const matchB = b === "" || a.bairro === b;
+      const matchT = t === "" || a.tipoVeiculo === t;
+      return matchP && matchB && matchT;
+    });
+
+    plotarAtendimentosNoMapa(filtrados);
+    renderizarLista(filtrados);
+  }
+
+  selectProg.addEventListener("change", aplicarFiltros);
+  selectBairro.addEventListener("change", aplicarFiltros);
+  selectTipo.addEventListener("change", aplicarFiltros);
+
+  btnLimpar.addEventListener("click", () => {
+    selectProg.value = "";
+    selectBairro.value = "";
+    selectTipo.value = "";
+    aplicarFiltros();
+  });
+}
+
+function preencherDropdownsFiltro(lista) {
+  const selectProg = document.getElementById("filtro-programa");
+  const selectBairro = document.getElementById("filtro-bairro");
+  const selectTipo = document.getElementById("filtro-tipo");
+  if(!selectProg) return;
+
+  const programas = [...new Set(lista.map(a => a.programa))].sort();
+  const bairros = [...new Set(lista.map(a => a.bairro))].sort();
+  const tipos = [...new Set(lista.map(a => a.tipoVeiculo))].sort();
+
+  selectProg.innerHTML = '<option value="">Todos</option>' + programas.map(x => `<option value="${x}">${x}</option>`).join('');
+  selectBairro.innerHTML = '<option value="">Todos</option>' + bairros.map(x => `<option value="${x}">${x}</option>`).join('');
+  selectTipo.innerHTML = '<option value="">Todos</option>' + tipos.map(x => `<option value="${x}">${x}</option>`).join('');
 }
 
 /* =======================
@@ -363,6 +438,26 @@ function inicializarPlanejador() {
     attribution: "© OpenStreetMap"
   }).addTo(MAPA_PLANNER);
 
+  // Forçar redimensionamento quando a aba abrir (bug de tiles cinzas do leaflet em div oculta)
+  document.querySelector('[data-tab="tab-planejador"]').addEventListener('click', () => {
+    setTimeout(() => { MAPA_PLANNER.invalidateSize(); }, 300);
+  });
+
+  const btnGerarOcorrencias = document.getElementById('btn-gerar-ocorrencias');
+  if(btnGerarOcorrencias) {
+    btnGerarOcorrencias.addEventListener('click', () => {
+      // Plota ocorrencias aleatorias no mapa do planejador
+      L.circleMarker([-22.92, -43.20], { color: "red", radius: 8, fillOpacity: 0.8 })
+        .addTo(MAPA_PLANNER).bindPopup("<b>OTT-RJ:</b> Tiroteio relatado há 15min").openPopup();
+      L.circleMarker([-22.94, -43.23], { color: "orange", radius: 8, fillOpacity: 0.8 })
+        .addTo(MAPA_PLANNER).bindPopup("<b>COR-RIO:</b> Via Interditada - Acidente");
+      L.circleMarker([-22.88, -43.28], { color: "blue", radius: 8, fillOpacity: 0.8 })
+        .addTo(MAPA_PLANNER).bindPopup("<b>PMERJ:</b> Operação Policial Ativa");
+      
+      MAPA_PLANNER.setView([-22.92, -43.20], 11);
+    });
+  }
+
   const btnRota = document.getElementById('btn-rota');
   if(btnRota) {
     btnRota.addEventListener('click', () => {
@@ -378,9 +473,9 @@ function inicializarPlanejador() {
       feedback.innerHTML = 'Calculando rota e simulando custos...';
       
       setTimeout(() => {
-        // Limpa rota anterior
+        // Limpa rota anterior (mantém as ocorrencias)
         MAPA_PLANNER.eachLayer((layer) => {
-          if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+          if (layer instanceof L.Polyline) {
             MAPA_PLANNER.removeLayer(layer);
           }
         });
@@ -393,14 +488,14 @@ function inicializarPlanejador() {
 
         L.marker([lat1, lon1]).addTo(MAPA_PLANNER).bindPopup('Origem: ' + origem).openPopup();
         L.marker([lat2, lon2]).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
-        L.polyline([[lat1, lon1], [lat2, lon2]], {color: 'blue', weight: 5}).addTo(MAPA_PLANNER);
+        L.polyline([[lat1, lon1], [lat2, lon2]], {color: '#f5a623', weight: 6}).addTo(MAPA_PLANNER);
         MAPA_PLANNER.fitBounds([[lat1, lon1], [lat2, lon2]]);
 
         const distancia = (Math.random() * 15 + 5).toFixed(1);
         const custoSimulado = (Math.random() * 50 + 20).toFixed(2);
         
         feedback.innerHTML = `
-          <strong style="color:green">✔ Rota traçada!</strong><br>
+          <strong style="color:var(--good)">✔ Rota traçada!</strong><br>
           <b>Distância:</b> ${distancia} km<br>
           <b>Custo Estimado (Uber):</b> R$ ${custoSimulado}
         `;
@@ -433,11 +528,13 @@ function inicializarChatbot() {
         resposta = "O curso MOPP (Movimentação e Operação de Produtos Perigosos) é obrigatório para transporte de cargas de risco e tem validade de 5 anos.";
       } else if(txt.includes("documento") || txt.includes("cnh")) {
         resposta = "O motorista deve portar CNH válida na categoria do veículo, CRLV atualizado e, dependendo da carga, nota fiscal e manifesto.";
-      } else if(txt.includes("equipamento") || txt.includes("epi")) {
+      } else if(txt.includes("equipamento") || txt.includes("epi") || txt.includes("segurança")) {
         resposta = "Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
+      } else if(txt.includes("acidente")) {
+        resposta = "Em caso de acidente: 1) Sinalize a via. 2) Comunique o Centro de Comando imediatamente via Rádio/App. 3) Acione o socorro (192 ou 193) se houver vítimas.";
       }
 
-      chatBox.innerHTML += `<div class="msg bot" style="background: #eef2f5; padding: 10px; margin-top: 15px; border-radius: 8px;"><b>Agente RIG:</b> ${resposta}</div>`;
+      chatBox.innerHTML += `<div class="msg bot"><b>Agente RIG:</b> ${resposta}</div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
     }, 800);
   }
