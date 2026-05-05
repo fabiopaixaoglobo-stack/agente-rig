@@ -237,11 +237,30 @@ function extrairPrograma(v) {
    COORDENADAS SIMULADAS POR BAIRRO
 ======================= */
 const BAIRROS_COORDS = {
+  // ZONA OESTE
   "guaratiba": { lat: -22.986, lng: -43.593 },
+  "pedra de guaratiba": { lat: -22.986, lng: -43.593 },
+  "ilha de guaratiba": { lat: -22.986, lng: -43.593 },
   "curicica": { lat: -22.955, lng: -43.398 },
   "jacarepagua": { lat: -22.956, lng: -43.364 },
   "jacarepaguá": { lat: -22.956, lng: -43.364 },
   "barra da tijuca": { lat: -23.000, lng: -43.366 },
+  "recreio": { lat: -23.018, lng: -43.468 },
+  "recreio dos bandeirantes": { lat: -23.018, lng: -43.468 },
+  "camorim": { lat: -22.969, lng: -43.407 },
+  "vargem grande": { lat: -22.984, lng: -43.484 },
+  "vargem pequena": { lat: -22.981, lng: -43.443 },
+  "bangu": { lat: -22.879, lng: -43.465 },
+  "campo grande": { lat: -22.900, lng: -43.559 },
+  "santa cruz": { lat: -22.923, lng: -43.684 },
+  "realengo": { lat: -22.875, lng: -43.428 },
+  "padre miguel": { lat: -22.876, lng: -43.447 },
+  "taquara": { lat: -22.923, lng: -43.366 },
+  "freguesia": { lat: -22.940, lng: -43.341 },
+  "pechincha": { lat: -22.933, lng: -43.355 },
+  "tanque": { lat: -22.915, lng: -43.360 },
+
+  // ZONA SUL
   "jardim botanico": { lat: -22.967, lng: -43.228 },
   "jardim botânico": { lat: -22.967, lng: -43.228 },
   "leblon": { lat: -22.984, lng: -43.223 },
@@ -250,6 +269,22 @@ const BAIRROS_COORDS = {
   "botafogo": { lat: -22.951, lng: -43.180 },
   "flamengo": { lat: -22.935, lng: -43.177 },
   "laranjeiras": { lat: -22.933, lng: -43.186 },
+  "catete": { lat: -22.926, lng: -43.176 },
+  "gloria": { lat: -22.919, lng: -43.173 },
+  "glória": { lat: -22.919, lng: -43.173 },
+  "leme": { lat: -22.962, lng: -43.166 },
+  "urca": { lat: -22.953, lng: -43.162 },
+  "sao conrado": { lat: -22.993, lng: -43.253 },
+  "são conrado": { lat: -22.993, lng: -43.253 },
+  "rocinha": { lat: -22.988, lng: -43.249 },
+
+  // ZONA NORTE & CENTRO
+  "centro": { lat: -22.906, lng: -43.172 },
+  "lapa": { lat: -22.913, lng: -43.180 },
+  "mangueira": { lat: -22.903, lng: -43.235 },
+  "sao cristovao": { lat: -22.899, lng: -43.222 },
+  "são cristóvão": { lat: -22.899, lng: -43.222 },
+  "benfica": { lat: -22.892, lng: -43.243 },
   "tijuca": { lat: -22.933, lng: -43.238 },
   "vila isabel": { lat: -22.914, lng: -43.245 },
   "maracana": { lat: -22.912, lng: -43.230 },
@@ -257,13 +292,17 @@ const BAIRROS_COORDS = {
   "meier": { lat: -22.901, lng: -43.280 },
   "méier": { lat: -22.901, lng: -43.280 },
   "engenho de dentro": { lat: -22.894, lng: -43.294 },
-  "centro": { lat: -22.906, lng: -43.172 },
-  "bangu": { lat: -22.879, lng: -43.465 },
-  "campo grande": { lat: -22.900, lng: -43.559 },
-  "santa cruz": { lat: -22.923, lng: -43.684 },
   "madureira": { lat: -22.871, lng: -43.336 },
-  "recreio": { lat: -23.018, lng: -43.468 },
-  "recreio dos bandeirantes": { lat: -23.018, lng: -43.468 },
+  "cascadura": { lat: -22.878, lng: -43.324 },
+  "piedade": { lat: -22.890, lng: -43.308 },
+  "ilha do governador": { lat: -22.809, lng: -43.208 },
+  "galeao": { lat: -22.812, lng: -43.243 },
+  "galeão": { lat: -22.812, lng: -43.243 },
+  "penha": { lat: -22.834, lng: -43.276 },
+  "olaria": { lat: -22.844, lng: -43.262 },
+  "bonsucesso": { lat: -22.862, lng: -43.250 },
+
+  // OUTROS MUNICÍPIOS
   "niteroi": { lat: -22.883, lng: -43.103 },
   "niterói": { lat: -22.883, lng: -43.103 },
   "são gonçalo": { lat: -22.826, lng: -43.053 },
@@ -516,10 +555,22 @@ function inicializarPlanejador() {
                   const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
                   const duracaoMin = Math.round(routeData.routes[0].duration / 60);
                   
-                  // Calcular custo com base no modal
+                  // Calcular custo com base no modal e definir ícone
                   const modalSelect = document.getElementById("modal-rota");
                   const fator = modalSelect ? parseFloat(modalSelect.value) : 1.5;
                   const custo = (distanciaKm * fator + 5).toFixed(2);
+                  
+                  let emoji = '🚗';
+                  if(fator === 3.0) emoji = '🚐';
+                  if(fator === 4.5) emoji = '🚚';
+                  if(fator === 6.0) emoji = '🚌';
+
+                  const vehicleIcon = L.divIcon({
+                    html: `<div style="font-size: 26px; filter: drop-shadow(0px 3px 2px rgba(0,0,0,0.4));">${emoji}</div>`,
+                    className: '',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                  });
 
                   // Limpa rota anterior (mantém as ocorrencias simuladas)
                   MAPA_PLANNER.eachLayer((layer) => {
@@ -528,9 +579,9 @@ function inicializarPlanejador() {
                     }
                   });
 
-                  // Desenha rota real no mapa
+                  // Desenha rota real no mapa com icone animado no destino
                   L.marker([lat1, lon1]).addTo(MAPA_PLANNER).bindPopup('Origem: ' + origem).openPopup();
-                  L.marker([lat2, lon2]).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
+                  L.marker([lat2, lon2], {icon: vehicleIcon}).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
                   L.polyline(coords, {color: '#f5a623', weight: 6}).addTo(MAPA_PLANNER);
                   MAPA_PLANNER.fitBounds([[Math.min(lat1, lat2), Math.min(lon1, lon2)], [Math.max(lat1, lat2), Math.max(lon1, lon2)]], {padding: [30,30]});
 
@@ -567,17 +618,23 @@ function inicializarChatbot() {
     chatBox.scrollTop = chatBox.scrollHeight;
 
     setTimeout(() => {
-      let resposta = "Desculpe, não encontrei uma norma específica. Em caso de dúvidas complexas, acione o Centro de Comando.";
+      let resposta = "Desculpe, não encontrei uma referência direta para isso nos Manuais e Contratos (BR3 / Rick Rio). Pode ser mais específico?";
       const txt = texto.toLowerCase();
 
       if(txt.includes("mopp")) {
-        resposta = "O curso MOPP (Movimentação e Operação de Produtos Perigosos) é obrigatório para transporte de cargas de risco e tem validade de 5 anos.";
+        resposta = "<b>[Norma de Transporte / TNO]:</b> O curso MOPP (Movimentação e Operação de Produtos Perigosos) é obrigatório para transporte de cargas de risco e tem validade de 5 anos.";
       } else if(txt.includes("documento") || txt.includes("cnh")) {
-        resposta = "O motorista deve portar CNH válida na categoria do veículo, CRLV atualizado e, dependendo da carga, nota fiscal e manifesto.";
+        resposta = "<b>[Norma de Transporte]:</b> O motorista deve portar CNH válida na categoria do veículo, CRLV atualizado e, dependendo da carga, nota fiscal e manifesto.";
       } else if(txt.includes("equipamento") || txt.includes("epi") || txt.includes("segurança")) {
-        resposta = "Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
+        resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
       } else if(txt.includes("acidente")) {
-        resposta = "Em caso de acidente: 1) Sinalize a via. 2) Comunique o Centro de Comando imediatamente via Rádio/App. 3) Acione o socorro (192 ou 193) se houver vítimas.";
+        resposta = "<b>[Procedimento Geral]:</b> Em caso de acidente: 1) Sinalize a via. 2) Comunique o Centro de Comando imediatamente via Rádio/App. 3) Acione o socorro (192/193) se houver vítimas.";
+      } else if(txt.includes("contrato") && txt.includes("br3")) {
+        resposta = "<b>[Contrato de veículos]:</b> No contrato de Pessoas e Pequenas Cargas, o prestador é responsável pela manutenção preventiva do veículo e deve garantir a integridade da pequena carga até o destino final.";
+      } else if(txt.includes("contrato") && txt.includes("rick")) {
+        resposta = "<b>[Contrato de Transporte de Cargas]:</b> Nas regras de Transporte de Carga, as avarias durante o trajeto sem justificativa de ocorrência externa de força maior podem acarretar em penalidades financeiras à contratada.";
+      } else if(txt.includes("multa") || txt.includes("penalidade")) {
+        resposta = "<b>[Regras de Contrato]:</b> As penalidades são aplicadas em caso de atraso injustificado, avaria de carga, ou infrações de trânsito cometidas durante a operação do serviço.";
       }
 
       chatBox.innerHTML += `<div class="msg bot"><b>Agente RIG:</b> ${resposta}</div>`;
