@@ -30,7 +30,9 @@ body{
   align-items:center;
   justify-content:space-between;
   padding:0 18px;
-  background: linear-gradient(180deg, rgba(8,12,22,0.95), rgba(8,12,22,0.75));
+  background: 
+    linear-gradient(90deg, rgba(8,12,22,0.95) 0%, rgba(8,12,22,0.4) 40%, rgba(8,12,22,0.9) 100%),
+    url("assets/rig-bg.jpg") center/cover no-repeat;
   border-bottom:1px solid var(--line);
 }
 
@@ -157,9 +159,7 @@ body{
   margin-bottom:10px;
 }
 .heroPanel{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2)),
-    url("assets/rig-bg.jpg") center/cover no-repeat;
+  background: var(--panel2);
   border:1px solid rgba(245,166,35,.18);
 }
 .heroImg{
@@ -290,7 +290,7 @@ body{
   flex-direction:column;
   gap:12px;
 }
-.plannerRight{ flex:1; }
+.plannerRight{ flex:1; display:flex; flex-direction:column; height: 100%; min-height: 500px; }
 .hint{
   margin-top:10px;
   font-size:12px;
@@ -341,3 +341,24 @@ body{
 }
 .chatInputRow .input{ flex:1; margin-top:0; }
 .chatInputRow .btn{ width: 160px; margin-top:0; }
+
+.chatSugestoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.pillBtn {
+  background: rgba(245,166,35,.15);
+  border: 1px solid rgba(245,166,35,.4);
+  color: var(--accent2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pillBtn:hover {
+  background: rgba(245,166,35,.3);
+  color: #fff;
+}
