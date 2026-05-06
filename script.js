@@ -633,9 +633,9 @@ function inicializarChatbot() {
 resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bota de segurança, colete refletivo e capacete (em áreas de carga).";
       } else if(txt.includes("acidente")) {
         resposta = "<b>[Procedimento Geral]:</b> Em caso de acidente: 1) Sinalize a via. 2) Comunique o Centro de Comando imediatamente via Rádio/App. 3) Acione o socorro (192/193) se houver vítimas.";
-      } else if(txt.includes("contrato") && txt.includes("br3")) {
+      } else if(txt.includes("br3") || (txt.includes("contrato") && txt.includes("veículo"))) {
         resposta = "<b>[Contrato de veículos]:</b> No contrato de Pessoas e Pequenas Cargas, o prestador é responsável pela manutenção preventiva do veículo e deve garantir a integridade da pequena carga até o destino final.";
-      } else if(txt.includes("contrato") && txt.includes("rick")) {
+      } else if(txt.includes("rick") || txt.includes("carga") || txt.includes("avaria")) {
         resposta = "<b>[Contrato de Transporte de Cargas]:</b> Nas regras de Transporte de Carga, as avarias durante o trajeto sem justificativa de ocorrência externa de força maior podem acarretar em penalidades financeiras à contratada.";
       } else if(txt.includes("multa") || txt.includes("penalidade")) {
         resposta = "<b>[Regras de Contrato]:</b> As penalidades são aplicadas em caso de atraso injustificado, avaria de carga, ou infrações de trânsito cometidas durante a operação do serviço.";
