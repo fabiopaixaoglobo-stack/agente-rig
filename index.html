@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AGENTE RIG — Rota Inteligente</title>
+  <title>AGENTE RIT — Agente Inteligente de Transportes</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css?v=2" />
@@ -20,7 +20,7 @@
     <div class="brand">
       <div class="shield">🛡️</div>
       <div class="brandText">
-        <div class="brandTitle">AGENTE RIG <span class="muted">— ROTA INTELIGENTE</span></div>
+        <div class="brandTitle">AGENTE RIT <span class="muted">— AGENTE INTELIGENTE DE TRANSPORTES</span></div>
         <div class="brandSub">Gestão Integrada de Transportes</div>
       </div>
     </div>
@@ -30,7 +30,7 @@
         <span class="dot"></span>
         SISTEMA OPERACIONAL
       </div>
-      <div class="codeTag">OP-RJ-404</div>
+      <div class="codeTag">TRANSPORTE-RJ</div>
     </div>
   </header>
 
@@ -47,7 +47,7 @@
     <section id="tab-monitoramento" class="tabPane active">
       <aside class="sidebar">
         <div class="panel heroPanel">
-          <img class="heroImg" src="assets/agente-rig-hero.png" alt="AGENTE RIG" />
+          <img class="heroImg" src="assets/agente-rig-hero.png" alt="AGENTE RIT" />
           <div class="heroTitle">Centro de Comando</div>
           <div class="heroSub">IA • Rota • Segurança</div>
         </div>
@@ -62,7 +62,7 @@
           <div id="dadosResumo" class="summaryBox">Nenhum arquivo carregado</div>
         </div>
 
-        <div class="panel">
+        <div class="panel panelFiltros">
           <div class="panelTitle">Filtros</div>
 
           <label class="label">Programa</label>
@@ -127,7 +127,10 @@
               <option value="6.0">Ônibus</option>
             </select>
 
-<button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
+            <div style="display:flex; gap:10px;">
+              <button id="btn-rota" class="btn btnPrimary">🛣️ Traçar rota</button>
+              <button id="btn-limpar-rota" class="btn btnGhost">🗑️ Limpar Rota</button>
+            </div>
             <div id="plannerFeedback" class="summaryBox">Informe origem e destino.</div>
 
             <div class="hint">
@@ -148,33 +151,33 @@
       </div>
     </section>
 
-    <!-- NORMAS (chatbot UI) -->
-    <section id="tab-normas" class="tabPane">
-      <div class="normasWrap">
-        <div class="panel normasPanel">
-          <div class="panelTitle">Consultor de Normas (modo chat)</div>
+    <!-- NORMAS -->
+    <section id="tab-normas" class="tabPane" style="position: relative; overflow: hidden;">
+      <img src="assets/brain-routes.png" class="normasBackground" alt="Cérebro com Rotas" onerror="this.style.display='none'" />
+      
+      <div class="normasWrap" style="z-index: 1; position: relative; height: 100%; width: 100%;">
+        <div class="panel normasPanel" style="display:flex; flex-direction:column; height: 100%;">
+          <div class="panelTitle">Consulta de Normas de Transportes</div>
 
-          <div id="chat" class="chatBox">
+          <div class="normas-botoes" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+            <button class="pillBtn cat-btn" data-cat="pessoas">Transporte de Pessoas</button>
+            <button class="pillBtn cat-btn" data-cat="cargas">Transporte de Cargas</button>
+            <button class="pillBtn cat-btn" data-cat="norma">Norma de Transportes</button>
+          </div>
+
+          <div id="normas-lista" class="summaryBox" style="display:none; margin-bottom:15px; font-size:14px; background: rgba(0,0,0,0.4); max-height: 150px; overflow-y: auto;">
+          </div>
+
+          <div class="panelTitle" style="margin-top:10px;">Chat com IA</div>
+          <div id="chat" class="chatBox" style="flex:1;">
             <div class="msg bot">
-              Olá! Pode perguntar livremente sobre normas e procedimentos (ex.: MOPP, TNO, “documentos obrigatórios”, “equipamentos do veículo”, etc.).
-            </div>
-
-            <div class="chatSugestoes">
-              <button class="pillBtn" onclick="document.getElementById('pergunta').value='O que é MOPP?'; document.getElementById('btn-enviar').click();">O que é MOPP?</button>
-              <button class="pillBtn" onclick="document.getElementById('pergunta').value='Equipamentos de segurança'; document.getElementById('btn-enviar').click();">EPIs</button>
-              <button class="pillBtn" onclick="document.getElementById('pergunta').value='O que fazer em caso de acidente?'; document.getElementById('btn-enviar').click();">Acidente</button>
-              <button class="pillBtn" onclick="document.getElementById('pergunta').value='Regras do contrato BR3'; document.getElementById('btn-enviar').click();">Contrato BR3</button>
-              <button class="pillBtn" onclick="document.getElementById('pergunta').value='Avarias de carga Rick Rio'; document.getElementById('btn-enviar').click();">Avarias (Cargas)</button>
+              Olá! Pode perguntar livremente sobre normas e procedimentos.
             </div>
           </div>
 
           <div class="chatInputRow">
             <input id="pergunta" class="input" placeholder="Digite sua pergunta..." />
             <button id="btn-enviar" class="btn btnPrimary">Enviar</button>
-          </div>
-
-          <div class="hint">
-            *Nesta versão, o chat responde com uma base de respostas simuladas (para validar o formato). Depois podemos conectar a um banco de normas real.
           </div>
         </div>
       </div>

@@ -34,6 +34,50 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarFiltros();
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  const catBtns = document.querySelectorAll('.cat-btn');
+  const normasLista = document.getElementById('normas-lista');
+  
+  if (catBtns && normasLista) {
+    const dadosNormas = {
+      "pessoas": `
+        <ul style="margin:0; padding-left:20px; color:#ddd;">
+          <li>Aplicação e alcance</li>
+          <li>Regras Gerais</li>
+          <li>Solicitação e disposições gerais</li>
+          <li>Transporte de pessoas</li>
+          <li>Definições</li>
+        </ul>
+      `,
+      "cargas": `
+        <ul style="margin:0; padding-left:20px; color:#ddd;">
+          <li>Objeto do contrato</li>
+          <li>Níveis de serviço</li>
+          <li>Avarias</li>
+          <li>Penalidades</li>
+        </ul>
+      `,
+      "norma": `
+        <ul style="margin:0; padding-left:20px; color:#ddd;">
+          <li>Procedimentos operacionais</li>
+          <li>Segurança</li>
+          <li>Documentação obrigatória</li>
+        </ul>
+      `
+    };
+
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catBtns.forEach(b => b.style.background = '');
+        btn.style.background = 'rgba(245,166,35,0.4)';
+        const cat = btn.getAttribute('data-cat');
+        normasLista.innerHTML = dadosNormas[cat];
+        normasLista.style.display = 'block';
+      });
+    });
+  }
+});
+
 /* =======================
    MAPA
 ======================= */
@@ -480,6 +524,45 @@ function inicializarAbas() {
 }
 
 /* =======================
+   FUNÇÕES DE PLANEJAMENTO
+======================= */
+function calcularCustoModal(distanciaKm, tipo) {
+  let custo = 0;
+  let consumo = "";
+  let tipoText = "";
+  let baseText = "";
+  
+  if (tipo === 1.5) { // Passeio
+    custo = distanciaKm * 0.45;
+    consumo = "10 km/l";
+    baseText = "consumo e tipo de combustível (GNV/Etanol)";
+    tipoText = "Passeio";
+  } else if (tipo === 3.0) { // Van
+    custo = distanciaKm * 0.85;
+    consumo = "6 km/l";
+    baseText = "consumo e tipo de combustível (Diesel)";
+    tipoText = "Van Passageiro";
+  } else if (tipo === 4.5) { // Cargas
+    custo = distanciaKm * 1.50;
+    consumo = "4 km/l";
+    baseText = "consumo e tipo de combustível (Diesel)";
+    tipoText = "Cargas (Caminhão Trucado)";
+  } else if (tipo === 6.0) { // Ônibus
+    custo = distanciaKm * 2.20;
+    consumo = "3 km/l";
+    baseText = "consumo e tipo de combustível (Diesel)";
+    tipoText = "Ônibus (45 passageiros)";
+  }
+  return { custo: custo.toFixed(2), tipoText, baseText, consumo };
+}
+
+function calcularRiscoRota(score) {
+  if (score <= 3) return "ROTA SEGURA";
+  if (score <= 7) return "RISCO MODERADO";
+  return "ROTA CRÍTICA";
+}
+
+/* =======================
    PLANEJADOR DE ROTAS
 ======================= */
 let MAPA_PLANNER = null;
@@ -514,6 +597,22 @@ function inicializarPlanejador() {
         .addTo(MAPA_PLANNER).bindPopup("<b>PMERJ:</b> Operação Policial Ativa");
 
       MAPA_PLANNER.setView([-22.92, -43.20], 11);
+    });
+  }
+
+  const btnLimparRota = document.getElementById('btn-limpar-rota');
+  if(btnLimparRota) {
+    btnLimparRota.addEventListener('click', () => {
+      document.getElementById('origem').value = '';
+      document.getElementById('destino').value = '';
+      document.getElementById('plannerFeedback').innerHTML = 'Informe origem e destino.';
+      MAPA_PLANNER.eachLayer((layer) => {
+        if (layer instanceof L.Polyline || (layer instanceof L.Marker && layer._popup && !layer._popup.getContent().includes("PMERJ") && !layer._popup.getContent().includes("COR-RIO") && !layer._popup.getContent().includes("OTT-RJ")) || layer instanceof L.CircleMarker) {
+          MAPA_PLANNER.removeLayer(layer);
+        }
+      });
+      // reset map view
+      MAPA_PLANNER.setView([-22.9068, -43.1729], 11);
     });
   }
 
@@ -561,7 +660,8 @@ return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};$
                   // Calcular custo com base no modal e definir ícone
                   const modalSelect = document.getElementById("modal-rota");
                   const fator = modalSelect ? parseFloat(modalSelect.value) : 1.5;
-                  const custo = (distanciaKm * fator + 5).toFixed(2);
+                  
+                  const { custo, tipoText, baseText, consumo } = calcularCustoModal(distanciaKm, fator);
 
                   let emoji = '🚗';
                   if(fator === 3.0) emoji = '🚐';
@@ -575,9 +675,9 @@ return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};$
                     iconAnchor: [15, 15]
                   });
 
-                  // Limpa rota anterior (mantém as ocorrencias simuladas)
+                  // Limpa rota anterior (mantém as ocorrencias manuais)
                   MAPA_PLANNER.eachLayer((layer) => {
-                    if (layer instanceof L.Polyline || (layer instanceof L.Marker && !layer._popup.getContent().includes("PMERJ") && !layer._popup.getContent().includes("COR-RIO") && !layer._popup.getContent().includes("OTT-RJ"))) {
+                    if (layer instanceof L.Polyline || (layer instanceof L.Marker && layer._popup && !layer._popup.getContent().includes("PMERJ") && !layer._popup.getContent().includes("COR-RIO") && !layer._popup.getContent().includes("OTT-RJ")) || (layer instanceof L.CircleMarker)) {
                       MAPA_PLANNER.removeLayer(layer);
                     }
                   });
@@ -585,14 +685,54 @@ return fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};$
                   // Desenha rota real no mapa com icone animado no destino
                   L.marker([lat1, lon1]).addTo(MAPA_PLANNER).bindPopup('Origem: ' + origem).openPopup();
                   L.marker([lat2, lon2], {icon: vehicleIcon}).addTo(MAPA_PLANNER).bindPopup('Destino: ' + destino);
-                  L.polyline(coords, {color: '#f5a623', weight: 6}).addTo(MAPA_PLANNER);
+                  
+                  // Gerar ocorrencias dinamicas baseadas na rota
+                  let scoreTotal = 0;
+                  const tiposCrimes = [
+                    { tipo: 'Roubo', peso: 3, cor: 'red' },
+                    { tipo: 'Acidente', peso: 2, cor: 'orange' },
+                    { tipo: 'Furto', peso: 1, cor: 'yellow' }
+                  ];
+                  
+                  // Escolher de 1 a 4 pontos da rota aleatoriamente para simular ocorrencias
+                  const numOcorrencias = Math.floor(Math.random() * 4) + 1;
+                  for(let i=0; i<numOcorrencias; i++) {
+                     const randomIdx = Math.floor(Math.random() * coords.length);
+                     const pt = coords[randomIdx];
+                     const crime = tiposCrimes[Math.floor(Math.random() * tiposCrimes.length)];
+                     scoreTotal += crime.peso;
+                     
+                     // Adicionar pequeno offset para nao ficar exatamente em cima da linha
+                     const latOffset = (Math.random() - 0.5) * 0.005;
+                     const lngOffset = (Math.random() - 0.5) * 0.005;
+                     
+                     // Adicionar animacao para ocorrencia critica (Roubo)
+                     const className = crime.tipo === 'Roubo' ? 'marker-critical-anim' : '';
+                     
+                     L.circleMarker([pt[0] + latOffset, pt[1] + lngOffset], { 
+                       color: crime.cor, 
+                       radius: 8, 
+                       fillOpacity: 0.8,
+                       className: className 
+                     })
+                     .addTo(MAPA_PLANNER)
+                     .bindPopup(`<b>${crime.tipo}</b><br>Peso: ${crime.peso}`);
+                  }
+                  
+                  const classRisco = calcularRiscoRota(scoreTotal);
+                  let corRisco = '#22c55e'; // verde
+                  if (classRisco === 'RISCO MODERADO') corRisco = '#f5a623';
+                  if (classRisco === 'ROTA CRÍTICA') corRisco = '#ef4444';
+
+                  L.polyline(coords, {color: corRisco, weight: 6}).addTo(MAPA_PLANNER);
                   MAPA_PLANNER.fitBounds([[Math.min(lat1, lat2), Math.min(lon1, lon2)], [Math.max(lat1, lat2), Math.max(lon1, lon2)]], {padding: [30,30]});
 
                   feedback.innerHTML = `
-                    <strong style="color:var(--good)">✔ Rota Real traçada com sucesso!</strong><br>
+                    <div style="font-size: 1.1em; font-weight: bold; color: ${corRisco}; margin-bottom: 5px;">${classRisco} (Score de Risco: ${scoreTotal})</div>
                     <b>Distância:</b> ${distanciaKm} km<br>
-                    <b>Tempo Estimado:</b> ${duracaoMin} min<br>
-                    <b>Custo (Modal):</b> R$ ${custo}
+                    <b>Custo estimado:</b> R$ ${custo}<br>
+                    <b>Modal:</b> ${tipoText}<br>
+                    <b>Base de cálculo:</b> ${baseText}<br>
                   `;
                 });
             });
@@ -641,7 +781,7 @@ resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bo
         resposta = "<b>[Regras de Contrato]:</b> As penalidades são aplicadas em caso de atraso injustificado, avaria de carga, ou infrações de trânsito cometidas durante a operação do serviço.";
       }
 
-      chatBox.innerHTML += `<div class="msg bot"><b>Agente RIG:</b> ${resposta}</div>`;
+      chatBox.innerHTML += `<div class="msg bot"><b>Agente RIT:</b> ${resposta}</div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
     }, 800);
   }
