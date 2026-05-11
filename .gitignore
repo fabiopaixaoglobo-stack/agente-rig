@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+**/.env
+server/cache.json
+.DS_Store
+dist/
+build/
+*.log
+
+# PDFs em Normas/ (limite GitHub 100 MB) — manter só no disco local
+Normas/*.pdf

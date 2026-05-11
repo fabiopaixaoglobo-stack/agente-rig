@@ -1,0 +1,12 @@
+{
+    "contrato-cargas": [
+        { "tema": "SLA", "texto": "O SLA de entrega para transporte de carga é de 24h para capital e 48h para interior." },
+        { "tema": "OT", "texto": "Toda carga deve ser acompanhada de Ordem de Transporte (OT) impressa e manifesto digital." },
+        { "tema": "Seguro", "texto": "Cargas acima de R$ 50.000 exigem escolta armada e rastreamento em tempo real." }
+    ],
+    "contrato-pessoas": [
+        { "tema": "Jornada", "texto": "O motorista deve realizar pausa de 30 min a cada 4h de condução ininterrupta." },
+        { "tema": "Noturno", "texto": "Transporte noturno (22h-05h) exige veículo com rastreamento ativo e botão de pânico." },
+        { "tema": "Capacidade", "texto": "Veículos de passeio limitados a 4 passageiros + motorista. Vans limitadas a 15." }
+    ]
+}

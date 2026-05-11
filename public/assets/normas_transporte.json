@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "titulo": "OBJETIVO E APLICABILIDADE",
+    "icone": "🎯",
+    "resumo": "Estabelece as diretrizes fundamentais para o transporte corporativo e operacional.",
+    "palavras_chave": ["objetivo", "aplicabilidade", "diretrizes", "escopo"],
+    "texto": "Esta norma tem como objetivo estabelecer os padrões e critérios para o transporte de passageiros e cargas, garantindo segurança, eficiência e conformidade legal em todas as operações da RIT."
+  },
+  {
+    "id": 2,
+    "titulo": "REQUISITOS DO MOTORISTA",
+    "icone": "👨‍✈️",
+    "resumo": "Documentação e conduta exigida para condutores de veículos operacionais.",
+    "palavras_chave": ["motorista", "cnh", "conduta", "habilitação", "treinamento"],
+    "texto": "Todo motorista deve possuir CNH válida na categoria correspondente, curso de direção defensiva e não possuir infrações graves nos últimos 12 meses. A postura deve ser profissional e cordial."
+  },
+  {
+    "id": 3,
+    "titulo": "REQUISITOS DO VEÍCULO",
+    "icone": "🚘",
+    "resumo": "Condições mínimas de conservação, segurança e documentação do veículo.",
+    "palavras_chave": ["veículo", "manutenção", "segurança", "vistoria", "documento"],
+    "texto": "Os veículos devem estar com a manutenção em dia, possuir ar-condicionado funcional, cintos de segurança em todos os assentos e documentação (CRLV) devidamente licenciada."
+  },
+  {
+    "id": 4,
+    "titulo": "EQUIPAMENTOS DE SEGURANÇA",
+    "icone": "🛡️",
+    "resumo": "Uso obrigatório de EPIs e itens de segurança veicular.",
+    "palavras_chave": ["epi", "segurança", "extintor", "triângulo", "colete"],
+    "texto": "É obrigatória a presença de extintor de incêndio carregado, triângulo de sinalização, pneu reserva em boas condições e colete refletivo para o motorista em caso de emergência."
+  },
+  {
+    "id": 5,
+    "titulo": "TRANSPORTE DE PASSAGEIROS",
+    "icone": "👥",
+    "resumo": "Regras para embarque, lotação e segurança dos passageiros.",
+    "palavras_chave": ["passageiro", "lotação", "embarque", "comportamento"],
+    "texto": "O número de passageiros não deve exceder a capacidade nominal do veículo. Todos devem utilizar o cinto de segurança durante todo o trajeto. É proibido o transporte de passageiros em pé."
+  },
+  {
+    "id": 6,
+    "titulo": "LIMITES DE VELOCIDADE",
+    "icone": "🚀",
+    "resumo": "Velocidades máximas permitidas em diferentes vias e condições.",
+    "palavras_chave": ["velocidade", "limite", "radar", "segurança"],
+    "texto": "Os motoristas devem respeitar os limites das vias, nunca excedendo 80km/h em rodovias e 40km/h em áreas urbanas internas ou conforme sinalização específica do cliente."
+  },
+  {
+    "id": 7,
+    "titulo": "JORNADA DE TRABALHO",
+    "icone": "🕒",
+    "resumo": "Controle de horas de condução e períodos de descanso obrigatórios.",
+    "palavras_chave": ["jornada", "descanso", "horas", "fadiga"],
+    "texto": "O motorista não deve conduzir por mais de 4 horas ininterruptas, devendo realizar uma pausa de no mínimo 30 minutos. A jornada diária não deve exceder os limites legais trabalhistas."
+  },
+  {
+    "id": 8,
+    "titulo": "PROCEDIMENTO EM ACIDENTES",
+    "icone": "🆘",
+    "resumo": "Ações imediatas em caso de colisão, atropelamento ou incidentes.",
+    "palavras_chave": ["acidente", "emergência", "colisão", "socorro"],
+    "texto": "Em caso de acidente, sinalize o local, verifique se há feridos e acione imediatamente os serviços de emergência e a central RIT. Não remova o veículo antes da perícia se houver vítimas."
+  },
+  {
+    "id": 9,
+    "titulo": "TRANSPORTE DE CARGAS",
+    "icone": "📦",
+    "resumo": "Regras para acondicionamento e amarração de materiais e bagagens.",
+    "palavras_chave": ["carga", "bagagem", "amarração", "peso"],
+    "texto": "Cargas e bagagens devem ser acomodadas preferencialmente no porta-malas. Se transportadas no habitáculo, devem estar devidamente presas para não se tornarem projéteis em caso de frenagem."
+  },
+  {
+    "id": 10,
+    "titulo": "ABASTECIMENTO E MANUTENÇÃO",
+    "icone": "⛽",
+    "resumo": "Procedimentos para postos autorizados e verificações diárias.",
+    "palavras_chave": ["abastecimento", "combustível", "manutenção", "check-list"],
+    "texto": "O abastecimento deve ser feito em postos conveniados. O motorista deve realizar o check-list diário de níveis de óleo, água, calibragem de pneus e funcionamento de luzes."
+  },
+  {
+    "id": 11,
+    "titulo": "USO DE CELULAR E DISPOSITIVOS",
+    "icone": "📱",
+    "resumo": "Proibição do uso de aparelhos eletrônicos durante a condução.",
+    "palavras_chave": ["celular", "telefone", "direção", "distração"],
+    "texto": "É terminantemente proibido o uso de celular pelo motorista com o veículo em movimento, mesmo com fones de ouvido ou viva-voz, para evitar distrações fatais."
+  },
+  {
+    "id": 12,
+    "titulo": "CONSUMO DE ÁLCOOL E DROGAS",
+    "icone": "🚫",
+    "resumo": "Tolerância zero para substâncias psicoativas na direção.",
+    "palavras_chave": ["álcool", "drogas", "substâncias", "embriaguez"],
+    "texto": "A RIT adota tolerância zero para o consumo de álcool ou qualquer substância que altere a percepção. O motorista está sujeito a testes aleatórios de bafômetro."
+  },
+  {
+    "id": 13,
+    "titulo": "DOCUMENTAÇÃO OPERACIONAL",
+    "icone": "📋",
+    "resumo": "Porte obrigatório de guias, manifestos e autorizações de viagem.",
+    "palavras_chave": ["documento", "guia", "autorização", "fiscalização"],
+    "texto": "Durante a operação, o motorista deve portar a Ordem de Serviço, documento do veículo, sua CNH e qualquer autorização especial de tráfego que a rota exija."
+  },
+  {
+    "id": 14,
+    "titulo": "ÁREAS DE RISCO E SEGURANÇA",
+    "icone": "⚠️",
+    "resumo": "Protocolos para circulação em zonas de perigo ou conflito.",
+    "palavras_chave": ["risco", "segurança", "conflito", "perigo", "alerta"],
+    "texto": "Ao circular em áreas mapeadas como de risco, mantenha vidros fechados, portas travadas e evite paradas desnecessárias. Siga estritamente as rotas aprovadas pela Central de Inteligência."
+  },
+  {
+    "id": 15,
+    "titulo": "IDENTIFICAÇÃO VISUAL",
+    "icone": "🏷️",
+    "resumo": "Padronização de logotipos e adesivagem nos veículos.",
+    "palavras_chave": ["logotipo", "adesivo", "identificação", "padrão"],
+    "texto": "Os veículos devem portar a identificação visual da RIT ou do projeto específico em local visível, conforme manual de marca, facilitando o acesso a unidades monitoradas."
+  },
+  {
+    "id": 16,
+    "titulo": "LIMPEZA E HIGIENE",
+    "icone": "🧼",
+    "resumo": "Manutenção da limpeza interna e externa do veículo.",
+    "palavras_chave": ["limpeza", "higiene", "conservação", "conforto"],
+    "texto": "O veículo deve ser entregue limpo ao início de cada turno. É proibido fumar no interior do veículo ou consumir alimentos que possam causar odores ou sujeira persistente."
+  },
+  {
+    "id": 17,
+    "titulo": "TREINAMENTO E CAPACITAÇÃO",
+    "icone": "🎓",
+    "resumo": "Programas de reciclagem e cursos obrigatórios anuais.",
+    "palavras_chave": ["treinamento", "curso", "capacitação", "reciclagem"],
+    "texto": "Todos os motoristas devem participar anualmente do programa de reciclagem em direção defensiva, primeiros socorros e atendimento ao cliente promovido pela RIT."
+  },
+  {
+    "id": 18,
+    "titulo": "SINALIZAÇÃO E COMUNICAÇÃO",
+    "icone": "📻",
+    "resumo": "Uso correto de rádio, setas e alertas sonoros.",
+    "palavras_chave": ["rádio", "comunicação", "sinalização", "seta"],
+    "texto": "A comunicação com a Central deve ser breve e profissional. O uso de sinalização (setas, alertas) é obrigatório para qualquer manobra, visando a previsibilidade no trânsito."
+  },
+  {
+    "id": 19,
+    "titulo": "MEIO AMBIENTE E EMISSÕES",
+    "icone": "🌿",
+    "resumo": "Controle de poluentes e descarte correto de resíduos.",
+    "palavras_chave": ["meio ambiente", "poluição", "emissões", "sustentabilidade"],
+    "texto": "Os veículos devem passar por teste de emissão de gases semestralmente. Óleos e filtros usados devem ser descartados exclusivamente em locais licenciados."
+  },
+  {
+    "id": 20,
+    "titulo": "DISPOSIÇÕES FINAIS E PENALIDADES",
+    "icone": "📄",
+    "resumo": "Consequências pelo descumprimento das normas estabelecidas.",
+    "palavras_chave": ["penalidade", "multa", "advertência", "suspensão"],
+    "texto": "O descumprimento de qualquer item desta norma sujeita o infrator a penalidades que variam de advertência por escrito até a rescisão contratual, conforme a gravidade."
+  }
+]
