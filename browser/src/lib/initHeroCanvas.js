@@ -1,74 +1,78 @@
-import * as THREE from "three";
+// browser/src/lib/initHeroCanvas.js
+export default function initHeroCanvas(containerId = 'hero-webgl') {
+  try {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const loadThree = () => {
+      if (window.THREE) return Promise.resolve(window.THREE);
+      return import('https://unpkg.com/three@0.158.0/build/three.module.js').then(m => (window.THREE = m));
+    };
 
-/**
- * Inicializa um canvas WebGL simples com partículas/nós e parallax.
- * Fallbacks devem ser tratados no CSS/HTML (imagem estática).
- */
-export default function initHeroCanvas(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+    let renderer, scene, camera, animationId;
+    const start = async () => {
+      const THREE = await loadThree();
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      container.appendChild(renderer.domElement);
 
-  // Limpa conteúdo anterior
-  container.innerHTML = "";
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 0, 60);
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(0, 0, 6);
+      const count = Math.min(1200, Math.floor((container.clientWidth * container.clientHeight) / 8000));
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      const speeds = new Float32Array(count);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  container.appendChild(renderer.domElement);
+      for (let i = 0; i < count; i++) {
+        positions[i*3+0] = (Math.random()-0.5)*120;
+        positions[i*3+1] = (Math.random()-0.5)*60;
+        positions[i*3+2] = (Math.random()-0.5)*200;
+        speeds[i] = 0.2 + Math.random()*1.2;
+      }
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
 
-  // Luz ambiente
-  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambient);
+      const material = new THREE.PointsMaterial({ size: 0.8, color: 0x00d1ff, transparent: true, opacity: 0.9, depthWrite: false });
+      const particles = new THREE.Points(geometry, material);
+      scene.add(particles);
 
-  // Partículas (nós)
-  const pointsGeo = new THREE.BufferGeometry();
-  const count = 300;
-  const positions = new Float32Array(count * 3);
-  for (let i = 0; i < count * 3; i++) positions[i] = (Math.random() - 0.5) * 12;
-  pointsGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  const pointsMat = new THREE.PointsMaterial({ color: 0x00d1ff, size: 0.04, transparent: true, opacity: 0.9 });
-  const points = new THREE.Points(pointsGeo, pointsMat);
-  scene.add(points);
+      const onResize = () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w/h; camera.updateProjectionMatrix();
+        renderer.setSize(w,h);
+      };
+      window.addEventListener('resize', onResize);
 
-  // Linhas sutis entre alguns pontos (simulação de conexões)
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xff8a00, transparent: true, opacity: 0.08 });
-  const lineGeo = new THREE.BufferGeometry();
-  const linePositions = new Float32Array(300 * 3);
-  for (let i = 0; i < linePositions.length; i++) linePositions[i] = (Math.random() - 0.5) * 12;
-  lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
-  const lines = new THREE.LineSegments(lineGeo, lineMat);
-  scene.add(lines);
+      let t = 0;
+      const animate = () => {
+        t += 0.01;
+        const pos = geometry.attributes.position.array;
+        for (let i = 0; i < count; i++) {
+          const idx = i*3;
+          pos[idx+2] += Math.sin(t * speeds[i]) * 0.12 * speeds[i];
+          pos[idx+0] += Math.cos(t * speeds[i] * 0.3) * 0.02;
+          if (pos[idx+2] > 120) pos[idx+2] = -120;
+        }
+        geometry.attributes.position.needsUpdate = true;
+        camera.position.x = Math.sin(t*0.2)*6;
+        camera.position.y = Math.sin(t*0.1)*2;
+        camera.lookAt(0,0,0);
+        renderer.render(scene, camera);
+        animationId = requestAnimationFrame(animate);
+      };
+      animate();
+    };
 
-  // Animação de pulso simples
-  let pulse = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    pulse += 0.02;
-    const glow = (Math.sin(pulse) + 1) / 2;
-    points.material.opacity = 0.6 + glow * 0.4;
-    points.rotation.y += 0.0008;
-    points.rotation.x += 0.0003;
-    renderer.render(scene, camera);
+    start();
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+      if (renderer && renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+      window.removeEventListener('resize', () => {});
+    };
+  } catch (e) {
+    console.warn('initHeroCanvas falhou', e);
   }
-  animate();
-
-  // Parallax mouse
-  let mouseX = 0, mouseY = 0;
-  window.addEventListener("mousemove", (e) => {
-    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-    mouseY = (e.clientY / window.innerHeight) * 2 - 1;
-    camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
-    camera.position.y += (-mouseY * 0.5 - camera.position.y) * 0.05;
-  });
-
-  // Resize handler
-  window.addEventListener("resize", () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
 }

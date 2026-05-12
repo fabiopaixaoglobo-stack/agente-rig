@@ -3,52 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agente RIG — Hero Test</title>
+  <title>Agente RIG — Hero</title>
   <link rel="stylesheet" href="/browser/src/styles/HomeHero.css" />
-  <style>
-    /* fallback styling caso o CSS importado não carregue */
-    body { margin:0; background:#050A0F; color:#fff; font-family:Inter, sans-serif; }
-    .hero-fallback { display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; padding:24px; }
-    .hero-fallback h1 { color:#00D1FF; font-size:clamp(20px,4vw,44px); margin:0 0 12px; }
-    .hero-fallback p { color:rgba(255,255,255,0.85); margin:0 0 18px; }
-    .hero-actions { display:flex; gap:12px; justify-content:center; margin-top:18px; }
-    .btn { padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; border:none; }
-    .btn.primary { background:linear-gradient(90deg,#00D1FF,#FF8A00); color:#04111a; }
-    .btn.ghost { background:rgba(255,255,255,0.06); color:#fff; }
-  </style>
 </head>
 <body>
-  <div id="hero-root">
+  <div id="hero-root" class="hero-root">
     <div id="hero-webgl" style="position:absolute;inset:0;z-index:0;"></div>
-    <div class="hero-overlay" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,10,15,0.35),rgba(5,10,15,0.6));z-index:1;"></div>
-
-    <main class="hero-fallback" role="main" style="position:relative;z-index:2;">
-      <div>
-        <img src="/public/assets/rit-shield.png" alt="RIT" style="width:120px;margin:0 auto 12px;display:block;" />
-        <h1>AGENTE RIG: A INTELIGÊNCIA POR TRÁS DA ROTA</h1>
-        <p>Otimização preditiva, segurança avançada e visibilidade total da sua frota em tempo real.</p>
-        <div class="hero-actions">
-          <button class="btn primary" onclick="location.href='/index.html'">VOLTAR</button>
-          <button class="btn ghost" onclick="window.open('/public/assets/hero-fallback.jpg','_blank')">VER IMAGEM</button>
-        </div>
+    <div class="hero-content">
+      <div class="hero-badge">AGENTE RIG</div>
+      <h1 class="hero-title">A INTELIGÊNCIA POR TRÁS DA ROTA</h1>
+      <p class="hero-sub">Otimização preditiva, segurança avançada e visibilidade total da sua frota em tempo real.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="location.href='/'">VOLTAR</button>
+        <button class="btn btn-ghost" onclick="window.open('/public/assets/hero-fallback.jpg','_blank')">VER IMAGEM</button>
       </div>
-    </main>
-
+    </div>
   </div>
 
-  <script>
-    // tentativa de inicializar o canvas three.js se o bundle estiver disponível
-    try {
-      if (window.initHeroCanvas) {
-        window.initHeroCanvas('hero-webgl');
-      } else if (typeof fetch === 'function') {
-        // se o arquivo initHeroCanvas estiver exposto via bundle, tente carregá-lo dinamicamente
-        const s = document.createElement('script');
-        s.src = '/browser/src/lib/initHeroCanvas.js';
-        s.onload = () => { if (window.initHeroCanvas) window.initHeroCanvas('hero-webgl'); };
-        document.head.appendChild(s);
-      }
-    } catch (e) { console.warn('Hero canvas init falhou:', e); }
+  <script type="module">
+    import initHeroCanvas from '/browser/src/lib/initHeroCanvas.js';
+    window.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('hero-webgl')) initHeroCanvas('hero-webgl');
+    });
   </script>
 </body>
 </html>
