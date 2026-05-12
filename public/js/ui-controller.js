@@ -5,12 +5,14 @@ const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
 export class UiController {
-    constructor(mapService, plannerService, chatService, dataService) {
+    constructor(mapService, plannerService, transitoService, chatService, dataService) {
         this.mapService = mapService;
         this.plannerService = plannerService;
+        this.transitoService = transitoService;
         this.chatService = chatService;
         this.dataService = dataService;
         this.eventoAtualUrl = '';
+        this._transitoRoute = null;
 
         this.initTabs();
         this.initFilters();
@@ -34,9 +36,10 @@ export class UiController {
                 if (target) target.classList.add('active');
                 
                 if (targetId === 'tab-rede') this.carregarMapaRede();
-                
+
                 this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
+                if (this.transitoService) this.transitoService.invalidateSize();
             });
         });
     }
@@ -184,6 +187,7 @@ export class UiController {
 
         document.getElementById('btn-mapa-live')?.addEventListener('click', () => this.atualizarMapaLive());
         document.getElementById('btn-abrir-rota-waze')?.addEventListener('click', () => this.abrirRotaExterna());
+        document.getElementById('btn-abrir-waze-app')?.addEventListener('click', () => this.abrirWazeComRota());
         document.getElementById('btn-centralizar-rede')?.addEventListener('click', () => this.carregarMapaRede());
     }
 
@@ -343,11 +347,37 @@ export class UiController {
         showToast('Importação de pontos em lote ainda não está ligada a uma API.', 'info');
     }
 
-    atualizarMapaLive() {
-        const o = document.getElementById('waze-origem').value;
-        const d = document.getElementById('waze-destino').value;
-        showToast("Atualizando mapa de trânsito...", "info");
-        // Lógica para atualizar iframe do Waze se necessário
+    async atualizarMapaLive() {
+        const o = document.getElementById('waze-origem').value.trim();
+        const d = document.getElementById('waze-destino').value.trim();
+        if (!o || !d) { showToast('Informe origem e destino.', 'error'); return; }
+        showToast('Calculando rota de trânsito...', 'info');
+        try {
+            const headers = { Accept: 'application/json' };
+            const [resO, resD] = await Promise.all([
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(o + ', Rio de Janeiro, Brasil')}&limit=1`, { headers }),
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(d + ', Rio de Janeiro, Brasil')}&limit=1`, { headers })
+            ]);
+            const [dO, dD] = await Promise.all([resO.json(), resD.json()]);
+            if (!dO.length || !dD.length) throw new Error('Endereço não encontrado.');
+            const lat1 = parseFloat(dO[0].lat), lon1 = parseFloat(dO[0].lon);
+            const lat2 = parseFloat(dD[0].lat), lon2 = parseFloat(dD[0].lon);
+            const osrm = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`);
+            const rd = await osrm.json();
+            if (!rd.routes?.length) throw new Error('Rota indisponível.');
+            const coords = rd.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const distKm = (rd.routes[0].distance / 1000).toFixed(1);
+            const durMin = Math.round(rd.routes[0].duration / 60);
+            this._transitoRoute = { lat1, lon1, lat2, lon2 };
+            this.transitoService.routeOverlay.clearLayers();
+            L.marker([lat1, lon1]).addTo(this.transitoService.routeOverlay).bindPopup(`Origem: ${escapeHtml(o)}`);
+            L.marker([lat2, lon2]).addTo(this.transitoService.routeOverlay).bindPopup(`Destino: ${escapeHtml(d)}`);
+            L.polyline(coords, { color: '#00b7fa', weight: 6 }).addTo(this.transitoService.routeOverlay);
+            this.transitoService.map.fitBounds([[Math.min(lat1,lat2), Math.min(lon1,lon2)],[Math.max(lat1,lat2), Math.max(lon1,lon2)]], { padding: [30,30] });
+            showToast(`Rota: ${distKm} km · ${durMin} min`, 'success');
+        } catch (err) {
+            showToast(err.message || 'Erro ao calcular rota.', 'error');
+        }
     }
 
     abrirRotaExterna() {
@@ -356,7 +386,20 @@ export class UiController {
         if (o && d) {
             window.open(`https://www.waze.com/ul?q=${encodeURIComponent(d)}&from=${encodeURIComponent(o)}&navigate=yes`, '_blank');
         } else {
-            showToast("Informe origem e destino.", "error");
+            showToast('Informe origem e destino.', 'error');
+        }
+    }
+
+    abrirWazeComRota() {
+        const d = document.getElementById('waze-destino').value.trim();
+        const o = document.getElementById('waze-origem').value.trim();
+        if (this._transitoRoute) {
+            const { lat2, lon2 } = this._transitoRoute;
+            window.open(`https://waze.com/ul?ll=${lat2},${lon2}&navigate=yes`, '_blank');
+        } else if (d) {
+            window.open(`https://www.waze.com/ul?q=${encodeURIComponent(d)}&navigate=yes`, '_blank');
+        } else {
+            showToast('Trace a rota primeiro ou informe o destino.', 'error');
         }
     }
 

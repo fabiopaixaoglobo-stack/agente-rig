@@ -334,9 +334,114 @@ body {
 }
 
 .whatsapp-footer p {
-    font-size: 9px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0;
+	font-size: 9px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════════
+   TIPOGRAFIA RESPONSIVA — clamp()
+   ═══════════════════════════════════════════════════════ */
+.panelTitle {
+  font-size: clamp(8px, 1.4vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.label {
+  font-size: clamp(9px, 1.1vw, 11px);
+  font-weight: 600;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.input, .select {
+  font-size: clamp(10px, 1.1vw, 12px);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  width: 100%;
+  height: 26px;
+}
+
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 4px;
+  font-size: clamp(10px, 1.1vw, 12px);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.card:hover { background: rgba(245,166,35,0.08); }
+.card .meta-motorista, .card .meta-veiculo, .card .meta-bairro {
+  font-size: clamp(9px, 1vw, 11px);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Rede Credenciada & Consultor — fontes menores */
+.normasMain .chatBox { font-size: clamp(11px, 1.1vw, 13px); line-height: 1.4; }
+.normaList .card     { font-size: clamp(10px, 1vw, 12px); }
+.msg                 { font-size: clamp(11px, 1.2vw, 13px); line-height: 1.5; }
+.summaryBox          { font-size: clamp(9px, 1vw, 11px); line-height: 1.4; padding: 6px; color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════
+   TRÂNSITO REAL — layout com mapa Leaflet
+   ═══════════════════════════════════════════════════════ */
+#tab-transito.active {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+}
+
+.transito-map {
+  flex: 1;
+  min-height: 300px;
+}
+
+/* Garante que .map genérico (main, planner, transito) preenche o espaço */
+.map {
+  flex: 1;
+  min-height: 300px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOTÃO WAZE
+   ═══════════════════════════════════════════════════════ */
+.btn-waze {
+  background: #00b7fa;
+  color: #000 !important;
+  border: none;
+  font-weight: 900;
+}
+.btn-waze:hover {
+  background: #0099d6;
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PLANEJADOR — links externos
+   ═══════════════════════════════════════════════════════ */
+.plannerExternalLinks {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.plannerExternalLinks .btn-waze {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEGURANÇA: oculta qualquer iframe apontando p/ WhatsApp
+   ═══════════════════════════════════════════════════════ */
+iframe[src*="web.whatsapp.com"] { display: none !important; }

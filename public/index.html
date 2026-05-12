@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>RIT — Command Center</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
@@ -68,7 +68,7 @@
           <div style="margin-bottom: 8px;"><label class="label">Destino</label><input id="destino" class="input" placeholder="Ex: Barra, RJ" /></div>
           <button id="btn-rota" class="btn btnPrimary" style="width: 100%;">TRAÇAR ROTA INTELIGENTE</button>
           <div id="plannerFeedback" class="summaryBox" style="margin-top: 10px; font-size: 10px;">Aguardando dados...</div>
-          <div id="externalLinks" style="display: none; margin-top: 10px; gap: 4px;" class="plannerExternalLinks"><a id="link-google" target="_blank" rel="noopener noreferrer" class="btn btnSmall" style="flex:1;">Google Maps</a><a id="link-waze" target="_blank" rel="noopener noreferrer" class="btn btnSmall" style="flex:1;">Waze</a></div>
+          <div id="externalLinks" style="display: none; margin-top: 10px; gap: 4px;" class="plannerExternalLinks"><a id="link-google" target="_blank" rel="noopener noreferrer" class="btn btnSmall" style="flex:1;">Google Maps</a><a id="link-waze" target="_blank" rel="noopener noreferrer" class="btn btnSmall btn-waze" style="flex:1;">🚗 Waze</a></div>
         </div>
       </aside>
       <div id="mapPlanner" class="map"></div>
@@ -79,9 +79,13 @@
       <div class="filterBar" style="height: 60px; gap: 15px;">
         <div style="flex: 1;"><label class="label">Origem</label><input id="waze-origem" class="input" placeholder="Partida..." /></div>
         <div style="flex: 1;"><label class="label">Destino</label><input id="waze-destino" class="input" placeholder="Chegada..." /></div>
-        <div style="display: flex; gap: 5px; padding-top: 10px;"><button type="button" id="btn-mapa-live" class="btn btnPrimary">MAPA LIVE</button><button type="button" id="btn-abrir-rota-waze" class="btn">ABRIR ROTA</button></div>
+        <div style="display: flex; gap: 5px; padding-top: 10px;">
+          <button type="button" id="btn-mapa-live" class="btn btnPrimary">MAPA LIVE</button>
+          <button type="button" id="btn-abrir-rota-waze" class="btn">ABRIR ROTA</button>
+          <button type="button" id="btn-abrir-waze-app" class="btn btn-waze">🚗 ABRIR NO WAZE</button>
+        </div>
       </div>
-      <div style="flex: 1; background: #000;"><iframe id="iframe-waze" src="https://embed.waze.com/iframe?latlng=-22.9068%2C-43.1729&zoom=12" width="100%" height="100%" style="border: none;"></iframe></div>
+      <div id="mapTransito" class="map transito-map"></div>
     </section>
 
     <!-- REDE CREDENCIADA -->
