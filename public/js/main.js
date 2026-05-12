@@ -2,6 +2,7 @@ import { MapService } from './map-service.js';
 import { ChatService } from './chat-service.js';
 import { DataService } from './data-service.js';
 import { UiController } from './ui-controller.js';
+import { MonitoramentoGrupos } from './MonitoramentoGrupos.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🚀 Agente RIG v3.5.1 - Inicializando módulos...");
@@ -12,8 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = new DataService();
 
         const ui = new UiController(mainMap, plannerMap, chat, data);
+        const whatsapp = new MonitoramentoGrupos("btn-open-whatsapp");
 
-        window.AGENTE_RIG = { ui, mainMap, plannerMap, chat, data };
+        window.AGENTE_RIG = { ui, mainMap, plannerMap, chat, data, whatsapp };
 
         window.setContext = (ctx) => chat.setContext(ctx);
         window.limparChat = () => chat.clear();
