@@ -1,0 +1,1 @@
+(placeholder) substitua por public/assets/hero-fallback.jpg
