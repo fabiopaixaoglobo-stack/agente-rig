@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Agente RIG — Hero</title>
-  <link rel="stylesheet" href="/browser/src/styles/HomeHero.css" />
+  <link rel="stylesheet" href="/styles/HomeHero.css" />
 </head>
 <body>
   <div id="hero-root" class="hero-root">
@@ -15,13 +15,13 @@
       <p class="hero-sub">Otimização preditiva, segurança avançada e visibilidade total da sua frota em tempo real.</p>
       <div class="hero-actions">
         <button class="btn btn-primary" onclick="location.href='/'">VOLTAR</button>
-        <button class="btn btn-ghost" onclick="window.open('/public/assets/hero-fallback.jpg','_blank')">VER IMAGEM</button>
+        <button class="btn btn-ghost" onclick="window.open('/assets/hero-fallback.jpg','_blank')">VER IMAGEM</button>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import initHeroCanvas from '/browser/src/lib/initHeroCanvas.js';
+    import initHeroCanvas from '/lib/initHeroCanvas.js';
     window.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('hero-webgl')) initHeroCanvas('hero-webgl');
     });

@@ -3,14 +3,30 @@ export default function initHeroCanvas(containerId = 'hero-webgl') {
   try {
     const container = document.getElementById(containerId);
     if (!container) return;
-    const loadThree = () => {
-      if (window.THREE) return Promise.resolve(window.THREE);
-      return import('https://unpkg.com/three@0.158.0/build/three.module.js').then(m => (window.THREE = m));
+    const loadThree = async () => {
+      if (window.THREE) return window.THREE;
+      try {
+        const m = await import('https://unpkg.com/three@0.158.0/build/three.module.js');
+        window.THREE = m;
+        return m;
+      } catch (err) {
+        console.warn('Failed to load three.js from CDN, attempting to use fallback image/style.', err);
+        throw err;
+      }
     };
 
     let renderer, scene, camera, animationId;
     const start = async () => {
-      const THREE = await loadThree();
+      let THREE;
+      try {
+        THREE = await loadThree();
+      } catch (e) {
+        // Fallback: apply a subtle fallback background to the container if WebGL fails
+        container.style.background = 'url("/assets/hero-fallback.jpg") center/cover no-repeat';
+        container.style.opacity = '0.4';
+        return;
+      }
+
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -20,7 +36,11 @@ export default function initHeroCanvas(containerId = 'hero-webgl') {
       camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
       camera.position.set(0, 0, 60);
 
-      const count = Math.min(1200, Math.floor((container.clientWidth * container.clientHeight) / 8000));
+      // Reduce count on mobile devices
+      const isMobile = window.innerWidth < 768;
+      const maxParticles = isMobile ? 400 : 1200;
+      const count = Math.min(maxParticles, Math.floor((container.clientWidth * container.clientHeight) / (isMobile ? 12000 : 8000)));
+      
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array(count * 3);
       const speeds = new Float32Array(count);

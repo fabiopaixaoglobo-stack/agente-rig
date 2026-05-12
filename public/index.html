@@ -156,8 +156,7 @@
             <button id="btn-enviar" class="btn btnPrimary" style="height: 32px;">ENVIAR</button>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <!-- MONITORAMENTO DE GRUPOS (WHATSAPP) -->
     <section id="tab-whatsapp" class="tabPane">
@@ -173,7 +172,7 @@
               <span class="info-icon">ℹ️</span>
               <p>O WhatsApp Web abrirá em uma nova janela segura, permitindo que você acompanhe as conversas enquanto mantém o Agente RIG aberto para consulta.</p>
             </div>
-            <button id="btn-open-whatsapp" class="btn-whatsapp-primary">
+            <button id="btn-open-whatsapp" class="btn-whatsapp-primary" onclick="window.open('https://web.whatsapp.com', '_blank')">
               <span class="btn-icon">🚀</span> ABRIR WHATSAPP WEB
             </button>
           </div>
@@ -188,7 +187,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <div id="modalGuia" class="modal-overlay"><div class="modal-content"><img src="assets/norma_visual.jpg" alt="Guia visual das normas" style="max-width: 100%;"></div></div>
-  <!-- <script src="app.js?v=11"></script> -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
