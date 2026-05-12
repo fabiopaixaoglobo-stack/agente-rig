@@ -158,7 +158,9 @@ export class UiController {
         document.querySelectorAll('.docButtons .btn').forEach(btn => {
             const onClickAttr = btn.getAttribute('onclick');
             if (onClickAttr && onClickAttr.includes('setContext')) {
-                const ctx = onClickAttr.match(/'([^']+)'/)[1];
+                const m = onClickAttr.match(/'([^']+)'/);
+                if (!m) return;
+                const ctx = m[1];
                 btn.removeAttribute('onclick');
                 btn.addEventListener('click', () => this.chatService.setContext(ctx));
             } else if (onClickAttr && onClickAttr.includes('limparChat')) {

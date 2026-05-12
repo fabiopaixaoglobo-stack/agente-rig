@@ -2,9 +2,13 @@ import { CONFIG } from './config.js';
 
 export class MapService {
     constructor(elementId) {
-        this.map = L.map(elementId, { 
-            center: CONFIG.DEFAULT_CENTER, 
-            zoom: CONFIG.DEFAULT_ZOOM 
+        const el = document.getElementById(elementId);
+        if (!el) {
+            throw new Error(`MapService: elemento #${elementId} não encontrado no DOM.`);
+        }
+        this.map = L.map(el, {
+            center: CONFIG.DEFAULT_CENTER,
+            zoom: CONFIG.DEFAULT_ZOOM,
         });
         L.tileLayer(CONFIG.MAP_TILE_LAYER, { 
             attribution: CONFIG.MAP_ATTRIBUTION 

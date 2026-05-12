@@ -33,6 +33,7 @@
     <button class="tabBtn" data-tab="tab-rede">Rede Credenciada</button>
     <button class="tabBtn" data-tab="tab-eventos">Eventos</button>
     <button class="tabBtn" data-tab="tab-normas">Consultor Normativo</button>
+    <button class="tabBtn" data-tab="tab-whatsapp">Monitoramento de Grupos</button>
   </nav>
 
   <main class="main">
@@ -152,6 +153,21 @@
             <button id="btn-enviar" class="btn btnPrimary" style="height: 32px;">ENVIAR</button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- MONITORAMENTO DE GRUPOS (WHATSAPP) -->
+    <section id="tab-whatsapp" class="tabPane">
+      <div class="whatsapp-container">
+        <div class="whatsapp-fallback">
+          <div class="whatsapp-fallback-content">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Logo" style="width: 60px; margin-bottom: 20px;">
+            <h3>Monitoramento de Grupos via WhatsApp Web</h3>
+            <p>Se o painel abaixo não carregar automaticamente, clique no botão para abrir em uma janela segura.</p>
+            <a href="https://web.whatsapp.com/" target="_blank" class="btn btnPrimary" style="margin-top: 15px; height: 36px; padding: 0 25px; font-size: 11px;">ABRIR WHATSAPP WEB</a>
+          </div>
+        </div>
+        <iframe id="iframe-whatsapp" src="https://web.whatsapp.com/" width="100%" height="100%" style="border: none; position: relative; z-index: 2;" title="WhatsApp Web"></iframe>
       </div>
     </section>
   </main>
