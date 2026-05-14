@@ -1,8 +1,35 @@
 :root { --bg:#050A0F; --accent:#00D1FF; --muted:rgba(255,255,255,0.8); }
-.hero-root { position:relative; min-height:80vh; display:flex; align-items:center; justify-content:center; overflow:hidden; background:linear-gradient(180deg,#03060a,#071018); color:#fff; font-family:Inter,system-ui,Arial; }
+.hero-root { position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; background-color: #03060a; color:#fff; font-family:Inter,system-ui,Arial; }
+.hero-video-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.8; }
+.hero-root::before { content: ""; position: absolute; inset: 0; background: rgba(5, 10, 15, 0.6); z-index: 1; pointer-events: none; }
+.hero-webgl { z-index: 2; position: relative; }
 .hero-content { position:relative; z-index:3; max-width:1100px; padding:48px; text-align:left; }
-.hero-badge { display:inline-block; margin-bottom:12px; font-weight:800; color:rgba(255,255,255,0.85); }
-.hero-title { font-size:clamp(28px,4.5vw,56px); color:var(--accent); margin:0 0 12px; font-weight:800; letter-spacing:-0.02em; }
+.hero-badge { display:inline-block; margin-bottom:12px; font-weight:800; color:rgba(255,255,255,0.85); letter-spacing: 2px; }
+.hero-title { font-size:clamp(28px,4.5vw,56px); color:var(--accent); margin:0 0 12px; font-weight:900; letter-spacing:-0.02em; text-transform: uppercase; }
+
+/* Animações Cinematográficas HTML para substituir Motion Graphics no Vídeo */
+@keyframes cinematicGlow {
+  0% { opacity: 0; transform: scale(0.95); text-shadow: 0 0 0 rgba(0, 209, 255, 0); }
+  20% { opacity: 1; transform: scale(1); text-shadow: 0 0 20px rgba(0, 209, 255, 0.8), 0 0 40px rgba(0, 209, 255, 0.4); }
+  80% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 25px rgba(255, 138, 0, 0.8), 0 0 50px rgba(255, 138, 0, 0.4); }
+  100% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 20px rgba(0, 209, 255, 0.6); }
+}
+
+@keyframes cinematicFade {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.cinematic-glow {
+  animation: cinematicGlow 8s infinite alternate ease-in-out;
+  background: linear-gradient(90deg, #00D1FF, #FF8A00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cinematic-fade {
+  animation: cinematicFade 2s ease-out forwards;
+}
 .hero-sub { color:var(--muted); margin:0 0 18px; font-size:clamp(14px,1.6vw,18px); }
 .hero-actions { display:flex; gap:12px; margin-top:18px; }
 .btn { padding:12px 18px; border-radius:10px; font-weight:700; cursor:pointer; border:none; }

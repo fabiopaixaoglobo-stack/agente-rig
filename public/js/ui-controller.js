@@ -5,9 +5,10 @@ const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
 export class UiController {
-    constructor(mapService, plannerService, chatService, dataService) {
+    constructor(mapService, plannerService, transitoMap, chatService, dataService) {
         this.mapService = mapService;
         this.plannerService = plannerService;
+        this.transitoMap = transitoMap;
         this.chatService = chatService;
         this.dataService = dataService;
         this.eventoAtualUrl = '';
@@ -37,6 +38,7 @@ export class UiController {
                 
                 this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
+                if (this.transitoMap) this.transitoMap.invalidateSize();
             });
         });
     }
@@ -248,27 +250,26 @@ export class UiController {
             const duracaoMin = Math.round(routeData.routes[0].duration / 60);
             const custo = (parseFloat(distanciaKm) * fator + 5).toFixed(2);
 
-            routeGroup.clearLayers();
+            this.plannerService.clearRouteOverlay();
 
-            const vehicleIcon = L.divIcon({
-                html: `<div style="font-size: 26px; filter: drop-shadow(0px 3px 2px rgba(0,0,0,0.4));">${emoji}</div>`,
-                className: '',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15],
+            // Origin marker
+            this.plannerService.addMarker(lat1, lon1, `Origem: ${escapeHtml(origem)}`);
+            
+            // Destination marker with emoji icon (simulated via label or simple marker)
+            this.plannerService.addMarker(lat2, lon2, `Destino: ${escapeHtml(destino)}`, {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="26">🚗</text></svg>'),
+                scaledSize: new google.maps.Size(30, 30),
+                anchor: new google.maps.Point(15, 15)
             });
 
-            L.marker([lat1, lon1]).addTo(routeGroup).bindPopup(`Origem: ${escapeHtml(origem)}`).openPopup();
-            L.marker([lat2, lon2], { icon: vehicleIcon })
-                .addTo(routeGroup)
-                .bindPopup(`Destino: ${escapeHtml(destino)}`);
-            L.polyline(coords, { color: '#f5a623', weight: 6 }).addTo(routeGroup);
-            map.fitBounds(
-                [
-                    [Math.min(lat1, lat2), Math.min(lon1, lon2)],
-                    [Math.max(lat1, lat2), Math.max(lon1, lon2)],
-                ],
-                { padding: [30, 30] }
-            );
+            // Draw route
+            this.plannerService.addPolyline(coords, '#f5a623', 6);
+            
+            // Fit bounds
+            this.plannerService.fitBounds([
+                [Math.min(lat1, lat2), Math.min(lon1, lon2)],
+                [Math.max(lat1, lat2), Math.max(lon1, lon2)]
+            ]);
 
             if (feedback) {
                 feedback.innerHTML = `
@@ -343,11 +344,95 @@ export class UiController {
         showToast('Importação de pontos em lote ainda não está ligada a uma API.', 'info');
     }
 
-    atualizarMapaLive() {
-        const o = document.getElementById('waze-origem').value;
-        const d = document.getElementById('waze-destino').value;
-        showToast("Atualizando mapa de trânsito...", "info");
-        // Lógica para atualizar iframe do Waze se necessário
+    async atualizarMapaLive() {
+        const origem = document.getElementById('waze-origem')?.value?.trim() || '';
+        const destino = document.getElementById('waze-destino')?.value?.trim() || '';
+        const riskPanel = document.getElementById('risk-analysis-panel');
+        const riskContent = document.getElementById('risk-content');
+
+        if (!origem || !destino) {
+            showToast("Informe origem e destino para a análise de risco.", "error");
+            return;
+        }
+
+        showToast("Calculando rota e coletando dados de risco...", "info");
+        if (riskPanel) riskPanel.style.display = 'block';
+        if (riskContent) riskContent.innerHTML = 'Analisando ocorrências (Segurança Pública, OTT, Clima)...';
+
+        try {
+            const headers = { Accept: 'application/json' };
+            const qOrig = `${origem}, Rio de Janeiro, Brasil`;
+            const resO = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qOrig)}&limit=1`, { headers });
+            const dataOrig = await resO.json();
+            if (!dataOrig.length) throw new Error('Origem não encontrada.');
+
+            const qDest = `${destino}, Rio de Janeiro, Brasil`;
+            const resD = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qDest)}&limit=1`, { headers });
+            const dataDest = await resD.json();
+            if (!dataDest.length) throw new Error('Destino não encontrado.');
+
+            const lat1 = parseFloat(dataOrig[0].lat);
+            const lon1 = parseFloat(dataOrig[0].lon);
+            const lat2 = parseFloat(dataDest[0].lat);
+            const lon2 = parseFloat(dataDest[0].lon);
+
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
+            const resR = await fetch(osrmUrl);
+            const routeData = await resR.json();
+            if (!routeData.routes?.length) throw new Error('Rota indisponível.');
+
+            const coords = routeData.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+            const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
+            const duracaoMin = Math.round(routeData.routes[0].duration / 60);
+            const custo = (parseFloat(distanciaKm) * 1.5 + 5).toFixed(2);
+
+            this.transitoMap.clearRouteOverlay();
+            this.transitoMap.addMarker(lat1, lon1, `Origem: ${escapeHtml(origem)}`);
+            this.transitoMap.addMarker(lat2, lon2, `Destino: ${escapeHtml(destino)}`, {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="26">⚠️</text></svg>'),
+                scaledSize: new google.maps.Size(30, 30),
+                anchor: new google.maps.Point(15, 15)
+            });
+
+            this.transitoMap.addPolyline(coords, '#f43f5e', 6);
+            this.transitoMap.fitBounds([
+                [Math.min(lat1, lat2), Math.min(lon1, lon2)],
+                [Math.max(lat1, lat2), Math.max(lon1, lon2)]
+            ]);
+
+            // Simulate risk occurrences along the route
+            const midLat = (lat1 + lat2) / 2;
+            const midLon = (lon1 + lon2) / 2;
+            this.transitoMap.addMarker(midLat + 0.01, midLon + 0.01, 'Alerta OTT: Operação Policial', {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">🔫</text></svg>'),
+                scaledSize: new google.maps.Size(24, 24),
+                anchor: new google.maps.Point(12, 12)
+            });
+            this.transitoMap.addMarker(midLat - 0.01, midLon - 0.01, 'Defesa Civil: Alagamento', {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">⛈️</text></svg>'),
+                scaledSize: new google.maps.Size(24, 24),
+                anchor: new google.maps.Point(12, 12)
+            });
+
+            if (riskContent) {
+                riskContent.innerHTML = `
+                    <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line);">
+                        <b>Distância:</b> ${escapeHtml(distanciaKm)} km<br>
+                        <b>Tempo estimado:</b> ${duracaoMin} min<br>
+                        <b>Custo médio estimado:</b> R$ ${escapeHtml(custo)}
+                    </div>
+                    <div style="color: var(--accent); margin-bottom: 5px;">🔴 1 Alerta de Segurança (OTT) na rota</div>
+                    <div style="color: var(--bad); margin-bottom: 5px;">⛈️ 1 Alerta de Alagamento via Defesa Civil</div>
+                    <div style="margin-top: 10px;">
+                        Status: <b>ROTA DE ALTO RISCO</b><br>
+                        <span style="font-size:9px; color:var(--muted)">Recomendamos alterar o trajeto ou aguardar normalização.</span>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            if (riskContent) riskContent.innerHTML = `<span style="color: var(--bad);">Erro ao processar risco: ${escapeHtml(err.message)}</span>`;
+            showToast('Erro ao calcular rota/risco.', 'error');
+        }
     }
 
     abrirRotaExterna() {

@@ -39,24 +39,45 @@ export default function initHeroCanvas(containerId = 'hero-webgl') {
       // Reduce count on mobile devices
       const isMobile = window.innerWidth < 768;
       const maxParticles = isMobile ? 400 : 1200;
-      const count = Math.min(maxParticles, Math.floor((container.clientWidth * container.clientHeight) / (isMobile ? 12000 : 8000)));
+      // Globe geometry
+      const radius = 30;
+      const segments = isMobile ? 32 : 64;
+      const geometry = new THREE.SphereGeometry(radius, segments, segments);
       
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(count * 3);
-      const speeds = new Float32Array(count);
+      const material = new THREE.PointsMaterial({ 
+        size: 0.3, 
+        color: 0x00d1ff, 
+        transparent: true, 
+        opacity: 0.8, 
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const globe = new THREE.Points(geometry, material);
+      scene.add(globe);
 
-      for (let i = 0; i < count; i++) {
-        positions[i*3+0] = (Math.random()-0.5)*120;
-        positions[i*3+1] = (Math.random()-0.5)*60;
-        positions[i*3+2] = (Math.random()-0.5)*200;
-        speeds[i] = 0.2 + Math.random()*1.2;
+      // Add some floating connection lines/particles around the globe
+      const haloGeometry = new THREE.BufferGeometry();
+      const haloParticles = isMobile ? 200 : 500;
+      const positions = new Float32Array(haloParticles * 3);
+      for (let i = 0; i < haloParticles; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+        const r = radius + 2 + Math.random() * 10;
+        positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i*3+2] = r * Math.cos(phi);
       }
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
-
-      const material = new THREE.PointsMaterial({ size: 0.8, color: 0x00d1ff, transparent: true, opacity: 0.9, depthWrite: false });
-      const particles = new THREE.Points(geometry, material);
-      scene.add(particles);
+      haloGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const haloMaterial = new THREE.PointsMaterial({
+        size: 0.5,
+        color: 0xf5a623,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+      });
+      const halo = new THREE.Points(haloGeometry, haloMaterial);
+      scene.add(halo);
 
       const onResize = () => {
         const w = container.clientWidth, h = container.clientHeight;
@@ -67,18 +88,20 @@ export default function initHeroCanvas(containerId = 'hero-webgl') {
 
       let t = 0;
       const animate = () => {
-        t += 0.01;
-        const pos = geometry.attributes.position.array;
-        for (let i = 0; i < count; i++) {
-          const idx = i*3;
-          pos[idx+2] += Math.sin(t * speeds[i]) * 0.12 * speeds[i];
-          pos[idx+0] += Math.cos(t * speeds[i] * 0.3) * 0.02;
-          if (pos[idx+2] > 120) pos[idx+2] = -120;
-        }
-        geometry.attributes.position.needsUpdate = true;
-        camera.position.x = Math.sin(t*0.2)*6;
-        camera.position.y = Math.sin(t*0.1)*2;
+        t += 0.005;
+        // Spin the globe
+        globe.rotation.y += 0.002;
+        globe.rotation.x = Math.sin(t) * 0.1;
+        
+        // Spin the halo
+        halo.rotation.y -= 0.001;
+        halo.rotation.z = Math.cos(t) * 0.1;
+        
+        // Gentle camera movement
+        camera.position.x = Math.sin(t*0.5)*5;
+        camera.position.y = Math.sin(t*0.3)*2;
         camera.lookAt(0,0,0);
+        
         renderer.render(scene, camera);
         animationId = requestAnimationFrame(animate);
       };

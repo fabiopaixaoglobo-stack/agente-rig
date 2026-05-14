@@ -10,3 +10,4 @@ build/
 
 # PDFs em Normas/ (limite GitHub 100 MB) — manter só no disco local
 Normas/*.pdf
+*.pptx

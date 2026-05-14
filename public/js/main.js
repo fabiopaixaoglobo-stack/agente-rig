@@ -9,10 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
         const mainMap = new MapService("map");
         const plannerMap = new MapService("mapPlanner");
+        const transitoMap = new MapService("mapTransito");
         const chat = new ChatService("chat", "pergunta", "btn-enviar");
         const data = new DataService();
 
-        const ui = new UiController(mainMap, plannerMap, chat, data);
+        const ui = new UiController(mainMap, plannerMap, transitoMap, chat, data);
         const whatsapp = new MonitoramentoGrupos("btn-open-whatsapp");
 
         window.AGENTE_RIG = { ui, mainMap, plannerMap, chat, data, whatsapp };
