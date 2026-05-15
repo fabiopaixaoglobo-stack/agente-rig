@@ -1,1 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agente RIG — Hero</title>
+  <link rel="stylesheet" href="/styles/HomeHero.css" />
+</head>
+<body>
+  <div id="hero-root" class="hero-root">
+    <video id="hero-video" class="hero-video-bg" autoplay loop muted playsinline>
+      <source src="/assets/V%C3%ADdeo%20Loop%20Agente%20RIT%20-%20Futurista%20-%20Vers%C3%A3o%20Final.mp4" type="video/mp4">
+    </video>
+    
+    <!-- Botão de som -->
+    <button id="btn-mute" class="btn btn-ghost" style="position:absolute; top:20px; right:20px; z-index:10; padding: 8px 12px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+      <span id="mute-icon">🔇</span>
+    </button>
+    <div class="hero-content">
+      <div class="hero-badge cinematic-fade">AGENTE RIT</div>
+      <h1 class="hero-title cinematic-glow">ROTA INTELIGENTE DE TRANSPORTE</h1>
+      <p class="hero-sub">Otimização preditiva, segurança avançada e visibilidade total da sua frota em tempo real.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="location.href='/dashboard.html'">ENTRAR</button>
+      </div>
+    </div>
+  </div>
 
+  <script>
+    const video = document.getElementById('hero-video');
+    const btnMute = document.getElementById('btn-mute');
+    const muteIcon = document.getElementById('mute-icon');
+
+    btnMute.addEventListener('click', () => {
+      if (video.muted) {
+        video.muted = false;
+        muteIcon.textContent = '🔊';
+      } else {
+        video.muted = true;
+        muteIcon.textContent = '🔇';
+      }
+    });
+  </script>
+</body>
+</html>
