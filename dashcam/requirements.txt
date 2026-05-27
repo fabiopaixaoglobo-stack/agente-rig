@@ -1,0 +1,8 @@
+# Dependências do DASHCAM EXPLORER
+# Instale com: pip install -r requirements.txt
+
+# Requisições HTTP para mapear endpoints da câmera
+requests>=2.31.0
+
+# Processamento de vídeo RTSP e MJPEG (inclui FFmpeg embutido no Windows)
+opencv-python>=4.8.0

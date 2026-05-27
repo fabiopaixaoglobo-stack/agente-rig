@@ -36,3 +36,117 @@
 .btn-primary { background:linear-gradient(90deg,#00D1FF,#FF8A00); color:#04111a; }
 .btn-ghost { background:rgba(255,255,255,0.04); color:#fff; border:1px solid rgba(255,255,255,0.06); }
 @media (max-width:720px) { .hero-content { padding:28px; text-align:center; } .hero-badge { display:block; } }
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-box {
+  background: rgba(10, 15, 28, 0.95);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 32px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 0 30px rgba(0, 209, 255, 0.2);
+  transform: translateY(20px);
+  transition: transform 0.3s;
+  color: #fff;
+  position: relative;
+}
+.modal-overlay.active .modal-box {
+  transform: translateY(0);
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-close:hover {
+  color: #fff;
+}
+.modal-title {
+  margin: 0 0 20px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+  text-transform: uppercase;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+}
+.modal-btn {
+  width: 100%;
+  margin-top: 10px;
+}
+.modal-links {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-links a {
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.modal-links a:hover {
+  text-decoration: underline;
+}
+.error-msg {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+  min-height: 15px;
+}
+.success-msg {
+  color: #52c41a;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+  min-height: 15px;
+}

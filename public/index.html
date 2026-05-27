@@ -21,7 +21,7 @@
       <h1 class="hero-title cinematic-glow">ROTA INTELIGENTE DE TRANSPORTE</h1>
       <p class="hero-sub">Otimização preditiva, segurança avançada e visibilidade total da sua frota em tempo real.</p>
       <div class="hero-actions">
-        <button class="btn btn-primary" onclick="location.href='/dashboard.html'">ENTRAR</button>
+        <button class="btn btn-primary" onclick="openModal('login-modal')">ENTRAR</button>
       </div>
     </div>
   </div>
@@ -40,6 +40,201 @@
         muteIcon.textContent = '🔇';
       }
     });
+
+    function openModal(id) {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.error-msg, .success-msg').forEach(el => { el.textContent = ''; el.className = 'error-msg'; });
+    }
+
+    function closeModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    async function doLogin() {
+        const id = document.getElementById('login-identificador').value;
+        const pwd = document.getElementById('login-senha').value;
+        const msg = document.getElementById('login-error');
+        
+        if (!id || !pwd) {
+            msg.textContent = 'Preencha todos os campos.';
+            return;
+        }
+        msg.textContent = 'Autenticando...';
+        msg.className = 'success-msg';
+        
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identificador: id, senha: pwd })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                localStorage.setItem('rig_token', data.token);
+                localStorage.setItem('rig_user', JSON.stringify(data.usuario));
+                localStorage.setItem('rig_auditId', data.auditId);
+                window.location.href = '/dashboard.html';
+            } else {
+                msg.className = 'error-msg';
+                msg.textContent = data.error || 'Erro ao realizar login.';
+            }
+        } catch (err) {
+            msg.className = 'error-msg';
+            msg.textContent = 'Erro de comunicação com o servidor.';
+        }
+    }
+
+    async function doRegister() {
+        const nome = document.getElementById('reg-nome').value;
+        const sobrenome = document.getElementById('reg-sobrenome').value;
+        const matricula = document.getElementById('reg-matricula').value;
+        const email = document.getElementById('reg-email').value;
+        const senha = document.getElementById('reg-senha').value;
+        const msg = document.getElementById('reg-msg');
+        
+        msg.className = 'error-msg';
+        if (!nome || !sobrenome || !matricula || !email || !senha) {
+            msg.textContent = 'Preencha todos os campos.';
+            return;
+        }
+        
+        if (!email.toLowerCase().includes('globo')) {
+            msg.textContent = 'Utilize um e-mail corporativo globo.';
+            return;
+        }
+        
+        msg.textContent = 'Validando dados na Base de Colaboradores...';
+        msg.className = 'success-msg';
+        
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, sobrenome, matricula, email, senha })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                msg.className = 'success-msg';
+                msg.textContent = data.message;
+                setTimeout(() => {
+                    document.getElementById('login-identificador').value = matricula;
+                    openModal('login-modal');
+                }, 3000);
+            } else {
+                msg.className = 'error-msg';
+                msg.textContent = data.error || 'Erro ao realizar cadastro.';
+            }
+        } catch (err) {
+            msg.className = 'error-msg';
+            msg.textContent = 'Erro de comunicação com o servidor.';
+        }
+    }
+
+    async function doRecover() {
+        const email = document.getElementById('rec-email').value;
+        const msg = document.getElementById('rec-msg');
+        
+        if (!email) {
+            msg.textContent = 'Insira o seu e-mail corporativo.';
+            return;
+        }
+        
+        msg.textContent = 'Verificando...';
+        msg.className = 'success-msg';
+        
+        try {
+            const res = await fetch('/api/recover', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                msg.className = 'success-msg';
+                msg.textContent = data.message;
+            } else {
+                msg.className = 'error-msg';
+                msg.textContent = data.error || 'Erro ao processar solicitação.';
+            }
+        } catch (err) {
+            msg.className = 'error-msg';
+            msg.textContent = 'Erro de comunicação com o servidor.';
+        }
+    }
   </script>
+
+  <!-- Modals -->
+  <div id="login-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModals()">✕</button>
+      <h2 class="modal-title">Acesso Seguro</h2>
+      <div class="form-group">
+        <label class="form-label">Matrícula ou E-mail corporativo (globo)</label>
+        <input type="text" id="login-identificador" class="form-input" placeholder="Ex: 123456 ou nome@globo.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" id="login-senha" class="form-input" placeholder="••••••••">
+      </div>
+      <div id="login-error" class="error-msg"></div>
+      <button class="btn btn-primary modal-btn" onclick="doLogin()">ENTRAR</button>
+      <div class="modal-links">
+        <a onclick="openModal('register-modal')">Primeiro acesso</a>
+        <a onclick="openModal('recover-modal')">Esqueci a senha</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="register-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModals()">✕</button>
+      <h2 class="modal-title">Cadastro</h2>
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input type="text" id="reg-nome" class="form-input" placeholder="Nome">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sobrenome</label>
+        <input type="text" id="reg-sobrenome" class="form-input" placeholder="Sobrenome">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Matrícula</label>
+        <input type="text" id="reg-matricula" class="form-input" placeholder="Matrícula">
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-mail corporativo (globo)</label>
+        <input type="email" id="reg-email" class="form-input" placeholder="nome@globo.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" id="reg-senha" class="form-input" placeholder="Mínimo 8 caracteres">
+      </div>
+      <div id="reg-msg" class="error-msg"></div>
+      <button class="btn btn-primary modal-btn" onclick="doRegister()">CADASTRAR</button>
+      <div class="modal-links">
+        <a onclick="openModal('login-modal')">Já tenho conta</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="recover-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModals()">✕</button>
+      <h2 class="modal-title">Recuperar Senha</h2>
+      <div class="form-group">
+        <label class="form-label">E-mail corporativo</label>
+        <input type="email" id="rec-email" class="form-input" placeholder="nome@globo.com">
+      </div>
+      <div id="rec-msg" class="error-msg"></div>
+      <button class="btn btn-primary modal-btn" onclick="doRecover()">ENVIAR INSTRUÇÕES</button>
+      <div class="modal-links">
+        <a onclick="openModal('login-modal')">Voltar ao login</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

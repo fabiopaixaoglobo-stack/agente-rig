@@ -1,0 +1,19 @@
+CIOT obrigatório para todas as operações
+
+Deve ser emitido antes do transporte
+
+Deve estar vinculado ao MDF-e
+
+Não pode ser gerado abaixo do piso mínimo
+
+Multa de R$ 10.500 por operação
+
+Fiscalização por cruzamento de dados
+
+Responsabilidade varia conforme contratação
+
+Impactos:
+- Necessidade de validação prévia
+- Integração sistêmica
+- Aumento de controle operacional
+- Risco de paralisação

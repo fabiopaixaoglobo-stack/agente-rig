@@ -22,10 +22,10 @@
     </div>
 
     <div class="topRight">
-      <button class="btn btn-ghost" onclick="location.href='/'" style="margin-right: 10px; color: var(--accent); border-color: var(--accent);">RETORNAR</button>
+      <button class="btn btn-ghost" onclick="doLogout()" style="margin-right: 10px; color: var(--accent); border-color: var(--accent);">SAIR</button>
       <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden />
       <button id="btn-upload" class="btn btnPrimary">IMPORTAR BASE</button>
-      <div class="status"><span class="dot"></span> ACTIVE</div>
+      <div class="status" id="user-status"><span class="dot"></span> ACTIVE</div>
     </div>
   </header>
 
@@ -203,6 +203,36 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
   <div id="modalGuia" class="modal-overlay"><div class="modal-content"><img src="assets/norma_visual.jpg" alt="Guia visual das normas" style="max-width: 100%;"></div></div>
+  <script>
+    if (!localStorage.getItem('rig_token')) {
+        window.location.href = '/';
+    } else {
+        try {
+            const user = JSON.parse(localStorage.getItem('rig_user'));
+            if (user && user.nome) {
+                const statusEl = document.getElementById('user-status');
+                statusEl.innerHTML = `<span class="dot"></span> ${user.nome.toUpperCase()} (${user.funcao})`;
+            }
+        } catch(e) {}
+    }
+
+    function doLogout() {
+        const auditId = localStorage.getItem('rig_auditId');
+        if (auditId) {
+            fetch('/api/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auditId })
+            }).finally(() => {
+                localStorage.clear();
+                window.location.href = '/';
+            });
+        } else {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+    }
+  </script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

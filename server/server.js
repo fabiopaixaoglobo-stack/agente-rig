@@ -7,6 +7,7 @@ const fsSync = require('fs');
 const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
 const geocodeRouter = require('./geocode');
+const { setupAuthRoutes } = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,6 +47,7 @@ const chatLimiter = rateLimit({
 
 // ROTAS API (antes do static para não haver ambiguidade com ficheiros em public/)
 app.use('/api', geocodeRouter);
+setupAuthRoutes(app);
 
 const publicPath = path.resolve(__dirname, '../public');
 
