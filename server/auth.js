@@ -240,7 +240,10 @@ function setupAuthRoutes(app) {
             const colaborador = findInBase(null, email);
             console.log(`[RECOVER] Na base Excel? ${!!colaborador} | Globo? ${isGlobo}`);
 
-            if (colaborador && isGlobo && process.env.SMTP_HOST && process.env.SMTP_USER) {
+            console.log(`[RECOVER] SMTP enabled: ${!!process.env.SMTP_HOST}`);
+            console.log(`[RECOVER] Email attempt for: ${email}`);
+
+            if (process.env.SMTP_HOST && process.env.SMTP_USER) {
                 const mailOptions = {
                     from: `"Agente RIT Rota Inteligente de Transporte" <${process.env.SMTP_USER}>`,
                     to: email,
@@ -260,8 +263,8 @@ function setupAuthRoutes(app) {
                     `
                 };
                 transporter.sendMail(mailOptions, (err, info) => {
-                    if (err) console.error('❌ Erro ao enviar e-mail:', err);
-                    else     console.log('✅ E-mail de recuperação enviado:', email, info.messageId);
+                    if (err) console.error(`❌ Email send failure`, err);
+                    else     console.log(`✅ Email sent`, info.messageId);
                 });
             }
 
