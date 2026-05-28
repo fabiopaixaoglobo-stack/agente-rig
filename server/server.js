@@ -26,6 +26,9 @@ const RAG_MAX_CHARS_CONTRATOS = 3500;
 let groq = null;
 if (process.env.GROQ_API_KEY) {
     groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    console.log('✅ GROQ_API_KEY configurada — IA online.');
+} else {
+    console.error('⚠️ GROQ_API_KEY não encontrada — chatbot ficará offline. Configure a variável no Render.');
 }
 
 // MIDDLEWARES — CORS: defina ALLOWED_ORIGINS (lista separada por vírgula) em produção
@@ -153,8 +156,15 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     contractInfo = truncar(contractInfo, RAG_MAX_CHARS_CONTRATOS);
 
     if (!groq) {
-        return res.json({ response: '🤖 IA Offline. Configure a GROQ_API_KEY no servidor.' });
+        console.error('[CHAT] Requisição recebida, mas GROQ_API_KEY ausente.');
+        return res.json({
+            response: '🤖 IA Offline. Configure a GROQ_API_KEY no servidor.',
+            status: 'offline',
+            message: 'GROQ API key not configured'
+        });
     }
+
+    console.log(`[CHAT] Requisição recebida — normas: ${matches.length}, contratos: ${contractInfo ? 'sim' : 'não'}`);
 
     try {
         const systemPrompt = `
@@ -189,7 +199,13 @@ REGRAS:
         const content = completion.choices[0]?.message?.content;
         res.json({ response: typeof content === 'string' ? content : 'Resposta vazia do modelo.' });
     } catch (error) {
-        console.error('Erro no Chat:', error);
+        console.error('[CHAT] Erro na comunicação com Groq:', error?.message || error);
+        if (error?.status === 401) {
+            return res.status(500).json({ error: 'GROQ_API_KEY inválida. Verifique a chave configurada no Render.' });
+        }
+        if (error?.status === 429) {
+            return res.status(429).json({ error: 'Limite de requisições da API Groq atingido. Tente novamente em instantes.' });
+        }
         res.status(500).json({ error: 'Falha na comunicação com o serviço de IA.' });
     }
 });
