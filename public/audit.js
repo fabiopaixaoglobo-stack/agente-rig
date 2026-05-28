@@ -7,8 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let auditData = [];
-    let chartHourlyInstance = null;
-    let chartUsersInstance = null;
 
     // Elements
     const tbody = document.getElementById('audit-tbody');
@@ -24,9 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const kpiAvg = document.getElementById('kpi-avg-session');
     const kpiTopUser = document.getElementById('kpi-top-user');
 
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.borderColor = '#334155';
-
     btnLogout.addEventListener('click', () => {
         localStorage.removeItem('rig_token');
         localStorage.removeItem('rig_audit_id');
@@ -37,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filterDate.addEventListener('change', renderDashboard);
     filterUser.addEventListener('input', renderDashboard);
 
+    // ── Data Fetch ──────────────────────────────
     async function loadAuditData() {
         try {
             const response = await fetch('/api/audit', {
@@ -63,9 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ── Render Pipeline ─────────────────────────
     function renderDashboard() {
-        // 1. Filter Data
-        const dateVal = filterDate.value; // YYYY-MM-DD
+        const dateVal = filterDate.value;
         const userVal = filterUser.value.toLowerCase().trim();
 
         let filtered = auditData;
@@ -86,16 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 2. Update KPIs
         updateKPIs(filtered);
-
-        // 3. Update Charts
-        updateCharts(filtered);
-
-        // 4. Update Table
         renderTable(filtered);
     }
 
+    // ── KPI Computation ─────────────────────────
     function updateKPIs(data) {
         let activeCount = 0;
         let todayLogins = 0;
@@ -107,25 +98,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = new Date().toISOString().split('T')[0];
 
         data.forEach(row => {
-            // Active users: no logout time
             if (!row.data_hora_logout) activeCount++;
 
-            // Today's logins
             if (row.data_hora_login) {
                 const loginDate = new Date(row.data_hora_login).toISOString().split('T')[0];
                 if (loginDate === todayStr) todayLogins++;
             }
 
-            // Unique users
             uniqueUsers.add(row.matricula);
 
-            // Avg session
             if (row.tempo_sessao !== null && row.tempo_sessao !== undefined) {
                 totalSessionTime += row.tempo_sessao;
                 sessionsWithTime++;
             }
 
-            // Top user
             const userName = `${row.nome} ${row.sobrenome}`;
             userCounts[userName] = (userCounts[userName] || 0) + 1;
         });
@@ -138,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const avgSec = Math.floor(totalSessionTime / sessionsWithTime);
             kpiAvg.textContent = formatSessionTime(avgSec);
         } else {
-            kpiAvg.textContent = '0m';
+            kpiAvg.textContent = '-';
         }
 
         let topUser = '-';
@@ -152,93 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         kpiTopUser.textContent = topUser;
     }
 
-    function updateCharts(data) {
-        const hourlyCounts = Array(24).fill(0);
-        const userCounts = {};
-
-        data.forEach(row => {
-            if (row.data_hora_login) {
-                const date = new Date(row.data_hora_login);
-                hourlyCounts[date.getHours()]++;
-            }
-
-            const userName = `${row.nome} ${row.sobrenome}`;
-            userCounts[userName] = (userCounts[userName] || 0) + 1;
-        });
-
-        // Prepare Top Users (limit to 10)
-        const sortedUsers = Object.entries(userCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10);
-        
-        const topUserLabels = sortedUsers.map(u => u[0]);
-        const topUserData = sortedUsers.map(u => u[1]);
-
-        // Render Hourly Chart
-        const ctxHourly = document.getElementById('chart-hourly').getContext('2d');
-        if (chartHourlyInstance) chartHourlyInstance.destroy();
-        chartHourlyInstance = new Chart(ctxHourly, {
-            type: 'bar',
-            data: {
-                labels: Array.from({length: 24}, (_, i) => `${i}h`),
-                datasets: [{
-                    label: 'Logins',
-                    data: hourlyCounts,
-                    backgroundColor: '#00D1FF',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        // Render Top Users Chart
-        const ctxUsers = document.getElementById('chart-top-users').getContext('2d');
-        if (chartUsersInstance) chartUsersInstance.destroy();
-        chartUsersInstance = new Chart(ctxUsers, {
-            type: 'bar',
-            data: {
-                labels: topUserLabels,
-                datasets: [{
-                    label: 'Sessões',
-                    data: topUserData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    function formatDateTime(isoString) {
-        if (!isoString) return '-';
-        const date = new Date(isoString);
-        return date.toLocaleString('pt-BR');
-    }
-
-    function formatSessionTime(seconds) {
-        if (seconds === null || seconds === undefined) return '-';
-        if (seconds < 60) return `${seconds}s`;
-        const minutes = Math.floor(seconds / 60);
-        const hrs = Math.floor(minutes / 60);
-        const remMin = minutes % 60;
-        
-        if (hrs > 0) {
-            return `${hrs}h ${remMin}m`;
-        }
-        return `${minutes}m`;
-    }
-
+    // ── Table Rendering ─────────────────────────
     function renderTable(rows) {
         tbody.innerHTML = '';
         
@@ -249,27 +149,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
-            
             const nomeCompleto = `${row.nome} ${row.sobrenome}`;
-            
-            // Determine Status and styling
+
+            const isActive = !row.data_hora_logout;
+            const isLongSession = row.tempo_sessao && row.tempo_sessao > 3600;
+
             let statusHtml = '';
             let rowClass = '';
-            let statusText = '';
-            
-            const isLongSession = row.tempo_sessao && row.tempo_sessao > 3600; // > 1 hour
-            const isActive = !row.data_hora_logout;
 
             if (isActive) {
-                statusHtml = `<span class="status-dot status-active"></span> Ativo`;
+                statusHtml = '<span class="status-dot status-active"></span> Ativo';
                 rowClass = 'row-active';
             } else if (isLongSession) {
-                statusHtml = `<span class="status-dot status-long"></span> Longa (>1h)`;
-                rowClass = 'row-warning';
+                statusHtml = '<span class="status-dot status-long"></span> Longa';
+                rowClass = 'row-long';
             } else {
-                statusHtml = `<span class="status-dot status-normal"></span> Normal`;
+                statusHtml = '<span class="status-dot status-normal"></span> Normal';
             }
-            
+
             tr.className = rowClass;
             tr.innerHTML = `
                 <td>${statusHtml}</td>
@@ -280,9 +177,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${formatSessionTime(row.tempo_sessao)}</td>
                 <td>${escapeHTML(row.ip_origem || '-')}</td>
             `;
-            
+
             tbody.appendChild(tr);
         });
+    }
+
+    // ── Formatters ──────────────────────────────
+    function formatDateTime(isoString) {
+        if (!isoString) return '-';
+        return new Date(isoString).toLocaleString('pt-BR');
+    }
+
+    function formatSessionTime(seconds) {
+        if (seconds === null || seconds === undefined) return '-';
+        if (seconds < 60) return `${seconds}s`;
+        const minutes = Math.floor(seconds / 60);
+        const hrs = Math.floor(minutes / 60);
+        const remMin = minutes % 60;
+        return hrs > 0 ? `${hrs}h ${remMin}m` : `${minutes}m`;
     }
 
     function escapeHTML(str) {
@@ -297,5 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage.style.display = 'block';
     }
 
+    // ── Init ────────────────────────────────────
     loadAuditData();
 });

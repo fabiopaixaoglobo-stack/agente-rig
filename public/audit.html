@@ -7,14 +7,13 @@
     <link rel="stylesheet" href="audit.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
         <header class="dashboard-header">
             <div>
                 <h2>Agente RIG - Monitoramento de Auditoria</h2>
-                <p class="subtitle">Visão Executiva em Tempo Real</p>
+                <p class="subtitle">Visão Executiva</p>
             </div>
             <button id="btn-logout" class="btn-logout"><i class="ph ph-sign-out"></i> Sair</button>
         </header>
@@ -61,22 +60,10 @@
                 </div>
             </div>
 
-            <!-- Charts -->
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <h4>Atividade por Hora</h4>
-                    <canvas id="chart-hourly"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h4>Top Usuários (Sessões)</h4>
-                    <canvas id="chart-top-users"></canvas>
-                </div>
-            </div>
-
-            <!-- Filters & Table -->
+            <!-- Histórico de Acessos -->
             <div class="table-section">
                 <div class="table-header">
-                    <h4>Registros de Auditoria</h4>
+                    <h4>Histórico de Acessos</h4>
                     <div class="filters">
                         <input type="date" id="filter-date" title="Filtrar por data">
                         <input type="text" id="filter-user" placeholder="Buscar por nome ou matrícula">
