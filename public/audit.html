@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria - Agente RIG</title>
+    <link rel="stylesheet" href="audit.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h2>Agente RIG - Monitoramento de Auditoria</h2>
+            <button id="btn-logout" class="btn-logout">Sair</button>
+        </header>
+        
+        <div class="dashboard-content">
+            <div id="error-message" class="error-message"></div>
+            
+            <div class="table-responsive">
+                <table id="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Matrícula</th>
+                            <th>Login</th>
+                            <th>Logout</th>
+                            <th>Tempo Sessão</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-tbody">
+                        <!-- Dados dinâmicos aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="audit.js"></script>
+</body>
+</html>

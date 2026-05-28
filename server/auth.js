@@ -278,6 +278,46 @@ function setupAuthRoutes(app) {
             return res.status(500).json({ error: 'Erro interno ao processar recuperação.' });
         }
     });
+    // ── MIDDLEWARE JWT ───────────────────────────
+    function verifyToken(req, res, next) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
+        }
+
+        jwt.verify(token, JWT_SECRET, (err, user) => {
+            if (err) return res.status(403).json({ error: 'Token inválido ou expirado.' });
+            req.user = user;
+            next();
+        });
+    }
+
+    // ── GET /api/audit ───────────────────────────
+    app.get('/api/audit', verifyToken, async (req, res) => {
+        try {
+            const query = `
+                SELECT 
+                    u.nome,
+                    u.sobrenome,
+                    u.matricula,
+                    u.email,
+                    a.data_hora_login,
+                    a.data_hora_logout,
+                    a.tempo_sessao,
+                    a.ip_origem
+                FROM auditoria a
+                JOIN users u ON u.id = a.id_usuario
+                ORDER BY a.data_hora_login DESC;
+            `;
+            const result = await pool.query(query);
+            return res.json({ success: true, data: result.rows });
+        } catch (err) {
+            console.error('Erro no /api/audit:', err);
+            return res.status(500).json({ error: 'Erro interno ao buscar auditoria.' });
+        }
+    });
 }
 
 module.exports = { setupAuthRoutes, loadBaseColaboradores };
