@@ -8,6 +8,7 @@ const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
 const geocodeRouter = require('./geocode');
 const { setupAuthRoutes } = require('./auth');
+const { initDB } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -199,6 +200,7 @@ app.use(express.static(publicPath));
 app.get('*', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
 
 async function iniciar() {
+    await initDB();
     await carregarBases();
     app.listen(PORT, () => {
         console.log(`🚀 Agente RIG v3.5.1 na porta ${PORT}`);

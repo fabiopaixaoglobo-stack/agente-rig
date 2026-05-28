@@ -4,22 +4,30 @@ const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const db = require('./database');
+const { pool } = require('./database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'agente-rig-super-secret-2026';
 
+// ──────────────────────────────────────────────
+// SMTP (e-mail de recuperação)
+// ──────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || '',
-    port: process.env.SMTP_PORT || 587,
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
     auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || ''
     }
 });
 
-// The path to the Excel file specified in the prompt
-const baseColaboradoresPath = path.resolve(__dirname, '../Normas/Base de Colaboradores Globo para validação do Agente RIT - Abril 2025.xlsx');
+// ──────────────────────────────────────────────
+// BASE DE COLABORADORES (Excel)
+// ──────────────────────────────────────────────
+const baseColaboradoresPath = path.resolve(
+    __dirname,
+    '../Normas/Base de Colaboradores Globo para validação do Agente RIT - Abril 2025.xlsx'
+);
 
 let baseColaboradoresCache = null;
 let lastModifiedTime = null;
@@ -36,187 +44,235 @@ function loadBaseColaboradores() {
         }
 
         const workbook = xlsx.readFile(baseColaboradoresPath);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = xlsx.utils.sheet_to_json(sheet);
-        
+
         baseColaboradoresCache = data.map(row => {
-            // Normalizar as chaves para facilitar a busca ignorando acentos e espaços
-            const normalizedRow = {};
-            for (let key in row) {
-                const normKey = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
-                normalizedRow[normKey] = row[key];
+            const norm = {};
+            for (const key in row) {
+                const k = key.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, '_');
+                norm[k] = row[key];
             }
-            // Mapeamentos comuns para garantir que encontramos email e matrícula mesmo que as colunas variem levemente
-            normalizedRow._email = normalizedRow.email || normalizedRow.e_mail || normalizedRow['e-mail'] || normalizedRow.email_corporativo;
-            normalizedRow._matricula = normalizedRow.matricula || normalizedRow.id || normalizedRow.registro;
-            normalizedRow._nome = normalizedRow.nome || normalizedRow.nome_funcionario || normalizedRow.nome_completo;
-            return normalizedRow;
+            norm._email     = norm.email || norm.e_mail || norm['e-mail'] || norm.email_corporativo;
+            norm._matricula = norm.matricula || norm.id || norm.registro;
+            norm._nome      = norm.nome || norm.nome_funcionario || norm.nome_completo;
+            return norm;
         });
+
         lastModifiedTime = stats.mtime;
-        console.log(`✅ Base de Colaboradores carregada/atualizada: ${baseColaboradoresCache.length} registros.`);
+        console.log(`✅ Base de Colaboradores carregada: ${baseColaboradoresCache.length} registros.`);
         return baseColaboradoresCache;
-    } catch (error) {
-        console.error('❌ Erro ao ler a Base de Colaboradores (Excel):', error);
+    } catch (err) {
+        console.error('❌ Erro ao ler Base de Colaboradores:', err);
         return [];
     }
 }
 
-// Busca o usuário na base do Excel
 function findInBase(matricula, email) {
     const base = loadBaseColaboradores();
     return base.find(c => {
-        const matchMatricula = matricula && c._matricula && String(c._matricula).trim() === String(matricula).trim();
-        const matchEmail = email && c._email && String(c._email).trim().toLowerCase() === String(email).trim().toLowerCase();
-        return matchMatricula || matchEmail;
+        const okMat = matricula && c._matricula &&
+            String(c._matricula).trim() === String(matricula).trim();
+        const okEmail = email && c._email &&
+            String(c._email).trim().toLowerCase() === String(email).trim().toLowerCase();
+        return okMat || okEmail;
     });
 }
 
+// ──────────────────────────────────────────────
+// ROTAS DE AUTENTICAÇÃO
+// ──────────────────────────────────────────────
 function setupAuthRoutes(app) {
-    // Tenta carregar no startup
-    loadBaseColaboradores();
+    loadBaseColaboradores(); // pré-carrega no startup
 
+    // ── POST /api/register ──────────────────────
     app.post('/api/register', async (req, res) => {
-        const { nome, sobrenome, matricula, email, senha } = req.body;
-        
-        if (!nome || !sobrenome || !matricula || !email || !senha) {
-            return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
-        }
-        
-        // Regras de Senha: min 8 chars, 1 número, 1 maiúscula, 1 minúscula, 1 especial
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-        if (!passwordRegex.test(senha)) {
-            return res.status(400).json({ error: 'A senha deve ter no mínimo 8 caracteres, contendo: número, letra maiúscula, minúscula e caractere especial.' });
-        }
-        
-        // Verifica se matrícula/e-mail consta na Base Excel (condição do projeto)
-        const colaborador = findInBase(matricula, email);
-        if (!colaborador) {
-            return res.status(403).json({ error: 'Você não possui acesso. Favor entrar em contato com a Área de Transportes Globo.' });
-        }
+        try {
+            const { nome, sobrenome, matricula, email, senha } = req.body;
 
-        // Puxa Função e Área automaticamente (usa nomes de colunas comuns no caso de variar)
-        const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
-        const area = colaborador.area || colaborador.setor || colaborador.departamento || 'Geral';
-
-        // Verifica se já não está cadastrado no SQLite
-        db.get('SELECT id FROM usuarios WHERE matricula = ? OR email = ?', [matricula, email], async (err, row) => {
-            if (err) return res.status(500).json({ error: 'Erro ao conectar com o banco de dados interno.' });
-            if (row) return res.status(400).json({ error: 'Este usuário já possui cadastro ativo no sistema.' });
-
-            try {
-                const hashedSenha = await bcrypt.hash(senha, 10);
-                db.run('INSERT INTO usuarios (nome, sobrenome, matricula, email, senha, funcao, area) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-                [nome, sobrenome, matricula, email, hashedSenha, funcao, area], function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erro ao registrar usuário localmente.' });
-                    }
-                    res.json({ success: true, message: 'Cadastro realizado com sucesso! Você já pode entrar.', funcao, area });
-                });
-            } catch (error) {
-                res.status(500).json({ error: 'Erro ao processar segurança da senha.' });
+            if (!nome || !sobrenome || !matricula || !email || !senha) {
+                return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
             }
-        });
+
+            // Regras de senha
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+            if (!passwordRegex.test(senha)) {
+                return res.status(400).json({
+                    error: 'A senha deve ter no mínimo 8 caracteres com: número, maiúscula, minúscula e caractere especial.'
+                });
+            }
+
+            // Valida na Base Excel (por matrícula OU e-mail)
+            const colaborador = findInBase(matricula, email);
+            if (!colaborador) {
+                return res.status(403).json({
+                    error: 'Você não possui acesso. Favor entrar em contato com a Área de Transportes Globo.'
+                });
+            }
+
+            const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
+            const area   = colaborador.area   || colaborador.setor || colaborador.departamento || 'Geral';
+
+            // Verifica duplicata
+            const dup = await pool.query(
+                'SELECT id FROM users WHERE matricula = $1 OR email = $2',
+                [matricula, email]
+            );
+            if (dup.rows.length > 0) {
+                return res.status(400).json({ error: 'Este usuário já possui cadastro ativo no sistema.' });
+            }
+
+            const hashedSenha = await bcrypt.hash(senha, 10);
+            await pool.query(
+                `INSERT INTO users (nome, sobrenome, matricula, email, senha, funcao, area)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [nome, sobrenome, matricula, email, hashedSenha, funcao, area]
+            );
+
+            return res.json({
+                success: true,
+                message: 'Cadastro realizado com sucesso! Você já pode entrar.',
+                funcao,
+                area
+            });
+        } catch (err) {
+            console.error('Erro no /api/register:', err);
+            return res.status(500).json({ error: 'Erro interno ao registrar usuário.' });
+        }
     });
 
-    app.post('/api/login', (req, res) => {
-        const { identificador, senha } = req.body; // identificador = matrícula ou email
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'desconhecido';
+    // ── POST /api/login ─────────────────────────
+    app.post('/api/login', async (req, res) => {
+        try {
+            const { identificador, senha } = req.body;
+            const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'desconhecido';
 
-        if (!identificador || !senha) {
-            return res.status(400).json({ error: 'Matrícula/E-mail e senha são obrigatórios.' });
-        }
+            if (!identificador || !senha) {
+                return res.status(400).json({ error: 'Matrícula/E-mail e senha são obrigatórios.' });
+            }
 
-        // Busca no SQLite
-        db.get('SELECT * FROM usuarios WHERE matricula = ? OR email = ?', [identificador, identificador], async (err, user) => {
-            if (err) return res.status(500).json({ error: 'Erro ao conectar com o banco de dados interno.' });
-            if (!user) return res.status(401).json({ error: 'Credenciais inválidas. Verifique os dados inseridos.' });
+            const result = await pool.query(
+                'SELECT * FROM users WHERE matricula = $1 OR email = $2',
+                [identificador, identificador]
+            );
+            const user = result.rows[0];
+            if (!user) {
+                return res.status(401).json({ error: 'Credenciais inválidas. Verifique os dados inseridos.' });
+            }
 
             const validPassword = await bcrypt.compare(senha, user.senha);
-            if (!validPassword) return res.status(401).json({ error: 'Credenciais inválidas. Verifique a senha.' });
-
-            // REGRA IMPORTANTE: Bloquear se não estiver MAIS na base Excel
-            const isStillInBase = findInBase(user.matricula, user.email);
-            if (!isStillInBase) {
-                return res.status(403).json({ error: 'Você não possui acesso. Favor entrar em contato com a Área de Transportes Globo.' });
+            if (!validPassword) {
+                return res.status(401).json({ error: 'Credenciais inválidas. Verifique a senha.' });
             }
 
-            const token = jwt.sign({ id: user.id, matricula: user.matricula, role: user.funcao }, JWT_SECRET, { expiresIn: '12h' });
-
-            // Registro na tabela de Auditoria
-            db.run('INSERT INTO auditoria (id_usuario, data_hora_login, ip_origem) VALUES (?, datetime("now", "localtime"), ?)', [user.id, ip], function(err) {
-                const auditId = this ? this.lastID : null;
-                res.json({ 
-                    success: true, 
-                    token, 
-                    usuario: { nome: user.nome, sobrenome: user.sobrenome, area: user.area, funcao: user.funcao },
-                    auditId 
+            // Verifica se ainda consta na base Excel
+            if (!findInBase(user.matricula, user.email)) {
+                return res.status(403).json({
+                    error: 'Você não possui acesso. Favor entrar em contato com a Área de Transportes Globo.'
                 });
+            }
+
+            const token = jwt.sign(
+                { id: user.id, matricula: user.matricula, role: user.funcao },
+                JWT_SECRET,
+                { expiresIn: '12h' }
+            );
+
+            // Auditoria de login
+            const audit = await pool.query(
+                `INSERT INTO auditoria (id_usuario, ip_origem) VALUES ($1, $2) RETURNING id`,
+                [user.id, ip]
+            );
+            const auditId = audit.rows[0]?.id || null;
+
+            return res.json({
+                success: true,
+                token,
+                usuario: {
+                    nome:     user.nome,
+                    sobrenome: user.sobrenome,
+                    area:     user.area,
+                    funcao:   user.funcao
+                },
+                auditId
             });
-        });
-    });
-
-    app.post('/api/logout', (req, res) => {
-        const { auditId } = req.body;
-        if (auditId) {
-            // Calcula o tempo de sessão em segundos
-            db.run(`UPDATE auditoria 
-                    SET data_hora_logout = datetime("now", "localtime"), 
-                        tempo_sessao = CAST((julianday('now', 'localtime') - julianday(data_hora_login)) * 24 * 60 * 60 AS INTEGER) 
-                    WHERE id = ?`, [auditId]);
+        } catch (err) {
+            console.error('Erro no /api/login:', err);
+            return res.status(500).json({ error: 'Erro interno ao realizar login.' });
         }
-        res.json({ success: true });
     });
 
-    app.post('/api/recover', (req, res) => {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ error: 'O E-mail é obrigatório.' });
+    // ── POST /api/logout ─────────────────────────
+    app.post('/api/logout', async (req, res) => {
+        try {
+            const { auditId } = req.body;
+            if (!auditId) {
+                return res.status(400).json({ error: 'Audit ID é obrigatório para realizar logout.' });
+            }
 
-        const isGlobo = email.toLowerCase().includes('globo');
-        
-        console.log(`[RECOVER] Tentativa de recuperação para: ${email}`);
-        
-        // Procura na base se é válido
-        const colaborador = findInBase(null, email);
-        console.log(`[RECOVER] Encontrado na base Excel? ${!!colaborador}. isGlobo? ${isGlobo}`);
+            if (auditId) {
+                await pool.query(
+                    `UPDATE auditoria
+                     SET data_hora_logout = NOW(),
+                         tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
+                     WHERE id = $1`,
+                    [auditId]
+                );
+            }
+            return res.json({ success: true });
+        } catch (err) {
+            console.error('Erro no /api/logout:', err);
+            return res.json({ success: true }); // não bloquear o logout por erro de auditoria
+        }
+    });
 
-        if (colaborador && isGlobo) {
-            if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-                console.warn('⚠️ Solicitação de recuperação recebida, mas SMTP_HOST/SMTP_USER não configurados no .env.');
-            } else {
+    // ── POST /api/recover ────────────────────────
+    app.post('/api/recover', async (req, res) => {
+        try {
+            const { email } = req.body;
+            if (!email) return res.status(400).json({ error: 'O E-mail é obrigatório.' });
+
+            const isGlobo = email.toLowerCase().includes('globo');
+            console.log(`[RECOVER] Tentativa para: ${email}`);
+
+            const colaborador = findInBase(null, email);
+            console.log(`[RECOVER] Na base Excel? ${!!colaborador} | Globo? ${isGlobo}`);
+
+            if (colaborador && isGlobo && process.env.SMTP_HOST && process.env.SMTP_USER) {
                 const mailOptions = {
                     from: `"Agente RIT Rota Inteligente de Transporte" <${process.env.SMTP_USER}>`,
                     to: email,
                     subject: 'Recuperação de Senha - Agente RIT',
                     html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-                            <h2 style="color: #00D1FF;">Agente RIT - Redefinição de Acesso</h2>
-                            <p>Olá <strong>${colaborador._nome || colaborador.nome || 'Colaborador'}</strong>,</p>
-                            <p>Recebemos uma solicitação de recuperação de senha para a sua conta associada à matrícula <strong>${colaborador._matricula || ''}</strong>.</p>
-                            <p>Para recuperar o seu acesso, por favor, realize um novo <strong>Cadastro (Primeiro acesso)</strong> na tela inicial do sistema utilizando os seus dados corporativos oficiais.</p>
-                            <p>O sistema irá validar suas credenciais com a Base de Transportes e recadastrar sua nova senha automaticamente.</p>
+                        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:8px;">
+                            <h2 style="color:#00D1FF;">Agente RIT - Redefinição de Acesso</h2>
+                            <p>Olá <strong>${colaborador._nome || 'Colaborador'}</strong>,</p>
+                            <p>Recebemos uma solicitação de recuperação de senha para a conta associada à matrícula <strong>${colaborador._matricula || ''}</strong>.</p>
+                            <p>Para recuperar o acesso, realize um novo <strong>Cadastro (Primeiro acesso)</strong> na tela inicial do sistema com seus dados corporativos oficiais.</p>
+                            <p>O sistema validará suas credenciais e recadastrará sua nova senha automaticamente.</p>
                             <br>
-                            <p>Se você não solicitou isso, pode ignorar este e-mail com segurança.</p>
-                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                            <p style="font-size: 12px; color: #888;">Este é um e-mail automático do Centro de Comando e Monitoramento RIT.</p>
+                            <p>Se você não solicitou isso, ignore este e-mail com segurança.</p>
+                            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+                            <p style="font-size:12px;color:#888;">E-mail automático — Centro de Comando e Monitoramento RIT.</p>
                         </div>
                     `
                 };
-
-                transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) {
-                        console.error('❌ Erro ao enviar e-mail:', error);
-                    } else {
-                        console.log('✅ E-mail de recuperação enviado para:', email, info.messageId);
-                    }
+                transporter.sendMail(mailOptions, (err, info) => {
+                    if (err) console.error('❌ Erro ao enviar e-mail:', err);
+                    else     console.log('✅ E-mail de recuperação enviado:', email, info.messageId);
                 });
             }
-            
-            // Sucesso simulado/real: o fluxo exigido é apenas de exibir a confirmação e avisar para recadastrar
-            return res.json({ success: true, message: 'Se o e-mail estiver na base corporativa Globo, enviaremos as instruções para redefinição de senha e recadastro.' });
-        } else {
-            // Mensagem idêntica por segurança (evita enumeração de e-mails válidos)
-            return res.json({ success: true, message: 'Se o e-mail estiver na base corporativa Globo, enviaremos as instruções para redefinição de senha e recadastro.' });
+
+            // Resposta genérica (evita enumeração de e-mails)
+            return res.json({
+                success: true,
+                message: 'Se o e-mail estiver na base corporativa Globo, enviaremos as instruções para redefinição de senha e recadastro.'
+            });
+        } catch (err) {
+            console.error('Erro no /api/recover:', err);
+            return res.status(500).json({ error: 'Erro interno ao processar recuperação.' });
         }
     });
 }

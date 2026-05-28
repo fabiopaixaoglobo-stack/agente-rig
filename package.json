@@ -1,6 +1,6 @@
 {
   "name": "agente-rig-fullstack",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Sistema Agente RIG - Versão Operacional Full",
   "main": "server/server.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "jsonwebtoken": "^9.0.3",
     "node-fetch": "^2.6.7",
     "nodemailer": "^8.0.7",
-    "sqlite3": "^6.0.1",
+    "pg": "^8.21.0",
     "xlsx": "^0.18.5"
   },
   "engines": {
