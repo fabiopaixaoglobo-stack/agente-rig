@@ -73,11 +73,14 @@ function loadBaseColaboradores() {
 function findInBase(matricula, email) {
     const base = loadBaseColaboradores();
     return base.find(c => {
-        const okMat = matricula && c._matricula &&
-            String(c._matricula).trim() === String(matricula).trim();
-        const okEmail = email && c._email &&
-            String(c._email).trim().toLowerCase() === String(email).trim().toLowerCase();
-        return okMat || okEmail;
+        let match = true;
+        if (matricula) {
+            match = match && c._matricula && String(c._matricula).trim() === String(matricula).trim();
+        }
+        if (email) {
+            match = match && c._email && String(c._email).trim().toLowerCase() === String(email).trim().toLowerCase();
+        }
+        return match;
     });
 }
 
