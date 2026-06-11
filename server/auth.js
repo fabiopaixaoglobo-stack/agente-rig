@@ -118,13 +118,26 @@ function setupAuthRoutes(app) {
             const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
             const area   = colaborador.area   || colaborador.setor || colaborador.departamento || 'Geral';
 
-            // Verifica duplicata
+            // Verifica duplicata ou redefinição de senha
             const dup = await pool.query(
-                'SELECT id FROM users WHERE matricula = $1 OR email = $2',
+                'SELECT id, matricula, email FROM users WHERE matricula = $1 OR email = $2',
                 [matricula, email]
             );
             if (dup.rows.length > 0) {
-                return res.status(400).json({ error: 'Este usuário já possui cadastro ativo no sistema.' });
+                const existingUser = dup.rows[0];
+                if (existingUser.matricula === matricula && existingUser.email === email) {
+                    // Redefinição de senha
+                    const hashedSenha = await bcrypt.hash(senha, 10);
+                    await pool.query('UPDATE users SET senha = $1 WHERE id = $2', [hashedSenha, existingUser.id]);
+                    return res.json({
+                        success: true,
+                        message: 'Sua senha foi redefinida com sucesso! Você já pode entrar.',
+                        funcao,
+                        area
+                    });
+                } else {
+                    return res.status(400).json({ error: 'Este usuário já possui cadastro ativo no sistema com dados divergentes.' });
+                }
             }
 
             const hashedSenha = await bcrypt.hash(senha, 10);
@@ -246,7 +259,7 @@ function setupAuthRoutes(app) {
             console.log(`[RECOVER] SMTP enabled: ${!!process.env.SMTP_HOST}`);
             console.log(`[RECOVER] Email attempt for: ${email}`);
 
-            if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+            if (colaborador && process.env.SMTP_HOST && process.env.SMTP_USER) {
                 const mailOptions = {
                     from: `"Agente RIT Rota Inteligente de Transporte" <${process.env.SMTP_USER}>`,
                     to: email,
