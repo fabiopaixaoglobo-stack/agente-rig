@@ -12,6 +12,14 @@ export class UiController {
         this.chatService = chatService;
         this.dataService = dataService;
         this.eventoAtualUrl = '';
+        this.tarifasConfig = {
+            tarifaBase: 3.50,
+            precoPorKm: 1.50,
+            precoPorMinuto: 0.30,
+            tarifaMinima: 6.00,
+            fatorPico: 1.4,
+            fatorMadrugada: 1.2
+        };
 
         this.initTabs();
         this.initFilters();
@@ -189,15 +197,194 @@ export class UiController {
         document.getElementById('btn-centralizar-rede')?.addEventListener('click', () => this.carregarMapaRede());
     }
 
+    limparEndereco(endereco) {
+        if (!endereco) return '';
+        let str = String(endereco);
+        // Remover CEPs
+        str = str.replace(/cep\s*:?\s*\d{5}-?\d{3}/gi, '');
+        str = str.replace(/\b\d{5}-?\d{3}\b/g, '');
+        // Substituir traços e travessões por vírgula
+        str = str.replace(/[-–—]+/g, ',');
+        // Remover termos redundantes do Rio de Janeiro
+        str = str.replace(/\b(rio de janeiro|rj|brasil|brazil)\b/gi, '');
+        // Limpar espaços e vírgulas duplicadas/finais
+        str = str.replace(/,\s*,/g, ',');
+        str = str.replace(/\s+/g, ' ');
+        return str.trim().replace(/^,|,$/g, '').trim();
+    }
+
+    calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
+        const TARIFA_BASE = this.tarifasConfig?.tarifaBase || 3.50;
+        const PRECO_POR_KM = this.tarifasConfig?.precoPorKm || 1.50;
+        const PRECO_POR_MINUTO = this.tarifasConfig?.precoPorMinuto || 0.30;
+        const TARIFA_MINIMA = this.tarifasConfig?.tarifaMinima || 6.00;
+        
+        let fatorDinamico = 1.0;
+        
+        let hora = 12; // default
+        if (horarioCorrida) {
+            if (typeof horarioCorrida === 'string' && horarioCorrida.includes(':')) {
+                hora = parseInt(horarioCorrida.split(':')[0], 10);
+            } else if (!isNaN(horarioCorrida)) {
+                hora = Math.floor(horarioCorrida * 24); 
+            }
+        }
+        
+        if ((hora >= 7 && hora < 9) || (hora >= 17 && hora < 19)) {
+            fatorDinamico = this.tarifasConfig?.fatorPico || 1.4;
+        } else if (hora >= 22 || hora < 2) {
+            fatorDinamico = this.tarifasConfig?.fatorMadrugada || 1.2; // Madrugada
+        }
+
+        let custoBruto = (TARIFA_BASE + (distanciaKm * PRECO_POR_KM) + (tempoMinutos * PRECO_POR_MINUTO)) * fatorDinamico;
+        
+        return custoBruto < TARIFA_MINIMA ? TARIFA_MINIMA : parseFloat(custoBruto.toFixed(2));
+    }
+
+    async atualizarTarifasReferencia() {
+        try {
+            const res = await fetch('/api/rotas/tarifas');
+            const json = await res.json();
+            if (json.ok && json.tarifas) {
+                this.tarifasConfig = json.tarifas;
+                
+                const tfBase = document.getElementById('ref-tarifa-base');
+                const tfKm = document.getElementById('ref-custo-km');
+                const tfMin = document.getElementById('ref-custo-min');
+                const tfMinima = document.getElementById('ref-tarifa-min');
+                const tfFator = document.getElementById('ref-fator-dinamico');
+                const statusRef = document.getElementById('status-referencia');
+
+                if (tfBase) tfBase.textContent = this.tarifasConfig.tarifaBase.toFixed(2).replace('.', ',');
+                if (tfKm) tfKm.textContent = this.tarifasConfig.precoPorKm.toFixed(2).replace('.', ',');
+                if (tfMin) tfMin.textContent = this.tarifasConfig.precoPorMinuto.toFixed(2).replace('.', ',');
+                if (tfMinima) tfMinima.textContent = this.tarifasConfig.tarifaMinima.toFixed(2).replace('.', ',');
+                if (tfFator) {
+                    tfFator.textContent = `${this.tarifasConfig.fatorPico.toFixed(1).replace('.', ',')}x (picos) / ${this.tarifasConfig.fatorMadrugada.toFixed(1).replace('.', ',')}x (madrugada)`;
+                }
+                if (statusRef) {
+                    statusRef.innerHTML = `<span style="color:var(--good);">● Referência atualizada</span>`;
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao atualizar tarifas de referência:', err);
+            const statusRef = document.getElementById('status-referencia');
+            if (statusRef) {
+                statusRef.innerHTML = `<span style="color:var(--bad);">⚠️ Erro ao atualizar referência</span>`;
+            }
+        }
+    }
+
     initPlanner() {
         const btn = document.getElementById('btn-rota');
         if (!btn || !this.plannerService) return;
         btn.addEventListener('click', () => this.tracarRotaPlanejador());
+
+        const inputUpload = document.getElementById('upload-planejador');
+        const btnUpload = document.getElementById('btn-upload-planejador');
+        
+        if (btnUpload && inputUpload) {
+            btnUpload.addEventListener('click', () => inputUpload.click());
+            inputUpload.addEventListener('change', (e) => this.tratarUploadPlanejador(e));
+        }
+
+        document.getElementById("btnFecharModalLote")?.addEventListener("click", () => {
+            document.getElementById("modalLote").style.display = "none";
+        });
+
+        document.getElementById("btnBaixarLote")?.addEventListener("click", () => {
+            if (!this.plannerData || this.plannerData.length === 0) return;
+            const exportData = this.plannerData.map(r => ({
+                'Matrícula': r.matricula || '',
+                'Nome do Colaborador': r.nome_colaborador || '',
+                'Área': r.area || '',
+                'Endereço de Saída': r.origem || '',
+                'Endereço de Chegada': r.destino || '',
+                'Horário de Saída': r.horario || '',
+                'Retorno (KM)': r.distancia_km ? parseFloat(r.distancia_km) : '',
+                'Retorno (Valor)': r.custo_estimado ? parseFloat(r.custo_estimado) : ''
+            }));
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rotas Processadas");
+            XLSX.writeFile(wb, "Rotas_Processadas_RIT.xlsx");
+        });
+
+        this.atualizarTarifasReferencia();
+    }
+
+    async tratarUploadPlanejador(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const modal = document.getElementById("modalLote");
+        const modalLoading = document.getElementById("modalLoteLoading");
+        const modalContent = document.getElementById("modalLoteContent");
+        const btnBaixar = document.getElementById("btnBaixarLote");
+        
+        if (modal) modal.style.display = "flex";
+        if (modalLoading) modalLoading.style.display = "block";
+        if (modalContent) modalContent.style.display = "none";
+        if (btnBaixar) btnBaixar.style.display = "none";
+
+        const formData = new FormData();
+        formData.append("planilha", file);
+        
+        try {
+            const res = await fetch("/api/rotas/importar", {
+                method: "POST",
+                body: formData
+            });
+            const json = await res.json();
+            
+            if (!json.ok) {
+                showToast(json.error || "Erro ao processar lote.", "error");
+                if (modal) modal.style.display = "none";
+                return;
+            }
+
+            this.plannerData = json.resultados;
+            
+            const tbody = document.getElementById("tabelaLoteBody");
+            if (tbody) {
+                tbody.innerHTML = "";
+                
+                json.resultados.forEach(r => {
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #333";
+                    const colInfo = r.nome_colaborador ? `${escapeHtml(r.nome_colaborador)} (${escapeHtml(r.matricula)})<br><small style="color: #aaa;">${escapeHtml(r.area)}</small>` : '-';
+                    tr.innerHTML = `
+                        <td style="padding: 8px;">${colInfo}</td>
+                        <td style="padding: 8px;">${escapeHtml(r.origem)}</td>
+                        <td style="padding: 8px;">${escapeHtml(r.destino)}</td>
+                        <td style="padding: 8px;">${escapeHtml(r.horario || '')}</td>
+                        <td style="padding: 8px;">${r.distancia_km ? r.distancia_km + ' km' : '-'}</td>
+                        <td style="padding: 8px;">${r.tempo_min ? r.tempo_min + ' min' : '-'}</td>
+                        <td style="padding: 8px; font-weight:bold; color:var(--accent)">${r.custo_estimado ? 'R$ ' + r.custo_estimado : '-'}</td>
+                        <td style="padding: 8px; color: ${r.status === 'SUCESSO' ? 'var(--accent)' : 'var(--bad)'}">${escapeHtml(r.status)} ${r.erro ? '<br><small>'+escapeHtml(r.erro)+'</small>' : ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            if (modalLoading) modalLoading.style.display = "none";
+            if (modalContent) modalContent.style.display = "block";
+            if (btnBaixar) btnBaixar.style.display = "block";
+            showToast("Lote processado com sucesso!", "success");
+
+        } catch (err) {
+            console.error(err);
+            showToast("Falha na comunicação com o servidor.", "error");
+            if (modal) modal.style.display = "none";
+        } finally {
+            e.target.value = "";
+        }
     }
 
     async tracarRotaPlanejador() {
         const origem = document.getElementById('origem')?.value?.trim() || '';
         const destino = document.getElementById('destino')?.value?.trim() || '';
+        const horario = document.getElementById('horario')?.value?.trim() || '12:00';
         const feedback = document.getElementById('plannerFeedback');
         const linksEl = document.getElementById('externalLinks');
         const linkGoogle = document.getElementById('link-google');
@@ -215,20 +402,21 @@ export class UiController {
 
         const map = this.plannerService.map;
         const routeGroup = this.plannerService.routeOverlay;
-        const fator = 1.5;
-        const emoji = '🚗';
 
         if (feedback) feedback.innerHTML = 'Buscando coordenadas…';
 
         try {
             const headers = { Accept: 'application/json' };
-            const qOrig = `${origem}, Rio de Janeiro, Brasil`;
+            const origemLimpa = this.limparEndereco(origem);
+            const destinoLimpa = this.limparEndereco(destino);
+
+            const qOrig = `${origemLimpa}, Rio de Janeiro, Brasil`;
             const resO = await fetch(`${NOMINATIM}?format=json&q=${encodeURIComponent(qOrig)}&limit=1`, { headers });
             const dataOrig = await resO.json();
             if (!dataOrig.length) throw new Error('Endereço de origem não encontrado.');
 
             if (feedback) feedback.innerHTML = 'Buscando destino…';
-            const qDest = `${destino}, Rio de Janeiro, Brasil`;
+            const qDest = `${destinoLimpa}, Rio de Janeiro, Brasil`;
             const resD = await fetch(`${NOMINATIM}?format=json&q=${encodeURIComponent(qDest)}&limit=1`, { headers });
             const dataDest = await resD.json();
             if (!dataDest.length) throw new Error('Endereço de destino não encontrado.');
@@ -248,7 +436,8 @@ export class UiController {
             const coords = routeData.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
             const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
             const duracaoMin = Math.round(routeData.routes[0].duration / 60);
-            const custo = (parseFloat(distanciaKm) * fator + 5).toFixed(2);
+            
+            const custo = this.calcularCustoEstimado(parseFloat(distanciaKm), duracaoMin, horario).toFixed(2);
 
             this.plannerService.clearRouteOverlay();
 
@@ -276,12 +465,12 @@ export class UiController {
                     <strong style="color:var(--good)">✔ Rota traçada</strong><br>
                     <b>Distância:</b> ${escapeHtml(distanciaKm)} km<br>
                     <b>Tempo estimado:</b> ${duracaoMin} min<br>
-                    <b>Custo (estimado):</b> R$ ${escapeHtml(custo)}
+                    <b>Custo (estimado de aplicativo):</b> R$ ${escapeHtml(custo)}
                 `;
             }
 
-            const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem + ', RJ')}&destination=${encodeURIComponent(destino + ', RJ')}`;
-            const wUrl = `https://www.waze.com/ul?q=${encodeURIComponent(destino)}&from=${encodeURIComponent(origem)}&navigate=yes`;
+            const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origemLimpa + ', RJ')}&destination=${encodeURIComponent(destinoLimpa + ', RJ')}`;
+            const wUrl = `https://www.waze.com/ul?q=${encodeURIComponent(destinoLimpa)}&from=${encodeURIComponent(origemLimpa)}&navigate=yes`;
             if (linkGoogle) linkGoogle.href = gUrl;
             if (linkWaze) linkWaze.href = wUrl;
             if (linksEl) linksEl.style.display = 'flex';

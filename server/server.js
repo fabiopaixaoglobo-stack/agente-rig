@@ -6,7 +6,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
-const geocodeRouter = require('./geocode');
+const { router: geocodeRouter } = require('./geocode');
 const { setupAuthRoutes } = require('./auth');
 const { initDB } = require('./database');
 
@@ -51,6 +51,8 @@ const chatLimiter = rateLimit({
 
 // ROTAS API (antes do static para não haver ambiguidade com ficheiros em public/)
 app.use('/api', geocodeRouter);
+const importarRotas = require('./importar_rotas');
+app.use('/api/rotas', importarRotas);
 setupAuthRoutes(app);
 
 const publicPath = path.resolve(__dirname, '../public');

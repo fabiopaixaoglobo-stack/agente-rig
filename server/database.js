@@ -34,6 +34,34 @@ async function initDB() {
                 ip_origem        TEXT
             );
         `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS lotes_importacao (
+                id SERIAL PRIMARY KEY,
+                id_usuario INTEGER REFERENCES users(id),
+                nome_arquivo TEXT NOT NULL,
+                criado_em TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS rotas_importadas (
+                id SERIAL PRIMARY KEY,
+                id_lote INTEGER REFERENCES lotes_importacao(id) ON DELETE CASCADE,
+                origem TEXT NOT NULL,
+                destino TEXT NOT NULL,
+                horario TEXT,
+                distancia_km NUMERIC,
+                tempo_min NUMERIC,
+                custo_estimado NUMERIC,
+                status TEXT DEFAULT 'PENDENTE',
+                erro TEXT,
+                criado_em TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+        await client.query(`
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS matricula TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS nome_colaborador TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS area TEXT;
+        `);
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
     } catch (err) {
         console.error('❌ Erro ao inicializar banco de dados:', err.message);

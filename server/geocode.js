@@ -41,68 +41,73 @@ async function salvarCache(cache) {
     }
 }
 
+async function getGeocode(targetMunicipio, targetUF, bairro = '') {
+    const cacheKey = `${targetUF}|${targetMunicipio}|${bairro}`.toUpperCase().trim();
+
+    return withCacheLock(async () => {
+        const cache = await lerCache();
+        if (cache[cacheKey]) {
+            return { ok: true, ...cache[cacheKey], source: 'cache' };
+        }
+
+        let query = '';
+        let precision = '';
+        if (bairro && bairro.length > 2) {
+            query = `${bairro}, ${targetMunicipio}, ${targetUF}, Brasil`;
+            precision = 'bairro';
+        } else {
+            query = `${targetMunicipio}, ${targetUF}, Brasil`;
+            precision = 'municipio';
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Rate limit 1 sec
+
+        let response = await fetchFn(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+            { headers: { 'User-Agent': 'AgenteRIG/3.5' } }
+        );
+
+        if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+
+        let data = await response.json();
+
+        if (data.length === 0 && precision === 'bairro') {
+            query = `${targetMunicipio}, ${targetUF}, Brasil`;
+            precision = 'municipio';
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // Rate limit 1 sec
+            response = await fetchFn(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+                { headers: { 'User-Agent': 'AgenteRIG/3.5' } }
+            );
+            data = await response.json();
+        }
+
+        if (data.length === 0) {
+            const result = FALLBACK_CENTROID;
+            cache[cacheKey] = result;
+            await salvarCache(cache);
+            return { ok: true, ...result, source: 'fallback' };
+        }
+
+        const result = {
+            lat: parseFloat(data[0].lat),
+            lon: parseFloat(data[0].lon),
+            precision: precision,
+        };
+        cache[cacheKey] = result;
+        await salvarCache(cache);
+        return { ok: true, ...result, source: 'api' };
+    });
+}
+
 router.get('/geocode', async (req, res) => {
     const { bairro, municipio, uf } = req.query;
     const targetMunicipio = municipio || 'Rio de Janeiro';
     const targetUF = uf || 'RJ';
-    const cacheKey = `${targetUF}|${targetMunicipio}|${bairro || ''}`.toUpperCase().trim();
 
     try {
-        await withCacheLock(async () => {
-            const cache = await lerCache();
-            if (cache[cacheKey]) {
-                res.json({ ok: true, ...cache[cacheKey], source: 'cache' });
-                return;
-            }
-
-            let query = '';
-            let precision = '';
-            if (bairro && bairro.length > 2) {
-                query = `${bairro}, ${targetMunicipio}, ${targetUF}, Brasil`;
-                precision = 'bairro';
-            } else {
-                query = `${targetMunicipio}, ${targetUF}, Brasil`;
-                precision = 'municipio';
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 100));
-
-            let response = await fetchFn(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
-                { headers: { 'User-Agent': 'AgenteRIG/3.5' } }
-            );
-
-            if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
-
-            let data = await response.json();
-
-            if (data.length === 0 && precision === 'bairro') {
-                query = `${targetMunicipio}, ${targetUF}, Brasil`;
-                precision = 'municipio';
-                response = await fetchFn(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
-                    { headers: { 'User-Agent': 'AgenteRIG/3.5' } }
-                );
-                data = await response.json();
-            }
-
-            if (data.length === 0) {
-                const result = FALLBACK_CENTROID;
-                cache[cacheKey] = result;
-                await salvarCache(cache);
-                res.json({ ok: true, ...result, source: 'fallback' });
-                return;
-            }
-
-            const result = {
-                lat: parseFloat(data[0].lat),
-                lon: parseFloat(data[0].lon),
-                precision: precision,
-            };
-            cache[cacheKey] = result;
-            await salvarCache(cache);
-            res.json({ ok: true, ...result, source: 'api' });
-        });
+        const result = await getGeocode(targetMunicipio, targetUF, bairro);
+        res.json(result);
     } catch (error) {
         console.error('Erro Geocode:', error);
         if (!res.headersSent) {
@@ -111,4 +116,5 @@ router.get('/geocode', async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = { router, getGeocode };
+

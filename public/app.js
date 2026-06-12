@@ -13,6 +13,7 @@ let CHAT_CONTEXTO = "geral"; // 'norma', 'contrato-cargas', 'contrato-pessoas', 
 document.addEventListener("DOMContentLoaded", () => {
   inicializarMapa();
   inicializarUpload();
+  inicializarUploadPlanejador();
   inicializarAbas();
   inicializarPlanejador();
   inicializarChatbot();
@@ -93,6 +94,95 @@ function inicializarUpload() {
       geocodificarAtendimentos();
     };
     reader.readAsArrayBuffer(file);
+  });
+}
+
+function inicializarUploadPlanejador() {
+  const input = document.getElementById("upload-planejador");
+  const btn = document.getElementById("btn-upload-planejador");
+  
+  if (!input || !btn) return;
+
+  btn.addEventListener("click", () => input.click());
+  
+  input.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Abrir Modal Loading
+    const modal = document.getElementById("modalLote");
+    const modalLoading = document.getElementById("modalLoteLoading");
+    const modalContent = document.getElementById("modalLoteContent");
+    const btnBaixar = document.getElementById("btnBaixarLote");
+    
+    modal.style.display = "flex";
+    modalLoading.style.display = "block";
+    modalContent.style.display = "none";
+    btnBaixar.style.display = "none";
+
+    const formData = new FormData();
+    formData.append("planilha", file);
+    
+    try {
+      const res = await fetch("/api/rotas/importar", {
+        method: "POST",
+        body: formData
+      });
+      const json = await res.json();
+      
+      if (!json.ok) {
+        alert(json.error || "Erro ao processar lote.");
+        modal.style.display = "none";
+        return;
+      }
+
+      PLANNER_DATA = json.resultados;
+      
+      // Renderizar tabela
+      const tbody = document.getElementById("tabelaLoteBody");
+      tbody.innerHTML = "";
+      
+      json.resultados.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid #333";
+        tr.innerHTML = \`
+          <td style="padding: 8px;">\${escHtml(r.origem)}</td>
+          <td style="padding: 8px;">\${escHtml(r.destino)}</td>
+          <td style="padding: 8px;">\${escHtml(r.horario || '')}</td>
+          <td style="padding: 8px;">\${r.distancia_km ? r.distancia_km + ' km' : '-'}</td>
+          <td style="padding: 8px;">\${r.tempo_min ? r.tempo_min + ' min' : '-'}</td>
+          <td style="padding: 8px; font-weight:bold; color:var(--accent)">\${r.custo_estimado ? 'R$ ' + r.custo_estimado : '-'}</td>
+          <td style="padding: 8px; color: \${r.status === 'SUCESSO' ? 'var(--accent)' : 'var(--bad)'}">\${escHtml(r.status)} \${r.erro ? '<br><small>'+escHtml(r.erro)+'</small>' : ''}</td>
+        \`;
+        tbody.appendChild(tr);
+      });
+
+      modalLoading.style.display = "none";
+      modalContent.style.display = "block";
+      btnBaixar.style.display = "block";
+
+    } catch (err) {
+      console.error(err);
+      alert("Falha na comunicação com o servidor.");
+      modal.style.display = "none";
+    } finally {
+      // Limpa input para permitir novo upload do mesmo arquivo se desejar
+      input.value = "";
+    }
+  });
+
+  document.getElementById("btnFecharModalLote")?.addEventListener("click", () => {
+    document.getElementById("modalLote").style.display = "none";
+  });
+
+  document.getElementById("btnBaixarLote")?.addEventListener("click", () => {
+    if (!PLANNER_DATA || PLANNER_DATA.length === 0) return;
+    
+    // Converte para aba usando XLSX
+    const ws = XLSX.utils.json_to_sheet(PLANNER_DATA);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rotas Processadas");
+    XLSX.writeFile(wb, "Rotas_Processadas_RIT.xlsx");
   });
 }
 
