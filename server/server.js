@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fetch = require('node-fetch');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -217,11 +218,35 @@ app.use(express.static(publicPath));
 // FALLBACK PARA SPA
 app.get('*', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
 
+// KEEP-ALIVE: evita o Cold Start no plano gratuito do Render
+// Faz um ping no próprio servidor a cada 14 minutos
+function iniciarKeepAlive() {
+    const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+    if (!RENDER_URL) {
+        console.log('ℹ️  RENDER_EXTERNAL_URL não definida — keep-alive desativado (ambiente local).');
+        return;
+    }
+    const pingUrl = `${RENDER_URL}/api/health`;
+    const INTERVALO_MS = 14 * 60 * 1000; // 14 minutos
+
+    setInterval(async () => {
+        try {
+            const res = await fetch(pingUrl);
+            console.log(`✅ [Keep-Alive] Ping OK — status ${res.status} — ${new Date().toISOString()}`);
+        } catch (err) {
+            console.warn(`⚠️  [Keep-Alive] Falha no ping: ${err.message}`);
+        }
+    }, INTERVALO_MS);
+
+    console.log(`🔔 Keep-Alive ativado — pingando ${pingUrl} a cada 14 min.`);
+}
+
 async function iniciar() {
     await initDB();
     await carregarBases();
     app.listen(PORT, () => {
         console.log(`🚀 Agente RIG v3.5.1 na porta ${PORT}`);
+        iniciarKeepAlive();
     });
 }
 
