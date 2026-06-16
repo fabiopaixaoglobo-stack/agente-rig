@@ -37,6 +37,7 @@
     <button class="tabBtn" data-tab="tab-eventos">Eventos</button>
     <button class="tabBtn" data-tab="tab-normas">Consultor Normativo</button>
     <button class="tabBtn" data-tab="tab-whatsapp">Monitoramento de Grupos</button>
+    <button class="tabBtn" data-tab="tab-cameras">Câmeras RJ</button>
   </nav>
 
   <main class="main">
@@ -216,6 +217,39 @@
           <div class="whatsapp-footer">
             <p>Sincronizado com Agente RIG Command Center</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CÂMERAS RJ -->
+    <section id="tab-cameras" class="tabPane">
+      <aside class="sidebar" style="width: 320px;">
+        <div class="panel">
+          <div class="panelTitle">Selecione a Câmera</div>
+          <div style="margin-bottom: 12px;">
+            <label class="label">Bairro</label>
+            <select id="camera-bairro" class="select" style="width: 100%;">
+              <option value="">Selecione o Bairro...</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label class="label">Câmera</label>
+            <select id="camera-id" class="select" style="width: 100%;" disabled>
+              <option value="">Selecione a Câmera...</option>
+            </select>
+          </div>
+          <div id="camera-info" style="font-size: 11px; color: var(--muted); margin-top: 10px;">
+            Nenhuma câmera selecionada.
+          </div>
+        </div>
+        <div class="panel" style="margin-top: 10px;">
+          <div class="panelTitle">Informações do Sinal</div>
+          <p style="font-size: 11px; color: #ccc;">O vídeo ao vivo depende da fonte pública (Prefeitura do Rio). Em caso de oscilação, tente recarregar ou selecione outra câmera próxima.</p>
+        </div>
+      </aside>
+      <div style="flex: 1; background: #000; display: flex; flex-direction: column;">
+        <div id="camera-frame-container" style="flex: 1; display: flex; justify-content: center; align-items: center; background: #111;">
+          <div style="color: #666; font-size: 14px;">Selecione uma câmera ao lado para visualizar.</div>
         </div>
       </div>
     </section>
