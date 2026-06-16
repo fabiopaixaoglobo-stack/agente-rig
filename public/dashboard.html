@@ -25,6 +25,8 @@
       <button class="btn btn-ghost" onclick="doLogout()" style="margin-right: 10px; color: var(--accent); border-color: var(--accent);">SAIR</button>
       <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden />
       <button id="btn-upload" class="btn btnPrimary">IMPORTAR BASE</button>
+      <div class="status" id="cor-estagio" style="display:none; color:#fff; border-color:transparent; font-weight:800; padding:4px 10px; margin-right:5px; border-radius:4px; font-size:10px;">ESTÁGIO -</div>
+      <div class="status" id="cor-calor" style="display:none; color:#fff; border-color:transparent; font-weight:800; padding:4px 10px; margin-right:10px; border-radius:4px; font-size:10px;">CALOR -</div>
       <div class="status" id="user-status"><span class="dot"></span> ACTIVE</div>
     </div>
   </header>
@@ -38,6 +40,7 @@
     <button class="tabBtn" data-tab="tab-normas">Consultor Normativo</button>
     <button class="tabBtn" data-tab="tab-whatsapp">Monitoramento de Grupos</button>
     <button class="tabBtn" data-tab="tab-cameras">Câmeras RJ</button>
+    <button class="tabBtn" data-tab="tab-radar">Radar Meteorológico RJ</button>
   </nav>
 
   <main class="main">
@@ -250,6 +253,23 @@
       <div style="flex: 1; background: #000; display: flex; flex-direction: column;">
         <div id="camera-frame-container" style="flex: 1; display: flex; justify-content: center; align-items: center; background: #111;">
           <div style="color: #666; font-size: 14px;">Selecione uma câmera ao lado para visualizar.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RADAR METEOROLÓGICO RJ -->
+    <section id="tab-radar" class="tabPane">
+      <div style="flex: 1; background: #000; display: flex; flex-direction: column; position: relative;">
+        <div class="filterBar" style="background: rgba(10, 15, 28, 0.98); height: 40px;">
+          <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+            <span style="font-weight: 800; font-size: 12px; color: var(--accent);">RADAR METEOROLÓGICO AO VIVO - ALERTA RIO</span>
+          </div>
+          <div style="text-align:right;">
+             <span id="radar-status" style="font-size: 10px; color: var(--muted);">Conectado com Centro de Operações Rio</span>
+          </div>
+        </div>
+        <div style="flex: 1; width: 100%;">
+          <iframe src="https://aplicativo.cocr.com.br/radar_emb_app" width="100%" height="100%" style="border:none;" scrolling="no" allowfullscreen></iframe>
         </div>
       </div>
     </section>
