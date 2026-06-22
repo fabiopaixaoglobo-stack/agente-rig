@@ -275,9 +275,29 @@
       </div>
     </section>
 
-    <!-- + TRANSPORTES (EMULADOR) -->
-    <section id="tab-transportes" class="tabPane" style="padding: 0; margin: 0; width: 100%; height: 100%;">
-      <iframe id="iframe-transportes" data-src="https://globo.wiselog360.com/#/login" width="100%" height="100%" style="border: none; background: #000; width: 100%; height: 100%;"></iframe>
+    <!-- + TRANSPORTES (PORTAL SEGURO) -->
+    <section id="tab-transportes" class="tabPane">
+      <div class="transportes-control-panel">
+        <div class="transportes-card">
+          <div class="transportes-header">
+            <div class="transportes-logo-container">🚚</div>
+            <h2>+ Transportes - Sistema Oficial Globo</h2>
+          </div>
+          <div class="transportes-body">
+            <p>Por questões de segurança e restrições do portal de autenticação da Globo (login.g.globo), o acesso ao + Transportes deve ser realizado em uma nova janela isolada e segura.</p>
+            <div class="info-box" style="background: rgba(0, 209, 255, 0.08); border-left: 3px solid #00d1ff;">
+              <span class="info-icon">ℹ️</span>
+              <p style="color: #00d1ff; font-weight: 600; font-size: 11px; margin: 0;">Sua sessão atual do login Globo será utilizada de forma totalmente segura no seu navegador.</p>
+            </div>
+            <button class="btn-transportes-primary" onclick="window.open('https://globo.wiselog360.com/#/app/report', '_blank')">
+              <span class="btn-icon">🚀</span> ABRIR + TRANSPORTES
+            </button>
+          </div>
+          <div class="transportes-footer">
+            <p>Integração Oficial Agente RIT</p>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 

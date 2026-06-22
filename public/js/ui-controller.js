@@ -43,7 +43,6 @@ export class UiController {
                 if (target) target.classList.add('active');
                 
                 if (targetId === 'tab-rede') this.carregarMapaRede();
-                if (targetId === 'tab-transportes') this.carregarTransportes();
                 
                 this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
@@ -643,12 +642,5 @@ export class UiController {
         }
     }
 
-    carregarTransportes() {
-        const i = document.getElementById('iframe-transportes');
-        if (i && !i.src) {
-            i.src = i.getAttribute('data-src');
-            showToast("Carregando portal + Transportes...", "info");
-        }
-    }
 }
 
