@@ -1,7 +1,3 @@
-Aqui está o texto completo e reorganizado da sua documentação de arquitetura. A seção de Governança e Segurança de IA foi integrada como o **Item 6**, e a Conclusão foi movida para o **Item 7**, incluindo um fechamento que amarra formalmente a justificativa técnica para a Diretoria e para a auditoria do banco de dados do sistema.
-
----
-
 # Arquitetura de Segurança - Agente RIT
 
 Este documento detalha os controles, mecanismos e a arquitetura de segurança implementados no **Agente RIT** (Rota Inteligente de Transporte) para garantir a integridade, confidencialidade e disponibilidade das informações dos colaboradores da Globo.
