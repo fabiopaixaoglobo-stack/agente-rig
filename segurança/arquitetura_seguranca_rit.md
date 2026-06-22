@@ -1,3 +1,4 @@
+
 # Arquitetura de Segurança - Agente RIT
 
 Este documento detalha os controles, mecanismos e a arquitetura de segurança implementados no **Agente RIT** (Rota Inteligente de Transporte) para garantir a integridade, confidencialidade e disponibilidade das informações dos colaboradores da Globo.
