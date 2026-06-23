@@ -431,3 +431,40 @@ tbody tr:hover {
     color: var(--warning-color);
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
+
+/* ── Action Group ────────────────────────────── */
+.action-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ── Force Reset Button ────────────────────────── */
+.btn-force-reset {
+    background-color: transparent;
+    color: var(--warning-color);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-force-reset:hover {
+    background-color: var(--warning-color);
+    color: #000;
+    border-color: var(--warning-color);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.btn-force-reset:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -407,6 +407,87 @@ function setupAuthRoutes(app) {
             return res.status(500).json({ error: 'Erro interno ao buscar recuperações.' });
         }
     });
+
+    // ── POST /api/audit/force-reset ────────────────
+    // Força o envio do e-mail de redefinição de senha para um usuário.
+    // Requer token JWT de administrador (verifyToken).
+    app.post('/api/audit/force-reset', verifyToken, async (req, res) => {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                return res.status(400).json({ error: 'E-mail é obrigatório.' });
+            }
+
+            // Valida se o usuário existe na base de cadastro
+            const userResult = await pool.query(
+                'SELECT id, nome, sobrenome, email FROM users WHERE email = $1',
+                [email.toLowerCase()]
+            );
+
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Nenhum usuário cadastrado com este e-mail.' });
+            }
+
+            const targetUser = userResult.rows[0];
+
+            // Também busca na base de colaboradores para enriquecer o e-mail
+            const colaborador = findInBase(null, email);
+
+            let emailEnviado = false;
+            if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+                const mailOptions = {
+                    from: `"Agente RIT - Rotas Inteligentes de Transportes" <${process.env.SMTP_USER}>`,
+                    to: email,
+                    subject: '⚠️ Redefinição de Senha Obrigatória - Agente RIT',
+                    html: `
+                        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:8px;">
+                            <h2 style="color:#00D1FF;">Agente RIT - Redefinição de Acesso Obrigatória</h2>
+                            <p>Olá <strong>${targetUser.nome} ${targetUser.sobrenome}</strong>,</p>
+                            <p>Por razões de <strong>segurança</strong>, o administrador do sistema solicitou a redefinição da sua senha de acesso.</p>
+                            <p>Para recuperar o acesso, siga as etapas abaixo:</p>
+                            <ol>
+                                <li>Acesse a tela de login do sistema.</li>
+                                <li>Clique em <strong>"Esqueci minha senha"</strong> ou acesse a opção de <strong>Primeiro Acesso</strong>.</li>
+                                <li>Informe seus dados corporativos (matrícula e e-mail) para validação.</li>
+                                <li>Crie uma nova senha segura.</li>
+                            </ol>
+                            <p>Se você já realizou a redefinição ou não reconhece esta solicitação, entre em contato com o suporte de TI.</p>
+                            <br>
+                            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+                            <p style="font-size:12px;color:#888;">Esta mensagem foi gerada automaticamente pelo Centro de Comando e Monitoramento RIT. Não responda a este e-mail.</p>
+                        </div>
+                    `
+                };
+
+                try {
+                    await transporter.sendMail(mailOptions);
+                    emailEnviado = true;
+                    console.log(`✅ [force-reset] E-mail enviado para: ${email}`);
+                } catch (mailErr) {
+                    console.error(`❌ [force-reset] Falha ao enviar e-mail:`, mailErr);
+                    emailEnviado = false;
+                }
+            }
+
+            // Registra a solicitação forçada na tabela de recuperações
+            await pool.query(
+                `INSERT INTO recuperacao_senha (email, email_enviado)
+                 VALUES ($1, $2)`,
+                [email.toLowerCase(), emailEnviado]
+            );
+
+            return res.json({
+                success: true,
+                emailEnviado,
+                message: emailEnviado
+                    ? `E-mail de redefinição enviado para ${email} com sucesso.`
+                    : `Solicitação registrada, mas o e-mail não pôde ser enviado (verifique as configurações de SMTP).`
+            });
+        } catch (err) {
+            console.error('Erro no /api/audit/force-reset:', err);
+            return res.status(500).json({ error: 'Erro interno ao forçar redefinição.' });
+        }
+    });
 }
 
 module.exports = { setupAuthRoutes, loadBaseColaboradores };

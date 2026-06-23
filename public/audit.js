@@ -140,12 +140,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusVal) {
             filtered = filtered.filter(row => {
                 const isActive = !row.data_hora_logout;
-                const isLongSession = row.tempo_sessao && row.tempo_sessao > 3600;
-                let rowStatus = 'Normal';
-                if (isActive) {
-                    rowStatus = 'Ativo';
-                } else if (isLongSession) {
+                let effectiveSeconds = row.tempo_sessao;
+                if (isActive && row.data_hora_login) {
+                    effectiveSeconds = Math.floor((Date.now() - new Date(row.data_hora_login).getTime()) / 1000);
+                }
+                const isLong = effectiveSeconds && effectiveSeconds > 3600;
+                let rowStatus;
+                if (isActive && isLong) {
                     rowStatus = 'Longa';
+                } else if (isActive) {
+                    rowStatus = 'Ativo';
+                } else if (isLong) {
+                    rowStatus = 'Longa';
+                } else {
+                    rowStatus = 'Normal';
                 }
                 return rowStatus === statusVal;
             });
@@ -233,12 +241,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const nomeCompleto = `${row.nome} ${row.sobrenome}`;
 
             const isActive = !row.data_hora_logout;
-            const isLongSession = row.tempo_sessao && row.tempo_sessao > 3600;
+            // Compute effective elapsed time for active sessions (no tempo_sessao yet)
+            let effectiveSeconds = row.tempo_sessao;
+            if (isActive && row.data_hora_login) {
+                effectiveSeconds = Math.floor((Date.now() - new Date(row.data_hora_login).getTime()) / 1000);
+            }
+            const isLongSession = effectiveSeconds && effectiveSeconds > 3600;
 
             let statusHtml = '';
             let rowClass = '';
 
-            if (isActive) {
+            if (isActive && isLongSession) {
+                statusHtml = '<span class="status-dot status-long"></span> Ativo (Longa)';
+                rowClass = 'row-long';
+            } else if (isActive) {
                 statusHtml = '<span class="status-dot status-active"></span> Ativo';
                 rowClass = 'row-active';
             } else if (isLongSession) {
@@ -248,12 +264,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusHtml = '<span class="status-dot status-normal"></span> Normal';
             }
 
-            let actionHtml = '';
-            if (isActive) {
-                actionHtml = `<button class="btn-kick" data-id="${row.audit_id}"><i class="ph ph-user-minus"></i> Derrubar</button>`;
-            } else {
-                actionHtml = '-';
-            }
+            // Action: kick button for active sessions + force-reset for any row that has an email
+            const kickBtn = isActive
+                ? `<button class="btn-kick" data-id="${row.audit_id}" title="Encerrar sessão"><i class="ph ph-user-minus"></i> Derrubar</button>`
+                : '';
+            const resetBtn = row.email
+                ? `<button class="btn-force-reset" data-email="${escapeHTML(row.email)}" data-name="${escapeHTML(nomeCompleto)}" title="Forçar redefinição de senha"><i class="ph ph-envelope-simple-open"></i> Forçar Reset</button>`
+                : '';
+            const actionHtml = (kickBtn || resetBtn)
+                ? `<div class="action-group">${kickBtn}${resetBtn}</div>`
+                : '-';
 
             tr.className = rowClass;
             tr.innerHTML = `
@@ -262,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${escapeHTML(row.matricula)}</td>
                 <td>${formatDateTime(row.data_hora_login)}</td>
                 <td>${formatDateTime(row.data_hora_logout)}</td>
-                <td>${formatSessionTime(row.tempo_sessao)}</td>
+                <td>${isActive ? formatSessionTime(effectiveSeconds) + ' ⏱' : formatSessionTime(row.tempo_sessao)}</td>
                 <td>${escapeHTML(row.ip_origem || '-')}</td>
                 <td>${actionHtml}</td>
             `;
@@ -304,30 +324,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Kick Button Event Delegation ───────────────
     tbody.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-kick');
-        if (!btn) return;
-
-        const auditId = btn.getAttribute('data-id');
-        if (confirm('Tem certeza que deseja derrubar esta sessão de acesso?')) {
-            try {
-                const response = await fetch('/api/audit/kick', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ auditId })
-                });
-
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    await loadAuditData();
-                } else {
-                    alert(data.error || 'Erro ao derrubar sessão.');
+        // ── Derrubar ──
+        const kickBtn = e.target.closest('.btn-kick');
+        if (kickBtn) {
+            const auditId = kickBtn.getAttribute('data-id');
+            if (confirm('Tem certeza que deseja derrubar esta sessão de acesso?')) {
+                try {
+                    const response = await fetch('/api/audit/kick', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ auditId })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        await loadAuditData();
+                    } else {
+                        alert(data.error || 'Erro ao derrubar sessão.');
+                    }
+                } catch (error) {
+                    console.error('Kick session error:', error);
+                    alert('Erro de conexão ao tentar derrubar a sessão.');
                 }
-            } catch (error) {
-                console.error('Kick session error:', error);
-                alert('Erro de conexão ao tentar derrubar a sessão.');
+            }
+            return;
+        }
+
+        // ── Forçar Reset de Senha ──
+        const resetBtn = e.target.closest('.btn-force-reset');
+        if (resetBtn) {
+            const email = resetBtn.getAttribute('data-email');
+            const name = resetBtn.getAttribute('data-name');
+            if (confirm(`Forçar o envio de e-mail de redefinição de senha para ${name} (${email})?\n\nO usuário receberá um e-mail com as instruções para criar uma nova senha.`)) {
+                try {
+                    resetBtn.disabled = true;
+                    resetBtn.innerHTML = '<i class="ph ph-spinner"></i> Enviando...';
+                    const response = await fetch('/api/audit/force-reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ email })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        if (data.emailEnviado) {
+                            alert(`✅ E-mail de redefinição enviado com sucesso para ${email}.`);
+                        } else {
+                            alert(`⚠️ Solicitação registrada, mas o e-mail não pôde ser enviado.\nVerifique as configurações de SMTP no servidor.`);
+                        }
+                    } else {
+                        alert(data.error || 'Erro ao forçar reset de senha.');
+                    }
+                } catch (error) {
+                    console.error('Force-reset error:', error);
+                    alert('Erro de conexão ao tentar forçar o reset de senha.');
+                } finally {
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = '<i class="ph ph-envelope-simple-open"></i> Forçar Reset';
+                }
             }
         }
     });
