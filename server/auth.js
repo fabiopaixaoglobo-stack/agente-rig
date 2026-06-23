@@ -219,7 +219,7 @@ function setupAuthRoutes(app) {
 
             // Auditoria de login
             const audit = await pool.query(
-                `INSERT INTO auditoria (id_usuario, ip_origem) VALUES ($1, $2) RETURNING id`,
+                `INSERT INTO auditoria (id_usuario, ip_origem, ultimo_ping) VALUES ($1, $2, NOW()) RETURNING id`,
                 [user.id, ip]
             );
             const auditId = audit.rows[0]?.id || null;
@@ -262,6 +262,43 @@ function setupAuthRoutes(app) {
         } catch (err) {
             console.error('Erro no /api/logout:', err);
             return res.json({ success: true }); // não bloquear o logout por erro de auditoria
+        }
+    });
+
+    // ── POST /api/session/ping ───────────────────
+    // Heartbeat: o frontend chama a cada 5 minutos para manter a sessão viva.
+    app.post('/api/session/ping', async (req, res) => {
+        try {
+            const { auditId } = req.body;
+            if (!auditId) return res.json({ success: false });
+            await pool.query(
+                `UPDATE auditoria SET ultimo_ping = NOW() WHERE id = $1 AND data_hora_logout IS NULL`,
+                [auditId]
+            );
+            return res.json({ success: true });
+        } catch (err) {
+            console.error('Erro no /api/session/ping:', err);
+            return res.json({ success: false });
+        }
+    });
+
+    // ── POST /api/session/close ──────────────────
+    // Usado pelo sendBeacon quando o browser fecha (não requer JWT pois beacon é fire-and-forget)
+    app.post('/api/session/close', async (req, res) => {
+        try {
+            const { auditId } = req.body;
+            if (!auditId) return res.json({ success: false });
+            await pool.query(
+                `UPDATE auditoria
+                 SET data_hora_logout = NOW(),
+                     tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
+                 WHERE id = $1 AND data_hora_logout IS NULL`,
+                [auditId]
+            );
+            return res.json({ success: true });
+        } catch (err) {
+            console.error('Erro no /api/session/close:', err);
+            return res.json({ success: false });
         }
     });
 
@@ -341,6 +378,22 @@ function setupAuthRoutes(app) {
     // ── GET /api/audit ───────────────────────────
     app.get('/api/audit', verifyToken, async (req, res) => {
         try {
+            // Auto-cleanup: fecha sessões que estão abertas há mais de 12h
+            // OU que não enviaram ping nos últimos 30 minutos (browser fechou sem beacon)
+            await pool.query(`
+                UPDATE auditoria
+                SET data_hora_logout = COALESCE(ultimo_ping, data_hora_login + INTERVAL '30 minutes'),
+                    tempo_sessao = EXTRACT(EPOCH FROM (
+                        COALESCE(ultimo_ping, data_hora_login + INTERVAL '30 minutes') - data_hora_login
+                    ))::INTEGER
+                WHERE data_hora_logout IS NULL
+                  AND (
+                      data_hora_login < NOW() - INTERVAL '12 hours'
+                      OR (ultimo_ping IS NOT NULL AND ultimo_ping < NOW() - INTERVAL '30 minutes')
+                      OR (ultimo_ping IS NULL AND data_hora_login < NOW() - INTERVAL '30 minutes')
+                  )
+            `);
+
             const query = `
                 SELECT 
                     a.id AS audit_id,

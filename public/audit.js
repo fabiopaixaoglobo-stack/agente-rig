@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnLogout.addEventListener('click', () => {
         localStorage.removeItem('rig_token');
-        localStorage.removeItem('rig_audit_id');
+        localStorage.removeItem('rig_auditId');
         localStorage.removeItem('rig_user');
         window.location.href = '/login.html';
     });

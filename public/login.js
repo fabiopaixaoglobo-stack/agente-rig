@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Store JWT and Audit ID
                 localStorage.setItem('rig_token', data.token);
                 if (data.auditId) {
-                    localStorage.setItem('rig_audit_id', data.auditId);
+                    localStorage.setItem('rig_auditId', data.auditId);
                 }
                 localStorage.setItem('rig_user', JSON.stringify(data.usuario));
                 
