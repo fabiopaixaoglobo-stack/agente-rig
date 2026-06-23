@@ -5,6 +5,34 @@ import { parseDataHora } from './data-service.js';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
+function verificarEmAtendimento(inicioVal, fimVal) {
+    const inicio = parseDataHora(inicioVal);
+    const fim = parseDataHora(fimVal);
+    if (!inicio || !fim) return 'Fora do atendimento';
+
+    const agora = new Date();
+    
+    // Se a data de início/fim for o mesmo dia de hoje, faz a comparação exata com data e hora
+    const mesmoDia = (inicio.getDate() === agora.getDate() &&
+                      inicio.getMonth() === agora.getMonth() &&
+                      inicio.getFullYear() === agora.getFullYear());
+                      
+    if (mesmoDia) {
+        return (agora >= inicio && agora <= fim) ? 'Em atendimento' : 'Fora do atendimento';
+    } else {
+        // Fallback para simulação/demonstração de outras datas: compara apenas hora e minuto do dia
+        const minAgora = agora.getHours() * 60 + agora.getMinutes();
+        const minInicio = inicio.getHours() * 60 + inicio.getMinutes();
+        let minFim = fim.getHours() * 60 + fim.getMinutes();
+        
+        if (minFim < minInicio) {
+            return (minAgora >= minInicio || minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+        } else {
+            return (minAgora >= minInicio && minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+        }
+    }
+}
+
 export class UiController {
     constructor(mapService, plannerService, transitoMap, chatService, dataService) {
         this.mapService = mapService;
@@ -51,34 +79,6 @@ export class UiController {
             });
         });
     }
-
-function verificarEmAtendimento(inicioVal, fimVal) {
-    const inicio = parseDataHora(inicioVal);
-    const fim = parseDataHora(fimVal);
-    if (!inicio || !fim) return 'Fora do atendimento';
-
-    const agora = new Date();
-    
-    // Se a data de início/fim for o mesmo dia de hoje, faz a comparação exata com data e hora
-    const mesmoDia = (inicio.getDate() === agora.getDate() &&
-                      inicio.getMonth() === agora.getMonth() &&
-                      inicio.getFullYear() === agora.getFullYear());
-                      
-    if (mesmoDia) {
-        return (agora >= inicio && agora <= fim) ? 'Em atendimento' : 'Fora do atendimento';
-    } else {
-        // Fallback para simulação/demonstração de outras datas: compara apenas hora e minuto do dia
-        const minAgora = agora.getHours() * 60 + agora.getMinutes();
-        const minInicio = inicio.getHours() * 60 + inicio.getMinutes();
-        let minFim = fim.getHours() * 60 + fim.getMinutes();
-        
-        if (minFim < minInicio) {
-            return (minAgora >= minInicio || minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
-        } else {
-            return (minAgora >= minInicio && minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
-        }
-    }
-}
 
     initFilters() {
         const sp = document.getElementById("filtro-programa");
