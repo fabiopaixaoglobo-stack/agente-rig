@@ -129,6 +129,12 @@ function setupAuthRoutes(app) {
                     // Redefinição de senha
                     const hashedSenha = await bcrypt.hash(senha, 10);
                     await pool.query('UPDATE users SET senha = $1 WHERE id = $2', [hashedSenha, existingUser.id]);
+                    await pool.query(
+                        `UPDATE recuperacao_senha
+                         SET cadastro_concluido = TRUE, concluido_em = NOW()
+                         WHERE email = $1 AND cadastro_concluido = FALSE`,
+                        [email]
+                    );
                     return res.json({
                         success: true,
                         message: 'Sua senha foi redefinida com sucesso! Você já pode entrar.',
@@ -145,6 +151,12 @@ function setupAuthRoutes(app) {
                 `INSERT INTO users (nome, sobrenome, matricula, email, senha, funcao, area)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [nome, sobrenome, matricula, email, hashedSenha, funcao, area]
+            );
+            await pool.query(
+                `UPDATE recuperacao_senha
+                 SET cadastro_concluido = TRUE, concluido_em = NOW()
+                 WHERE email = $1 AND cadastro_concluido = FALSE`,
+                [email]
             );
 
             return res.json({
@@ -194,6 +206,15 @@ function setupAuthRoutes(app) {
                 { id: user.id, matricula: user.matricula, role: user.funcao },
                 JWT_SECRET,
                 { expiresIn: '12h' }
+            );
+
+            // Fecha sessões anteriores ativas do mesmo usuário
+            await pool.query(
+                `UPDATE auditoria
+                 SET data_hora_logout = NOW(),
+                     tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
+                 WHERE id_usuario = $1 AND data_hora_logout IS NULL`,
+                [user.id]
             );
 
             // Auditoria de login
@@ -284,6 +305,13 @@ function setupAuthRoutes(app) {
                 });
             }
 
+            const emailEnviado = !!(colaborador && process.env.SMTP_HOST && process.env.SMTP_USER);
+            await pool.query(
+                `INSERT INTO recuperacao_senha (email, email_enviado)
+                 VALUES ($1, $2)`,
+                [email, emailEnviado]
+            );
+
             // Resposta genérica (evita enumeração de e-mails)
             return res.json({
                 success: true,
@@ -315,6 +343,7 @@ function setupAuthRoutes(app) {
         try {
             const query = `
                 SELECT 
+                    a.id AS audit_id,
                     u.nome,
                     u.sobrenome,
                     u.matricula,
@@ -332,6 +361,50 @@ function setupAuthRoutes(app) {
         } catch (err) {
             console.error('Erro no /api/audit:', err);
             return res.status(500).json({ error: 'Erro interno ao buscar auditoria.' });
+        }
+    });
+
+    // ── POST /api/audit/kick ─────────────────────
+    app.post('/api/audit/kick', verifyToken, async (req, res) => {
+        try {
+            const { auditId } = req.body;
+            if (!auditId) {
+                return res.status(400).json({ error: 'Audit ID é obrigatório para encerrar a sessão.' });
+            }
+
+            await pool.query(
+                `UPDATE auditoria
+                 SET data_hora_logout = NOW(),
+                     tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
+                 WHERE id = $1 AND data_hora_logout IS NULL`,
+                [auditId]
+            );
+
+            return res.json({ success: true, message: 'Acesso encerrado com sucesso.' });
+        } catch (err) {
+            console.error('Erro no /api/audit/kick:', err);
+            return res.status(500).json({ error: 'Erro interno ao encerrar o acesso.' });
+        }
+    });
+
+    // ── GET /api/recuperacoes ─────────────────────
+    app.get('/api/recuperacoes', verifyToken, async (req, res) => {
+        try {
+            const query = `
+                SELECT 
+                    email,
+                    solicitado_em,
+                    email_enviado,
+                    cadastro_concluido,
+                    concluido_em
+                FROM recuperacao_senha
+                ORDER BY solicitado_em DESC;
+            `;
+            const result = await pool.query(query);
+            return res.json({ success: true, data: result.rows });
+        } catch (err) {
+            console.error('Erro no /api/recuperacoes:', err);
+            return res.status(500).json({ error: 'Erro interno ao buscar recuperações.' });
         }
     });
 }

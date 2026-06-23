@@ -7,13 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let auditData = [];
+    let recoverData = [];
 
     // Elements
     const tbody = document.getElementById('audit-tbody');
+    const recoverTbody = document.getElementById('recover-tbody');
     const errorMessage = document.getElementById('error-message');
     const btnLogout = document.getElementById('btn-logout');
     const filterDate = document.getElementById('filter-date');
     const filterUser = document.getElementById('filter-user');
+    const filterStatus = document.getElementById('filter-status');
+    const filterRecoverUser = document.getElementById('filter-recover-user');
 
     // KPI Elements
     const kpiActive = document.getElementById('kpi-active-users');
@@ -31,8 +35,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filterDate.addEventListener('change', renderDashboard);
     filterUser.addEventListener('input', renderDashboard);
+    filterStatus.addEventListener('change', renderDashboard);
+    if (filterRecoverUser) {
+        filterRecoverUser.addEventListener('input', renderRecoverDashboard);
+    }
 
-    // ── Data Fetch ──────────────────────────────
+    // ── Tab Switching ────────────────────────────
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'tab-recuperacoes') {
+                loadRecoverData();
+            } else {
+                loadAuditData();
+            }
+        });
+    });
+
+    // ── Data Fetch: Audit ─────────────────────────
     async function loadAuditData() {
         try {
             const response = await fetch('/api/audit', {
@@ -59,10 +86,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── Render Pipeline ─────────────────────────
+    // ── Data Fetch: Password Recovery ──────────────
+    async function loadRecoverData() {
+        try {
+            const response = await fetch('/api/recuperacoes', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('rig_token');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                recoverData = data.data;
+                renderRecoverDashboard();
+            } else {
+                showError(data.error || 'Erro ao buscar dados de recuperações.');
+            }
+        } catch (error) {
+            console.error('Recover fetch error:', error);
+            showError('Erro de conexão com o servidor.');
+        }
+    }
+
+    // ── Render Pipeline: Audit ────────────────────
     function renderDashboard() {
         const dateVal = filterDate.value;
         const userVal = filterUser.value.toLowerCase().trim();
+        const statusVal = filterStatus.value;
 
         let filtered = auditData;
 
@@ -82,8 +137,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (statusVal) {
+            filtered = filtered.filter(row => {
+                const isActive = !row.data_hora_logout;
+                const isLongSession = row.tempo_sessao && row.tempo_sessao > 3600;
+                let rowStatus = 'Normal';
+                if (isActive) {
+                    rowStatus = 'Ativo';
+                } else if (isLongSession) {
+                    rowStatus = 'Longa';
+                }
+                return rowStatus === statusVal;
+            });
+        }
+
         updateKPIs(filtered);
         renderTable(filtered);
+    }
+
+    // ── Render Pipeline: Password Recovery ─────────
+    function renderRecoverDashboard() {
+        const emailFilter = filterRecoverUser.value.toLowerCase().trim();
+        let filtered = recoverData;
+
+        if (emailFilter) {
+            filtered = filtered.filter(row => (row.email || '').toLowerCase().includes(emailFilter));
+        }
+
+        renderRecoverTable(filtered);
     }
 
     // ── KPI Computation ─────────────────────────
@@ -138,12 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
         kpiTopUser.textContent = topUser;
     }
 
-    // ── Table Rendering ─────────────────────────
+    // ── Table Rendering: Audit ────────────────────
     function renderTable(rows) {
         tbody.innerHTML = '';
         
         if (!rows || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum registro encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Nenhum registro encontrado.</td></tr>';
             return;
         }
 
@@ -167,6 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusHtml = '<span class="status-dot status-normal"></span> Normal';
             }
 
+            let actionHtml = '';
+            if (isActive) {
+                actionHtml = `<button class="btn-kick" data-id="${row.audit_id}"><i class="ph ph-user-minus"></i> Derrubar</button>`;
+            } else {
+                actionHtml = '-';
+            }
+
             tr.className = rowClass;
             tr.innerHTML = `
                 <td>${statusHtml}</td>
@@ -176,11 +264,73 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${formatDateTime(row.data_hora_logout)}</td>
                 <td>${formatSessionTime(row.tempo_sessao)}</td>
                 <td>${escapeHTML(row.ip_origem || '-')}</td>
+                <td>${actionHtml}</td>
             `;
 
             tbody.appendChild(tr);
         });
     }
+
+    // ── Table Rendering: Password Recovery ─────────
+    function renderRecoverTable(rows) {
+        recoverTbody.innerHTML = '';
+
+        if (!rows || rows.length === 0) {
+            recoverTbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum registro encontrado.</td></tr>';
+            return;
+        }
+
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+
+            const emailEnviadoHtml = row.email_enviado 
+                ? '<span class="status-badge badge-success"><i class="ph ph-check-circle"></i> Sim</span>' 
+                : '<span class="status-badge badge-error"><i class="ph ph-x-circle"></i> Não</span>';
+                
+            const cadastroConcluidoHtml = row.cadastro_concluido
+                ? '<span class="status-badge badge-success"><i class="ph ph-check-circle"></i> Sim</span>'
+                : '<span class="status-badge badge-warning"><i class="ph ph-hourglass"></i> Pendente</span>';
+
+            tr.innerHTML = `
+                <td>${escapeHTML(row.email)}</td>
+                <td>${formatDateTime(row.solicitado_em)}</td>
+                <td>${emailEnviadoHtml}</td>
+                <td>${cadastroConcluidoHtml}</td>
+                <td>${formatDateTime(row.concluido_em)}</td>
+            `;
+            recoverTbody.appendChild(tr);
+        });
+    }
+
+    // ── Kick Button Event Delegation ───────────────
+    tbody.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-kick');
+        if (!btn) return;
+
+        const auditId = btn.getAttribute('data-id');
+        if (confirm('Tem certeza que deseja derrubar esta sessão de acesso?')) {
+            try {
+                const response = await fetch('/api/audit/kick', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ auditId })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    await loadAuditData();
+                } else {
+                    alert(data.error || 'Erro ao derrubar sessão.');
+                }
+            } catch (error) {
+                console.error('Kick session error:', error);
+                alert('Erro de conexão ao tentar derrubar a sessão.');
+            }
+        }
+    });
 
     // ── Formatters ──────────────────────────────
     function formatDateTime(isoString) {

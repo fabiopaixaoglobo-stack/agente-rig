@@ -35,6 +35,16 @@ async function initDB() {
             );
         `);
         await client.query(`
+            CREATE TABLE IF NOT EXISTS recuperacao_senha (
+                id SERIAL PRIMARY KEY,
+                email TEXT NOT NULL,
+                solicitado_em TIMESTAMPTZ DEFAULT NOW(),
+                email_enviado BOOLEAN DEFAULT FALSE,
+                cadastro_concluido BOOLEAN DEFAULT FALSE,
+                concluido_em TIMESTAMPTZ
+            );
+        `);
+        await client.query(`
             CREATE TABLE IF NOT EXISTS lotes_importacao (
                 id SERIAL PRIMARY KEY,
                 id_usuario INTEGER REFERENCES users(id),

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoria Executiva - Agente RIG</title>
+    <title>Auditoria de Acessos - Agente RIT</title>
     <link rel="stylesheet" href="audit.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -12,8 +12,8 @@
     <div class="dashboard-container">
         <header class="dashboard-header">
             <div>
-                <h2>Agente RIG - Monitoramento de Auditoria</h2>
-                <p class="subtitle">Visão Executiva</p>
+                <h2>Agente RIT - Rotas Inteligentes e Transportes</h2>
+                <p class="subtitle">Auditoria de Acessos</p>
             </div>
             <button id="btn-logout" class="btn-logout"><i class="ph ph-sign-out"></i> Sair</button>
         </header>
@@ -60,32 +60,79 @@
                 </div>
             </div>
 
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="tab-acessos">Histórico de Acessos</button>
+                <button class="tab-btn" data-tab="tab-recuperacoes">Recuperações de Senha</button>
+            </div>
+
             <!-- Histórico de Acessos -->
-            <div class="table-section">
-                <div class="table-header">
-                    <h4>Histórico de Acessos</h4>
-                    <div class="filters">
-                        <input type="date" id="filter-date" title="Filtrar por data">
-                        <input type="text" id="filter-user" placeholder="Buscar por nome ou matrícula">
+            <div id="tab-acessos" class="tab-content active">
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Histórico de Acessos</h4>
+                        <div class="legend">
+                            <span class="legend-item"><span class="status-dot status-active"></span> Ativo</span>
+                            <span class="legend-item"><span class="status-dot status-normal"></span> Normal (&le; 1h)</span>
+                            <span class="legend-item"><span class="status-dot status-long"></span> Longa (&gt; 1h)</span>
+                        </div>
+                        <div class="filters">
+                            <select id="filter-status" class="select-filter">
+                                <option value="">Todos os Status</option>
+                                <option value="Ativo">Ativo</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Longa">Longa</option>
+                            </select>
+                            <input type="date" id="filter-date" title="Filtrar por data">
+                            <input type="text" id="filter-user" placeholder="Buscar por nome ou matrícula">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Nome</th>
+                                    <th>Matrícula</th>
+                                    <th>Login</th>
+                                    <th>Logout</th>
+                                    <th>Tempo Sessão</th>
+                                    <th>IP</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-tbody">
+                                <!-- Dados dinâmicos -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table id="audit-table">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>Nome</th>
-                                <th>Matrícula</th>
-                                <th>Login</th>
-                                <th>Logout</th>
-                                <th>Tempo Sessão</th>
-                                <th>IP</th>
-                            </tr>
-                        </thead>
-                        <tbody id="audit-tbody">
-                            <!-- Dados dinâmicos -->
-                        </tbody>
-                    </table>
+            </div>
+
+            <!-- Recuperações de Senha -->
+            <div id="tab-recuperacoes" class="tab-content">
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Recuperações de Senha e Cadastro</h4>
+                        <div class="filters">
+                            <input type="text" id="filter-recover-user" placeholder="Buscar por e-mail">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="recover-table">
+                            <thead>
+                                <tr>
+                                    <th>E-mail</th>
+                                    <th>Solicitado Em</th>
+                                    <th>E-mail Enviado</th>
+                                    <th>Novo Cadastro Realizado</th>
+                                    <th>Data Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recover-tbody">
+                                <!-- Dados dinâmicos -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

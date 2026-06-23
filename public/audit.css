@@ -122,10 +122,10 @@ body {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 24px;
+    padding: 12px 18px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
@@ -135,11 +135,11 @@ body {
 }
 
 .kpi-icon {
-    font-size: 32px;
+    font-size: 24px;
     color: var(--primary-color);
     background: rgba(0, 209, 255, 0.1);
-    padding: 12px;
-    border-radius: 12px;
+    padding: 8px;
+    border-radius: 8px;
     display: flex;
 }
 
@@ -149,17 +149,17 @@ body {
 }
 
 .kpi-title {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     font-weight: 500;
     text-transform: uppercase;
 }
 
 .kpi-info h3 {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-color);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 /* ── Table Section ───────────────────────────── */
@@ -303,4 +303,131 @@ tbody tr:hover {
 
 .row-long:hover {
     background-color: rgba(239, 68, 68, 0.12);
+}
+
+/* ── Tabs Styling ───────────────────────────── */
+.tabs-container {
+    display: flex;
+    gap: 12px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+.tab-btn:hover {
+    color: var(--text-color);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    background-color: rgba(0, 209, 255, 0.1);
+}
+
+.tab-content {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+/* ── Legend Styling ─────────────────────────── */
+.legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-right: auto;
+    padding-left: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+}
+
+/* ── Select Filter Styling ───────────────────── */
+.select-filter {
+    padding: 10px 16px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.select-filter:focus {
+    border-color: var(--primary-color);
+}
+
+/* ── Kick Button Styling ─────────────────────── */
+.btn-kick {
+    background-color: transparent;
+    color: var(--error-color);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-kick:hover {
+    background-color: var(--error-color);
+    color: #fff;
+    border-color: var(--error-color);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+/* ── Status Badge Styling ────────────────────── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-error {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--error-color);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--warning-color);
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
