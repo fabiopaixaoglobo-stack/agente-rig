@@ -39,6 +39,98 @@ function getCell(row, keyMap, configColumnName) {
     return '';
 }
 
+function parseDataHora(v) {
+    if (!v) return null;
+    if (v instanceof Date) return v;
+    
+    if (typeof v === 'number') {
+        return new Date(Math.round((v - 25569) * 86400 * 1000));
+    }
+    
+    const str = String(v).trim();
+    const regexBR = /(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/;
+    const mBR = str.match(regexBR);
+    if (mBR) {
+        return new Date(
+            Number(mBR[3]),
+            Number(mBR[2]) - 1,
+            Number(mBR[1]),
+            Number(mBR[4]),
+            Number(mBR[5])
+        );
+    }
+    
+    const regexISO = /(\d{4})-(\d{1,2})-(\d{1,2})[T\s](\d{1,2}):(\d{2})/;
+    const mISO = str.match(regexISO);
+    if (mISO) {
+        return new Date(
+            Number(mISO[1]),
+            Number(mISO[2]) - 1,
+            Number(mISO[3]),
+            Number(mISO[4]),
+            Number(mISO[5])
+        );
+    }
+    
+    const parsed = Date.parse(str);
+    if (!isNaN(parsed)) {
+        return new Date(parsed);
+    }
+    
+    return null;
+}
+
+function calcularDiferencaAtendimento(inicioVal, fimVal) {
+    const inicio = parseDataHora(inicioVal);
+    const fim = parseDataHora(fimVal);
+    
+    if (!inicio || !fim) return '';
+    
+    const diffMs = fim - inicio;
+    if (diffMs < 0) return '';
+    
+    const diffMin = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMin / 60);
+    const mins = diffMin % 60;
+    
+    if (hrs === 0 && mins === 0) return '0min';
+    if (hrs === 0) return `${mins}min`;
+    if (mins === 0) return `${hrs}h`;
+    return `${hrs}h ${mins}min`;
+}
+
+function extrairHora(v) {
+    const date = parseDataHora(v);
+    if (!date) {
+        const m = String(v).match(/(\d{1,2}:\d{2})/);
+        return m ? m[1] : '';
+    }
+    const hrs = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    return `${hrs}:${mins}`;
+}
+
+function extrairValoresDataHora(row, keyMap) {
+    let inicio = getCell(row, keyMap, CONFIG.EXCEL_COLUMNS.DATA_HORA_INICIO);
+    let fim = getCell(row, keyMap, CONFIG.EXCEL_COLUMNS.DATA_HORA_FIM);
+
+    if (!inicio || !fim) {
+        const keys = Object.keys(row);
+        const dataHoraKeys = keys.filter(k => {
+            const nk = String(k || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            return nk.startsWith('data hora');
+        });
+        if (dataHoraKeys.length >= 2) {
+            if (!inicio) inicio = row[dataHoraKeys[0]];
+            if (!fim) fim = row[dataHoraKeys[1]];
+        } else if (dataHoraKeys.length === 1 && !inicio) {
+            inicio = row[dataHoraKeys[0]];
+        }
+    }
+    
+    return { inicio, fim };
+}
+
 export class DataService {
     constructor() {
         this.baseAtendimentos = [];
@@ -68,6 +160,11 @@ export class DataService {
                             const bairroParts = enderecoRaw.split(',');
                             const bairro = bairroParts.pop().trim() || 'Rio de Janeiro';
 
+                            const { inicio: dataHoraInicioRaw, fim: dataHoraFimRaw } = extrairValoresDataHora(l, keyMap);
+
+                            const emAtendimento = calcularDiferencaAtendimento(dataHoraInicioRaw, dataHoraFimRaw);
+                            const horarioInicio = extrairHora(dataHoraInicioRaw);
+
                             return {
                                 motorista: String(
                                     getCell(l, keyMap, CONFIG.EXCEL_COLUMNS.MOTORISTA) || ''
@@ -80,6 +177,8 @@ export class DataService {
                                     .trim(),
                                 placa,
                                 bairro,
+                                emAtendimento,
+                                horarioInicio,
                                 lat: null,
                                 lng: null,
                             };

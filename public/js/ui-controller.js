@@ -55,6 +55,8 @@ export class UiController {
         const sp = document.getElementById("filtro-programa");
         const sb = document.getElementById("filtro-bairro");
         const st = document.getElementById("filtro-tipo");
+        const se = document.getElementById("filtro-em-atendimento");
+        const sh = document.getElementById("filtro-horario-inicio");
         const btnLimpar = document.getElementById("btn-limpar");
         const btnCentralizar = document.getElementById("btn-centralizar");
 
@@ -62,16 +64,20 @@ export class UiController {
             const f = this.dataService.baseAtendimentos.filter(a => 
                 (!sp.value || a.programa === sp.value) && 
                 (!sb.value || a.bairro === sb.value) &&
-                (!st || !st.value || a.tipoVeiculo === st.value)
+                (!st || !st.value || a.tipoVeiculo === st.value) &&
+                (!se || !se.value || a.emAtendimento === se.value) &&
+                (!sh || !sh.value || a.horarioInicio === sh.value)
             );
             this.plotarAtendimentos(f);
         };
 
-        [sp, sb, st].forEach(s => s?.addEventListener("change", filtrar));
+        [sp, sb, st, se, sh].forEach(s => s?.addEventListener("change", filtrar));
         btnLimpar?.addEventListener("click", () => {
             if(sp) sp.value = "";
             if(sb) sb.value = "";
             if(st) st.value = "";
+            if(se) se.value = "";
+            if(sh) sh.value = "";
             this.plotarAtendimentos(this.dataService.baseAtendimentos);
         });
         btnCentralizar?.addEventListener("click", () => {
@@ -133,14 +139,29 @@ export class UiController {
         const sp = document.getElementById("filtro-programa");
         const sb = document.getElementById("filtro-bairro");
         const st = document.getElementById("filtro-tipo");
+        const se = document.getElementById("filtro-em-atendimento");
+        const sh = document.getElementById("filtro-horario-inicio");
         
         const progs = [...new Set(l.map(a => a.programa))].sort();
         const bairs = [...new Set(l.map(a => a.bairro))].sort();
         const tipos = [...new Set(l.map(a => a.tipoVeiculo))].sort();
+        const emAtends = [...new Set(l.map(a => a.emAtendimento).filter(Boolean))].sort((a, b) => {
+            const toMins = (str) => {
+                const hMatch = str.match(/(\d+)h/);
+                const mMatch = str.match(/(\d+)min/);
+                const h = hMatch ? parseInt(hMatch[1]) : 0;
+                const m = mMatch ? parseInt(mMatch[1]) : 0;
+                return h * 60 + m;
+            };
+            return toMins(a) - toMins(b);
+        });
+        const horarios = [...new Set(l.map(a => a.horarioInicio).filter(Boolean))].sort();
 
         if (sp) sp.innerHTML = '<option value="">Programa</option>' + progs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (sb) sb.innerHTML = '<option value="">Bairro</option>' + bairs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (st) st.innerHTML = '<option value="">Veículo</option>' + tipos.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+        if (se) se.innerHTML = '<option value="">Em Atendimento</option>' + emAtends.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+        if (sh) sh.innerHTML = '<option value="">Horário de Início</option>' + horarios.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
     }
 
     initNormas() {

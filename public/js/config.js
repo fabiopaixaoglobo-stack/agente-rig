@@ -13,6 +13,8 @@ export const CONFIG = {
         MOTORISTA: "Motorista",
         TIPO: "Tipo de Veículo",
         PROGRAMA: "Programa",
-        ENDERECO: "Localidade + Endereço"
+        ENDERECO: "Localidade + Endereço",
+        DATA_HORA_INICIO: "Data Hora",
+        DATA_HORA_FIM: "Data Hora2"
     }
 };

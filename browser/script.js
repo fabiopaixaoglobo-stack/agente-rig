@@ -197,6 +197,87 @@ BASE_ATENDIMENTOS = normalizarPlanilha(linhas);
    NORMALIZAÇÃO DA PLANILHA
 ======================= */
 
+function parseDataHora(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  
+  if (typeof v === 'number') {
+    return new Date(Math.round((v - 25569) * 86400 * 1000));
+  }
+  
+  const str = String(v).trim();
+  const regexBR = /(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/;
+  const mBR = str.match(regexBR);
+  if (mBR) {
+    return new Date(
+      Number(mBR[3]),
+      Number(mBR[2]) - 1,
+      Number(mBR[1]),
+      Number(mBR[4]),
+      Number(mBR[5])
+    );
+  }
+  
+  const regexISO = /(\d{4})-(\d{1,2})-(\d{1,2})[T\s](\d{1,2}):(\d{2})/;
+  const mISO = str.match(regexISO);
+  if (mISO) {
+    return new Date(
+      Number(mISO[1]),
+      Number(mISO[2]) - 1,
+      Number(mISO[3]),
+      Number(mISO[4]),
+      Number(mISO[5])
+    );
+  }
+  
+  const parsed = Date.parse(str);
+  if (!isNaN(parsed)) {
+    return new Date(parsed);
+  }
+  
+  return null;
+}
+
+function calcularDiferencaAtendimento(inicioVal, fimVal) {
+  const inicio = parseDataHora(inicioVal);
+  const fim = parseDataHora(fimVal);
+  
+  if (!inicio || !fim) return '';
+  
+  const diffMs = fim - inicio;
+  if (diffMs < 0) return '';
+  
+  const diffMin = Math.floor(diffMs / 60000);
+  const hrs = Math.floor(diffMin / 60);
+  const mins = diffMin % 60;
+  
+  if (hrs === 0 && mins === 0) return '0min';
+  if (hrs === 0) return `${mins}min`;
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}min`;
+}
+
+function extrairValoresDataHora(row) {
+  let inicio = row["Data Hora"];
+  let fim = row["Data Hora2"] || row["Data Hora_1"];
+
+  if (!inicio || !fim) {
+    const keys = Object.keys(row);
+    const dataHoraKeys = keys.filter(k => {
+      const nk = String(k || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      return nk.startsWith('data hora');
+    });
+    if (dataHoraKeys.length >= 2) {
+      if (!inicio) inicio = row[dataHoraKeys[0]];
+      if (!fim) fim = row[dataHoraKeys[1]];
+    } else if (dataHoraKeys.length === 1 && !inicio) {
+      inicio = row[dataHoraKeys[0]];
+    }
+  }
+  
+  return { inicio, fim };
+}
+
 function normalizarPlanilha(linhas) {
   return linhas.map(l => {
     const tipoVeiculo = texto(l["Tipo de Veículo"]).toUpperCase();
@@ -204,15 +285,22 @@ function normalizarPlanilha(linhas) {
 
     if (!placa || tipoVeiculo === "AJUDANTE") return null;
 
+    const { inicio: dataHoraInicioRaw, fim: dataHoraFimRaw } = extrairValoresDataHora(l);
+
+    const emAtendimento = calcularDiferencaAtendimento(dataHoraInicioRaw, dataHoraFimRaw);
+    const horarioInicio = extrairHora(dataHoraInicioRaw);
+
     return {
       motorista: texto(l["Motorista"]),
       prestador: texto(l["Prestador do veículo"]),
       tipoVeiculo: texto(l["Tipo de Veículo"]),
       passageiro: texto(l["Passageiro"]),
-      hora: extrairHora(l["Data Hora"]),
+      hora: horarioInicio,
       bairro: extrairBairro(l["Localidade + Endereço"]),
       programa: extrairPrograma(l["Programa"]),
       placa,
+      emAtendimento,
+      horarioInicio,
       lat: gerarLatitudeSimulada(extrairBairro(l["Localidade + Endereço"])),
       lng: gerarLongitudeSimulada(extrairBairro(l["Localidade + Endereço"]))
     };
@@ -224,8 +312,14 @@ function texto(v) {
 }
 
 function extrairHora(v) {
-  const m = String(v).match(/(\d{1,2}:\d{2})/);
-  return m ? m[1] : "";
+  const date = parseDataHora(v);
+  if (!date) {
+    const m = String(v).match(/(\d{1,2}:\d{2})/);
+    return m ? m[1] : "";
+  }
+  const hrs = String(date.getHours()).padStart(2, "0");
+  const mins = String(date.getMinutes()).padStart(2, "0");
+  return `${hrs}:${mins}`;
 }
 
 function extrairBairro(v) {
@@ -356,6 +450,8 @@ function inicializarFiltros() {
   const selectProg = document.getElementById("filtro-programa");
   const selectBairro = document.getElementById("filtro-bairro");
   const selectTipo = document.getElementById("filtro-tipo");
+  const selectEmAtendimento = document.getElementById("filtro-em-atendimento");
+  const selectHorarioInicio = document.getElementById("filtro-horario-inicio");
   const btnLimpar = document.getElementById("btn-limpar");
 
   if(!selectProg) return;
@@ -364,26 +460,32 @@ function inicializarFiltros() {
     const p = selectProg.value;
     const b = selectBairro.value;
     const t = selectTipo.value;
+    const e = selectEmAtendimento?.value || "";
+    const h = selectHorarioInicio?.value || "";
 
     const filtrados = BASE_ATENDIMENTOS.filter(a => {
       const matchP = p === "" || a.programa === p;
       const matchB = b === "" || a.bairro === b;
       const matchT = t === "" || a.tipoVeiculo === t;
-      return matchP && matchB && matchT;
+      const matchE = e === "" || a.emAtendimento === e;
+      const matchH = h === "" || a.horarioInicio === h;
+      return matchP && matchB && matchT && matchE && matchH;
     });
 
     plotarAtendimentosNoMapa(filtrados);
     renderizarLista(filtrados);
   }
 
-  selectProg.addEventListener("change", aplicarFiltros);
-  selectBairro.addEventListener("change", aplicarFiltros);
-  selectTipo.addEventListener("change", aplicarFiltros);
+  [selectProg, selectBairro, selectTipo, selectEmAtendimento, selectHorarioInicio].forEach(s => {
+    s?.addEventListener("change", aplicarFiltros);
+  });
 
   btnLimpar.addEventListener("click", () => {
     selectProg.value = "";
     selectBairro.value = "";
     selectTipo.value = "";
+    if (selectEmAtendimento) selectEmAtendimento.value = "";
+    if (selectHorarioInicio) selectHorarioInicio.value = "";
     aplicarFiltros();
   });
 }
@@ -392,15 +494,34 @@ function preencherDropdownsFiltro(lista) {
   const selectProg = document.getElementById("filtro-programa");
   const selectBairro = document.getElementById("filtro-bairro");
   const selectTipo = document.getElementById("filtro-tipo");
+  const selectEmAtendimento = document.getElementById("filtro-em-atendimento");
+  const selectHorarioInicio = document.getElementById("filtro-horario-inicio");
   if(!selectProg) return;
 
   const programas = [...new Set(lista.map(a => a.programa))].sort();
   const bairros = [...new Set(lista.map(a => a.bairro))].sort();
   const tipos = [...new Set(lista.map(a => a.tipoVeiculo))].sort();
+  const emAtends = [...new Set(lista.map(a => a.emAtendimento).filter(Boolean))].sort((a, b) => {
+    const toMins = (str) => {
+      const hMatch = str.match(/(\d+)h/);
+      const mMatch = str.match(/(\d+)min/);
+      const h = hMatch ? parseInt(hMatch[1]) : 0;
+      const m = mMatch ? parseInt(mMatch[1]) : 0;
+      return h * 60 + m;
+    };
+    return toMins(a) - toMins(b);
+  });
+  const horarios = [...new Set(lista.map(a => a.horarioInicio).filter(Boolean))].sort();
 
   selectProg.innerHTML = '<option value="">Todos</option>' + programas.map(x => `<option value="${x}">${x}</option>`).join('');
   selectBairro.innerHTML = '<option value="">Todos</option>' + bairros.map(x => `<option value="${x}">${x}</option>`).join('');
   selectTipo.innerHTML = '<option value="">Todos</option>' + tipos.map(x => `<option value="${x}">${x}</option>`).join('');
+  if (selectEmAtendimento) {
+    selectEmAtendimento.innerHTML = '<option value="">Todos</option>' + emAtends.map(x => `<option value="${x}">${x}</option>`).join('');
+  }
+  if (selectHorarioInicio) {
+    selectHorarioInicio.innerHTML = '<option value="">Todos</option>' + horarios.map(x => `<option value="${x}">${x}</option>`).join('');
+  }
 }
 
 /* =======================
