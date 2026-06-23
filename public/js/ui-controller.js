@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { showToast, escapeHtml } from './utils.js';
+import { parseDataHora } from './data-service.js';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
@@ -51,6 +52,34 @@ export class UiController {
         });
     }
 
+function verificarEmAtendimento(inicioVal, fimVal) {
+    const inicio = parseDataHora(inicioVal);
+    const fim = parseDataHora(fimVal);
+    if (!inicio || !fim) return 'Fora do atendimento';
+
+    const agora = new Date();
+    
+    // Se a data de início/fim for o mesmo dia de hoje, faz a comparação exata com data e hora
+    const mesmoDia = (inicio.getDate() === agora.getDate() &&
+                      inicio.getMonth() === agora.getMonth() &&
+                      inicio.getFullYear() === agora.getFullYear());
+                      
+    if (mesmoDia) {
+        return (agora >= inicio && agora <= fim) ? 'Em atendimento' : 'Fora do atendimento';
+    } else {
+        // Fallback para simulação/demonstração de outras datas: compara apenas hora e minuto do dia
+        const minAgora = agora.getHours() * 60 + agora.getMinutes();
+        const minInicio = inicio.getHours() * 60 + inicio.getMinutes();
+        let minFim = fim.getHours() * 60 + fim.getMinutes();
+        
+        if (minFim < minInicio) {
+            return (minAgora >= minInicio || minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+        } else {
+            return (minAgora >= minInicio && minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+        }
+    }
+}
+
     initFilters() {
         const sp = document.getElementById("filtro-programa");
         const sb = document.getElementById("filtro-bairro");
@@ -61,13 +90,18 @@ export class UiController {
         const btnCentralizar = document.getElementById("btn-centralizar");
 
         const filtrar = () => {
-            const f = this.dataService.baseAtendimentos.filter(a => 
-                (!sp.value || a.programa === sp.value) && 
-                (!sb.value || a.bairro === sb.value) &&
-                (!st || !st.value || a.tipoVeiculo === st.value) &&
-                (!se || !se.value || a.emAtendimento === se.value) &&
-                (!sh || !sh.value || a.horarioInicio === sh.value)
-            );
+            const f = this.dataService.baseAtendimentos.filter(a => {
+                const matchP = !sp.value || a.programa === sp.value;
+                const matchB = !sb.value || a.bairro === sb.value;
+                const matchT = !st || !st.value || a.tipoVeiculo === st.value;
+                
+                // Calcula dinamicamente o status do atendimento com base no horário atual do sistema
+                const statusAtual = verificarEmAtendimento(a.dataHoraInicioRaw, a.dataHoraFimRaw);
+                const matchE = !se || !se.value || statusAtual === se.value;
+                
+                const matchH = !sh || !sh.value || a.horarioInicio === sh.value;
+                return matchP && matchB && matchT && matchE && matchH;
+            });
             this.plotarAtendimentos(f);
         };
 
@@ -139,28 +173,16 @@ export class UiController {
         const sp = document.getElementById("filtro-programa");
         const sb = document.getElementById("filtro-bairro");
         const st = document.getElementById("filtro-tipo");
-        const se = document.getElementById("filtro-em-atendimento");
         const sh = document.getElementById("filtro-horario-inicio");
         
         const progs = [...new Set(l.map(a => a.programa))].sort();
         const bairs = [...new Set(l.map(a => a.bairro))].sort();
         const tipos = [...new Set(l.map(a => a.tipoVeiculo))].sort();
-        const emAtends = [...new Set(l.map(a => a.emAtendimento).filter(Boolean))].sort((a, b) => {
-            const toMins = (str) => {
-                const hMatch = str.match(/(\d+)h/);
-                const mMatch = str.match(/(\d+)min/);
-                const h = hMatch ? parseInt(hMatch[1]) : 0;
-                const m = mMatch ? parseInt(mMatch[1]) : 0;
-                return h * 60 + m;
-            };
-            return toMins(a) - toMins(b);
-        });
         const horarios = [...new Set(l.map(a => a.horarioInicio).filter(Boolean))].sort();
 
         if (sp) sp.innerHTML = '<option value="">Programa</option>' + progs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (sb) sb.innerHTML = '<option value="">Bairro</option>' + bairs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (st) st.innerHTML = '<option value="">Veículo</option>' + tipos.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
-        if (se) se.innerHTML = '<option value="">Em Atendimento</option>' + emAtends.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (sh) sh.innerHTML = '<option value="">Horário de Início</option>' + horarios.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
     }
 

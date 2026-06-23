@@ -257,6 +257,34 @@ function calcularDiferencaAtendimento(inicioVal, fimVal) {
   return `${hrs}h ${mins}min`;
 }
 
+function verificarEmAtendimento(inicioVal, fimVal) {
+  const inicio = parseDataHora(inicioVal);
+  const fim = parseDataHora(fimVal);
+  if (!inicio || !fim) return 'Fora do atendimento';
+
+  const agora = new Date();
+  
+  // Se a data de início/fim for o mesmo dia de hoje, faz a comparação exata com data e hora
+  const mesmoDia = (inicio.getDate() === agora.getDate() &&
+                    inicio.getMonth() === agora.getMonth() &&
+                    inicio.getFullYear() === agora.getFullYear());
+                    
+  if (mesmoDia) {
+    return (agora >= inicio && agora <= fim) ? 'Em atendimento' : 'Fora do atendimento';
+  } else {
+    // Fallback para simulação/demonstração de outras datas: compara apenas hora e minuto do dia
+    const minAgora = agora.getHours() * 60 + agora.getMinutes();
+    const minInicio = inicio.getHours() * 60 + inicio.getMinutes();
+    let minFim = fim.getHours() * 60 + fim.getMinutes();
+    
+    if (minFim < minInicio) {
+      return (minAgora >= minInicio || minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+    } else {
+      return (minAgora >= minInicio && minAgora <= minFim) ? 'Em atendimento' : 'Fora do atendimento';
+    }
+  }
+}
+
 function extrairValoresDataHora(row) {
   let inicio = row["Data Hora"];
   let fim = row["Data Hora2"] || row["Data Hora_1"];
@@ -287,7 +315,6 @@ function normalizarPlanilha(linhas) {
 
     const { inicio: dataHoraInicioRaw, fim: dataHoraFimRaw } = extrairValoresDataHora(l);
 
-    const emAtendimento = calcularDiferencaAtendimento(dataHoraInicioRaw, dataHoraFimRaw);
     const horarioInicio = extrairHora(dataHoraInicioRaw);
 
     return {
@@ -299,7 +326,8 @@ function normalizarPlanilha(linhas) {
       bairro: extrairBairro(l["Localidade + Endereço"]),
       programa: extrairPrograma(l["Programa"]),
       placa,
-      emAtendimento,
+      dataHoraInicioRaw,
+      dataHoraFimRaw,
       horarioInicio,
       lat: gerarLatitudeSimulada(extrairBairro(l["Localidade + Endereço"])),
       lng: gerarLongitudeSimulada(extrairBairro(l["Localidade + Endereço"]))
@@ -467,7 +495,10 @@ function inicializarFiltros() {
       const matchP = p === "" || a.programa === p;
       const matchB = b === "" || a.bairro === b;
       const matchT = t === "" || a.tipoVeiculo === t;
-      const matchE = e === "" || a.emAtendimento === e;
+      
+      const statusAtual = verificarEmAtendimento(a.dataHoraInicioRaw, a.dataHoraFimRaw);
+      const matchE = e === "" || statusAtual === e;
+      
       const matchH = h === "" || a.horarioInicio === h;
       return matchP && matchB && matchT && matchE && matchH;
     });
@@ -494,31 +525,17 @@ function preencherDropdownsFiltro(lista) {
   const selectProg = document.getElementById("filtro-programa");
   const selectBairro = document.getElementById("filtro-bairro");
   const selectTipo = document.getElementById("filtro-tipo");
-  const selectEmAtendimento = document.getElementById("filtro-em-atendimento");
   const selectHorarioInicio = document.getElementById("filtro-horario-inicio");
   if(!selectProg) return;
 
   const programas = [...new Set(lista.map(a => a.programa))].sort();
   const bairros = [...new Set(lista.map(a => a.bairro))].sort();
   const tipos = [...new Set(lista.map(a => a.tipoVeiculo))].sort();
-  const emAtends = [...new Set(lista.map(a => a.emAtendimento).filter(Boolean))].sort((a, b) => {
-    const toMins = (str) => {
-      const hMatch = str.match(/(\d+)h/);
-      const mMatch = str.match(/(\d+)min/);
-      const h = hMatch ? parseInt(hMatch[1]) : 0;
-      const m = mMatch ? parseInt(mMatch[1]) : 0;
-      return h * 60 + m;
-    };
-    return toMins(a) - toMins(b);
-  });
   const horarios = [...new Set(lista.map(a => a.horarioInicio).filter(Boolean))].sort();
 
   selectProg.innerHTML = '<option value="">Todos</option>' + programas.map(x => `<option value="${x}">${x}</option>`).join('');
   selectBairro.innerHTML = '<option value="">Todos</option>' + bairros.map(x => `<option value="${x}">${x}</option>`).join('');
   selectTipo.innerHTML = '<option value="">Todos</option>' + tipos.map(x => `<option value="${x}">${x}</option>`).join('');
-  if (selectEmAtendimento) {
-    selectEmAtendimento.innerHTML = '<option value="">Todos</option>' + emAtends.map(x => `<option value="${x}">${x}</option>`).join('');
-  }
   if (selectHorarioInicio) {
     selectHorarioInicio.innerHTML = '<option value="">Todos</option>' + horarios.map(x => `<option value="${x}">${x}</option>`).join('');
   }

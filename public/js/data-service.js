@@ -39,7 +39,7 @@ function getCell(row, keyMap, configColumnName) {
     return '';
 }
 
-function parseDataHora(v) {
+export function parseDataHora(v) {
     if (!v) return null;
     if (v instanceof Date) return v;
     
@@ -162,7 +162,6 @@ export class DataService {
 
                             const { inicio: dataHoraInicioRaw, fim: dataHoraFimRaw } = extrairValoresDataHora(l, keyMap);
 
-                            const emAtendimento = calcularDiferencaAtendimento(dataHoraInicioRaw, dataHoraFimRaw);
                             const horarioInicio = extrairHora(dataHoraInicioRaw);
 
                             return {
@@ -177,7 +176,8 @@ export class DataService {
                                     .trim(),
                                 placa,
                                 bairro,
-                                emAtendimento,
+                                dataHoraInicioRaw,
+                                dataHoraFimRaw,
                                 horarioInicio,
                                 lat: null,
                                 lng: null,
