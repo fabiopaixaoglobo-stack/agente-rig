@@ -208,15 +208,6 @@ function setupAuthRoutes(app) {
                 { expiresIn: '12h' }
             );
 
-            // Fecha sessões anteriores ativas do mesmo usuário
-            await pool.query(
-                `UPDATE auditoria
-                 SET data_hora_logout = NOW(),
-                     tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
-                 WHERE id_usuario = $1 AND data_hora_logout IS NULL`,
-                [user.id]
-            );
-
             // Auditoria de login
             const audit = await pool.query(
                 `INSERT INTO auditoria (id_usuario, ip_origem, ultimo_ping) VALUES ($1, $2, NOW()) RETURNING id`,
