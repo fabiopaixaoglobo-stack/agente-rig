@@ -19,7 +19,17 @@ Para evitar falsidade ideológica, duplicidade ou cruzamento de homônimos:
 * O sistema exige que a **Matrícula** E o **E-mail Corporativo** (`@g.globo` ou `@globo.com`) informados pelo usuário correspondam exatamente ao mesmo registro na base oficial de RH/Normas.
 * A validação não é baseada em uma lógica permissiva (OU). Ambas as credenciais corporativas são confrontadas simultaneamente contra a mesma linha da base de dados oficial. Caso apenas uma bata ou haja divergência, o acesso/cadastro é imediatamente bloqueado.
 
-### 2.2 Política de Senhas Fortes e Hash (Criptografia)
+### 2.2 Normalização e Comparação Segura de Credenciais (Atualização Junho/2026)
+
+Para evitar falsos positivos de "dados divergentes" e garantir robustez no fluxo de recadastramento e redefinição de senha, foram implementadas as seguintes melhorias de normalização:
+
+* **Normalização de E-mail (Case-Insensitive):** Todos os e-mails são convertidos para **minúsculas** (`toLowerCase()`) e removidos espaços extras (`trim()`) antes de qualquer operação de comparação ou armazenamento no banco de dados. Isso impede que variações de capitalização (ex: `Juliana.MCaldas@g.globo` vs `juliana.mcaldas@g.globo`) causem erros de validação.
+* **Normalização de Matrícula:** A matrícula é convertida explicitamente para **string** (`String()`) e sanitizada com `trim()` para eliminar inconsistências de tipo ou espaços.
+* **Comparação Normalizada no PostgreSQL:** As queries de verificação de duplicidade utilizam `LOWER(TRIM(email))` diretamente no SQL, garantindo que a comparação no banco também seja case-insensitive.
+* **Análise Multi-Registro:** A verificação de duplicatas agora analisa **todos os registros retornados** pela query (em vez de apenas o primeiro), utilizando `Array.find()` para localizar correspondências exatas (matrícula + e-mail no mesmo registro) e correspondências parciais separadamente, garantindo diagnóstico preciso de cada cenário.
+* **Logging de Auditoria no Registro:** Todas as operações de redefinição de senha e detecção de dados divergentes geram logs estruturados no console do servidor (`[REGISTER]`), facilitando investigações de segurança e troubleshooting.
+
+### 2.3 Política de Senhas Fortes e Hash (Criptografia)
 
 * **Hash com Salt (`bcryptjs`)**: As senhas dos usuários nunca são armazenadas em texto claro no banco de dados. O sistema utiliza a biblioteca `bcryptjs` com um *cost factor* seguro (fator 10) para gerar o hash da senha, impossibilitando a leitura reversa em caso de vazamento do banco.
 * **Complexidade Exigida**: Durante o registro, o sistema impõe uma validação estrita com Expressões Regulares (Regex) garantindo que a senha possua:
@@ -31,7 +41,7 @@ Para evitar falsidade ideológica, duplicidade ou cruzamento de homônimos:
 
 
 
-### 2.3 JSON Web Tokens (JWT) para Sessão
+### 2.4 JSON Web Tokens (JWT) para Sessão
 
 * Após o login bem-sucedido, a sessão do usuário é gerenciada via **JWT** assinado digitalmente com uma chave secreta (`JWT_SECRET`) armazenada de forma segura nas variáveis de ambiente.
 * Os tokens têm expiração definida (12 horas) e contêm apenas o identificador e a permissão (role/função) do usuário, sem expor dados sensíveis.
@@ -65,6 +75,20 @@ O sistema foi blindado contra injeções e ataques de banco de dados:
 * A comunicação com o servidor SMTP é feita via porta 587 (com TLS) ou 465 (SSL), garantindo que os dados de envio não sejam interceptados.
 * Ao invés de enviar links fracos de redefinição, a arquitetura de segurança optou por forçar um novo recadastramento cruzado, obrigando o usuário a provar novamente que possui a Matrícula e E-mail correspondentes na base oficial.
 
+### 5.1 Fluxo de Redefinição de Senha — Tratamento de Cenários (Atualização Junho/2026)
+
+O fluxo de recadastramento via `/api/register` foi aprimorado para tratar corretamente os seguintes cenários sem bloquear indevidamente o acesso legítimo:
+
+| Cenário | Comportamento |
+|---|---|
+| Matrícula e e-mail correspondem ao mesmo registro existente | Senha é redefinida com sucesso (e-mail normalizado no banco) |
+| Matrícula existe, e-mail é diferente (atualização legítima) | Senha redefinida + e-mail atualizado no cadastro |
+| Matrícula e e-mail pertencem a registros **diferentes** | Bloqueio com mensagem "dados divergentes" (cenário real de divergência) |
+| E-mail já associado a outra matrícula | Bloqueio com mensagem específica orientando verificação de matrícula |
+| Nenhum registro existente | Novo cadastro criado normalmente |
+
+Todas as operações de comparação utilizam normalização case-insensitive (`LOWER(TRIM())`) tanto no backend Node.js quanto nas queries PostgreSQL, eliminando falsos positivos causados por diferenças de capitalização nos e-mails dos colaboradores.
+
 ## 6. Governança de Inteligência Artificial e Privacidade de Dados
 
 ### 6.1 Uso Restrito ao Ciclo de Desenvolvimento (Engenharia de Código)
@@ -82,8 +106,18 @@ Para garantir total conformidade com as políticas de Segurança da Informação
 
 O ecossistema final do Agente RIT é composto puramente por código proprietário e bibliotecas de mercado consolidadas executadas em infraestrutura interna. Como o código gerado passou por auditoria e validação manual contra injeções de SQL, criptografia de hashes e validações cruzadas, o uso instrumental de ferramentas de IA para sua escrita não introduz vulnerabilidades externas, dependências tecnológicas ou riscos de conformidade à infraestrutura corporativa.
 
-## 7. Conclusão
+## 7. Histórico de Atualizações de Segurança
 
-Com a recente atualização para **Validação Conjunta da Matrícula e E-mail**, o Agente RIT adicionou uma forte barreira contra impersonificação. Aliado às políticas de auditoria avançada (captura de IP), proteção contra injeções SQL com consultas parametrizadas e criptografia padrão da indústria (Bcrypt e JWT), o sistema assegura uma arquitetura robusta e independente de fatores externos.
+| Data | Versão | Descrição da Alteração |
+|---|---|---|
+| Junho/2026 | 2.1 | Normalização case-insensitive de e-mails no cadastro e redefinição de senha. Correção do falso positivo "dados divergentes" no fluxo de recuperação. Análise multi-registro na verificação de duplicatas. Logging estruturado de auditoria no endpoint `/api/register`. Mensagens de erro diferenciadas por cenário de conflito. |
+| — | 2.0 | Validação Conjunta Estrita (Matrícula + E-mail). Auditoria com captura de IP. Anti-enumeração no fluxo de recuperação. |
+| — | 1.0 | Implementação inicial: JWT, bcrypt, consultas parametrizadas, base Excel. |
+
+## 8. Conclusão
+
+Com a recente atualização para **Normalização e Comparação Segura de Credenciais** (v2.1, Junho/2026), o Agente RIT corrigiu uma vulnerabilidade funcional no fluxo de redefinição de senha que causava bloqueio indevido de colaboradores legítimos por diferenças de capitalização em e-mails. A correção mantém a integridade da Validação Conjunta Estrita ao mesmo tempo que elimina falsos positivos, garantindo que apenas divergências reais (matrícula e e-mail pertencentes a registros diferentes) sejam bloqueadas.
+
+Aliado às políticas de auditoria avançada (captura de IP), proteção contra injeções SQL com consultas parametrizadas e criptografia padrão da indústria (Bcrypt e JWT), o sistema assegura uma arquitetura robusta e independente de fatores externos.
 
 Adicionalmente, as políticas estritas de isolamento e o uso de IA limitado exclusivamente ao design de código — sem tráfego de dados de produção para o ecossistema externo — garantem que o sistema atenda integralmente e sem ressalvas aos rigorosos requisitos de segurança da informação e privacidade exigidos pelo ambiente corporativo da Globo.

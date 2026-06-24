@@ -118,22 +118,35 @@ function setupAuthRoutes(app) {
             const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
             const area   = colaborador.area   || colaborador.setor || colaborador.departamento || 'Geral';
 
+            // Normaliza e-mail e matrícula para comparação segura (case-insensitive, sem espaços extras)
+            const normalizedEmail = email.trim().toLowerCase();
+            const normalizedMatricula = String(matricula).trim();
+
             // Verifica duplicata ou redefinição de senha
             const dup = await pool.query(
-                'SELECT id, matricula, email FROM users WHERE matricula = $1 OR email = $2',
-                [matricula, email]
+                'SELECT id, matricula, email FROM users WHERE matricula = $1 OR LOWER(TRIM(email)) = $2',
+                [normalizedMatricula, normalizedEmail]
             );
             if (dup.rows.length > 0) {
-                const existingUser = dup.rows[0];
-                if (existingUser.matricula === matricula && existingUser.email === email) {
-                    // Redefinição de senha
+                // Procura um registro que corresponda AMBOS matrícula E e-mail (correspondência exata normalizada)
+                const exactMatch = dup.rows.find(u =>
+                    String(u.matricula).trim() === normalizedMatricula &&
+                    String(u.email).trim().toLowerCase() === normalizedEmail
+                );
+
+                if (exactMatch) {
+                    // Redefinição de senha — matrícula e e-mail coincidem com o mesmo registro
+                    console.log(`[REGISTER] Redefinição de senha para matrícula ${normalizedMatricula} (user ID ${exactMatch.id})`);
                     const hashedSenha = await bcrypt.hash(senha, 10);
-                    await pool.query('UPDATE users SET senha = $1 WHERE id = $2', [hashedSenha, existingUser.id]);
+                    await pool.query(
+                        'UPDATE users SET senha = $1, email = $2 WHERE id = $3',
+                        [hashedSenha, normalizedEmail, exactMatch.id]
+                    );
                     await pool.query(
                         `UPDATE recuperacao_senha
                          SET cadastro_concluido = TRUE, concluido_em = NOW()
-                         WHERE email = $1 AND cadastro_concluido = FALSE`,
-                        [email]
+                         WHERE LOWER(TRIM(email)) = $1 AND cadastro_concluido = FALSE`,
+                        [normalizedEmail]
                     );
                     return res.json({
                         success: true,
@@ -141,22 +154,64 @@ function setupAuthRoutes(app) {
                         funcao,
                         area
                     });
-                } else {
-                    return res.status(400).json({ error: 'Este usuário já possui cadastro ativo no sistema com dados divergentes.' });
                 }
+
+                // Correspondência parcial — verifica se matrícula ou e-mail pertencem a registros diferentes
+                const partialByMatricula = dup.rows.find(u =>
+                    String(u.matricula).trim() === normalizedMatricula
+                );
+                const partialByEmail = dup.rows.find(u =>
+                    String(u.email).trim().toLowerCase() === normalizedEmail
+                );
+
+                if (partialByMatricula && partialByEmail && partialByMatricula.id !== partialByEmail.id) {
+                    // Matrícula pertence a um usuário e e-mail a outro — realmente divergente
+                    console.warn(`[REGISTER] Dados divergentes reais: matrícula ${normalizedMatricula} (user ${partialByMatricula.id}) vs email ${normalizedEmail} (user ${partialByEmail.id})`);
+                    return res.status(400).json({
+                        error: 'Este usuário já possui cadastro ativo no sistema com dados divergentes.'
+                    });
+                }
+
+                if (partialByMatricula) {
+                    // Mesma matrícula mas e-mail diferente — atualiza o e-mail e redefine a senha
+                    console.log(`[REGISTER] Redefinição com atualização de e-mail: matrícula ${normalizedMatricula}, email antigo: ${partialByMatricula.email}, novo: ${normalizedEmail}`);
+                    const hashedSenha = await bcrypt.hash(senha, 10);
+                    await pool.query(
+                        'UPDATE users SET senha = $1, email = $2 WHERE id = $3',
+                        [hashedSenha, normalizedEmail, partialByMatricula.id]
+                    );
+                    await pool.query(
+                        `UPDATE recuperacao_senha
+                         SET cadastro_concluido = TRUE, concluido_em = NOW()
+                         WHERE LOWER(TRIM(email)) = $1 AND cadastro_concluido = FALSE`,
+                        [normalizedEmail]
+                    );
+                    return res.json({
+                        success: true,
+                        message: 'Sua senha foi redefinida com sucesso! Você já pode entrar.',
+                        funcao,
+                        area
+                    });
+                }
+
+                // E-mail já cadastrado com matrícula diferente
+                console.warn(`[REGISTER] E-mail ${normalizedEmail} já usado por outra matrícula (user ${partialByEmail?.id}).`);
+                return res.status(400).json({
+                    error: 'Este e-mail já está associado a outro cadastro. Verifique sua matrícula ou entre em contato com o suporte.'
+                });
             }
 
             const hashedSenha = await bcrypt.hash(senha, 10);
             await pool.query(
                 `INSERT INTO users (nome, sobrenome, matricula, email, senha, funcao, area)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [nome, sobrenome, matricula, email, hashedSenha, funcao, area]
+                [nome, sobrenome, normalizedMatricula, normalizedEmail, hashedSenha, funcao, area]
             );
             await pool.query(
                 `UPDATE recuperacao_senha
                  SET cadastro_concluido = TRUE, concluido_em = NOW()
-                 WHERE email = $1 AND cadastro_concluido = FALSE`,
-                [email]
+                 WHERE LOWER(TRIM(email)) = $1 AND cadastro_concluido = FALSE`,
+                [normalizedEmail]
             );
 
             return res.json({
