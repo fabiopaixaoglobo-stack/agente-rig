@@ -238,6 +238,7 @@ export class UiController {
         document.getElementById('btn-mapa-live')?.addEventListener('click', () => this.atualizarMapaLive());
         document.getElementById('btn-abrir-rota-waze')?.addEventListener('click', () => this.abrirRotaExterna());
         document.getElementById('btn-centralizar-rede')?.addEventListener('click', () => this.carregarMapaRede());
+        document.getElementById('btn-atualizar-ott')?.addEventListener('click', () => this.atualizarInformesOTT());
     }
 
     limparEndereco(endereco) {
@@ -754,6 +755,83 @@ export class UiController {
         if (i) {
             i.src = i.getAttribute('data-src');
             showToast("Centralizando rede RJ...", "info");
+        }
+    }
+
+    async atualizarInformesOTT() {
+        const listEl = document.getElementById('ott-reports-list');
+        if (listEl) {
+            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;">Buscando informes do OTT...</div>';
+        }
+
+        try {
+            showToast("Carregando informes OTT das últimas 24h...", "info");
+            const res = await fetch('/api/ott');
+            const data = await res.json();
+
+            if (!data.ok || !data.alerts) {
+                throw new Error("Erro na resposta da API.");
+            }
+
+            // Limpa marcadores anteriores do mapa de trânsito
+            if (this.transitoMap) {
+                this.transitoMap.clearMarkers();
+            }
+
+            if (listEl) {
+                if (data.alerts.length === 0) {
+                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhum tiroteio registrado nas últimas 24h.</div>';
+                    showToast("Nenhum informe encontrado.", "info");
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                data.alerts.forEach(alert => {
+                    // Adiciona na lista lateral
+                    const item = document.createElement('div');
+                    item.style.padding = '8px 0';
+                    item.style.borderBottom = '1px solid #222';
+                    item.innerHTML = `
+                        <strong style="color:#f43f5e;">⚠️ ${escapeHtml(alert.tipo)}</strong><br>
+                        <span style="font-size:10px; color:#aaa;">🕒 ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}</span><br>
+                        <span>📍 ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)}</span>
+                    `;
+                    listEl.appendChild(item);
+
+                    // Plota no mapa de trânsito real
+                    if (this.transitoMap && alert.lat && alert.lon) {
+                        const popupText = `
+                            <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+                                <strong style="color:#e11d48; font-size:12px;">🔴 Ocorrência OTT</strong><br>
+                                <b>Tipo:</b> ${escapeHtml(alert.tipo)}<br>
+                                <b>Data/Hora:</b> ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}<br>
+                                <b>Local:</b> ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)}
+                            </div>
+                        `;
+                        
+                        // Custom Marker com logotipo "OTT" em SVG
+                        const iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">' +
+                            '<circle cx="18" cy="18" r="16" fill="#000000" stroke="#f43f5e" stroke-width="2"/>' +
+                            '<text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="900" fill="#ffffff">OTT</text>' +
+                            '<text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#f43f5e">🔫</text>' +
+                            '</svg>';
+                            
+                        this.transitoMap.addMarker(alert.lat, alert.lon, popupText, {
+                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(iconSvg),
+                            scaledSize: new google.maps.Size(36, 36),
+                            anchor: new google.maps.Point(18, 18)
+                        });
+                    }
+                });
+
+                showToast("Informes OTT atualizados!", "success");
+            }
+        } catch (err) {
+            console.error(err);
+            if (listEl) {
+                listEl.innerHTML = '<div style="color:var(--bad); text-align:center; padding:10px 0;">Erro ao atualizar informes do OTT.</div>';
+            }
+            showToast("Erro ao processar informes OTT.", "error");
         }
     }
 

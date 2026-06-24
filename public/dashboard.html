@@ -131,6 +131,17 @@
             <button type="button" id="btn-mapa-live" class="btn btnPrimary" style="flex:1;">ANALISAR RISCO</button>
             <button type="button" id="btn-abrir-rota-waze" class="btn" style="flex:1;">ABRIR WAZE</button>
           </div>
+          <button type="button" id="btn-atualizar-ott" class="btn" style="width: 100%; margin-top: 8px; background-color: #0c1524; color: #00d1ff; border: 1px solid #00d1ff; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            🔄 ATUALIZAR INFORMES OTT
+          </button>
+        </div>
+        <div class="panel" id="ott-reports-panel" style="margin-top: 10px; display: flex; flex-direction: column; max-height: 250px; overflow-y: auto;">
+          <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; gap: 5px;">
+            <span>🔫</span> Informes OTT (Últimas 24h)
+          </div>
+          <div id="ott-reports-list" style="font-size: 11px; line-height: 1.5; color: #ccc; max-height: 200px; overflow-y: auto;">
+            <div style="color: #aaa; text-align: center; padding: 10px 0;">Clique em atualizar para buscar dados...</div>
+          </div>
         </div>
         <div class="panel" id="risk-analysis-panel" style="display:none; flex: 1; overflow-y: auto;">
           <div class="panelTitle" style="color: var(--bad);">⚠️ Verificação de Risco (Tempo Real)</div>
