@@ -584,10 +584,9 @@ export class UiController {
                 `;
             }
 
-            // URL format description for Uber web estimation widget:
-            // https://www.uber.com/global/pt-br/price-estimate/ using query parameters:
-            // ?pickup=Origem&dropoff=Destino (using coordinates gives extremely reliable and direct map selection)
-            const uberUrl = `https://www.uber.com/global/pt-br/price-estimate/?pickup=${encodeURIComponent(origemLimpa + ', Rio de Janeiro')}&dropoff=${encodeURIComponent(destinoLimpa + ', Rio de Janeiro')}`;
+            // Using universal deep link to m.uber.com which auto-fills the web app
+            // and mobile application using coordinates and formatted addresses:
+            const uberUrl = `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${lat1}&pickup[longitude]=${lon1}&pickup[nickname]=${encodeURIComponent(origemLimpa)}&dropoff[latitude]=${lat2}&dropoff[longitude]=${lon2}&dropoff[nickname]=${encodeURIComponent(destinoLimpa)}`;
             if (linkUber) linkUber.href = uberUrl;
             if (linksEl) linksEl.style.display = 'flex';
         } catch (err) {
