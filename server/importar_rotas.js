@@ -18,8 +18,66 @@ const TARIFAS_CONFIG = {
     fatorMadrugada: 1.2
 };
 
+// ──────────────────────────────────────────────
+// CADASTRO DE PEDÁGIOS (RJ) — Geofencing por coordenadas
+// ──────────────────────────────────────────────
+const PEDAGIOS_RJ = [
+    {
+        nome: 'Transolímpica',
+        valor: 9.95,
+        lat: -22.9319,
+        lon: -43.3640,
+        raioMetros: 600,
+        descricao: 'Pedágio da Transolímpica (Sulacap/Taquara)'
+    },
+    {
+        nome: 'Ponte Rio-Niterói',
+        valor: 6.60,
+        lat: -22.8826,
+        lon: -43.1594,
+        raioMetros: 800,
+        descricao: 'Pedágio da Ponte Rio-Niterói'
+    }
+];
+
+/**
+ * Calcula a distância em metros entre dois pontos geográficos (fórmula de Haversine).
+ */
+function haversineDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Raio da Terra em metros
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Detecta quais pedágios a rota cruza com base na geometria GeoJSON retornada pelo OSRM.
+ * @param {Array} routeCoords - Array de [lon, lat] do GeoJSON do OSRM
+ * @returns {Array} Lista de pedágios detectados com nome e valor
+ */
+function detectarPedagios(routeCoords) {
+    const pedagiosDetectados = [];
+    for (const pedagio of PEDAGIOS_RJ) {
+        for (const coord of routeCoords) {
+            const distancia = haversineDistancia(pedagio.lat, pedagio.lon, coord[1], coord[0]);
+            if (distancia <= pedagio.raioMetros) {
+                pedagiosDetectados.push({ nome: pedagio.nome, valor: pedagio.valor });
+                break; // Não contar o mesmo pedágio mais de uma vez
+            }
+        }
+    }
+    return pedagiosDetectados;
+}
+
 router.get('/tarifas', (req, res) => {
-    res.json({ ok: true, tarifas: TARIFAS_CONFIG });
+    res.json({
+        ok: true,
+        tarifas: TARIFAS_CONFIG,
+        pedagios: PEDAGIOS_RJ.map(p => ({ nome: p.nome, valor: p.valor, descricao: p.descricao }))
+    });
 });
 
 function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
@@ -168,7 +226,7 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
 
                 // 3. Rota OSRM
                 await new Promise(r => setTimeout(r, 500)); // Rate limit OSRM public API
-                const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${origemCoords.lon},${origemCoords.lat};${destinoCoords.lon},${destinoCoords.lat}?overview=false`;
+                const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${origemCoords.lon},${origemCoords.lat};${destinoCoords.lon},${destinoCoords.lat}?overview=full&geometries=geojson`;
                 
                 const response = await fetchFn(osrmUrl);
                 const routeData = await response.json();
@@ -180,15 +238,25 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 const distanciaKm = routeData.routes[0].distance / 1000;
                 const tempoMin = routeData.routes[0].duration / 60;
 
-                // 4. Calcular Custo
-                const custo = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr);
+                // 4. Detectar pedágios na rota
+                const routeCoords = routeData.routes[0].geometry?.coordinates || [];
+                const pedagiosDetectados = detectarPedagios(routeCoords);
+                const totalPedagios = pedagiosDetectados.reduce((sum, p) => sum + p.valor, 0);
 
-                // 5. Salvar no banco
+                // 5. Calcular Custo (base + pedágios)
+                const custoBase = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr);
+                const custoTotal = parseFloat((custoBase + totalPedagios).toFixed(2));
+
+                if (pedagiosDetectados.length > 0) {
+                    console.log(`[ROTA] Pedágios detectados: ${pedagiosDetectados.map(p => `${p.nome} R$${p.valor}`).join(', ')}`);
+                }
+
+                // 6. Salvar no banco
                 await pool.query(
                     `INSERT INTO rotas_importadas 
                     (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area) 
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custo, 'SUCESSO', matriculaStr, nomeStr, areaStr]
+                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custoTotal, 'SUCESSO', matriculaStr, nomeStr, areaStr]
                 );
 
                 resultados.push({
@@ -200,7 +268,10 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                     horario: horarioStr,
                     distancia_km: distanciaKm.toFixed(2),
                     tempo_min: tempoMin.toFixed(0),
-                    custo_estimado: custo.toFixed(2),
+                    custo_base: custoBase.toFixed(2),
+                    pedagios: pedagiosDetectados,
+                    total_pedagios: totalPedagios.toFixed(2),
+                    custo_estimado: custoTotal.toFixed(2),
                     status: 'SUCESSO'
                 });
 

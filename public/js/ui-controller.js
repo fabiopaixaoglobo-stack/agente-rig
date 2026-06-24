@@ -5,6 +5,38 @@ import { parseDataHora } from './data-service.js';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
+// ──────────────────────────────────────────────
+// CADASTRO DE PEDÁGIOS (RJ) — Geofencing
+// ──────────────────────────────────────────────
+const PEDAGIOS_RJ = [
+    { nome: 'Transolímpica', valor: 9.95, lat: -22.9319, lon: -43.3640, raioMetros: 600 },
+    { nome: 'Ponte Rio-Niterói', valor: 6.60, lat: -22.8826, lon: -43.1594, raioMetros: 800 }
+];
+
+function haversineDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function detectarPedagios(routeCoords) {
+    const detectados = [];
+    for (const pedagio of PEDAGIOS_RJ) {
+        for (const coord of routeCoords) {
+            const dist = haversineDistancia(pedagio.lat, pedagio.lon, coord[1], coord[0]);
+            if (dist <= pedagio.raioMetros) {
+                detectados.push({ nome: pedagio.nome, valor: pedagio.valor });
+                break;
+            }
+        }
+    }
+    return detectados;
+}
+
 function verificarEmAtendimento(inicioVal, fimVal) {
     const inicio = parseDataHora(inicioVal);
     const fim = parseDataHora(fimVal);
@@ -297,6 +329,7 @@ export class UiController {
                 const tfMinima = document.getElementById('ref-tarifa-min');
                 const tfFator = document.getElementById('ref-fator-dinamico');
                 const statusRef = document.getElementById('status-referencia');
+                const pedagiosList = document.getElementById('ref-pedagios-lista');
 
                 if (tfBase) tfBase.textContent = this.tarifasConfig.tarifaBase.toFixed(2).replace('.', ',');
                 if (tfKm) tfKm.textContent = this.tarifasConfig.precoPorKm.toFixed(2).replace('.', ',');
@@ -304,6 +337,12 @@ export class UiController {
                 if (tfMinima) tfMinima.textContent = this.tarifasConfig.tarifaMinima.toFixed(2).replace('.', ',');
                 if (tfFator) {
                     tfFator.textContent = `${this.tarifasConfig.fatorPico.toFixed(1).replace('.', ',')}x (picos) / ${this.tarifasConfig.fatorMadrugada.toFixed(1).replace('.', ',')}x (madrugada)`;
+                }
+                // Renderiza pedágios cadastrados
+                if (pedagiosList && json.pedagios) {
+                    pedagiosList.innerHTML = json.pedagios.map(p =>
+                        `<li>🚧 ${p.nome}: <strong>R$ ${p.valor.toFixed(2).replace('.', ',')}</strong></li>`
+                    ).join('');
                 }
                 if (statusRef) {
                     statusRef.innerHTML = `<span style="color:var(--good);">● Referência atualizada</span>`;
@@ -396,6 +435,12 @@ export class UiController {
                     const tr = document.createElement("tr");
                     tr.style.borderBottom = "1px solid #333";
                     const colInfo = r.nome_colaborador ? `${escapeHtml(r.nome_colaborador)} (${escapeHtml(r.matricula)})<br><small style="color: #aaa;">${escapeHtml(r.area)}</small>` : '-';
+                    const pedagioInfo = r.pedagios && r.pedagios.length > 0
+                        ? `<br><small style="color:#f5a623">${r.pedagios.map(p => `🚧 ${escapeHtml(p.nome)}: R$ ${p.valor.toFixed(2)}`).join('<br>')}</small>`
+                        : '';
+                    const custoDisplay = r.custo_estimado
+                        ? `R$ ${r.custo_estimado}${pedagioInfo}`
+                        : '-';
                     tr.innerHTML = `
                         <td style="padding: 8px;">${colInfo}</td>
                         <td style="padding: 8px;">${escapeHtml(r.origem)}</td>
@@ -403,7 +448,7 @@ export class UiController {
                         <td style="padding: 8px;">${escapeHtml(r.horario || '')}</td>
                         <td style="padding: 8px;">${r.distancia_km ? r.distancia_km + ' km' : '-'}</td>
                         <td style="padding: 8px;">${r.tempo_min ? r.tempo_min + ' min' : '-'}</td>
-                        <td style="padding: 8px; font-weight:bold; color:var(--accent)">${r.custo_estimado ? 'R$ ' + r.custo_estimado : '-'}</td>
+                        <td style="padding: 8px; font-weight:bold; color:var(--accent)">${custoDisplay}</td>
                         <td style="padding: 8px; color: ${r.status === 'SUCESSO' ? 'var(--accent)' : 'var(--bad)'}">${escapeHtml(r.status)} ${r.erro ? '<br><small>'+escapeHtml(r.erro)+'</small>' : ''}</td>
                     `;
                     tbody.appendChild(tr);
@@ -482,6 +527,12 @@ export class UiController {
             
             const custo = this.calcularCustoEstimado(parseFloat(distanciaKm), duracaoMin, horario).toFixed(2);
 
+            // Detectar pedágios na rota via geofencing
+            const routeGeoCoords = routeData.routes[0].geometry.coordinates; // [lon, lat]
+            const pedagiosDetectados = detectarPedagios(routeGeoCoords);
+            const totalPedagios = pedagiosDetectados.reduce((sum, p) => sum + p.valor, 0);
+            const custoTotal = (parseFloat(custo) + totalPedagios).toFixed(2);
+
             this.plannerService.clearRouteOverlay();
 
             // Origin marker
@@ -504,11 +555,19 @@ export class UiController {
             ]);
 
             if (feedback) {
+                let pedagioHtml = '';
+                if (pedagiosDetectados.length > 0) {
+                    pedagioHtml = pedagiosDetectados.map(p =>
+                        `<br><span style="color:#f5a623">🚧 Pedágio: ${escapeHtml(p.nome)} — R$ ${p.valor.toFixed(2).replace('.', ',')}</span>`
+                    ).join('');
+                }
+
                 feedback.innerHTML = `
                     <strong style="color:var(--good)">✔ Rota traçada</strong><br>
                     <b>Distância:</b> ${escapeHtml(distanciaKm)} km<br>
                     <b>Tempo estimado:</b> ${duracaoMin} min<br>
-                    <b>Custo (estimado de aplicativo):</b> R$ ${escapeHtml(custo)}
+                    <b>Custo base (aplicativo):</b> R$ ${escapeHtml(custo)}${pedagioHtml}
+                    <br><b style="color:var(--accent)">Custo total estimado:</b> <span style="color:var(--accent); font-size:14px;">R$ ${escapeHtml(custoTotal)}</span>
                 `;
             }
 
