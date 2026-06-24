@@ -110,14 +110,14 @@ O ecossistema final do Agente RIT é composto puramente por código proprietári
 
 | Data | Versão | Descrição da Alteração |
 |---|---|---|
-| Junho/2026 | 2.2 | Sistema de detecção automática de pedágios por geofencing (Haversine). Cadastro de praças de pedágio com coordenadas (Transolímpica R$9,95, Ponte Rio-Niterói R$6,60). Detalhamento de custos no simulador separando custo base e pedágios. Aplicado tanto no simulador individual quanto no processamento em lote. |
+| Junho/2026 | 2.2 | Inclusão de pedágios automáticos por geofencing (Ponte Rio-Niterói e Transolímpica) no simulador de custos de rotas para assegurar exatidão e transparência nas estimativas financeiras. |
 | Junho/2026 | 2.1 | Normalização case-insensitive de e-mails no cadastro e redefinição de senha. Correção do falso positivo "dados divergentes" no fluxo de recuperação. Análise multi-registro na verificação de duplicatas. Logging estruturado de auditoria no endpoint `/api/register`. Mensagens de erro diferenciadas por cenário de conflito. |
 | — | 2.0 | Validação Conjunta Estrita (Matrícula + E-mail). Auditoria com captura de IP. Anti-enumeração no fluxo de recuperação. |
 | — | 1.0 | Implementação inicial: JWT, bcrypt, consultas parametrizadas, base Excel. |
 
 ## 8. Conclusão
 
-Com as atualizações v2.1 e **v2.2** (Junho/2026), o Agente RIT incorporou normalização segura de credenciais no fluxo de acesso e um sistema de **detecção automática de pedágios por geofencing** no simulador de transporte, garantindo que as estimativas de custo reflitam com maior precisão os custos reais de deslocamento, incluindo praças de pedágio no trajeto.
+Com a recente atualização para **Normalização e Comparação Segura de Credenciais** (v2.1, Junho/2026) e a **Detecção Automática de Pedágios por Geofencing** (v2.2, Junho/2026), o Agente RIT corrigiu uma vulnerabilidade funcional no fluxo de redefinição de senha e aumentou a precisão e confiabilidade nos cálculos de custo de transporte corporativo. A correção de acesso mantém a integridade da Validação Conjunta Estrita ao mesmo tempo que elimina falsos positivos, enquanto o novo sistema de custos assegura que despesas adicionais inevitáveis como pedágios sejam provisionadas de forma correta e visível no dashboard e no processamento em lote.
 
 Aliado às políticas de auditoria avançada (captura de IP), proteção contra injeções SQL com consultas parametrizadas e criptografia padrão da indústria (Bcrypt e JWT), o sistema assegura uma arquitetura robusta e independente de fatores externos.
 

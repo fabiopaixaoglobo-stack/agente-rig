@@ -1,0 +1,219 @@
+)
+
+
+
+
+/***********************************************************************
+ * AGENTE RIG – SCRIPT PRINCIPAL v3.4.0
+ ***********************************************************************/
+document.addEventListener("DOMContentLoaded", () => {
+  inicializarMapa();
+  inicializarUpload();
+  inicializarUploadPlanejador();
+  inicializarAbas();
+  inicializarPlanejador();
+  inicializarChatbot();
+function fecharGuiaVisual() { document.getElementById('modalGuia').style.display = 'none'; }
+function abrirGuiaVisual() { document.getElementById('modalGuia').style.display = 'flex'; }
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+        // Processa as linhas sequencialmente para não estourar rate limits
+        for (let row of data) {
+            const origemStr = row['Endereço de Origem'] || row['Origem'];
+            const destinoStr = row['Endereço de Destino'] || row['Destino'];
+            const horarioStr = row['Horário da Corrida'] || row['Horário'] || '12:00';
+            const origemStr = row['Endereço de Origem'] || row['Origem'] || row['Endereço de Saída'];
+            const destinoStr = row['Endereço de Destino'] || row['Destino'] || row['Endereço de Chegada'];
+            const horarioStr = row['Horário da Corrida'] || row['Horário'] || row['Horário de Saída'] || '12:00';
+            if (!origemStr || !destinoStr) {
+                resultados.push({ ...row, status: 'ERRO', erro: 'Origem ou Destino ausente' });
+                continue;
+            }
+            try {
+                // 1. Geocode Origem
+                const origemCoords = await getCoordsParaEndereco(origemStr);
+                
+                // 2. Geocode Destino
+                const destinoCoords = await getCoordsParaEndereco(destinoStr);
+                // 3. Rota OSRM
+                await new Promise(r => setTimeout(r, 500)); // Rate limit OSRM public API
+                const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${origemCoords.lon},${origemCoords.lat};${destinoCoords.lon},${destinoCoords.lat}?overview=false`;
+                
+                const response = await fetchFn(osrmUrl);
+                const routeData = await response.json();
+                if (routeData.code !== 'Ok' || !routeData.routes || routeData.routes.length === 0) {
+                     throw new Error('Rota não encontrada no OSRM');
+                }
+                const distanciaKm = routeData.routes[0].distance / 1000;
+                const tempoMin = routeData.routes[0].duration / 60;
+                // 4. Calcular Custo
+                const custo = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr);
+                // 5. Salvar no banco
+                await pool.query(
+                    `INSERT INTO rotas_importadas 
+                    (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custo, 'SUCESSO']
+                );
+                resultados.push({
+                    origem: origemStr,
+                    destino: destinoStr,
+                    horario: horarioStr,
+                    distancia_km: distanciaKm.toFixed(2),
+                    tempo_min: tempoMin.toFixed(0),
+                    custo_estimado: custo.toFixed(2),
+                    status: 'SUCESSO'
+                });
+            } catch (err) {
+                console.error('Erro ao processar rota:', origemStr, destinoStr, err.message);
+                
+                await pool.query(
+                    `INSERT INTO rotas_importadas 
+                    (id_lote, origem, destino, horario, status, erro) 
+                    VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [id_lote, origemStr, destinoStr, horarioStr, 'ERRO', err.message]
+                );
+                resultados.push({
+                    origem: origemStr,
+                    destino: destinoStr,
+                    horario: horarioStr,
+                    status: 'ERRO',
+                    erro: err.message
+                });
+            }
+        }
+        res.json({ ok: true, id_lote, resultados });
+    } catch (error) {
+        console.error('Erro no upload de base:', error);
+        res.status(500).json({ error: 'Falha ao processar o arquivo de lotes.' });
+    }
+});
+module.exports = router;
+em qual pasta esta o arquivo .env e ao rodar  npm start é no bash?
+15:24
+
+
+O arquivo .env principal que o sistema lê fica na pasta raiz do projeto. No seu computador, o caminho exato dele é: c:\Users\fapaixao\OneDrive\Agente RIG\.env
+
+(Nota: existe também um dentro da pasta server, mas o que o sistema lê quando você roda o comando principal é o da pasta raiz).
+
+Abra esse arquivo .env em um editor de texto (como Bloco de Notas ou VS Code) e verifique se a linha DATABASE_URL= está apontando para o seu banco de dados correto no Render.
+
+Sobre rodar o comando: Sim! Você deve rodar no terminal (seja o Git Bash, o prompt de comando CMD, ou o terminal integrado do VS Code).
+
+Lembrete importante: como vi um erro de segurança de script do Windows (PowerShell) ao tentar usar o npm na sua máquina anteriormente, se o comando npm start der erro vermelho na tela, use o comando direto do Node.js que é à prova de falhas:
+
+bash
+
+
+node server/server.js
+Rodando esse comando dentro da pasta raiz (Agente RIG), ele vai ligar o servidor. Se ele conectar no banco com sucesso e você ver as mensagens "✅ IA Online" e "🚀 Agente RIG na porta 3000", pode ir no navegador e abrir o localhost:3000 que a tela de login vai aparecer!
+
+15:24
+
+
+
+User uploaded media 1
+User uploaded media 2
+Segue o print dos arquivos no gethub. Não tem o arquivo env no diretório raiz.No meu diretório no computador o arquivo env está na raiz mas com data de atualização 14/05/2026, assim se você fez alguma alteração, não foi processada.
+15:28
+
+
+Fábio, os seus prints foram perfeitos para entendermos o que está acontecendo!
+
+Respondendo as suas observações:
+
+Por que o .env não está no GitHub? Isso é esperado e é uma boa prática de segurança! O arquivo .env contém senhas e chaves secretas (como a sua GROQ_API_KEY). O arquivo .gitignore (que está na sua lista) diz para o GitHub ignorar o .env para que a sua chave secreta não vaze publicamente na internet.
+
+Por que o .env não foi alterado? Eu não alterei o seu arquivo .env porque ele é um arquivo de configuração pessoal da sua máquina. O que eu alterei foram os códigos do sistema (server.js, database.js, etc.) que agora exigem a conexão com o banco de dados.
+
+Acabei de ler o seu arquivo .env na sua máquina e descobri o exato motivo da falha: Falta a variável do Banco de Dados nele!
+
+Como a variável DATABASE_URL não existe no seu .env, o sistema tentou procurar um banco PostgreSQL instalado localmente no seu computador (porta 5432) e, como não achou, ele bloqueou a inicialização do localhost:3000.
+
+Como consertar agora:
+Abra o arquivo .env que está na raiz (esse que aparece na sua imagem do OneDrive com a data 14/05) e adicione a seguinte linha no final dele:
+
+env
+
+
+DATABASE_URL=postgres://seu_usuario:sua_senha@url-do-render/nome_do_banco
+(Você precisa substituir esse link pelo link real do seu banco de dados PostgreSQL que criamos no Render).
+
+Se você não tiver esse link fácil no momento, e só quiser testar a interface nova agora mesmo, me avise! Eu posso alterar o código rapidamente para que o sistema ignore o erro do banco de dados na sua máquina local e deixe você acessar a tela do Planejador. O que prefere?
+
+15:28
+
+
+
+User uploaded media 1
+Colei o arquivo no env. precisa de espaço ou # o está correto, posso salvar?
+15:34
+
+
+A formatação está perfeita! É exatamente assim: sem espaços antes ou depois do sinal de igual (=) e sem o # no início (o # serve apenas para transformar a linha em um comentário inativo).
+
+⚠️ UM ALERTA MUITO IMPORTANTE: Embora o formato esteja certinho, você não pode salvar com esse texto falso (seu_usuario:sua_senha@url-do-render...). Você precisa substituir esse texto inteiro pelo link verdadeiro que o painel do Render forneceu quando o banco de dados PostgreSQL foi criado lá.
+
+Se você salvar com esse texto genérico e rodar o node server/server.js, o sistema vai tentar procurar um servidor na internet chamado "url-do-render" e vai dar erro de conexão novamente.
+
+O que fazer agora:
+
+Se você tiver o link real do Render aí com você: apague o texto genérico, cole o link real, salve o arquivo e rode node server/server.js no terminal.
+Se você não tiver o link real agora e quiser apenas ver a tela do Planejador funcionando, me avise que eu coloco um "curativo" no código em 2 segundos para ele ignorar o banco e abrir o localhost:3000 para você testar!
+15:34
+
+
+
+User uploaded media 1
+Segue minha tela do render, onde encontro o usuário e senha do render?
+16:10
+
+
+Perfeito! Pela sua tela, vejo que o seu banco de dados está rodando perfeitamente. O nome dele é o agente-rig-db (o terceiro item da lista com o ícone de um cilindro).
+
+Para pegar a URL completa (que já vem com o usuário e a senha embutidos), siga estes passos exatos no Render:
+
+Clique em cima do nome agente-rig-db na sua lista.
+Na nova tela que vai abrir, role a página um pouco para baixo até encontrar a seção chamada "Connections" (Conexões).
+Lá você verá dois links diferentes. Como você está rodando o sistema no seu computador local (na sua casa/escritório), você precisa copiar o link chamado "External Database URL" (URL Externa).
+Dica: Haverá um botãozinho de "Copy" (Copiar) do lado direito do link.
+O link copiado já terá o formato exato que precisamos: postgres://usuario:senha@algum-host.render.com/agente_rig_db
+Passo Final: Vá no seu arquivo .env, apague a linha falsa e cole exatamente assim:
+
+DATABASE_URL=cole_aqui_o_link_que_voce_copiou
+
+Salve o arquivo, abra o seu terminal novamente e rode o comando node server/server.js. Agora o seu computador conseguirá conversar com o banco de dados do Render e o localhost:3000 vai abrir!
+
+16:10
+
+
+
+User uploaded media 1
+Ficou assim. Onde eu rodo esse comando node, no power shell, ou no Bash e o que exatamente devo digitar?
+16:14
+
+
+O seu arquivo .env ficou perfeito! (Nota rápida: observe apenas se o seu Bloco de Notas não quebrou a linha do link do banco de dados no meio sem querer. Aquele final oregon-postgres.render... precisa estar grudado na mesma linha, mas se for apenas a "quebra de linha automática" visual do Notepad, está tudo certo. Não esqueça de Salvar!).
+
+Onde e como rodar o comando:
+
+Você pode usar qualquer um (PowerShell, Prompt de Comando ou Bash), não faz diferença para esse comando específico.
+
+Siga este passo a passo exato:
+
+Abra o seu PowerShell ou Bash.
+Garanta que você está dentro da pasta do projeto digitando este comando para navegar até lá:
+bash
+
+
+cd "C:\Users\fapaixao\OneDrive\Agente RIG"
+Agora que você está na pasta raiz, digite exatamente este comando e aperte Enter:
+bash
+
+
+node server/server.js
+Se tudo deu certo, o terminal vai carregar um pouquinho e escrever mensagens como: ✅ Banco de dados PostgreSQL inicializado com sucesso. 🚀 Agente RIG v3.5.1 na porta 3000
+
+Se essas mensagens aparecerem, não feche a telinha preta do terminal (deixe ele rodando de fundo). Abra o seu navegador e acesse http://localhost:3000. A tela de login vai aparecer e você poderá acessar o Planejador para testar a funcionalidade que criamos!

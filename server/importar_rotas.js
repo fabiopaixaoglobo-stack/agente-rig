@@ -15,69 +15,15 @@ const TARIFAS_CONFIG = {
     precoPorMinuto: 0.30,
     tarifaMinima: 6.00,
     fatorPico: 1.4,
-    fatorMadrugada: 1.2
+    fatorMadrugada: 1.2,
+    pedagios: [
+        { nome: "Transolímpica", valor: 9.95 },
+        { nome: "Ponte Rio-Niterói", valor: 6.60 }
+    ]
 };
 
-// ──────────────────────────────────────────────
-// CADASTRO DE PEDÁGIOS (RJ) — Geofencing por coordenadas
-// ──────────────────────────────────────────────
-const PEDAGIOS_RJ = [
-    {
-        nome: 'Transolímpica',
-        valor: 9.95,
-        lat: -22.9319,
-        lon: -43.3640,
-        raioMetros: 600,
-        descricao: 'Pedágio da Transolímpica (Sulacap/Taquara)'
-    },
-    {
-        nome: 'Ponte Rio-Niterói',
-        valor: 6.60,
-        lat: -22.8826,
-        lon: -43.1594,
-        raioMetros: 800,
-        descricao: 'Pedágio da Ponte Rio-Niterói'
-    }
-];
-
-/**
- * Calcula a distância em metros entre dois pontos geográficos (fórmula de Haversine).
- */
-function haversineDistancia(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Raio da Terra em metros
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-/**
- * Detecta quais pedágios a rota cruza com base na geometria GeoJSON retornada pelo OSRM.
- * @param {Array} routeCoords - Array de [lon, lat] do GeoJSON do OSRM
- * @returns {Array} Lista de pedágios detectados com nome e valor
- */
-function detectarPedagios(routeCoords) {
-    const pedagiosDetectados = [];
-    for (const pedagio of PEDAGIOS_RJ) {
-        for (const coord of routeCoords) {
-            const distancia = haversineDistancia(pedagio.lat, pedagio.lon, coord[1], coord[0]);
-            if (distancia <= pedagio.raioMetros) {
-                pedagiosDetectados.push({ nome: pedagio.nome, valor: pedagio.valor });
-                break; // Não contar o mesmo pedágio mais de uma vez
-            }
-        }
-    }
-    return pedagiosDetectados;
-}
-
 router.get('/tarifas', (req, res) => {
-    res.json({
-        ok: true,
-        tarifas: TARIFAS_CONFIG,
-        pedagios: PEDAGIOS_RJ.map(p => ({ nome: p.nome, valor: p.valor, descricao: p.descricao }))
-    });
+    res.json({ ok: true, tarifas: TARIFAS_CONFIG });
 });
 
 function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
@@ -124,6 +70,49 @@ function limparEndereco(endereco) {
     str = str.replace(/,\s*,/g, ',');
     str = str.replace(/\s+/g, ' ');
     return str.trim().replace(/^,|,$/g, '').trim();
+}
+
+const PEDAGIOS_RJ = [
+    {
+        nome: "Transolímpica",
+        valor: 9.95,
+        lat: -22.9136,
+        lon: -43.3851,
+        raio: 0.005 // aproximado em graus (~500m)
+    },
+    {
+        nome: "Ponte Rio-Niterói",
+        valor: 6.60,
+        lat: -22.8636,
+        lon: -43.1676,
+        raio: 0.008 // aproximado em graus (~800m)
+    }
+];
+
+function calcularDistanciaGraus(lat1, lon1, lat2, lon2) {
+    const dLat = lat1 - lat2;
+    const dLon = lon1 - lon2;
+    return Math.sqrt(dLat * dLat + dLon * dLon);
+}
+
+function detectarPedagios(coordinates) {
+    if (!coordinates || !Array.isArray(coordinates)) return [];
+    
+    const pedagiosDetectados = [];
+    for (const pedagio of PEDAGIOS_RJ) {
+        // Verifica se algum ponto da rota está dentro do raio do pedágio
+        const cruzou = coordinates.some(coord => {
+            // OSRM retorna GeoJSON coordinates como [lon, lat]
+            const lon = coord[0];
+            const lat = coord[1];
+            return calcularDistanciaGraus(lat, lon, pedagio.lat, pedagio.lon) <= pedagio.raio;
+        });
+        
+        if (cruzou) {
+            pedagiosDetectados.push(pedagio);
+        }
+    }
+    return pedagiosDetectados;
 }
 
 async function getCoordsParaEndereco(enderecoStr) {
@@ -237,21 +226,15 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
 
                 const distanciaKm = routeData.routes[0].distance / 1000;
                 const tempoMin = routeData.routes[0].duration / 60;
+                const geometryCoords = routeData.routes[0].geometry?.coordinates || [];
 
-                // 4. Detectar pedágios na rota
-                const routeCoords = routeData.routes[0].geometry?.coordinates || [];
-                const pedagiosDetectados = detectarPedagios(routeCoords);
-                const totalPedagios = pedagiosDetectados.reduce((sum, p) => sum + p.valor, 0);
-
-                // 5. Calcular Custo (base + pedágios)
+                // 4. Calcular Custo
                 const custoBase = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr);
-                const custoTotal = parseFloat((custoBase + totalPedagios).toFixed(2));
+                const pedagiosDetectados = detectarPedagios(geometryCoords);
+                const valorPedagios = pedagiosDetectados.reduce((acc, p) => acc + p.valor, 0);
+                const custoTotal = custoBase + valorPedagios;
 
-                if (pedagiosDetectados.length > 0) {
-                    console.log(`[ROTA] Pedágios detectados: ${pedagiosDetectados.map(p => `${p.nome} R$${p.valor}`).join(', ')}`);
-                }
-
-                // 6. Salvar no banco
+                // 5. Salvar no banco
                 await pool.query(
                     `INSERT INTO rotas_importadas 
                     (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area) 
@@ -269,8 +252,7 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                     distancia_km: distanciaKm.toFixed(2),
                     tempo_min: tempoMin.toFixed(0),
                     custo_base: custoBase.toFixed(2),
-                    pedagios: pedagiosDetectados,
-                    total_pedagios: totalPedagios.toFixed(2),
+                    pedagios: pedagiosDetectados.map(p => ({ nome: p.nome, valor: p.valor })),
                     custo_estimado: custoTotal.toFixed(2),
                     status: 'SUCESSO'
                 });

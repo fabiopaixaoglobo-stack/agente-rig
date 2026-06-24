@@ -1,0 +1,15 @@
+Passo a Passo para abrir o jogo na Godot 4:
+
+1. Baixe o Godot Engine 4.x (versão .NET ou Standard, recomendo Standard se for usar apenas GDScript) do site oficial: https://godotengine.org/download/
+2. Abra o Godot. Você verá o Gerenciador de Projetos (Project Manager).
+3. Clique em "Importar" (Import).
+4. Navegue até a pasta onde este arquivo está localizado (c:\Users\fapaixao\OneDrive\Agente RIG\JogoSciFi) e selecione o arquivo 'project.godot'.
+5. Clique em "Importar e Editar".
+6. Pronto! Agora você está dentro do seu projeto. 
+
+Para fazer o jogo rodar de verdade visualmente, você precisará:
+- Criar uma nova Cena 3D (Node3D) e chamá-la de "World". Anexar o LevelManager.gd nela.
+- Criar um CharacterBody3D chamado "Player", adicionar uma Camera3D, e anexar o Player.gd nele.
+- Criar um Node vazio chamado "StateMachine" como filho do Player, anexar o StateMachine.gd nele.
+- Criar 3 Nodes vazios dentro de StateMachine chamados StateMoto, StateNinja e StateNave. Anexar os respectivos scripts (StateMoto.gd, etc) neles.
+- Apertar F5 (Jogar) e ver os scripts funcionando através do console!
