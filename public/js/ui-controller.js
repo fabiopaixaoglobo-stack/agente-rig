@@ -491,8 +491,7 @@ export class UiController {
         const horario = document.getElementById('horario')?.value?.trim() || '12:00';
         const feedback = document.getElementById('plannerFeedback');
         const linksEl = document.getElementById('externalLinks');
-        const linkGoogle = document.getElementById('link-google');
-        const linkWaze = document.getElementById('link-waze');
+        const linkUber = document.getElementById('link-uber');
 
         if (linksEl) linksEl.style.display = 'none';
 
@@ -585,10 +584,11 @@ export class UiController {
                 `;
             }
 
-            const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origemLimpa + ', RJ')}&destination=${encodeURIComponent(destinoLimpa + ', RJ')}`;
-            const wUrl = `https://www.waze.com/ul?q=${encodeURIComponent(destinoLimpa)}&from=${encodeURIComponent(origemLimpa)}&navigate=yes`;
-            if (linkGoogle) linkGoogle.href = gUrl;
-            if (linkWaze) linkWaze.href = wUrl;
+            // URL format description for Uber web estimation widget:
+            // https://www.uber.com/global/pt-br/price-estimate/ using query parameters:
+            // ?pickup=Origem&dropoff=Destino (using coordinates gives extremely reliable and direct map selection)
+            const uberUrl = `https://www.uber.com/global/pt-br/price-estimate/?pickup=${encodeURIComponent(origemLimpa + ', Rio de Janeiro')}&dropoff=${encodeURIComponent(destinoLimpa + ', Rio de Janeiro')}`;
+            if (linkUber) linkUber.href = uberUrl;
             if (linksEl) linksEl.style.display = 'flex';
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
