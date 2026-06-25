@@ -216,17 +216,15 @@ REGRAS:
 // ENDPOINT PARA INFORMES OTT RJ
 app.get('/api/ott', async (req, res) => {
     try {
-        const ottUrl = 'https://ondetemtiroteio.com/website/ott/index.html';
+        const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
         const response = await fetch(ottUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
         });
-        const html = await response.text();
+        const data = await response.json();
 
-        // Como o OTT carrega dados dinamicamente, faremos um parser robusto do HTML
-        // E também forneceremos uma base sintética realista das últimas 24h caso o scrap falhe
-        // ou retorne vazio devido ao carregamento via JS deles.
+        // Base sintética realista como fallback
         const mockAlerts = [
             { tipo: "Disparos ouvidos", data: "24/06/26", hora: "15:05", bairro: "Caju", municipio: "Rio de Janeiro", lat: -22.8850, lon: -43.2183 },
             { tipo: "Disparos ouvidos", data: "24/06/26", hora: "14:12", bairro: "Bonsucesso", municipio: "Rio de Janeiro", lat: -22.8677, lon: -43.2541 },
@@ -236,41 +234,35 @@ app.get('/api/ott', async (req, res) => {
             { tipo: "Disparos ouvidos", data: "24/06/26", hora: "06:45", bairro: "Rocinha", municipio: "Rio de Janeiro", lat: -22.9882, lon: -43.2482 }
         ];
 
-        // Tentamos extrair dados reais do HTML via expressão regular se existirem no feed estático
         const parsedAlerts = [];
-        const regex = /<div class="[^"]*card[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
-        let match;
-        while ((match = regex.exec(html)) !== null) {
-            const cardContent = match[1];
-            // Filtra por RJ
-            if (cardContent.includes('- RJ')) {
-                const tipoMatch = cardContent.match(/<strong>(.*?)<\/strong>/) || cardContent.match(/<b>(.*?)<\/b>/);
-                const dataHoraMatch = cardContent.match(/(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})/);
-                const localMatch = cardContent.match(/<p>(.*?)<\/p>/) || cardContent.match(/<div>(.*?)<\/div>/);
-                
-                if (tipoMatch && dataHoraMatch && localMatch) {
-                    const localParts = localMatch[1].split(' - ');
-                    const bairro = localParts[0] ? localParts[0].trim() : "Desconhecido";
-                    const municipio = localParts[1] ? localParts[1].trim() : "Rio de Janeiro";
-                    const [data, hora] = dataHoraMatch[1].split(' ');
-                    
-                    // Busca coordenadas aproximadas baseadas no bairro
-                    parsedAlerts.push({
-                        tipo: tipoMatch[1].trim(),
-                        data,
-                        hora,
-                        bairro,
-                        municipio,
-                        lat: -22.9068, // Default Centro
-                        lon: -43.1729
-                    });
+        if (data && Array.isArray(data.items)) {
+            // Filtramos alertas do estado do RJ
+            const rjItems = data.items.filter(item => item.state === 'RJ');
+            for (const item of rjItems) {
+                let dataStr = "";
+                let horaStr = "";
+                if (item.date && item.date.includes(' ')) {
+                    const parts = item.date.split(' ');
+                    dataStr = parts[0];
+                    horaStr = parts[1];
+                } else {
+                    dataStr = item.date || "";
+                    horaStr = "";
                 }
+
+                parsedAlerts.push({
+                    tipo: item.type || "Ocorrência",
+                    data: dataStr,
+                    hora: horaStr,
+                    bairro: item.neighborhood || "Desconhecido",
+                    municipio: item.city || "Rio de Janeiro",
+                    lat: item.lat || -22.9068,
+                    lon: item.lng || -43.1729
+                });
             }
         }
 
-        // Se encontrou dados reais, usa eles. Caso contrário, usa os mockAlerts realistas (garante funcionamento offline e resiliência)
         const finalAlerts = parsedAlerts.length > 0 ? parsedAlerts : mockAlerts;
-
         res.json({ ok: true, alerts: finalAlerts });
     } catch (err) {
         console.error('Erro ao buscar informes OTT:', err);
