@@ -33,6 +33,30 @@ function verificarEmAtendimento(inicioVal, fimVal) {
     }
 }
 
+function obterPeriodo(horario) {
+    if (!horario || typeof horario !== 'string') return '';
+    const parts = horario.split(':');
+    if (parts.length < 2) return '';
+    let hora = parseInt(parts[0], 10);
+    const minuto = parseInt(parts[1], 10);
+    
+    // Arredonda para cima se houver minutos
+    if (minuto > 0) {
+        hora = (hora + 1) % 24;
+    }
+    
+    if (hora >= 0 && hora <= 4) {
+        return "Madrugada 0h as 05h";
+    } else if (hora >= 5 && hora <= 11) {
+        return "Manha 5h às 11h";
+    } else if (hora >= 12 && hora <= 17) {
+        return "Tarde 12h ás 17h";
+    } else if (hora >= 18 && hora <= 23) {
+        return "Noite 18h as 23h";
+    }
+    return '';
+}
+
 export class UiController {
     constructor(mapService, plannerService, transitoMap, chatService, dataService) {
         this.mapService = mapService;
@@ -99,7 +123,7 @@ export class UiController {
                 const statusAtual = verificarEmAtendimento(a.dataHoraInicioRaw, a.dataHoraFimRaw);
                 const matchE = !se || !se.value || statusAtual === se.value;
                 
-                const matchH = !sh || !sh.value || a.horarioInicio === sh.value;
+                const matchH = !sh || !sh.value || obterPeriodo(a.horarioInicio) === sh.value;
                 return matchP && matchB && matchT && matchE && matchH;
             });
             this.plotarAtendimentos(f);
@@ -178,12 +202,15 @@ export class UiController {
         const progs = [...new Set(l.map(a => a.programa))].sort();
         const bairs = [...new Set(l.map(a => a.bairro))].sort();
         const tipos = [...new Set(l.map(a => a.tipoVeiculo))].sort();
-        const horarios = [...new Set(l.map(a => a.horarioInicio).filter(Boolean))].sort();
+        
+        const periodosExistentes = [...new Set(l.map(a => obterPeriodo(a.horarioInicio)).filter(Boolean))];
+        const ordemPeriodos = ["Madrugada 0h as 05h", "Manha 5h às 11h", "Tarde 12h ás 17h", "Noite 18h as 23h"];
+        const periodosFiltrados = ordemPeriodos.filter(p => periodosExistentes.includes(p));
 
         if (sp) sp.innerHTML = '<option value="">Programa</option>' + progs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (sb) sb.innerHTML = '<option value="">Bairro</option>' + bairs.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
         if (st) st.innerHTML = '<option value="">Veículo</option>' + tipos.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
-        if (sh) sh.innerHTML = '<option value="">Horário de Início</option>' + horarios.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+        if (sh) sh.innerHTML = '<option value="">Horário de Início</option>' + periodosFiltrados.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
     }
 
     initNormas() {
