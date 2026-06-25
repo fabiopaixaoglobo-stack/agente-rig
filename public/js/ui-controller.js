@@ -257,7 +257,7 @@ export class UiController {
         return str.trim().replace(/^,|,$/g, '').trim();
     }
 
-    calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
+    calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida, transito = false, chuva = false) {
         const TARIFA_BASE = this.tarifasConfig?.tarifaBase || 3.50;
         const PRECO_POR_KM = this.tarifasConfig?.precoPorKm || 1.50;
         const PRECO_POR_MINUTO = this.tarifasConfig?.precoPorMinuto || 0.30;
@@ -278,6 +278,13 @@ export class UiController {
             fatorDinamico = this.tarifasConfig?.fatorPico || 1.4;
         } else if (hora >= 22 || hora < 2) {
             fatorDinamico = this.tarifasConfig?.fatorMadrugada || 1.2; // Madrugada
+        }
+
+        if (transito) {
+            fatorDinamico *= (this.tarifasConfig?.fatorTransito || 1.3);
+        }
+        if (chuva) {
+            fatorDinamico *= (this.tarifasConfig?.fatorChuva || 1.2);
         }
 
         let custoBruto = (TARIFA_BASE + (distanciaKm * PRECO_POR_KM) + (tempoMinutos * PRECO_POR_MINUTO)) * fatorDinamico;
@@ -305,6 +312,15 @@ export class UiController {
                 if (tfMinima) tfMinima.textContent = this.tarifasConfig.tarifaMinima.toFixed(2).replace('.', ',');
                 if (tfFator) {
                     tfFator.textContent = `${this.tarifasConfig.fatorPico.toFixed(1).replace('.', ',')}x (picos) / ${this.tarifasConfig.fatorMadrugada.toFixed(1).replace('.', ',')}x (madrugada)`;
+                }
+                
+                const tfTransito = document.getElementById('ref-fator-transito');
+                const tfChuva = document.getElementById('ref-fator-chuva');
+                if (tfTransito && this.tarifasConfig.fatorTransito) {
+                    tfTransito.textContent = `${this.tarifasConfig.fatorTransito.toFixed(1).replace('.', ',')}`;
+                }
+                if (tfChuva && this.tarifasConfig.fatorChuva) {
+                    tfChuva.textContent = `${this.tarifasConfig.fatorChuva.toFixed(1).replace('.', ',')}`;
                 }
                 
                 const tfPedagiosLista = document.getElementById('ref-pedagios-lista');
@@ -353,6 +369,13 @@ export class UiController {
                 lat: -22.8636,
                 lon: -43.1676,
                 raio: 0.008 // (~800m)
+            },
+            {
+                nome: "Linha Amarela",
+                valor: 4.00,
+                lat: -22.9072,
+                lon: -43.3089,
+                raio: 0.006 // (~600m)
             }
         ];
         
@@ -490,6 +513,11 @@ export class UiController {
         const origem = document.getElementById('origem')?.value?.trim() || '';
         const destino = document.getElementById('destino')?.value?.trim() || '';
         const horario = document.getElementById('horario')?.value?.trim() || '12:00';
+        const transitoSel = document.getElementById('planejador-transito')?.value || 'não';
+        const chuvaSel = document.getElementById('planejador-chuva')?.value || 'não';
+        const transito = transitoSel === 'sim';
+        const chuva = chuvaSel === 'sim';
+
         const feedback = document.getElementById('plannerFeedback');
         const linksEl = document.getElementById('externalLinks');
         const linkUber = document.getElementById('link-uber');
@@ -541,7 +569,7 @@ export class UiController {
             const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
             const duracaoMin = Math.round(routeData.routes[0].duration / 60);
             
-            const custoBase = this.calcularCustoEstimado(parseFloat(distanciaKm), duracaoMin, horario);
+            const custoBase = this.calcularCustoEstimado(parseFloat(distanciaKm), duracaoMin, horario, transito, chuva);
             const pedagiosDetectados = this.detectarPedagios(coords);
             const valorPedagios = pedagiosDetectados.reduce((acc, p) => acc + p.valor, 0);
             const custoTotal = custoBase + valorPedagios;

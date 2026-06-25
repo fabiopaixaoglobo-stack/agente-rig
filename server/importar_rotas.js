@@ -16,9 +16,12 @@ const TARIFAS_CONFIG = {
     tarifaMinima: 6.00,
     fatorPico: 1.4,
     fatorMadrugada: 1.2,
+    fatorTransito: 1.3,
+    fatorChuva: 1.2,
     pedagios: [
         { nome: "Transolímpica", valor: 9.95 },
-        { nome: "Ponte Rio-Niterói", valor: 6.60 }
+        { nome: "Ponte Rio-Niterói", valor: 6.60 },
+        { nome: "Linha Amarela", valor: 4.00 }
     ]
 };
 
@@ -26,7 +29,7 @@ router.get('/tarifas', (req, res) => {
     res.json({ ok: true, tarifas: TARIFAS_CONFIG });
 });
 
-function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
+function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida, transito = false, chuva = false) {
     const TARIFA_BASE = TARIFAS_CONFIG.tarifaBase;
     const PRECO_POR_KM = TARIFAS_CONFIG.precoPorKm;
     const PRECO_POR_MINUTO = TARIFAS_CONFIG.precoPorMinuto;
@@ -49,6 +52,13 @@ function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida) {
         fatorDinamico = TARIFAS_CONFIG.fatorPico;
     } else if (hora >= 22 || hora < 2) {
         fatorDinamico = TARIFAS_CONFIG.fatorMadrugada; // Madrugada
+    }
+
+    if (transito) {
+        fatorDinamico *= TARIFAS_CONFIG.fatorTransito;
+    }
+    if (chuva) {
+        fatorDinamico *= TARIFAS_CONFIG.fatorChuva;
     }
 
     let custoBruto = (TARIFA_BASE + (distanciaKm * PRECO_POR_KM) + (tempoMinutos * PRECO_POR_MINUTO)) * fatorDinamico;
@@ -86,6 +96,13 @@ const PEDAGIOS_RJ = [
         lat: -22.8636,
         lon: -43.1676,
         raio: 0.008 // aproximado em graus (~800m)
+    },
+    {
+        nome: "Linha Amarela",
+        valor: 4.00,
+        lat: -22.9072,
+        lon: -43.3089,
+        raio: 0.006 // aproximado em graus (~600m)
     }
 ];
 
@@ -192,6 +209,16 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             const rawHorario = findValueByHeader(row, ['horario', 'hora', 'horario de saida', 'horario da corrida']);
             const horarioStr = formatarHorarioExcel(rawHorario);
 
+            const transitoRaw = findValueByHeader(row, ['transito', 'trânsito']) || '';
+            const chuvaRaw = findValueByHeader(row, ['chuva']) || '';
+
+            const transito = typeof transitoRaw === 'string'
+                ? transitoRaw.trim().toLowerCase() === 'sim'
+                : !!transitoRaw;
+            const chuva = typeof chuvaRaw === 'string'
+                ? chuvaRaw.trim().toLowerCase() === 'sim'
+                : !!chuvaRaw;
+
             if (!origemStr || !destinoStr) {
                 resultados.push({
                     matricula: matriculaStr,
@@ -229,7 +256,7 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 const geometryCoords = routeData.routes[0].geometry?.coordinates || [];
 
                 // 4. Calcular Custo
-                const custoBase = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr);
+                const custoBase = calcularCustoEstimado(distanciaKm, tempoMin, horarioStr, transito, chuva);
                 const pedagiosDetectados = detectarPedagios(geometryCoords);
                 const valorPedagios = pedagiosDetectados.reduce((acc, p) => acc + p.valor, 0);
                 const custoTotal = custoBase + valorPedagios;
@@ -237,9 +264,9 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 // 5. Salvar no banco
                 await pool.query(
                     `INSERT INTO rotas_importadas 
-                    (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custoTotal, 'SUCESSO', matriculaStr, nomeStr, areaStr]
+                    (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area, transito, chuva) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custoTotal, 'SUCESSO', matriculaStr, nomeStr, areaStr, transito, chuva]
                 );
 
                 resultados.push({
@@ -262,9 +289,9 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 
                 await pool.query(
                     `INSERT INTO rotas_importadas 
-                    (id_lote, origem, destino, horario, status, erro, matricula, nome_colaborador, area) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-                    [id_lote, origemStr, destinoStr, horarioStr, 'ERRO', err.message, matriculaStr, nomeStr, areaStr]
+                    (id_lote, origem, destino, horario, status, erro, matricula, nome_colaborador, area, transito, chuva) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                    [id_lote, origemStr, destinoStr, horarioStr, 'ERRO', err.message, matriculaStr, nomeStr, areaStr, transito, chuva]
                 );
 
                 resultados.push({

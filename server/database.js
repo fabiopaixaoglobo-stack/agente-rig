@@ -71,6 +71,8 @@ async function initDB() {
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS matricula TEXT;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS nome_colaborador TEXT;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS area TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS transito BOOLEAN DEFAULT FALSE;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS chuva BOOLEAN DEFAULT FALSE;
         `);
         await client.query(`
             ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS ultimo_ping TIMESTAMPTZ;

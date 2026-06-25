@@ -81,6 +81,24 @@
           <div style="margin-bottom: 8px;"><label class="label">Origem</label><input id="origem" class="input" placeholder="Ex: Centro, RJ" /></div>
           <div style="margin-bottom: 8px;"><label class="label">Destino</label><input id="destino" class="input" placeholder="Ex: Barra, RJ" /></div>
           <div style="margin-bottom: 8px;"><label class="label">Horário de Partida</label><input id="horario" class="input" placeholder="Ex: 08:30" value="12:00" /></div>
+          
+          <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+            <div style="flex: 1;">
+              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px;">Trânsito</label>
+              <select id="planejador-transito" class="select" style="width: 100%; height: 26px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: var(--text); border-radius: 2px; padding: 0 4px; font-size: 11px;">
+                <option value="não">Não</option>
+                <option value="sim">Sim</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px;">Chuva</label>
+              <select id="planejador-chuva" class="select" style="width: 100%; height: 26px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: var(--text); border-radius: 2px; padding: 0 4px; font-size: 11px;">
+                <option value="não">Não</option>
+                <option value="sim">Sim</option>
+              </select>
+            </div>
+          </div>
+
           <button id="btn-rota" class="btn btnPrimary" style="width: 100%;">TRAÇAR ROTA INTELIGENTE</button>
           <div id="plannerFeedback" class="summaryBox" style="margin-top: 10px; font-size: 10px;">Aguardando dados...</div>
           <div id="externalLinks" style="display: none; margin-top: 10px;" class="plannerExternalLinks">
@@ -99,6 +117,8 @@
             <li>Custo por Minuto: R$ <span id="ref-custo-min">...</span></li>
             <li>Tarifa Mínima: R$ <span id="ref-tarifa-min">...</span></li>
             <li>Fator Dinâmico: <span id="ref-fator-dinamico">...</span></li>
+            <li>Fator Trânsito: x<span id="ref-fator-transito">...</span></li>
+            <li>Fator Chuva: x<span id="ref-fator-chuva">...</span></li>
           </ul>
           <div style="font-size: 11px; margin-top: 8px; border-top: 1px solid #333; padding-top: 8px;">
             <p style="color: #aaa; margin-bottom: 4px;">Pedágios Cadastrados (RJ):</p>
