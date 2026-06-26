@@ -9,7 +9,7 @@ const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
 const { router: geocodeRouter } = require('./geocode');
 const { setupAuthRoutes } = require('./auth');
-const { initDB } = require('./database');
+const { pool, initDB } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
