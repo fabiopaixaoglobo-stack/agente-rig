@@ -103,7 +103,48 @@ async function carregarBases() {
 }
 
 // ENDPOINTS API
-app.get('/api/health', (req, res) => res.json({ status: 'online', version: '3.5.1' }));
+app.get('/api/health', async (req, res) => {
+    try {
+        const startTime = Date.now();
+        const dbResult = await pool.query('SELECT NOW() as db_time');
+        const dbLatency = Date.now() - startTime;
+
+        let activeConns = -1;
+        try {
+            const connResult = await pool.query('SELECT count(*) as active FROM pg_stat_activity');
+            activeConns = parseInt(connResult.rows[0].active, 10);
+        } catch (e) {
+            // Ignora se não for superusuário
+        }
+
+        res.json({
+            status: 'online',
+            database: 'online',
+            latency_ms: dbLatency,
+            active_connections: activeConns,
+            db_time: dbResult.rows[0].db_time,
+            version: '3.5.2'
+        });
+    } catch (err) {
+        console.error('❌ ERRO NO HEALTH CHECK (DATABASE OFFLINE):', err.message);
+        res.status(500).json({
+            status: 'online',
+            database: 'offline',
+            error: err.message,
+            symptoms: [
+                'Erro Interno 500 ao tentar fazer login ou cadastrar primeiro acesso',
+                'Falha ao importar e processar novos lotes de planilhas',
+                'Registros de auditoria de acessos não estão sendo gravados'
+            ],
+            sugestoes: [
+                'Verifique se a instância do banco de dados no Render não foi suspensa ou pausada por inatividade',
+                'Verifique se o limite de conexões simultâneas do plano gratuito do Render foi excedido',
+                'Verifique se as credenciais do DATABASE_URL no .env do Render continuam válidas'
+            ],
+            version: '3.5.2'
+        });
+    }
+});
 
 app.get('/api/normas', (req, res) => {
     res.json(
