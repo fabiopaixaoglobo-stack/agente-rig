@@ -340,7 +340,11 @@ function iniciarKeepAlive() {
 }
 
 async function iniciar() {
-    await initDB();
+    try {
+        await initDB();
+    } catch (dbErr) {
+        console.error('⚠️ [Startup Warning] Não foi possível conectar ao banco de dados:', dbErr.message);
+    }
     await carregarBases();
     app.listen(PORT, () => {
         console.log(`🚀 Agente RIG v3.5.1 na porta ${PORT}`);
@@ -350,5 +354,4 @@ async function iniciar() {
 
 iniciar().catch((err) => {
     console.error('Falha ao iniciar servidor:', err);
-    process.exit(1);
 });
