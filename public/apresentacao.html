@@ -33,7 +33,7 @@
       user-select: none;
     }
 
-    /* Video de Fundo */
+    /* Video de Abertura / Fundo do RIT */
     .bg-video-container {
       position: absolute;
       inset: 0;
@@ -44,8 +44,8 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.25;
-      filter: blur(2px);
+      opacity: 0.22;
+      filter: blur(1px);
     }
     .bg-video-container::after {
       content: '';
@@ -54,12 +54,28 @@
       background: linear-gradient(135deg, rgba(5, 12, 24, 0.95) 0%, rgba(5, 12, 24, 0.7) 50%, rgba(5, 12, 24, 0.9) 100%);
     }
 
+    /* Slide 1 - Imagem de Abertura ao fundo */
+    .bg-image-slide1 {
+      position: absolute;
+      inset: 0;
+      background: url('assets/apresentacao/image1.png') no-repeat center center;
+      background-size: cover;
+      opacity: 0.35;
+      z-index: 0;
+    }
+    .bg-image-slide1::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(5, 12, 24, 0.5) 0%, rgba(5, 12, 24, 0.95) 80%);
+    }
+
     /* Partículas de Fundo */
     .bg-particles {
       position: absolute;
       inset: 0;
       overflow: hidden;
-      z-index: 0;
+      z-index: 1;
       pointer-events: none;
     }
     .particle {
@@ -125,6 +141,7 @@
       width: 100%;
       height: 100%;
       position: relative;
+      z-index: 2;
     }
     .slide {
       position: absolute;
@@ -136,7 +153,7 @@
       pointer-events: none;
       transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
       transform: scale(0.96) translateY(20px);
-      padding: 90px 60px 100px;
+      padding: 90px 40px 100px;
       overflow: hidden;
     }
     .slide.active {
@@ -152,13 +169,12 @@
     /* Split Layout */
     .split-container {
       display: grid;
-      grid-template-columns: 1.1fr 1.9fr;
-      gap: 50px;
+      grid-template-columns: 1.15fr 1.85fr;
+      gap: 40px;
       width: 100%;
-      max-width: 1300px;
+      max-width: 1400px;
       height: 100%;
       align-items: center;
-      z-index: 10;
     }
 
     /* Texto & Metricas */
@@ -178,16 +194,16 @@
       border: 1px solid var(--cyan);
       padding: 6px 16px;
       border-radius: 50px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       background: rgba(0, 209, 255, 0.05);
       box-shadow: 0 0 15px rgba(0, 209, 255, 0.1);
     }
     .title-xl {
-      font-size: clamp(38px, 4vw, 56px);
+      font-size: clamp(34px, 3.5vw, 48px);
       font-weight: 900;
       line-height: 1.1;
       letter-spacing: -1px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .highlight {
       background: var(--accent-grad);
@@ -196,10 +212,10 @@
       background-clip: text;
     }
     .description {
-      font-size: clamp(14px, 1.2vw, 17px);
+      font-size: clamp(13px, 1.1vw, 15px);
       color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 30px;
+      line-height: 1.5;
+      margin-bottom: 24px;
       font-weight: 300;
     }
     
@@ -207,72 +223,74 @@
     .features-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .feature-item {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       align-items: flex-start;
     }
     .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       background: rgba(0, 209, 255, 0.08);
       border: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       color: var(--cyan);
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0, 209, 255, 0.05);
     }
     .feature-text h4 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       color: var(--white);
     }
     .feature-text p {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
-    /* Mockup da Tela Real */
+    /* Mockup da Tela Real (Ajustada para imagem completa sem corte) */
     .content-right {
       position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
+      width: 100%;
+      height: 100%;
+      max-height: 520px;
     }
     .mockup-wrapper {
       position: relative;
       width: 100%;
-      border-radius: 16px;
+      height: 100%;
+      border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--glass-border);
-      background: rgba(5, 12, 24, 0.5);
-      box-shadow: 0 20px 50px rgba(0, 209, 255, 0.12),
-                  0 0 0 1px rgba(0, 209, 255, 0.08);
-      transition: transform 0.5s ease;
-    }
-    .mockup-wrapper:hover {
-      transform: scale(1.02);
+      background: rgba(5, 12, 24, 0.6);
+      box-shadow: 0 15px 45px rgba(0, 209, 255, 0.1),
+                  0 0 0 1px rgba(0, 209, 255, 0.06);
+      display: flex;
+      flex-direction: column;
     }
     .mockup-bar {
-      height: 28px;
-      background: rgba(10, 20, 38, 0.9);
+      height: 26px;
+      background: rgba(10, 20, 38, 0.95);
       border-bottom: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      padding: 0 14px;
       gap: 6px;
+      flex-shrink: 0;
     }
     .mockup-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.2);
     }
@@ -280,21 +298,70 @@
     .mockup-dot:nth-child(2) { background: #FFBD2E; }
     .mockup-dot:nth-child(3) { background: #27C93F; }
     .mockup-title {
-      margin-left: 20px;
-      font-size: 10px;
+      margin-left: 15px;
+      font-size: 9px;
       color: var(--muted);
       letter-spacing: 1px;
       font-family: 'Inter', sans-serif;
     }
-    .mockup-img {
+    .mockup-content {
+      flex: 1;
       width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      display: block;
-      transition: transform 1.2s ease;
+      height: calc(100% - 26px);
+      background: #000;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
     }
-    .slide.active .mockup-img {
-      transform: scale(1.01);
+    .mockup-img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain; /* Garante imagem completa sem cortes */
+      display: block;
+    }
+
+    /* Carrossel Interno para o Simulador de App */
+    .sim-toggle-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .sim-toggle-btn {
+      background: rgba(0, 209, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.3s;
+      letter-spacing: 1px;
+    }
+    .sim-toggle-btn.active {
+      background: var(--cyan);
+      color: var(--dark);
+      border-color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0, 209, 255, 0.4);
+    }
+    .carousel-view {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .carousel-view.active {
+      opacity: 1;
+      pointer-events: all;
     }
 
     /* Slide 1: Hero Customizado */
@@ -315,7 +382,7 @@
     }
     .hero-logo {
       width: 140px;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
       filter: drop-shadow(0 0 20px rgba(0, 209, 255, 0.4));
       animation: pulse 4s infinite alternate;
     }
@@ -324,19 +391,19 @@
       100% { transform: scale(1.04); filter: drop-shadow(0 0 30px rgba(0, 209, 255, 0.6)); }
     }
     .title-hero {
-      font-size: clamp(48px, 6vw, 84px);
+      font-size: clamp(42px, 5.5vw, 76px);
       font-weight: 900;
       letter-spacing: -2px;
       line-height: 1;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .subtitle-hero {
-      font-size: clamp(16px, 1.8vw, 24px);
+      font-size: clamp(15px, 1.6vw, 22px);
       color: var(--muted);
       font-weight: 300;
       max-width: 700px;
-      line-height: 1.5;
-      margin-bottom: 40px;
+      line-height: 1.45;
+      margin-bottom: 35px;
     }
     .kpi-container {
       display: grid;
@@ -344,7 +411,7 @@
       gap: 20px;
       width: 100%;
       max-width: 800px;
-      margin-top: 20px;
+      margin-top: 15px;
     }
     .kpi-card {
       background: var(--glass);
@@ -359,7 +426,7 @@
       transform: translateY(-4px);
     }
     .kpi-num {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 900;
       color: var(--cyan);
       margin-bottom: 4px;
@@ -375,7 +442,7 @@
     /* Barra de Navegação */
     .nav-bar {
       position: fixed;
-      bottom: 30px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -459,9 +526,9 @@
   <!-- Deck de Slides -->
   <div class="deck" id="deck">
 
-    <!-- SLIDE 1: CAPA (HERO) -->
+    <!-- SLIDE 1: CAPA (HERO COM IMAGEM DE ABERTURA AO FUNDO) -->
     <div class="slide active" data-slide="1">
-      <div class="hero-glow"></div>
+      <div class="bg-image-slide1"></div>
       <div class="hero-container">
         <img class="hero-logo" src="assets/rit-hero.png" alt="Logo RIT" />
         <h1 class="title-hero">ROTA INTELIGENTE DE <span class="highlight">TRANSPORTE</span></h1>
@@ -488,7 +555,7 @@
       </div>
     </div>
 
-    <!-- SLIDE 2: ABA 1 - MONITORAMENTO (IMAGEM REAL 1 / 1.PNG) -->
+    <!-- SLIDE 2: ABA 1 - MONITORAMENTO (IMAGEM EDITAVEL SLIDE 2 - MONITORAMENTO PADRÃO) -->
     <div class="slide" data-slide="2">
       <div class="split-container">
         <div class="content-left">
@@ -516,29 +583,31 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit.onrender.com/dashboard/monitoramento</div>
+              <div class="mockup-title">agente-rit.onrender.com/dashboard/monitoramento-geral</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image1.png" alt="Aba Monitoramento (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image2.png" alt="Aba Monitoramento Geral" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 3: ABA 2 - SIMULADOR DE TRANSPORTE POR APP (IMAGEM REAL 2 / 2.PNG) -->
+    <!-- SLIDE 3: ABA 2 - SIMULADOR DE TRANSPORTE POR APP (DUAS VERSÕES: IMAGEM SLIDE 7 E IMAGEM SLIDE 3) -->
     <div class="slide" data-slide="3">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 02</span>
           <h2 class="title-xl">Simulador de <span class="highlight">Transporte por App</span></h2>
-          <p class="description">Calculadora logística inteligente que reproduz com precisão as tarifas de aplicativos como Uber, garantindo auditoria de custos de deslocamentos.</p>
+          <p class="description">Calculadora de tarifas logística que reproduz com precisão os valores de corridas por app (ex: UberX) e apoia o controle financeiro de duas formas distintas.</p>
+          
+          <!-- Botões de Alternância das Versões -->
+          <div class="sim-toggle-container">
+            <button class="sim-toggle-btn active" id="btn-sim-indiv">1. Busca Individual</button>
+            <button class="sim-toggle-btn" id="btn-sim-lote">2. Importação em Lote</button>
+          </div>
+
           <div class="features-list">
-            <div class="feature-item">
-              <div class="feature-icon">📈</div>
-              <div class="feature-text">
-                <h4>Variáveis de Clima & Trânsito</h4>
-                <p>Ajustes automáticos de dinâmicos baseados em chuva e congestionamentos.</p>
-              </div>
-            </div>
             <div class="feature-item">
               <div class="feature-icon">🛣️</div>
               <div class="feature-text">
@@ -546,40 +615,94 @@
                 <p>Identificação de praças (como Linha Amarela a R$ 4,00) de ida e retorno.</p>
               </div>
             </div>
+            <div class="feature-item">
+              <div class="feature-icon">🌦️</div>
+              <div class="feature-text">
+                <h4>Fatores Trânsito e Chuva</h4>
+                <p>Ajuste dinâmico das simulações para máxima aproximação com os apps reais.</p>
+              </div>
+            </div>
           </div>
         </div>
         <div class="content-right">
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit.onrender.com/dashboard/simulador</div>
+              <div class="mockup-title" id="sim-mockup-title">agente-rit.onrender.com/dashboard/simulador?modo=individual</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image2.png" alt="Aba Simulador por App (Ativa)" />
+            <div class="mockup-content">
+              <!-- Versão 1: Busca Individual (Slide 7 do PowerPoint) -->
+              <div class="carousel-view active" id="view-sim-indiv">
+                <img class="mockup-img" src="assets/apresentacao/image7.png" alt="Simulador Busca Individual" />
+              </div>
+              <!-- Versão 2: Importação em Lote (Slide 3 do PowerPoint) -->
+              <div class="carousel-view" id="view-sim-lote">
+                <img class="mockup-img" src="assets/apresentacao/image3.png" alt="Simulador Importação em Lote" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 4: ABA 3 - TRÂNSITO REAL (IMAGEM REAL 3 / 3.PNG) -->
+    <!-- SLIDE 4: MONITORAMENTO DE MAPA DE TRANSPORTES PLOTADO (IMAGEM EDITAVEL SLIDE 4) -->
     <div class="slide" data-slide="4">
       <div class="split-container">
         <div class="content-left">
+          <span class="tag">Módulo 01 — Base Importada</span>
+          <h2 class="title-xl">Mapa de Transportes <span class="highlight">Plotado</span></h2>
+          <p class="description">Visualização em tempo real das rotas e veículos gerada a partir da importação de arquivos de bases de transportes coletivos.</p>
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon">📂</div>
+              <div class="feature-text">
+                <h4>Importação de Planilhas</h4>
+                <p>Processamento rápido de listas de colaboradores e trajetos sugeridos.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🗺️</div>
+              <div class="feature-text">
+                <h4>Georreferenciamento Instantâneo</h4>
+                <p>Os atendimentos importados são imediatamente plotados com pins no mapa interativo.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="content-right">
+          <div class="mockup-wrapper">
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+              <div class="mockup-title">agente-rit.onrender.com/dashboard/monitoramento?status=importado</div>
+            </div>
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image4.png" alt="Mapa de Transportes Plotado" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: ABA 3 - TRÂNSITO REAL (IMAGEM EDITAVEL SLIDE 5) -->
+    <div class="slide" data-slide="5">
+      <div class="split-container">
+        <div class="content-left">
           <span class="tag">Módulo 03</span>
-          <h2 class="title-xl">Trânsito Real & <span class="highlight">Análise de Risco</span></h2>
-          <p class="description">Segurança em primeiro lugar. O sistema correlaciona dados de trânsito em tempo real com informes de segurança de canais comunitários.</p>
+          <h2 class="title-xl">Trânsito Real & <span class="highlight">Informes OTT</span></h2>
+          <p class="description">Apoio crítico de segurança. Plotagem de ocorrências de segurança diretamente no trajeto do trânsito da cidade em tempo real.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">🔫</div>
               <div class="feature-text">
-                <h4>Integração OTT (Onde Tem Tiroteio)</h4>
-                <p>Alertas em tempo real sobre tiroteios e bloqueios de vias no mapa.</p>
+                <h4>Alertas do Onde Tem Tiroteio</h4>
+                <p>Integração e atualização constante de informes OTT de tiroteios e bloqueios.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon">⚠️</div>
               <div class="feature-text">
-                <h4>Análise Inteligente de Rota</h4>
-                <p>Evita trajetos de alto risco, sugerindo caminhos alternativos seguros.</p>
+                <h4>Apoio na Tomada de Decisão</h4>
+                <p>Visualização e cálculo de risco imediato para manter a frota segura.</p>
               </div>
             </div>
           </div>
@@ -588,34 +711,36 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit.onrender.com/dashboard/transito-real</div>
+              <div class="mockup-title">agente-rit.onrender.com/dashboard/transito-real?ott=ativo</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image3.png" alt="Aba Transito Real (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image5.png" alt="Trânsito Real com Informes OTT" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 5: ABA 4 - REDE CREDENCIADA (IMAGEM REAL 4 / 4.PNG) -->
-    <div class="slide" data-slide="5">
+    <!-- SLIDE 6: ABA 4 - REDE CREDENCIADA (IMAGEM EDITAVEL SLIDE 6) -->
+    <div class="slide" data-slide="6">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 04</span>
-          <h2 class="title-xl">Rede <span class="highlight">Credenciada</span></h2>
-          <p class="description">Mapa dinâmico e inteligente para consulta de toda a rede de postos e credenciados de suporte de combustível da frota Globo.</p>
+          <h2 class="title-xl">Rede Credenciada <span class="highlight">Ticket Log</span></h2>
+          <p class="description">Mapa dinâmico de rede de suporte para busca rápida de postos e credenciados de combustível da frota Globo no Rio de Janeiro.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">⛽</div>
               <div class="feature-text">
-                <h4>Integração Ticket Log / Good Card</h4>
-                <p>Filtros por endereço para achar o ponto de reabastecimento mais próximo.</p>
+                <h4>Localização de Postos de Serviços</h4>
+                <p>Busca e filtragem de credenciados por endereço ou proximidade.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">📌</div>
+              <div class="feature-icon">💳</div>
               <div class="feature-text">
-                <h4>Centralização de Geolocalização</h4>
-                <p>Navegação instantânea para localização em qualquer ponto do RJ.</p>
+                <h4>Ticket Log / Good Card</h4>
+                <p>Integração oficial via portal seguro e unificado de consulta.</p>
               </div>
             </div>
           </div>
@@ -626,32 +751,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/rede-credenciada</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image4.png" alt="Aba Rede Credenciada (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image6.png" alt="Rede Credenciada Ticket Log" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 6: ABA 5 - EVENTOS (IMAGEM REAL 5 / 5.PNG) -->
-    <div class="slide" data-slide="6">
+    <!-- SLIDE 7: ABA 5 - EVENTOS (IMAGEM EDITAVEL SLIDE 8) -->
+    <div class="slide" data-slide="7">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 05</span>
-          <h2 class="title-xl">Gestão de <span class="highlight">Grandes Eventos</span></h2>
-          <p class="description">Ferramenta dedicada para monitorar o impacto logístico causado por grandes eventos na infraestrutura urbana do Rio de Janeiro.</p>
+          <h2 class="title-xl">Controle de <span class="highlight">Grandes Eventos</span></h2>
+          <p class="description">Monitoramento analítico do impacto no tráfego urbano em grandes eventos (Carnaval, Rock in Rio, Réveillon) com mapas personalizados.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">🎉</div>
               <div class="feature-text">
-                <h4>Planos Operacionais Integrados</h4>
-                <p>Mapas temáticos específicos para Carnaval, Rock in Rio, Réveillon, etc.</p>
+                <h4>Planos Operacionais</h4>
+                <p>Visualização e importação de mapas temáticos específicos.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon">🗺️</div>
               <div class="feature-text">
-                <h4>Importação do Google My Maps</h4>
-                <p>Flexibilidade para importar pontos e áreas de bloqueio instantaneamente.</p>
+                <h4>Integração Google My Maps</h4>
+                <p>Carregamento dinâmico de traçados e pontos de bloqueio urbano.</p>
               </div>
             </div>
           </div>
@@ -660,34 +787,36 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit.onrender.com/dashboard/eventos</div>
+              <div class="mockup-title">agente-rit.onrender.com/dashboard/eventos?mid=1u63z-Uf9D2z-tW90m5Y8_I</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image5.png" alt="Aba Eventos (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image8.png" alt="Mapa de Eventos" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 7: ABA 6 - CONSULTOR NORMATIVO (IMAGEM REAL 6 / 6.PNG) -->
-    <div class="slide" data-slide="7">
+    <!-- SLIDE 8: ABA 6 - CONSULTOR NORMATIVO (IMAGEM EDITAVEL SLIDE 9) -->
+    <div class="slide" data-slide="8">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 06</span>
-          <h2 class="title-xl">Consultor Normativo <span class="highlight">Inteligente</span></h2>
-          <p class="description">Assistente virtual com inteligência artificial para sanar dúvidas instantâneas sobre regulamentos, normas e contratos operacionais.</p>
+          <h2 class="title-xl">Consultor Normativo <span class="highlight">com IA</span></h2>
+          <p class="description">Assistente cognitivo com inteligência artificial para consulta instantânea sobre regulamentos de transportes, normas de cargas e pessoas.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">🤖</div>
               <div class="feature-text">
-                <h4>IA com Integração RAG</h4>
-                <p>Processa grandes volumes de arquivos JSON de normas de forma segura e rápida.</p>
+                <h4>IA RAG Integrada</h4>
+                <p>Leitura inteligente de normas internas usando o motor Groq SDK.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">📋</div>
+              <div class="feature-icon">📑</div>
               <div class="feature-text">
-                <h4>Contextualização de Contratos</h4>
-                <p>Mecanismos focados em transportes de Cargas e Pessoas.</p>
+                <h4>Filtro de Contextos</h4>
+                <p>Bases rápidas para normas de cargas, trânsito ou colaboradores.</p>
               </div>
             </div>
           </div>
@@ -698,32 +827,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/consultor-normativo</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image6.png" alt="Aba Consultor Normativo (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image9.png" alt="Consultor Normativo" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 8: ABA 7 - MONITORAMENTO DE GRUPOS (IMAGEM REAL 7 / 7.PNG) -->
-    <div class="slide" data-slide="8">
+    <!-- SLIDE 9: ABA 7 - MONITORAMENTO DE GRUPOS (IMAGEM EDITAVEL SLIDE 10) -->
+    <div class="slide" data-slide="9">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 07</span>
           <h2 class="title-xl">Monitoramento <span class="highlight">de Grupos</span></h2>
-          <p class="description">Canal de ligação unificado e seguro do Command Center para abrir o monitoramento de canais de comunicação essenciais em tempo real.</p>
+          <p class="description">Módulo dedicado para acompanhar grupos de mensagens do WhatsApp Web para coordenação e comunicados rápidos da operação urbana.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">💬</div>
               <div class="feature-text">
-                <h4>WhatsApp Web Integrado</h4>
-                <p>Abertura ágil e segura em janela isolada direto da plataforma.</p>
+                <h4>Link Corporativo Seguro</h4>
+                <p>Abertura do WhatsApp Web de forma isolada mantendo a segurança.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon">🛡️</div>
               <div class="feature-text">
-                <h4>Interface Sandboxed</h4>
-                <p>Mantém as sessões corporativas protegidas e separadas no navegador.</p>
+                <h4>Sandbox e Proteção de Dados</h4>
+                <p>Ambiente que preserva dados e credenciais operacionais Globo.</p>
               </div>
             </div>
           </div>
@@ -734,32 +865,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/whatsapp</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image7.png" alt="Aba Monitoramento de Grupos (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image10.png" alt="WhatsApp Web de Grupos" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 9: ABA 8 - CÂMERAS RJ (IMAGEM REAL 8 / 8.PNG) -->
-    <div class="slide" data-slide="9">
+    <!-- SLIDE 10: ABA 8 - CÂMERAS RJ (IMAGEM EDITAVEL SLIDE 11) -->
+    <div class="slide" data-slide="10">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 08</span>
-          <h2 class="title-xl">Olho Digital: <span class="highlight">Câmeras RJ</span></h2>
-          <p class="description">Acesso direto e integrado às câmeras de trânsito públicas do Rio de Janeiro para averiguação imediata de acidentes e fluxo viário.</p>
+          <h2 class="title-xl">Câmeras RJ <span class="highlight">ao Vivo</span></h2>
+          <p class="description">Visualização direta de câmeras públicas para checar congestionamentos e acidentes em vias cruciais no Rio de Janeiro.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">🎥</div>
               <div class="feature-text">
-                <h4>Transmissão Direta do COR</h4>
-                <p>Integração com feeds públicos do Centro de Operações do Rio.</p>
+                <h4>Fontes Públicas do COR</h4>
+                <p>Integração fluida com as câmeras ativas da prefeitura.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">🏙️</div>
+              <div class="feature-icon">📍</div>
               <div class="feature-text">
-                <h4>Busca Integrada por Bairro</h4>
-                <p>Selecione o bairro e acesse a câmera correta instantaneamente.</p>
+                <h4>Busca por Bairro</h4>
+                <p>Acesso e seleção rápidos de câmeras no local de interesse logístico.</p>
               </div>
             </div>
           </div>
@@ -770,32 +903,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/cameras</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image8.png" alt="Aba Câmeras RJ (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image11.png" alt="Câmeras RJ ao Vivo" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 10: ABA 9 - RADAR METEOROLÓGICO (IMAGEM REAL 9 / 9.PNG) -->
-    <div class="slide" data-slide="10">
+    <!-- SLIDE 11: ABA 9 - RADAR METEOROLÓGICO (IMAGEM EDITAVEL SLIDE 12) -->
+    <div class="slide" data-slide="11">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 09</span>
           <h2 class="title-xl">Radar <span class="highlight">Meteorológico</span></h2>
-          <p class="description">Monitoramento climático dinâmico para prever e mitigar atrasos gerados por tempestades nas principais artérias da cidade.</p>
+          <p class="description">Módulo climático para acompanhar alertas e núcleos de chuva forte sobre o Rio de Janeiro com previsão de intercorrências logísticas.</p>
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon">⛈️</div>
               <div class="feature-text">
-                <h4>Radar Alerta Rio Ao Vivo</h4>
-                <p>Feed interativo e atualizado minuto a minuto do radar de chuva.</p>
+                <h4>Radar Alerta Rio Integrado</h4>
+                <p>Mapa interativo do radar meteorológico oficial ao vivo.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">⚓</div>
+              <div class="feature-icon">🚢</div>
               <div class="feature-text">
-                <h4>Apoio do Centro de Operações</h4>
-                <p>Informações consolidadas de alertas de alagamento por região.</p>
+                <h4>Previsão de Impacto</h4>
+                <p>Auxilia na mitigação de atrasos por alagamentos ou temporais.</p>
               </div>
             </div>
           </div>
@@ -806,32 +941,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/radar-meteorologico</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image9.png" alt="Aba Radar Meteorológico (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image12.png" alt="Radar Meteorológico Alerta Rio" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 11: ABA 10 - + TRANSPORTES (IMAGEM REAL 10 / 10.PNG) -->
-    <div class="slide" data-slide="11">
+    <!-- SLIDE 12: ABA 10 - + TRANSPORTES (IMAGEM EDITAVEL SLIDE 13) -->
+    <div class="slide" data-slide="12">
       <div class="split-container">
         <div class="content-left">
           <span class="tag">Módulo 10</span>
           <h2 class="title-xl">Portal Seguro <span class="highlight">+ Transportes</span></h2>
-          <p class="description">Acesso rápido e integrado ao sistema de transporte Wiselog 360 da Globo através de túnel criptografado e seguro.</p>
+          <p class="description">Conexão segura com o sistema Wiselog 360 da Globo para gestão e auditoria de viagens e rotas de entrega.</p>
           <div class="features-list">
-            <div class="feature-item">
-              <div class="feature-icon">🔑</div>
-              <div class="feature-text">
-                <h4>Integração de Sessão Segura</h4>
-                <p>Sincronia protegida aproveitando as credenciais ativas do login Globo.</p>
-              </div>
-            </div>
             <div class="feature-item">
               <div class="feature-icon">🚚</div>
               <div class="feature-text">
                 <h4>Portal Wiselog Integrado</h4>
-                <p>Abertura de relatórios de transporte e entregas com um clique.</p>
+                <p>Controle unificado de expedição e transporte corporativo Globo.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🔑</div>
+              <div class="feature-text">
+                <h4>Segurança de Login Integrada</h4>
+                <p>Túnel web que utiliza a própria autenticação ativa na Globo.</p>
               </div>
             </div>
           </div>
@@ -842,72 +979,34 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/mais-transportes</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image10.png" alt="Aba + Transportes (Ativa)" />
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/image13.png" alt="Portal + Transportes" />
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 12: CONTROLE E AUDITORIA (IMAGEM REAL 11 / 11.PNG) -->
-    <div class="slide" data-slide="12">
-      <div class="split-container">
-        <div class="content-left">
-          <span class="tag">Controle Interno</span>
-          <h2 class="title-xl">Saúde do Banco & <span class="highlight">Auditoria</span></h2>
-          <p class="description">Visibilidade para os administradores. O sistema conta com auditoria profunda de acessos e monitoramento de conexão em tempo real.</p>
-          <div class="features-list">
-            <div class="feature-item">
-              <div class="feature-icon">⚙️</div>
-              <div class="feature-text">
-                <h4>Auditoria de Logs Completa</h4>
-                <p>Registro de cada operação, login e importação para segurança interna.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon">🛡️</div>
-              <div class="feature-text">
-                <h4>Health Check Proativo</h4>
-                <p>Alerta automático caso a conexão com o banco sofra instabilidades.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="content-right">
-          <div class="mockup-wrapper">
-            <div class="mockup-bar">
-              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit.onrender.com/dashboard/auditoria</div>
-            </div>
-            <img class="mockup-img" src="assets/apresentacao/image11.png" alt="Tela de Auditoria e Logs" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLIDE 13: CONCLUSÃO & RESULTADOS (SEM TELA / TEXTO DE IMPACTO COM VÍDEO) -->
+    <!-- SLIDE 13: CONCLUSÃO & DADOS DE CONVENIÊNCIA E AUDITORIA (SEM TEXTOS INEXATOS DE DESVIOS) -->
     <div class="slide" data-slide="13">
       <div class="hero-glow"></div>
       <div class="hero-container">
-        <span class="tag">Resultados & Futuro</span>
-        <h2 class="title-hero">EFICIÊNCIA, SEGURANÇA E <span class="highlight">INTEGRAÇÃO</span></h2>
-        <p class="subtitle-hero" style="margin-bottom: 30px;">O Agente RIT transforma a gestão de logística e transportes da Globo em uma operação moderna, orientada a dados e altamente segura.</p>
+        <span class="tag">Controle de Governança</span>
+        <h2 class="title-hero">CONTROLE DE DADOS & <span class="highlight">AUDITORIA DE DADOS</span></h2>
+        <p class="subtitle-hero" style="margin-bottom: 30px;">O Agente RIT é uma ferramenta robusta voltada a transparência e integridade operacional. Todos os logins, logs de acesso e parametrizações operacionais são auditados.</p>
         
-        <div class="kpi-container" style="margin-bottom: 40px;">
+        <div class="kpi-container" style="margin-bottom: 40px; grid-template-columns: repeat(3, 1fr);">
           <div class="kpi-card">
-            <div class="kpi-num">-22%</div>
-            <div class="kpi-lbl">Gastos com Desvios</div>
+            <div class="kpi-num">Logs</div>
+            <div class="kpi-lbl">Auditoria de Operação Completa</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-num">100%</div>
-            <div class="kpi-lbl">Monitoramento</div>
+            <div class="kpi-num">DB Check</div>
+            <div class="kpi-lbl">Status e Conectividade do Banco</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-num">+45%</div>
-            <div class="kpi-lbl">Velocidade de Resposta</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-num">Zero</div>
-            <div class="kpi-lbl">Incidentes em Rotas Verificadas</div>
+            <div class="kpi-num">Seguro</div>
+            <div class="kpi-lbl">Conformidade e Acessos Controlados</div>
           </div>
         </div>
         
@@ -929,7 +1028,7 @@
   <script>
     // Gerador de Partículas de Fundo
     const particlesContainer = document.getElementById('particles');
-    const numParticles = 45;
+    const numParticles = 40;
     
     for (let i = 0; i < numParticles; i++) {
       const p = document.createElement('div');
@@ -1006,6 +1105,29 @@
       } else if (e.key === 'ArrowLeft') {
         prevSlide();
       }
+    });
+
+    // Controle Carrossel Interno do Slide 3 (Simulador)
+    const btnSimIndiv = document.getElementById('btn-sim-indiv');
+    const btnSimLote = document.getElementById('btn-sim-lote');
+    const viewSimIndiv = document.getElementById('view-sim-indiv');
+    const viewSimLote = document.getElementById('view-sim-lote');
+    const simTitle = document.getElementById('sim-mockup-title');
+
+    btnSimIndiv.addEventListener('click', () => {
+      btnSimIndiv.classList.add('active');
+      btnSimLote.classList.remove('active');
+      viewSimIndiv.classList.add('active');
+      viewSimLote.classList.remove('active');
+      simTitle.textContent = 'agente-rit.onrender.com/dashboard/simulador?modo=individual';
+    });
+
+    btnSimLote.addEventListener('click', () => {
+      btnSimLote.classList.add('active');
+      btnSimIndiv.classList.remove('active');
+      viewSimLote.classList.add('active');
+      viewSimIndiv.classList.remove('active');
+      simTitle.textContent = 'agente-rit.onrender.com/dashboard/simulador?modo=lote-xlsx';
     });
 
     updateCounter();
