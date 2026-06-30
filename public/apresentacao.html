@@ -33,6 +33,27 @@
       user-select: none;
     }
 
+    /* Video de Fundo */
+    .bg-video-container {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .bg-video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+      filter: blur(2px);
+    }
+    .bg-video-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(5, 12, 24, 0.95) 0%, rgba(5, 12, 24, 0.7) 50%, rgba(5, 12, 24, 0.9) 100%);
+    }
+
     /* Partículas de Fundo */
     .bg-particles {
       position: absolute;
@@ -417,6 +438,13 @@
 </head>
 <body>
 
+  <!-- Video de Abertura / Fundo do RIT -->
+  <div class="bg-video-container">
+    <video autoplay loop muted playsinline id="rit-bg-video">
+      <source src="assets/video/Vídeo Apresentação Agente RIT - Transportes RJ.mp4" type="video/mp4" />
+    </video>
+  </div>
+
   <!-- Barra Superior -->
   <div class="top-bar">
     <div class="top-logo">Agente RIT</div>
@@ -460,7 +488,7 @@
       </div>
     </div>
 
-    <!-- SLIDE 2: ABA 1 - MONITORAMENTO -->
+    <!-- SLIDE 2: ABA 1 - MONITORAMENTO (IMAGEM REAL 1 / 1.PNG) -->
     <div class="slide" data-slide="2">
       <div class="split-container">
         <div class="content-left">
@@ -490,13 +518,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/monitoramento</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image2.png" alt="Tela de Monitoramento" />
+            <img class="mockup-img" src="assets/apresentacao/image1.png" alt="Aba Monitoramento (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 3: ABA 2 - SIMULADOR DE TRANSPORTE POR APP -->
+    <!-- SLIDE 3: ABA 2 - SIMULADOR DE TRANSPORTE POR APP (IMAGEM REAL 2 / 2.PNG) -->
     <div class="slide" data-slide="3">
       <div class="split-container">
         <div class="content-left">
@@ -526,13 +554,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/simulador</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image3.png" alt="Tela do Simulador por App" />
+            <img class="mockup-img" src="assets/apresentacao/image2.png" alt="Aba Simulador por App (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 4: ABA 3 - TRÂNSITO REAL -->
+    <!-- SLIDE 4: ABA 3 - TRÂNSITO REAL (IMAGEM REAL 3 / 3.PNG) -->
     <div class="slide" data-slide="4">
       <div class="split-container">
         <div class="content-left">
@@ -562,13 +590,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/transito-real</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image4.png" alt="Tela do Trânsito Real" />
+            <img class="mockup-img" src="assets/apresentacao/image3.png" alt="Aba Transito Real (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 5: ABA 4 - REDE CREDENCIADA -->
+    <!-- SLIDE 5: ABA 4 - REDE CREDENCIADA (IMAGEM REAL 4 / 4.PNG) -->
     <div class="slide" data-slide="5">
       <div class="split-container">
         <div class="content-left">
@@ -598,13 +626,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/rede-credenciada</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image5.png" alt="Tela da Rede Credenciada" />
+            <img class="mockup-img" src="assets/apresentacao/image4.png" alt="Aba Rede Credenciada (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 6: ABA 5 - EVENTOS -->
+    <!-- SLIDE 6: ABA 5 - EVENTOS (IMAGEM REAL 5 / 5.PNG) -->
     <div class="slide" data-slide="6">
       <div class="split-container">
         <div class="content-left">
@@ -634,13 +662,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/eventos</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image6.png" alt="Tela de Eventos" />
+            <img class="mockup-img" src="assets/apresentacao/image5.png" alt="Aba Eventos (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 7: ABA 6 - CONSULTOR NORMATIVO -->
+    <!-- SLIDE 7: ABA 6 - CONSULTOR NORMATIVO (IMAGEM REAL 6 / 6.PNG) -->
     <div class="slide" data-slide="7">
       <div class="split-container">
         <div class="content-left">
@@ -670,13 +698,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/consultor-normativo</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image7.png" alt="Tela do Consultor Normativo" />
+            <img class="mockup-img" src="assets/apresentacao/image6.png" alt="Aba Consultor Normativo (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 8: ABA 7 - MONITORAMENTO DE GRUPOS -->
+    <!-- SLIDE 8: ABA 7 - MONITORAMENTO DE GRUPOS (IMAGEM REAL 7 / 7.PNG) -->
     <div class="slide" data-slide="8">
       <div class="split-container">
         <div class="content-left">
@@ -706,13 +734,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/whatsapp</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image8.png" alt="Tela do Monitoramento de Grupos" />
+            <img class="mockup-img" src="assets/apresentacao/image7.png" alt="Aba Monitoramento de Grupos (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 9: ABA 8 - CÂMERAS RJ -->
+    <!-- SLIDE 9: ABA 8 - CÂMERAS RJ (IMAGEM REAL 8 / 8.PNG) -->
     <div class="slide" data-slide="9">
       <div class="split-container">
         <div class="content-left">
@@ -742,13 +770,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/cameras</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image9.png" alt="Tela de Câmeras RJ" />
+            <img class="mockup-img" src="assets/apresentacao/image8.png" alt="Aba Câmeras RJ (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 10: ABA 9 - RADAR METEOROLÓGICO -->
+    <!-- SLIDE 10: ABA 9 - RADAR METEOROLÓGICO (IMAGEM REAL 9 / 9.PNG) -->
     <div class="slide" data-slide="10">
       <div class="split-container">
         <div class="content-left">
@@ -778,13 +806,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/radar-meteorologico</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image10.png" alt="Tela do Radar Meteorológico" />
+            <img class="mockup-img" src="assets/apresentacao/image9.png" alt="Aba Radar Meteorológico (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 11: ABA 10 - + TRANSPORTES -->
+    <!-- SLIDE 11: ABA 10 - + TRANSPORTES (IMAGEM REAL 10 / 10.PNG) -->
     <div class="slide" data-slide="11">
       <div class="split-container">
         <div class="content-left">
@@ -814,13 +842,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/mais-transportes</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image11.png" alt="Tela do + Transportes" />
+            <img class="mockup-img" src="assets/apresentacao/image10.png" alt="Aba + Transportes (Ativa)" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 12: CONTROLE E AUDITORIA (STATUS E SAÚDE DO DB) -->
+    <!-- SLIDE 12: CONTROLE E AUDITORIA (IMAGEM REAL 11 / 11.PNG) -->
     <div class="slide" data-slide="12">
       <div class="split-container">
         <div class="content-left">
@@ -850,13 +878,13 @@
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
               <div class="mockup-title">agente-rit.onrender.com/dashboard/auditoria</div>
             </div>
-            <img class="mockup-img" src="assets/apresentacao/image12.png" alt="Tela de Auditoria e Logs" />
+            <img class="mockup-img" src="assets/apresentacao/image11.png" alt="Tela de Auditoria e Logs" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SLIDE 13: CONCLUSÃO & RESULTADOS -->
+    <!-- SLIDE 13: CONCLUSÃO & RESULTADOS (SEM TELA / TEXTO DE IMPACTO COM VÍDEO) -->
     <div class="slide" data-slide="13">
       <div class="hero-glow"></div>
       <div class="hero-container">
@@ -901,7 +929,7 @@
   <script>
     // Gerador de Partículas de Fundo
     const particlesContainer = document.getElementById('particles');
-    const numParticles = 40;
+    const numParticles = 45;
     
     for (let i = 0; i < numParticles; i++) {
       const p = document.createElement('div');
