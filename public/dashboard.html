@@ -310,18 +310,44 @@
     <!-- RADAR METEOROLÓGICO RJ -->
     <section id="tab-radar" class="tabPane">
       <div style="flex: 1; background: #000; display: flex; flex-direction: column; position: relative;">
-        <div class="filterBar" style="background: rgba(10, 15, 28, 0.98); height: 40px;">
+        <div class="filterBar" style="background: rgba(10, 15, 28, 0.98); height: 40px; display: flex; align-items: center;">
           <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-            <span style="font-weight: 800; font-size: 12px; color: var(--accent);">RADAR METEOROLÓGICO AO VIVO - ALERTA RIO</span>
+            <span style="font-weight: 800; font-size: 12px; color: var(--accent); text-transform: uppercase;">Radar:</span>
+            <button type="button" id="btn-radar-windy" class="btn btnSmall btnPrimary" style="font-size: 9px; padding: 2px 8px; font-weight: bold; cursor: pointer;">Windy (Tempo Real/Satélite)</button>
+            <button type="button" id="btn-radar-alertario" class="btn btnSmall" style="font-size: 9px; padding: 2px 8px; border: 1px solid var(--line); font-weight: bold; cursor: pointer; color: #fff;">Alerta Rio (Estações Pluviométricas)</button>
           </div>
           <div style="text-align:right; display: flex; align-items: center; gap: 8px;">
-             <span id="radar-status" style="font-size: 10px; color: var(--muted);">Monitoramento Climático Real</span>
+             <span id="radar-status" style="font-size: 10px; color: var(--muted);">Monitoramento Climático</span>
              <button type="button" class="btn btnSmall" onclick="window.open('https://alertario.rio.rj.gov.br/', '_blank')" style="font-size: 9px; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; cursor: pointer;">Portal Alerta Rio ↗</button>
           </div>
         </div>
         <div style="flex: 1; width: 100%;">
-          <iframe src="https://embed.windy.com/embed2.html?lat=-22.908&lon=-43.200&detailLat=-22.908&detailLon=-43.200&width=650&height=450&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" width="100%" height="100%" style="border:none;" allowfullscreen></iframe>
+          <iframe id="iframe-radar-meteorologico" src="https://embed.windy.com/embed2.html?lat=-22.908&lon=-43.200&detailLat=-22.908&detailLon=-43.200&width=650&height=450&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" width="100%" height="100%" style="border:none;" allowfullscreen></iframe>
         </div>
+        <script>
+          document.addEventListener("DOMContentLoaded", () => {
+            const iframeRadar = document.getElementById('iframe-radar-meteorologico');
+            const btnWindy = document.getElementById('btn-radar-windy');
+            const btnAlertaRio = document.getElementById('btn-radar-alertario');
+
+            if (iframeRadar && btnWindy && btnAlertaRio) {
+              btnWindy.addEventListener('click', () => {
+                iframeRadar.src = "https://embed.windy.com/embed2.html?lat=-22.908&lon=-43.200&detailLat=-22.908&detailLon=-43.200&width=650&height=450&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1";
+                btnWindy.classList.add('btnPrimary');
+                btnWindy.style.background = '';
+                btnAlertaRio.classList.remove('btnPrimary');
+                btnAlertaRio.style.background = 'transparent';
+              });
+              btnAlertaRio.addEventListener('click', () => {
+                iframeRadar.src = "https://alertario.rio.rj.gov.br/radar/";
+                btnAlertaRio.classList.add('btnPrimary');
+                btnAlertaRio.style.background = 'var(--accent)';
+                btnWindy.classList.remove('btnPrimary');
+                btnWindy.style.background = 'transparent';
+              });
+            }
+          });
+        </script>
       </div>
     </section>
 
