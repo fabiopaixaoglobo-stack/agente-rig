@@ -311,7 +311,15 @@ app.get('/api/ott', async (req, res) => {
     }
 });
 
-app.use(express.static(publicPath));
+app.use(express.static(publicPath, {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
+}));
 
 // FALLBACK PARA SPA
 app.get('*', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));

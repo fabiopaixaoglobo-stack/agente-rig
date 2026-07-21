@@ -13,12 +13,29 @@ export class CorRio {
         setInterval(() => this.fetchCalor(), 600000);
     }
 
+    async fetchWithTimeout(resource, options = {}) {
+        const { timeout = 2500 } = options; // Timeout curto de 2.5 segundos
+        
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+            const response = await fetch(resource, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(id);
+            return response;
+        } catch (error) {
+            clearTimeout(id);
+            throw error;
+        }
+    }
+
     async fetchEstagio() {
         if (!this.elEstagio) return;
         try {
-            // Using a CORS proxy approach or direct fetch. Since it's a public API without tight CORS in the browser,
-            // direct fetch should work. If it fails, the server proxy route can be created later, but we will try direct first.
-            const response = await fetch('https://aplicativo.cocr.com.br/estagio_api');
+            const response = await this.fetchWithTimeout('https://aplicativo.cocr.com.br/estagio_api');
             if (response.ok) {
                 const data = await response.json();
                 this.elEstagio.style.display = 'inline-block';
@@ -26,14 +43,16 @@ export class CorRio {
                 this.elEstagio.innerHTML = `<span style="font-weight:900;">${(data.estagio || 'ESTÁGIO').toUpperCase()}</span>`;
             }
         } catch (error) {
-            console.error('Falha ao obter estágio do COR:', error);
+            console.warn('Timeout ou falha ao obter estágio do COR:', error.message);
+            // Oculta indicador silenciosamente em caso de erro para não poluir a interface
+            this.elEstagio.style.display = 'none';
         }
     }
 
     async fetchCalor() {
         if (!this.elCalor) return;
         try {
-            const response = await fetch('https://aplicativo.cocr.com.br/calor_api');
+            const response = await this.fetchWithTimeout('https://aplicativo.cocr.com.br/calor_api');
             if (response.ok) {
                 const text = await response.text(); // e.g. "calor 2"
                 
@@ -58,7 +77,9 @@ export class CorRio {
                 this.elCalor.innerHTML = `<span style="font-weight:900;">${text.toUpperCase()}</span>`;
             }
         } catch (error) {
-            console.error('Falha ao obter calor do COR:', error);
+            console.warn('Timeout ou falha ao obter calor do COR:', error.message);
+            // Oculta indicador silenciosamente em caso de erro para não poluir a interface
+            this.elCalor.style.display = 'none';
         }
     }
 }
