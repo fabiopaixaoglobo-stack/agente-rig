@@ -314,12 +314,13 @@
           <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
             <span style="font-weight: 800; font-size: 12px; color: var(--accent);">RADAR METEOROLÓGICO AO VIVO - ALERTA RIO</span>
           </div>
-          <div style="text-align:right;">
-             <span id="radar-status" style="font-size: 10px; color: var(--muted);">Conectado com Centro de Operações Rio</span>
+          <div style="text-align:right; display: flex; align-items: center; gap: 8px;">
+             <span id="radar-status" style="font-size: 10px; color: var(--muted);">Monitoramento Climático Real</span>
+             <button type="button" class="btn btnSmall" onclick="window.open('https://alertario.rio.rj.gov.br/', '_blank')" style="font-size: 9px; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; cursor: pointer;">Portal Alerta Rio ↗</button>
           </div>
         </div>
         <div style="flex: 1; width: 100%;">
-          <iframe src="https://aplicativo.cocr.com.br/radar_emb_app" width="100%" height="100%" style="border:none;" scrolling="no" allowfullscreen></iframe>
+          <iframe src="https://embed.windy.com/embed2.html?lat=-22.908&lon=-43.200&detailLat=-22.908&detailLon=-43.200&width=650&height=450&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" width="100%" height="100%" style="border:none;" allowfullscreen></iframe>
         </div>
       </div>
     </section>
