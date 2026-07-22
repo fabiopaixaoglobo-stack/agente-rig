@@ -501,9 +501,40 @@
       text-align: center;
       font-weight: 600;
     }
+    /* Botão Sair / Voltar ao Login */
+    .btn-exit-presentation {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(5, 12, 24, 0.7);
+      border: 1px solid var(--glass-border);
+      color: var(--white);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      text-decoration: none;
+    }
+    .btn-exit-presentation:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 209, 255, 0.4);
+      transform: translateX(-50%) scale(1.05);
+    }
   </style>
 </head>
 <body>
+
+  <!-- Botão Sair da Apresentação -->
+  <a href="/index.html" class="btn-exit-presentation" title="Voltar ao Login">✕</a>
 
   <!-- Video de Abertura / Fundo do RIT -->
   <div class="bg-video-container">
