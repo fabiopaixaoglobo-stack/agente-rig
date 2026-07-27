@@ -324,6 +324,24 @@ app.get('/api/rotas/detalhes/:id', async (req, res) => {
     }
 });
 
+app.get('/api/rotas/listar', async (req, res) => {
+    try {
+        const loteResult = await pool.query('SELECT id FROM lotes_importacao ORDER BY id DESC LIMIT 1');
+        if (loteResult.rows.length === 0) {
+            return res.json({ ok: true, resultados: [] });
+        }
+        const lastLoteId = loteResult.rows[0].id;
+        const rotasResult = await pool.query(
+            'SELECT * FROM rotas_importadas WHERE id_lote = $1 ORDER BY id ASC',
+            [lastLoteId]
+        );
+        res.json({ ok: true, resultados: rotasResult.rows });
+    } catch (err) {
+        console.error('Erro ao listar rotas do lote:', err);
+        res.status(500).json({ error: 'Erro interno ao carregar base.' });
+    }
+});
+
 app.post('/api/gps/update', async (req, res) => {
     try {
         const { motorista, lat, lng, placa, tipo_veiculo, programa, speed, id_rota, status_atendimento } = req.body;

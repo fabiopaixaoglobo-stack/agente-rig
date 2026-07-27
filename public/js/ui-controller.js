@@ -115,7 +115,53 @@ export class UiController {
         this.activeTrackers = [];
         this.initMapModeToggle();
         this.iniciarPoolActiveTrackers();
+        this.carregarBaseExistente();
         window.uiController = this;
+    }
+
+    async carregarBaseExistente() {
+        try {
+            const statusEl = document.getElementById("geo-status");
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Carregando base...</span>`;
+            
+            const res = await fetch("/api/rotas/listar");
+            const json = await res.json();
+            if (json.ok && json.resultados.length > 0) {
+                const atendimentos = json.resultados.map(r => ({
+                    id: r.id,
+                    motorista: r.motorista_nome || '',
+                    telefone: r.motorista_telefone || '',
+                    tipoVeiculo: r.tipo_veiculo || '',
+                    programa: r.programa || 'RIT',
+                    placa: r.placa_veiculo || '',
+                    bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
+                    dataHoraInicioRaw: r.horario,
+                    dataHoraFimRaw: r.horario_termino,
+                    horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
+                    lat: null,
+                    lng: null,
+                    passageiro: r.passageiro || '',
+                    origem: r.origem || '',
+                    destino: r.destino || '',
+                    statusAtendimento: r.status_atendimento
+                }));
+                
+                this.dataService.baseAtendimentos = atendimentos;
+                this.preencherDropdowns(atendimentos);
+                
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando coordenadas...</span>`;
+                await this.dataService.geocodificar((pct) => {
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
+                });
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
+                
+                this.plotarAtendimentos(this.dataService.baseAtendimentos);
+            } else {
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Sem base carregada</span>`;
+            }
+        } catch (e) {
+            console.error("Erro ao carregar base existente:", e);
+        }
     }
 
     initTabs() {
@@ -321,7 +367,9 @@ export class UiController {
                         horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
                         lat: null,
                         lng: null,
-                        passageiro: r.passageiro || ''
+                        passageiro: r.passageiro || '',
+                        origem: r.origem || '',
+                        destino: r.destino || ''
                     }));
                 
                 this.dataService.baseAtendimentos = atendimentos;
