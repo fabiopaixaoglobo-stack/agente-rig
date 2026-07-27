@@ -267,6 +267,52 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 continue;
             }
 
+            if (req.query.tipo === 'monitoramento') {
+                try {
+                    const insertResult = await pool.query(
+                        `INSERT INTO rotas_importadas 
+                        (id_lote, origem, destino, horario, status, matricula, nome_colaborador, area, transito, chuva,
+                         motorista_nome, motorista_telefone, tipo_veiculo, placa_veiculo, horario_termino, programa, localidade_origem, localidade_destino, passageiro) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id`,
+                        [
+                            id_lote, origemStr, destinoStr, horarioStr, 'SUCESSO', matriculaStr, nomeStr, areaStr, transito, chuva,
+                            motoristaNome, motoristaTelefone, tipoVeiculo, placaVeiculo, horarioTermino, programa, localidadeOrigem, localidadeDestino, passageiro
+                        ]
+                    );
+                    const insertedId = insertResult.rows[0]?.id;
+
+                    resultados.push({
+                        id: insertedId,
+                        matricula: matriculaStr,
+                        nome_colaborador: nomeStr,
+                        area: areaStr,
+                        origem: origemStr,
+                        destino: destinoStr,
+                        horario: horarioStr,
+                        status: 'SUCESSO',
+                        motorista_nome: motoristaNome,
+                        motorista_telefone: motoristaTelefone,
+                        tipo_veiculo: tipoVeiculo,
+                        placa_veiculo: placaVeiculo,
+                        horario_termino: horarioTermino,
+                        programa: programa,
+                        localidade_origem: localidadeOrigem,
+                        localidade_destino: localidadeDestino,
+                        passageiro: passageiro
+                    });
+                    continue;
+                } catch (err) {
+                    console.error("Erro ao salvar rota de monitoramento:", err);
+                    resultados.push({
+                        matricula: matriculaStr,
+                        nome_colaborador: nomeStr,
+                        status: 'ERRO',
+                        erro: 'Erro de banco de dados'
+                    });
+                    continue;
+                }
+            }
+
             try {
                 // 1. Geocode Origem
                 const origemCoords = await getCoordsParaEndereco(origemStr);

@@ -215,7 +215,7 @@ export class UiController {
                 const formData = new FormData();
                 formData.append("planilha", file);
                 
-                const res = await fetch("/api/rotas/importar", {
+                const res = await fetch("/api/rotas/importar?tipo=monitoramento", {
                     method: "POST",
                     body: formData
                 });
