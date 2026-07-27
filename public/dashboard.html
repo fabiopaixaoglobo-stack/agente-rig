@@ -68,7 +68,10 @@
           </select>
           <select id="filtro-horario-inicio" class="select" style="width: 140px;"><option value="">Horário de Início</option></select>
           <button id="btn-limpar" class="btn btnSmall">Limpar</button>
-          <div style="flex-grow: 1; text-align: right;"><button id="btn-centralizar" class="btn btnPrimary">Centralizar Mapa</button></div>
+          <div style="flex-grow: 1; text-align: right;">
+            <button id="btn-toggle-map-mode" class="btn btn-ghost" style="color: var(--accent); border-color: var(--accent); margin-right: 8px;">🛰️ MAPA: TODOS</button>
+            <button id="btn-centralizar" class="btn btnPrimary">Centralizar Mapa</button>
+          </div>
         </div>
         <div id="map" class="map"></div>
       </section>

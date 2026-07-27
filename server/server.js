@@ -311,6 +311,67 @@ app.get('/api/ott', async (req, res) => {
     }
 });
 
+app.get('/api/rotas/detalhes/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+        const result = await pool.query('SELECT * FROM rotas_importadas WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Rota não encontrada.' });
+        res.json({ ok: true, rota: result.rows[0] });
+    } catch (err) {
+        console.error('Erro ao buscar detalhes da rota:', err);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+app.post('/api/gps/update', async (req, res) => {
+    try {
+        const { motorista, lat, lng, placa, tipo_veiculo, programa, speed, id_rota, status_atendimento } = req.body;
+        if (!motorista || !lat || !lng) {
+            return res.status(400).json({ error: 'Dados incompletos (motorista, lat, lng são obrigatórios).' });
+        }
+
+        // Upsert na tabela posicoes_motoristas
+        await pool.query(
+            `INSERT INTO posicoes_motoristas (motorista_nome, lat, lng, placa, tipo_veiculo, programa, speed, timestamp)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+             ON CONFLICT (motorista_nome) DO UPDATE 
+             SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, placa = EXCLUDED.placa, 
+                 tipo_veiculo = EXCLUDED.tipo_veiculo, programa = EXCLUDED.programa, 
+                 speed = EXCLUDED.speed, timestamp = NOW()`,
+            [motorista, lat, lng, placa, tipo_veiculo, programa, speed || 0]
+        );
+
+        // Se passar id_rota e status_atendimento, atualiza o status de atendimento
+        if (id_rota && status_atendimento) {
+            await pool.query(
+                `UPDATE rotas_importadas SET status_atendimento = $1 WHERE id = $2`,
+                [status_atendimento, id_rota]
+            );
+            
+            // Se finalizado, remove da tabela de posicoes para tirar do mapa ativo
+            if (status_atendimento === 'FINALIZADO') {
+                await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
+            }
+        }
+
+        res.json({ ok: true, message: 'Localização atualizada com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao salvar geolocalização:', err);
+        res.status(500).json({ error: 'Erro ao processar localização.' });
+    }
+});
+
+app.get('/api/gps/active-trackers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM posicoes_motoristas');
+        res.json({ ok: true, trackers: result.rows });
+    } catch (err) {
+        console.error('Erro ao buscar motoristas ativos:', err);
+        res.status(500).json({ error: 'Erro ao obter rastreamentos ativos.' });
+    }
+});
+
 app.use(express.static(publicPath, {
     setHeaders: (res, path) => {
         if (path.endsWith('.html')) {

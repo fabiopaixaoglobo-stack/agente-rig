@@ -204,9 +204,9 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             const nomeStr = findValueByHeader(row, ['nome', 'colaborador', 'funcionario']) || '';
             const areaStr = findValueByHeader(row, ['area', 'setor', 'departamento']) || '';
 
-            const origemStr = findValueByHeader(row, ['origem', 'saida', 'partida', 'endereco de origem', 'endereco de saida']);
-            const destinoStr = findValueByHeader(row, ['destino', 'chegada', 'retorno', 'endereco de destino', 'endereco de chegada']);
-            const rawHorario = findValueByHeader(row, ['horario', 'hora', 'horario de saida', 'horario da corrida']);
+            const origemStr = findValueByHeader(row, ['origem', 'saida', 'partida', 'endereco de origem', 'endereco de saida', 'localidade1 + endereco1', 'localidade1 + endereço1', 'localidade1']);
+            const destinoStr = findValueByHeader(row, ['destino', 'chegada', 'retorno', 'endereco de destino', 'endereco de chegada', 'localidade2 + endereco2', 'localidade2 + endereço2', 'localidade2']);
+            const rawHorario = findValueByHeader(row, ['horario', 'hora', 'horario de saida', 'horario da corrida', 'data hora', 'data hora inicio', 'data hora início']);
             const horarioStr = formatarHorarioExcel(rawHorario);
 
             const transitoRaw = findValueByHeader(row, ['transito', 'trânsito']) || '';
@@ -218,6 +218,21 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             const chuva = typeof chuvaRaw === 'string'
                 ? chuvaRaw.trim().toLowerCase() === 'sim'
                 : !!chuvaRaw;
+
+            // Extrair novas colunas para o rastreamento do motorista
+            const motoristaNome = findValueByHeader(row, ['motorista', 'nome do motorista', 'condutor']) || '';
+            const motoristaTelefone = findValueByHeader(row, ['telefone motorista', 'telefone do motorista', 'celular motorista', 'tel motorista', 'telefone']) || '';
+            const tipoVeiculo = findValueByHeader(row, ['tipo de veiculo', 'tipo veiculo', 'veiculo tipo', 'categoria']) || '';
+            const placaVeiculo = findValueByHeader(row, ['placa veiculo', 'placa do veiculo', 'placa']) || '';
+            const passageiro = findValueByHeader(row, ['passageiro', 'colaborador', 'funcionario', 'nome_colaborador']) || '';
+            
+            const localidadeOrigem = findValueByHeader(row, ['localidade1', 'origem', 'localidade1 + endereco1', 'localidade1 + endereço1']) || '';
+            const localidadeDestino = findValueByHeader(row, ['localidade2', 'destino', 'localidade2 + endereco2', 'localidade2 + endereço2']) || '';
+            
+            const rawHorarioTermino = findValueByHeader(row, ['data hora2', 'data hora termino', 'data hora término', 'hora de termino', 'termino', 'data_hora2']);
+            const horarioTermino = formatarHorarioExcel(rawHorarioTermino);
+            
+            const programa = findValueByHeader(row, ['programa', 'projeto', 'grupo']) || '';
 
             if (!origemStr || !destinoStr) {
                 resultados.push({
@@ -262,14 +277,20 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 const custoTotal = custoBase + valorPedagios;
 
                 // 5. Salvar no banco
-                await pool.query(
+                const insertResult = await pool.query(
                     `INSERT INTO rotas_importadas 
-                    (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area, transito, chuva) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-                    [id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custoTotal, 'SUCESSO', matriculaStr, nomeStr, areaStr, transito, chuva]
+                    (id_lote, origem, destino, horario, distancia_km, tempo_min, custo_estimado, status, matricula, nome_colaborador, area, transito, chuva,
+                     motorista_nome, motorista_telefone, tipo_veiculo, placa_veiculo, horario_termino, programa, localidade_origem, localidade_destino, passageiro) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING id`,
+                    [
+                        id_lote, origemStr, destinoStr, horarioStr, distanciaKm, tempoMin, custoTotal, 'SUCESSO', matriculaStr, nomeStr, areaStr, transito, chuva,
+                        motoristaNome, motoristaTelefone, tipoVeiculo, placaVeiculo, horarioTermino, programa, localidadeOrigem, localidadeDestino, passageiro
+                    ]
                 );
+                const insertedId = insertResult.rows[0]?.id;
 
                 resultados.push({
+                    id: insertedId,
                     matricula: matriculaStr,
                     nome_colaborador: nomeStr,
                     area: areaStr,
@@ -281,7 +302,16 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                     custo_base: custoBase.toFixed(2),
                     pedagios: pedagiosDetectados.map(p => ({ nome: p.nome, valor: p.valor })),
                     custo_estimado: custoTotal.toFixed(2),
-                    status: 'SUCESSO'
+                    status: 'SUCESSO',
+                    motorista_nome: motoristaNome,
+                    motorista_telefone: motoristaTelefone,
+                    tipo_veiculo: tipoVeiculo,
+                    placa_veiculo: placaVeiculo,
+                    horario_termino: horarioTermino,
+                    programa: programa,
+                    localidade_origem: localidadeOrigem,
+                    localidade_destino: localidadeDestino,
+                    passageiro: passageiro
                 });
 
             } catch (err) {
@@ -289,9 +319,13 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                 
                 await pool.query(
                     `INSERT INTO rotas_importadas 
-                    (id_lote, origem, destino, horario, status, erro, matricula, nome_colaborador, area, transito, chuva) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-                    [id_lote, origemStr, destinoStr, horarioStr, 'ERRO', err.message, matriculaStr, nomeStr, areaStr, transito, chuva]
+                    (id_lote, origem, destino, horario, status, erro, matricula, nome_colaborador, area, transito, chuva,
+                     motorista_nome, motorista_telefone, tipo_veiculo, placa_veiculo, horario_termino, programa, localidade_origem, localidade_destino, passageiro) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+                    [
+                        id_lote, origemStr, destinoStr, horarioStr, 'ERRO', err.message, matriculaStr, nomeStr, areaStr, transito, chuva,
+                        motoristaNome, motoristaTelefone, tipoVeiculo, placaVeiculo, horarioTermino, programa, localidadeOrigem, localidadeDestino, passageiro
+                    ]
                 );
 
                 resultados.push({

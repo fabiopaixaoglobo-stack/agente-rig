@@ -81,6 +81,10 @@ export class UiController {
         this.initModals();
         this.initPlanner();
         this.initEventosLista();
+        
+        this.mapMode = 'TODOS';
+        this.gpsIntervalId = null;
+        this.initMapModeToggle();
     }
 
     initTabs() {
@@ -152,8 +156,39 @@ export class UiController {
             if (!file) return;
             
             try {
-                showToast("Processando planilha...", "info");
-                const atendimentos = await this.dataService.processExcel(file);
+                showToast("Processando e enviando base para o CCO...", "info");
+                
+                const formData = new FormData();
+                formData.append("planilha", file);
+                
+                const res = await fetch("/api/rotas/importar", {
+                    method: "POST",
+                    body: formData
+                });
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.error || "Erro ao fazer upload da base");
+                }
+                
+                // Mapeia os resultados retornados do banco de dados (que agora possuem ID)
+                const atendimentos = json.resultados.map(r => ({
+                    id: r.id,
+                    motorista: r.motorista_nome || '',
+                    telefone: r.motorista_telefone || '',
+                    tipoVeiculo: r.tipo_veiculo || '',
+                    programa: r.programa || 'RIT',
+                    placa: r.placa_veiculo || '',
+                    bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
+                    dataHoraInicioRaw: r.horario,
+                    dataHoraFimRaw: r.horario_termino,
+                    horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
+                    lat: null,
+                    lng: null,
+                    passageiro: r.passageiro || ''
+                }));
+                
+                this.dataService.baseAtendimentos = atendimentos;
                 this.preencherDropdowns(atendimentos);
                 
                 const statusEl = document.getElementById("geo-status");
@@ -168,7 +203,7 @@ export class UiController {
                 showToast("Base carregada com sucesso!", "success");
             } catch (err) {
                 console.error(err);
-                showToast("Erro ao processar planilha.", "error");
+                showToast(err.message || "Erro ao processar planilha.", "error");
             }
         });
     }
@@ -179,7 +214,7 @@ export class UiController {
         if (listEl) listEl.innerHTML = "";
 
         lista.forEach(a => {
-            if (a.lat && a.lng) {
+            if (this.mapMode === 'TODOS' && a.lat && a.lng) {
                 const popup = `<b>${escapeHtml(a.programa)}</b><br>${escapeHtml(a.motorista)}<br>${escapeHtml(a.bairro)}`;
                 this.mapService.addMarker(a.lat, a.lng, popup);
             }
@@ -188,9 +223,116 @@ export class UiController {
                 const m = escapeHtml(a.motorista);
                 const pl = escapeHtml(a.placa);
                 const b = escapeHtml(a.bairro);
-                listEl.innerHTML += `<div class="card"><div class="row1"><span class="badgeProgram">${p}</span></div><div class="meta-motorista">${m}</div><div class="meta-veiculo">${pl}</div><div class="meta-bairro">📍 ${b}</div></div>`;
+                const tel = escapeHtml(a.telefone);
+                
+                let whatsappButtonHtml = '';
+                if (tel) {
+                    let limpo = String(tel).replace(/\D/g, '');
+                    const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
+                    const msgText = `Olá ${a.motorista}, por favor confirme seus dados e inicie o compartilhamento de GPS para o atendimento de ${a.passageiro || 'Passageiro'} no link: ${window.location.origin}/motorista.html?id=${a.id}`;
+                    whatsappButtonHtml = `
+                        <div style="margin-top: 8px;">
+                            <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
+                                💬 Compartilhar Rastreamento
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                listEl.innerHTML += `
+                    <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+                        <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span class="badgeProgram" style="font-size:9px; background:rgba(0,209,255,0.15); color:var(--accent); font-weight:800; padding:2px 6px; border-radius:4px;">${p}</span>
+                        </div>
+                        <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 ${m}</div>
+                        <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
+                        <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 ${b}</div>
+                        ${whatsappButtonHtml}
+                    </div>
+                `;
             }
         });
+    }
+
+    initMapModeToggle() {
+        const btnToggle = document.getElementById("btn-toggle-map-mode");
+        if (!btnToggle) return;
+
+        btnToggle.addEventListener("click", () => {
+            if (this.mapMode === 'TODOS') {
+                this.mapMode = 'ONLINE';
+                btnToggle.textContent = '🛰️ MAPA: ONLINE';
+                btnToggle.style.background = 'linear-gradient(90deg, #25D366, #10B981)';
+                btnToggle.style.color = '#04111a';
+                
+                this.mapService.clearMarkers();
+                this.startGpsTracking();
+                showToast("Modo Rastreamento Online Ativado!", "success");
+            } else {
+                this.mapMode = 'TODOS';
+                btnToggle.textContent = '🛰️ MAPA: TODOS';
+                btnToggle.style.background = 'rgba(255, 255, 255, 0.04)';
+                btnToggle.style.color = '#fff';
+                
+                this.stopGpsTracking();
+                this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                showToast("Retornando ao Mapa Geral.", "info");
+            }
+        });
+    }
+
+    startGpsTracking() {
+        this.stopGpsTracking();
+        
+        const fetchAndRenderActiveDrivers = () => {
+            fetch('/api/gps/active-trackers')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && this.mapMode === 'ONLINE') {
+                        this.mapService.clearMarkers();
+                        
+                        data.trackers.forEach(t => {
+                            const popupHtml = `
+                                <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 200px;">
+                                    <div style="background: #e0e7ff; padding: 6px; border-radius: 4px; margin-bottom: 6px;">
+                                        <strong style="color: #312e81;">👤 ${escapeHtml(t.motorista_nome)}</strong>
+                                        <span style="font-size: 9px; background: #c7d2fe; color: #3730a3; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">
+                                            ${escapeHtml(t.programa || 'GERAL')}
+                                        </span>
+                                    </div>
+                                    <b>Placa:</b> ${escapeHtml(t.placa || 'N/D')}<br>
+                                    <b>Veículo:</b> ${escapeHtml(t.tipo_veiculo || 'N/D')}<br>
+                                    <b>Velocidade:</b> ${t.speed || 0} km/h<br>
+                                    <b>Atualizado em:</b> ${new Date(t.timestamp).toLocaleTimeString()}
+                                </div>
+                            `;
+                            
+                            // Custom symbol (Green dot with border for Gmaps)
+                            const pinSymbol = {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                fillColor: '#10B981',
+                                fillOpacity: 0.9,
+                                scale: 8,
+                                strokeColor: 'white',
+                                strokeWeight: 2
+                            };
+                            
+                            this.mapService.addMarker(t.lat, t.lng, popupHtml, pinSymbol);
+                        });
+                    }
+                })
+                .catch(err => console.error("Erro ao rastrear motoristas:", err));
+        };
+        
+        fetchAndRenderActiveDrivers();
+        this.gpsIntervalId = setInterval(fetchAndRenderActiveDrivers, 5000);
+    }
+
+    stopGpsTracking() {
+        if (this.gpsIntervalId) {
+            clearInterval(this.gpsIntervalId);
+            this.gpsIntervalId = null;
+        }
     }
 
     preencherDropdowns(l) {

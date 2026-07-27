@@ -73,6 +73,28 @@ async function initDB() {
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS area TEXT;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS transito BOOLEAN DEFAULT FALSE;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS chuva BOOLEAN DEFAULT FALSE;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS motorista_nome TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS motorista_telefone TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS tipo_veiculo TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS placa_veiculo TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS horario_termino TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS programa TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS localidade_origem TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS localidade_destino TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS passageiro TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS status_atendimento TEXT DEFAULT 'PENDENTE';
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS posicoes_motoristas (
+                motorista_nome TEXT PRIMARY KEY,
+                lat NUMERIC NOT NULL,
+                lng NUMERIC NOT NULL,
+                placa TEXT,
+                tipo_veiculo TEXT,
+                programa TEXT,
+                speed INTEGER,
+                timestamp TIMESTAMPTZ DEFAULT NOW()
+            );
         `);
         await client.query(`
             ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS ultimo_ping TIMESTAMPTZ;
