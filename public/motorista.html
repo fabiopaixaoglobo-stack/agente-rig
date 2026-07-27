@@ -305,6 +305,7 @@
     <div style="margin-top: 10px;">
       <button id="btn-gps" class="btn btn-primary">🛰️ AUTORIZAR GPS & COMPARTILHAMENTO</button>
       <button id="btn-start" class="btn btn-success" disabled>▶️ INICIAR ATENDIMENTO (EM VIAGEM)</button>
+      <button id="btn-pause" class="btn" style="background: var(--gold); color: #000; display: none;" disabled>⏸️ PAUSAR COMPARTILHAMENTO DE GPS</button>
       <button id="btn-stop" class="btn btn-danger" disabled>⏹️ FINALIZAR ATENDIMENTO (CHEGADA)</button>
     </div>
 
@@ -325,6 +326,7 @@
     // Elementos da tela
     const btnGps = document.getElementById('btn-gps');
     const btnStart = document.getElementById('btn-start');
+    const btnPause = document.getElementById('btn-pause');
     const btnStop = document.getElementById('btn-stop');
     const statusBox = document.getElementById('status-box');
     const statusText = document.getElementById('status-text');
@@ -389,7 +391,9 @@
       if (!rotaData) return;
 
       trackerActive = true;
-      btnStart.disabled = true;
+      btnStart.style.display = "none";
+      btnPause.style.display = "inline-flex";
+      btnPause.disabled = false;
       btnStop.disabled = false;
 
       statusBox.className = "status-panel status-active";
@@ -412,6 +416,25 @@
       );
     });
 
+    btnPause.addEventListener('click', async () => {
+      if (gpsWatchId) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+
+      trackerActive = false;
+      btnPause.style.display = "none";
+      btnStart.style.display = "inline-flex";
+      btnStart.disabled = false;
+      btnPause.disabled = true;
+
+      statusBox.className = "status-panel status-standby";
+      statusBox.innerHTML = '<span id="status-text">TRANSMISSÃO INTERROMPIDA</span>';
+
+      await enviarPosicao('PAUSADO');
+      alert("Transmissão de GPS interrompida temporariamente.");
+    });
+
     btnStop.addEventListener('click', async () => {
       if (confirm("Deseja realmente finalizar o atendimento?")) {
         if (gpsWatchId) {
@@ -420,6 +443,10 @@
         }
 
         trackerActive = false;
+        btnStart.style.display = "inline-flex";
+        btnStart.disabled = true;
+        btnPause.style.display = "none";
+        btnPause.disabled = true;
         btnStop.disabled = true;
         
         statusBox.className = "status-panel status-standby";
