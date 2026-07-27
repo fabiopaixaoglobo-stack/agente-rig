@@ -209,8 +209,9 @@ export class DataService {
             await Promise.all(
                 chunk.map(async (b) => {
                     try {
+                        const cleanB = b.split(' - ')[0].split(' — ')[0].trim();
                         const r = await fetch(
-                            `${CONFIG.API_ENDPOINTS.GEOCODE}?bairro=${encodeURIComponent(b)}`
+                            `${CONFIG.API_ENDPOINTS.GEOCODE}?bairro=${encodeURIComponent(cleanB)}`
                         );
                         const d = await r.json();
                         if (d.ok) cacheCoords.set(b, { lat: d.lat, lng: d.lon });
@@ -228,6 +229,10 @@ export class DataService {
             if (c) {
                 a.lat = c.lat;
                 a.lng = c.lng;
+            } else {
+                // Fallback com jitter leve em torno do centro do Rio de Janeiro para que aparecam todos no mapa
+                a.lat = -22.9068 + (Math.random() - 0.5) * 0.12;
+                a.lng = -43.1729 + (Math.random() - 0.5) * 0.12;
             }
         });
 

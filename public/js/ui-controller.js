@@ -26,6 +26,13 @@ function obterIconeVeiculoHTML(tipo, isActive) {
     `;
 }
 
+function obterBadgeStatusAtendimento(status) {
+    if (status === 'EM_TRANSITO') return `<span style="font-size:9px; background:#10B981; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">🟢 EM VIAGEM</span>`;
+    if (status === 'PAUSADO') return `<span style="font-size:9px; background:#F59E0B; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">⏸️ PAUSADO</span>`;
+    if (status === 'FINALIZADO') return `<span style="font-size:9px; background:#EF4444; color:#fff; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">🏁 FINALIZADO</span>`;
+    return `<span style="font-size:9px; background:rgba(255,255,255,0.1); color:#fff; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">💤 AGUARDANDO</span>`;
+}
+
 function verificarEmAtendimento(inicioVal, fimVal) {
     const inicio = parseDataHora(inicioVal);
     const fim = parseDataHora(fimVal);
@@ -206,6 +213,22 @@ export class UiController {
                 .then(data => {
                     if (data.ok) {
                         this.activeTrackers = data.trackers || [];
+
+                        // Sincroniza status de atendimento local
+                        if (this.dataService.baseAtendimentos) {
+                            this.dataService.baseAtendimentos.forEach(a => {
+                                const active = this.activeTrackers.find(t => t.motorista_name === a.motorista);
+                                if (active) {
+                                    a.statusAtendimento = active.status_atendimento || 'EM_TRANSITO';
+                                } else {
+                                    // Se antes estava em viagem mas nao esta mais nos ativos, virou FINALIZADO
+                                    if (a.statusAtendimento === 'EM_TRANSITO' || a.statusAtendimento === 'PAUSADO') {
+                                        a.statusAtendimento = 'FINALIZADO';
+                                    }
+                                }
+                            });
+                        }
+
                         this.atualizarResumoContadores();
                         
                         const filtrados = this.obterAtendimentosFiltrados();
@@ -220,6 +243,7 @@ export class UiController {
                 .catch(err => console.error("Erro no pool de motoristas:", err));
         };
         fetchActive();
+        if (this.activeTrackersInterval) clearInterval(this.activeTrackersInterval);
         this.activeTrackersInterval = setInterval(fetchActive, 5000);
     }
 
@@ -229,6 +253,31 @@ export class UiController {
         if (modal && iframe) {
             iframe.src = `/motorista.html?id=${id}`;
             modal.style.display = "flex";
+        }
+    }
+
+    async desconectarMotorista(id) {
+        if (!confirm("Deseja realmente forçar a desconexão e finalizar o atendimento deste motorista?")) return;
+        try {
+            const res = await fetch('/api/gps/desconectar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_rota: id })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                showToast("Motorista desconectado com sucesso!", "success");
+                // Força atualização imediata
+                if (this.activeTrackersInterval) {
+                    // Limpa e reinicia o loop de busca
+                    this.iniciarPoolActiveTrackers();
+                }
+            } else {
+                showToast("Erro ao desconectar motorista", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao conectar ao servidor", "error");
         }
     }
 
@@ -317,15 +366,21 @@ export class UiController {
                         <button onclick="window.uiController.abrirEmulador('${a.id}')" style="background:var(--accent); color:#04111a; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
                             📱 Simular
                         </button>
-                    </div>`;
+                    `;
+                    if (isActive) {
+                        actionsHtml += `
+                            <button onclick="window.uiController.desconectarMotorista('${a.id}')" style="background:#EF4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                                🛑 Desconectar
+                            </button>
+                        `;
+                    }
+                    actionsHtml += `</div>`;
 
                     const popupHtml = `
                         <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 220px; padding: 4px;">
-                            <div style="background: ${isActive ? '#d1fae5' : '#fee2e2'}; padding: 6px; border-radius: 6px; margin-bottom: 6px;">
+                            <div style="background: ${isActive ? '#d1fae5' : '#fee2e2'}; padding: 6px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                                 <strong style="color: ${isActive ? '#065f46' : '#991b1b'};">👤 ${escapeHtml(a.motorista)}</strong>
-                                <span style="font-size: 8px; background: ${isActive ? '#a7f3d0' : '#fecaca'}; color: ${isActive ? '#065f46' : '#991b1b'}; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">
-                                    ${isActive ? 'COMPARTILHANDO' : 'NÃO COMPARTILHADO'}
-                                </span>
+                                ${obterBadgeStatusAtendimento(a.statusAtendimento)}
                             </div>
                             <b>Passageiro/Produtor:</b> ${escapeHtml(a.passageiro || 'Não informado')}<br>
                             <b>Programa:</b> ${escapeHtml(a.programa)}<br>
@@ -377,11 +432,17 @@ export class UiController {
                 <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
                     📱 Simular Celular
                 </button>
-            </div>`;
+            `;
+            if (isActive) {
+                actionsHtml += `
+                    <button onclick="window.uiController.desconectarMotorista('${a.id}')" class="btn btnSmall" style="background:#EF4444; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                        🛑 Desconectar
+                    </button>
+                `;
+            }
+            actionsHtml += `</div>`;
             
-            const statusBadge = isActive 
-                ? `<span style="font-size:9px; background:#10B981; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">📡 COMPARTILHANDO</span>` 
-                : '';
+            const statusBadge = obterBadgeStatusAtendimento(a.statusAtendimento);
             
             listEl.innerHTML += `
                 <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:8px; box-shadow: ${isActive ? '0 0 10px rgba(16,185,129,0.15)' : 'none'};">

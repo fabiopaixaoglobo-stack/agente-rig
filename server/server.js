@@ -364,11 +364,44 @@ app.post('/api/gps/update', async (req, res) => {
 
 app.get('/api/gps/active-trackers', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM posicoes_motoristas');
+        const result = await pool.query(`
+            SELECT p.*, r.id as id_rota, r.status_atendimento 
+            FROM posicoes_motoristas p
+            LEFT JOIN (
+                SELECT DISTINCT ON (motorista_nome) id, motorista_nome, status_atendimento 
+                FROM rotas_importadas 
+                ORDER BY motorista_nome, id DESC
+            ) r ON p.motorista_name = r.motorista_nome
+        `);
         res.json({ ok: true, trackers: result.rows });
     } catch (err) {
         console.error('Erro ao buscar motoristas ativos:', err);
         res.status(500).json({ error: 'Erro ao obter rastreamentos ativos.' });
+    }
+});
+
+app.post('/api/gps/desconectar', async (req, res) => {
+    try {
+        const { id_rota } = req.body;
+        if (!id_rota) {
+            return res.status(400).json({ error: 'ID da rota é obrigatório.' });
+        }
+        
+        const result = await pool.query('SELECT motorista_nome FROM rotas_importadas WHERE id = $1', [id_rota]);
+        if (result.rows.length > 0) {
+            const motorista = result.rows[0].motorista_nome;
+            await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
+        }
+        
+        await pool.query(
+            `UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1`,
+            [id_rota]
+        );
+        
+        res.json({ ok: true, message: 'Motorista desconectado com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao desconectar motorista:', err);
+        res.status(500).json({ error: 'Erro interno ao desconectar.' });
     }
 });
 
