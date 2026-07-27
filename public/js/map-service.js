@@ -54,15 +54,24 @@ export class MapService {
             
             // Traduz a opção de cor/símbolo para o DivIcon do Leaflet
             if (iconOptions) {
-                const color = iconOptions.fillColor || '#EF4444';
-                const size = (iconOptions.scale || 7) * 2;
-                
-                markerOptions.icon = L.divIcon({
-                    className: 'leaflet-custom-marker',
-                    html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
-                    iconSize: [size, size],
-                    iconAnchor: [size / 2, size / 2]
-                });
+                if (iconOptions.html) {
+                    markerOptions.icon = L.divIcon({
+                        className: 'leaflet-custom-marker',
+                        html: iconOptions.html,
+                        iconSize: [28, 28],
+                        iconAnchor: [14, 14]
+                    });
+                } else {
+                    const color = iconOptions.fillColor || '#EF4444';
+                    const size = (iconOptions.scale || 7) * 2;
+                    
+                    markerOptions.icon = L.divIcon({
+                        className: 'leaflet-custom-marker',
+                        html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+                        iconSize: [size, size],
+                        iconAnchor: [size / 2, size / 2]
+                    });
+                }
             }
 
             const marker = L.marker([parseFloat(lat), parseFloat(lng)], markerOptions).addTo(this.map);

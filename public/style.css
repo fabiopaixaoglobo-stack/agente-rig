@@ -454,6 +454,12 @@ body {
     margin: 0;
 }
 
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
 /* iPhone Emulator Modal */
 .phone-modal {
   display: none;

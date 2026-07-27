@@ -5,6 +5,27 @@ import { parseDataHora } from './data-service.js';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
+function obterIconeVeiculoHTML(tipo, isActive) {
+    const t = String(tipo || '').toLowerCase();
+    let emoji = '🚗'; // default
+    if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) {
+        emoji = '🚌';
+    } else if (t.includes('van') || t.includes('minivan') || t.includes('combi') || t.includes('truckvan') || t.includes('camarim')) {
+        emoji = '🚐';
+    } else if (t.includes('caminhao') || t.includes('caminhão') || t.includes('truck') || t.includes('figurino')) {
+        emoji = '🚛';
+    } else if (t.includes('moto')) {
+        emoji = '🏍️';
+    }
+    const bg = isActive ? '#10B981' : '#F59E0B'; // Green if online, Yellow/Orange if offline
+    const anim = isActive ? 'animation: pulseGlow 1.5s infinite;' : '';
+    return `
+        <div style="display:flex; justify-content:center; align-items:center; background-color:${bg}; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.4); font-size:15px; ${anim}">
+            ${emoji}
+        </div>
+    `;
+}
+
 function verificarEmAtendimento(inicioVal, fimVal) {
     const inicio = parseDataHora(inicioVal);
     const fim = parseDataHora(fimVal);
@@ -280,24 +301,23 @@ export class UiController {
             lista.forEach(a => {
                 if (a.lat && a.lng) {
                     const isActive = this.activeTrackers.some(t => t.motorista_name === a.motorista);
-                    const color = isActive ? '#10B981' : '#EF4444';
                     
-                    let whatsappButtonHtml = '';
+                    let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
                     if (a.telefone) {
                         let limpo = String(a.telefone).replace(/\D/g, '');
                         const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
                         const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
-                        whatsappButtonHtml = `
-                            <div style="margin-top: 8px; display: flex; gap: 6px;">
-                                <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34;">
-                                    💬 Solicitar
-                                </a>
-                                <button onclick="window.uiController.abrirEmulador('${a.id}')" style="background:var(--accent); color:#04111a; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
-                                    📱 Simular
-                                </button>
-                            </div>
+                        actionsHtml += `
+                            <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34;">
+                                💬 Solicitar
+                            </a>
                         `;
                     }
+                    actionsHtml += `
+                        <button onclick="window.uiController.abrirEmulador('${a.id}')" style="background:var(--accent); color:#04111a; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                            📱 Simular
+                        </button>
+                    </div>`;
 
                     const popupHtml = `
                         <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 220px; padding: 4px;">
@@ -312,17 +332,12 @@ export class UiController {
                             <b>Veículo:</b> ${escapeHtml(a.placa)} (${escapeHtml(a.tipoVeiculo)})<br>
                             <b>Destino:</b> ${escapeHtml(a.bairro)}<br>
                             <b>Horários:</b> ${escapeHtml(a.dataHoraInicioRaw || 'N/D')} - ${escapeHtml(a.dataHoraFimRaw || 'N/D')}<br>
-                            ${whatsappButtonHtml}
+                            ${actionsHtml}
                         </div>
                     `;
 
                     const pinSymbol = {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: color,
-                        fillOpacity: 0.9,
-                        scale: 7,
-                        strokeColor: 'white',
-                        strokeWeight: 1.5
+                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
                     };
 
                     this.mapService.addMarker(a.lat, a.lng, popupHtml, pinSymbol);
@@ -347,22 +362,22 @@ export class UiController {
             const tel = escapeHtml(a.telefone);
             const pass = escapeHtml(a.passageiro || 'Não informado');
             
-            let whatsappButtonHtml = '';
+            let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
             if (tel) {
                 let limpo = String(tel).replace(/\D/g, '');
                 const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
                 const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
-                whatsappButtonHtml = `
-                    <div style="margin-top: 8px; display: flex; gap: 6px;">
-                        <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
-                            💬 Compartilhar Rastreamento
-                        </a>
-                        <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
-                            📱 Simular Celular
-                        </button>
-                    </div>
+                actionsHtml += `
+                    <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
+                        💬 Compartilhar Rastreamento
+                    </a>
                 `;
             }
+            actionsHtml += `
+                <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                    📱 Simular Celular
+                </button>
+            </div>`;
             
             const statusBadge = isActive 
                 ? `<span style="font-size:9px; background:#10B981; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">📡 COMPARTILHANDO</span>` 
@@ -378,7 +393,7 @@ export class UiController {
                     <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:4px;">👤 Passageiro/Produtor: ${pass}</div>
                     <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
                     <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 Destino: ${b}</div>
-                    ${whatsappButtonHtml}
+                    ${actionsHtml}
                 </div>
             `;
         });
@@ -449,14 +464,8 @@ export class UiController {
                                 </div>
                             `;
                             
-                            // Custom symbol (Green dot with border for Gmaps)
                             const pinSymbol = {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                fillColor: '#10B981',
-                                fillOpacity: 0.9,
-                                scale: 8,
-                                strokeColor: 'white',
-                                strokeWeight: 2
+                                html: obterIconeVeiculoHTML(t.tipo_veiculo, true)
                             };
                             
                             this.mapService.addMarker(t.lat, t.lng, popupHtml, pinSymbol);
