@@ -141,6 +141,8 @@ async function getCoordsParaEndereco(enderecoStr) {
 function findValueByHeader(row, keywords) {
     if (!row) return null;
     const keys = Object.keys(row);
+    
+    // 1. Tentar busca exata primeiro para evitar falsos positivos
     for (const key of keys) {
         const normalizedKey = key.toLowerCase()
             .normalize('NFD')
@@ -151,7 +153,24 @@ function findValueByHeader(row, keywords) {
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .trim();
-            if (normalizedKey.includes(normalizedKw) || normalizedKw.includes(normalizedKey)) {
+            if (normalizedKey === normalizedKw) {
+                return row[key];
+            }
+        }
+    }
+    
+    // 2. Busca parcial (se o cabeçalho contém o termo procurado)
+    for (const key of keys) {
+        const normalizedKey = key.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+        for (const kw of keywords) {
+            const normalizedKw = kw.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
+            if (normalizedKey.includes(normalizedKw)) {
                 return row[key];
             }
         }

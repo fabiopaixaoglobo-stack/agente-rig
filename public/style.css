@@ -147,8 +147,9 @@ body {
   display: flex;
   flex-direction: column;
   padding: 6px; /* Reduzido */
-  overflow-y: auto;
+  overflow-y: hidden;
   backdrop-filter: blur(10px);
+  height: calc(100vh - 120px);
 }
 
 .sidebar .panel { padding: 8px; margin-bottom: 6px; }
