@@ -453,3 +453,67 @@ body {
     letter-spacing: 1px;
     margin: 0;
 }
+
+/* iPhone Emulator Modal */
+.phone-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.phone-container {
+  position: relative;
+  width: 330px;
+  height: 660px;
+  background: #111;
+  border: 12px solid #222;
+  border-radius: 40px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 0 2px #444;
+  overflow: hidden;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 18px;
+  background: #222;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  z-index: 10;
+}
+
+.phone-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.phone-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+  z-index: 2001;
+}
+.phone-close:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+}

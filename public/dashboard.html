@@ -454,6 +454,15 @@
   <style>
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
+  <!-- Modal Emulador de Celular (iPhone style) -->
+  <div id="modalEmulador" class="phone-modal">
+    <button class="phone-close" onclick="document.getElementById('modalEmulador').style.display='none'; document.getElementById('iframeEmulador').src=''">×</button>
+    <div class="phone-container">
+      <div class="phone-notch"></div>
+      <iframe id="iframeEmulador" class="phone-iframe" src=""></iframe>
+    </div>
+  </div>
+
   <script src="session-manager.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>

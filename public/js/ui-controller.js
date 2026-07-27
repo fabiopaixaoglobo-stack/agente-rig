@@ -87,6 +87,7 @@ export class UiController {
         this.activeTrackers = [];
         this.initMapModeToggle();
         this.iniciarPoolActiveTrackers();
+        window.uiController = this;
     }
 
     initTabs() {
@@ -201,6 +202,15 @@ export class UiController {
         this.activeTrackersInterval = setInterval(fetchActive, 5000);
     }
 
+    abrirEmulador(id) {
+        const modal = document.getElementById("modalEmulador");
+        const iframe = document.getElementById("iframeEmulador");
+        if (modal && iframe) {
+            iframe.src = `/motorista.html?id=${id}`;
+            modal.style.display = "flex";
+        }
+    }
+
     initUpload() {
         const input = document.getElementById("upload-mapa");
         const btn = document.getElementById("btn-upload");
@@ -278,10 +288,13 @@ export class UiController {
                         const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
                         const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
                         whatsappButtonHtml = `
-                            <div style="margin-top: 8px;">
+                            <div style="margin-top: 8px; display: flex; gap: 6px;">
                                 <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34;">
-                                    💬 Solicitar Rastreamento
+                                    💬 Solicitar
                                 </a>
+                                <button onclick="window.uiController.abrirEmulador('${a.id}')" style="background:var(--accent); color:#04111a; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                                    📱 Simular
+                                </button>
                             </div>
                         `;
                     }
@@ -340,10 +353,13 @@ export class UiController {
                 const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
                 const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
                 whatsappButtonHtml = `
-                    <div style="margin-top: 8px;">
+                    <div style="margin-top: 8px; display: flex; gap: 6px;">
                         <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
                             💬 Compartilhar Rastreamento
                         </a>
+                        <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                            📱 Simular Celular
+                        </button>
                     </div>
                 `;
             }
