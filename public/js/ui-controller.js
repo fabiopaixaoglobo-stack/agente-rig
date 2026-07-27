@@ -246,7 +246,7 @@ export class UiController {
         const filtrados = filtradosList.length;
         
         const compartilhando = filtradosList.filter(a => 
-            this.activeTrackers.some(t => t.motorista_name === a.motorista)
+            this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase())
         ).length;
 
         el.textContent = `Importados: ${total} (Filtrados: ${filtrados}) | Compartilhando: ${compartilhando}`;
@@ -263,7 +263,7 @@ export class UiController {
                         // Sincroniza status de atendimento local
                         if (this.dataService.baseAtendimentos) {
                             this.dataService.baseAtendimentos.forEach(a => {
-                                const active = this.activeTrackers.find(t => t.motorista_name === a.motorista);
+                                const active = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
                                 if (active) {
                                     a.statusAtendimento = active.status_atendimento || 'EM_TRANSITO';
                                 } else {
@@ -397,7 +397,7 @@ export class UiController {
             this.mapService.clearMarkers();
             lista.forEach(a => {
                 if (a.lat && a.lng) {
-                    const isActive = this.activeTrackers.some(t => t.motorista_name === a.motorista);
+                    const isActive = this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
                     
                     let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
                     if (a.telefone) {
@@ -433,6 +433,7 @@ export class UiController {
                             <b>Passageiro/Produtor:</b> ${escapeHtml(a.passageiro || 'Não informado')}<br>
                             <b>Programa:</b> ${escapeHtml(a.programa)}<br>
                             <b>Veículo:</b> ${escapeHtml(a.placa)} (${escapeHtml(a.tipoVeiculo)})<br>
+                            <b>Contato:</b> ${escapeHtml(a.telefone || 'N/D')}<br>
                             <b>Destino:</b> ${escapeHtml(a.bairro)}<br>
                             <b>Horários:</b> ${escapeHtml(a.dataHoraInicioRaw || 'N/D')} - ${escapeHtml(a.dataHoraFimRaw || 'N/D')}<br>
                             ${actionsHtml}
@@ -457,7 +458,7 @@ export class UiController {
         listEl.innerHTML = "";
 
         lista.forEach(a => {
-            const isActive = this.activeTrackers.some(t => t.motorista_name === a.motorista);
+            const isActive = this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
             const p = escapeHtml(a.programa);
             const m = escapeHtml(a.motorista);
             const pl = escapeHtml(a.placa);
@@ -499,6 +500,7 @@ export class UiController {
                         ${statusBadge}
                     </div>
                     <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 Motorista: ${m}</div>
+                    <div class="meta-telefone" style="font-size:10px; color:var(--muted); margin-bottom:4px;">📞 Contato: ${tel || 'N/D'}</div>
                     <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:4px;">👤 Passageiro/Produtor: ${pass}</div>
                     <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
                     <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 Destino: ${b}</div>
@@ -568,6 +570,7 @@ export class UiController {
                                     </div>
                                     <b>Placa:</b> ${escapeHtml(t.placa || 'N/D')}<br>
                                     <b>Veículo:</b> ${escapeHtml(t.tipo_veiculo || 'N/D')}<br>
+                                    <b>Contato:</b> ${escapeHtml(t.motorista_telefone || 'N/D')}<br>
                                     <b>Velocidade:</b> ${t.speed || 0} km/h<br>
                                     <b>Atualizado em:</b> ${new Date(t.timestamp).toLocaleTimeString()}
                                 </div>
