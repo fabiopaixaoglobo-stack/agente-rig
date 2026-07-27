@@ -84,7 +84,9 @@ export class UiController {
         
         this.mapMode = 'TODOS';
         this.gpsIntervalId = null;
+        this.activeTrackers = [];
         this.initMapModeToggle();
+        this.iniciarPoolActiveTrackers();
     }
 
     initTabs() {
@@ -118,19 +120,9 @@ export class UiController {
         const btnCentralizar = document.getElementById("btn-centralizar");
 
         const filtrar = () => {
-            const f = this.dataService.baseAtendimentos.filter(a => {
-                const matchP = !sp.value || a.programa === sp.value;
-                const matchB = !sb.value || a.bairro === sb.value;
-                const matchT = !st || !st.value || a.tipoVeiculo === st.value;
-                
-                // Calcula dinamicamente o status do atendimento com base no horário atual do sistema
-                const statusAtual = verificarEmAtendimento(a.dataHoraInicioRaw, a.dataHoraFimRaw);
-                const matchE = !se || !se.value || statusAtual === se.value;
-                
-                const matchH = !sh || !sh.value || obterPeriodo(a.horarioInicio) === sh.value;
-                return matchP && matchB && matchT && matchE && matchH;
-            });
+            const f = this.obterAtendimentosFiltrados();
             this.plotarAtendimentos(f);
+            this.atualizarResumoContadores();
         };
 
         [sp, sb, st, se, sh].forEach(s => s?.addEventListener("change", filtrar));
@@ -141,10 +133,71 @@ export class UiController {
             if(se) se.value = "";
             if(sh) sh.value = "";
             this.plotarAtendimentos(this.dataService.baseAtendimentos);
+            this.atualizarResumoContadores();
         });
         btnCentralizar?.addEventListener("click", () => {
             this.mapService.setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
         });
+    }
+
+    obterAtendimentosFiltrados() {
+        const sp = document.getElementById("filtro-programa");
+        const sb = document.getElementById("filtro-bairro");
+        const st = document.getElementById("filtro-tipo");
+        const se = document.getElementById("filtro-em-atendimento");
+        const sh = document.getElementById("filtro-horario-inicio");
+
+        if (!sp || !sb) return this.dataService.baseAtendimentos || [];
+
+        return (this.dataService.baseAtendimentos || []).filter(a => {
+            const matchP = !sp.value || a.programa === sp.value;
+            const matchB = !sb.value || a.bairro === sb.value;
+            const matchT = !st || !st.value || a.tipoVeiculo === st.value;
+            
+            const statusAtual = verificarEmAtendimento(a.dataHoraInicioRaw, a.dataHoraFimRaw);
+            const matchE = !se || !se.value || statusAtual === se.value;
+            
+            const matchH = !sh || !sh.value || obterPeriodo(a.horarioInicio) === sh.value;
+            return matchP && matchB && matchT && matchE && matchH;
+        });
+    }
+
+    atualizarResumoContadores() {
+        const el = document.getElementById("resumo-atendimentos");
+        if (!el) return;
+
+        const total = (this.dataService.baseAtendimentos || []).length;
+        const filtradosList = this.obterAtendimentosFiltrados();
+        const filtrados = filtradosList.length;
+        
+        const compartilhando = filtradosList.filter(a => 
+            this.activeTrackers.some(t => t.motorista_name === a.motorista)
+        ).length;
+
+        el.textContent = `Importados: ${total} (Filtrados: ${filtrados}) | Compartilhando: ${compartilhando}`;
+    }
+
+    iniciarPoolActiveTrackers() {
+        const fetchActive = () => {
+            fetch('/api/gps/active-trackers')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        this.activeTrackers = data.trackers || [];
+                        this.atualizarResumoContadores();
+                        
+                        if (this.mapMode === 'ONLINE') {
+                            this.startGpsTracking();
+                        } else {
+                            const filtrados = this.obterAtendimentosFiltrados();
+                            this.plotarAtendimentos(filtrados);
+                        }
+                    }
+                })
+                .catch(err => console.error("Erro no pool de motoristas:", err));
+        };
+        fetchActive();
+        this.activeTrackersInterval = setInterval(fetchActive, 5000);
     }
 
     initUpload() {
@@ -214,16 +267,61 @@ export class UiController {
         if (listEl) listEl.innerHTML = "";
 
         lista.forEach(a => {
+            const isActive = this.activeTrackers.some(t => t.motorista_name === a.motorista);
+            
             if (this.mapMode === 'TODOS' && a.lat && a.lng) {
-                const popup = `<b>${escapeHtml(a.programa)}</b><br>${escapeHtml(a.motorista)}<br>${escapeHtml(a.bairro)}`;
-                this.mapService.addMarker(a.lat, a.lng, popup);
+                const color = isActive ? '#10B981' : '#EF4444';
+                
+                let whatsappButtonHtml = '';
+                if (a.telefone) {
+                    let limpo = String(a.telefone).replace(/\D/g, '');
+                    const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
+                    const msgText = `Olá ${a.motorista}, por favor confirme seus dados e inicie o compartilhamento de GPS para o atendimento de ${a.passageiro || 'Passageiro'} no link: ${window.location.origin}/motorista.html?id=${a.id}`;
+                    whatsappButtonHtml = `
+                        <div style="margin-top: 8px;">
+                            <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34;">
+                                💬 Solicitar Rastreamento
+                            </a>
+                        </div>
+                    `;
+                }
+
+                const popupHtml = `
+                    <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 220px; padding: 4px;">
+                        <div style="background: ${isActive ? '#d1fae5' : '#fee2e2'}; padding: 6px; border-radius: 6px; margin-bottom: 6px;">
+                            <strong style="color: ${isActive ? '#065f46' : '#991b1b'};">👤 ${escapeHtml(a.motorista)}</strong>
+                            <span style="font-size: 8px; background: ${isActive ? '#a7f3d0' : '#fecaca'}; color: ${isActive ? '#065f46' : '#991b1b'}; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">
+                                ${isActive ? 'COMPARTILHANDO' : 'NÃO COMPARTILHADO'}
+                            </span>
+                        </div>
+                        <b>Passageiro/Produtor:</b> ${escapeHtml(a.passageiro || a.nome_colaborador || 'Não informado')}<br>
+                        <b>Programa:</b> ${escapeHtml(a.programa)}<br>
+                        <b>Veículo:</b> ${escapeHtml(a.placa)} (${escapeHtml(a.tipoVeiculo)})<br>
+                        <b>Destino:</b> ${escapeHtml(a.bairro)}<br>
+                        <b>Horários:</b> ${escapeHtml(a.dataHoraInicioRaw || 'N/D')} - ${escapeHtml(a.dataHoraFimRaw || 'N/D')}<br>
+                        ${whatsappButtonHtml}
+                    </div>
+                `;
+
+                const pinSymbol = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: color,
+                    fillOpacity: 0.9,
+                    scale: 7,
+                    strokeColor: 'white',
+                    strokeWeight: 1.5
+                };
+
+                this.mapService.addMarker(a.lat, a.lng, popupHtml, pinSymbol);
             }
+            
             if (listEl) {
                 const p = escapeHtml(a.programa);
                 const m = escapeHtml(a.motorista);
                 const pl = escapeHtml(a.placa);
                 const b = escapeHtml(a.bairro);
                 const tel = escapeHtml(a.telefone);
+                const pass = escapeHtml(a.passageiro || a.nome_colaborador || 'Não informado');
                 
                 let whatsappButtonHtml = '';
                 if (tel) {
@@ -239,14 +337,20 @@ export class UiController {
                     `;
                 }
                 
+                const statusBadge = isActive 
+                    ? `<span style="font-size:9px; background:#10B981; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">📡 COMPARTILHANDO</span>` 
+                    : '';
+                
                 listEl.innerHTML += `
-                    <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+                    <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:8px; box-shadow: ${isActive ? '0 0 10px rgba(16,185,129,0.15)' : 'none'};">
                         <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                             <span class="badgeProgram" style="font-size:9px; background:rgba(0,209,255,0.15); color:var(--accent); font-weight:800; padding:2px 6px; border-radius:4px;">${p}</span>
+                            ${statusBadge}
                         </div>
-                        <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 ${m}</div>
+                        <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 Motorista: ${m}</div>
+                        <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:4px;">👤 Passageiro/Produtor: ${pass}</div>
                         <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
-                        <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 ${b}</div>
+                        <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 Destino: ${b}</div>
                         ${whatsappButtonHtml}
                     </div>
                 `;

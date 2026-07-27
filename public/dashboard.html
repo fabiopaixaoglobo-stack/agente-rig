@@ -53,7 +53,11 @@
           <div class="panelTitle">Status Operacional <div class="pill" style="background: var(--good); color: #000; font-weight: 800; font-size: 8px; padding: 1px 4px;">NORMAL</div></div>
           <div id="clima-info" style="font-size: 11px; font-weight: 700; color: var(--accent);">28°C ☀️ RIO DE JANEIRO</div>
         </div>
-        <div class="panel"><div class="panelTitle">Georreferenciamento</div><div id="geo-status" class="summaryBox" style="font-size: 9px; color: var(--muted);">Base não carregada.</div></div>
+        <div class="panel">
+          <div class="panelTitle">Georreferenciamento & Resumo</div>
+          <div id="geo-status" class="summaryBox" style="font-size: 10px; color: var(--muted); margin-bottom: 6px;">Base não carregada.</div>
+          <div id="resumo-atendimentos" style="font-size: 11px; font-weight: 700; color: var(--accent);">Importados: 0 | Compartilhando: 0</div>
+        </div>
         <div class="panel grow" style="overflow:hidden;"><div class="panelTitle">Fila de Atendimentos</div><div id="listaAtendimentos" class="listBox" style="flex:1; overflow-y:auto;"></div></div>
       </aside>
       <section class="mapArea">
@@ -62,7 +66,7 @@
           <select id="filtro-bairro" class="select" style="width: 140px;"><option value="">Bairro</option></select>
           <select id="filtro-tipo" class="select" style="width: 120px;"><option value="">Veículo</option></select>
           <select id="filtro-em-atendimento" class="select" style="width: 150px;">
-            <option value="">Em Atendimento</option>
+            <option value="">Todos atendimentos</option>
             <option value="Em atendimento">Em atendimento</option>
             <option value="Fora do atendimento">Fora do atendimento</option>
           </select>
