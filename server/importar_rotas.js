@@ -223,8 +223,8 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             const nomeStr = findValueByHeader(row, ['nome', 'colaborador', 'funcionario']) || '';
             const areaStr = findValueByHeader(row, ['area', 'setor', 'departamento']) || '';
 
-            const origemStr = findValueByHeader(row, ['origem', 'saida', 'partida', 'endereco de origem', 'endereco de saida', 'localidade1 + endereco1', 'localidade1 + endereço1', 'localidade1']);
-            const destinoStr = findValueByHeader(row, ['destino', 'chegada', 'retorno', 'endereco de destino', 'endereco de chegada', 'localidade2 + endereco2', 'localidade2 + endereço2', 'localidade2']);
+            const origemStr = findValueByHeader(row, ['origem', 'saida', 'partida', 'endereco de origem', 'endereco de saida', 'localidade1 + endereco1', 'localidade1 + endereço1', 'localidade1', 'localidade + endereco', 'localidade + endereço']);
+            const destinoStr = findValueByHeader(row, ['destino', 'chegada', 'retorno', 'endereco de destino', 'endereco de chegada', 'localidade2 + endereco2', 'localidade2 + endereço2', 'localidade2', 'localidade2 + endereco2', 'localidade2 + endereço2']);
             const rawHorario = findValueByHeader(row, ['horario', 'hora', 'horario de saida', 'horario da corrida', 'data hora', 'data hora inicio', 'data hora início']);
             const horarioStr = formatarHorarioExcel(rawHorario);
 
