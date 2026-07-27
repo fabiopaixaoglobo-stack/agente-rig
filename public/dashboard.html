@@ -77,7 +77,19 @@
             <button id="btn-centralizar" class="btn btnPrimary">Centralizar Mapa</button>
           </div>
         </div>
-        <div id="map" class="map"></div>
+        <div id="map" class="map" style="position: relative;">
+          <!-- Seletor de Camadas Estilo Wiselog (Satélite, Terreno, Mapa) -->
+          <div class="map-layers-control" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+            <button id="btn-layers-toggle" style="background: rgba(10, 15, 28, 0.95); border: 1px solid var(--line); color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              🗺️ Camadas
+            </button>
+            <div id="layers-menu" style="display: none; position: absolute; top: 32px; right: 0; background: rgba(10, 15, 28, 0.95); border: 1px solid var(--line); border-radius: 4px; padding: 6px; width: 130px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+              <button onclick="window.uiController.mapService.setMapType('mapa'); document.getElementById('layers-menu').style.display='none'" style="background: none; border: none; color: #fff; width: 100%; text-align: left; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 3px; display: block; margin-bottom: 2px;">🗺️ Mapa</button>
+              <button onclick="window.uiController.mapService.setMapType('satelite'); document.getElementById('layers-menu').style.display='none'" style="background: none; border: none; color: #fff; width: 100%; text-align: left; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 3px; display: block; margin-bottom: 2px;">🛰️ Satélite</button>
+              <button onclick="window.uiController.mapService.setMapType('terreno'); document.getElementById('layers-menu').style.display='none'" style="background: none; border: none; color: #fff; width: 100%; text-align: left; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 3px; display: block;">⛰️ Terreno</button>
+            </div>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -385,7 +397,9 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
+  <!-- Leaflet Maps (Free, without watermark) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <div id="modalGuia" class="modal-overlay"><div class="modal-content"><img src="assets/norma_visual.jpg" alt="Guia visual das normas" style="max-width: 100%;"></div></div>
   <script>
     if (!localStorage.getItem('rig_token')) {

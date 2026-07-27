@@ -386,29 +386,41 @@ export class UiController {
 
     initMapModeToggle() {
         const btnToggle = document.getElementById("btn-toggle-map-mode");
-        if (!btnToggle) return;
+        if (btnToggle) {
+            btnToggle.addEventListener("click", () => {
+                if (this.mapMode === 'TODOS') {
+                    this.mapMode = 'ONLINE';
+                    btnToggle.textContent = '🛰️ MAPA: ONLINE';
+                    btnToggle.style.background = 'linear-gradient(90deg, #25D366, #10B981)';
+                    btnToggle.style.color = '#04111a';
+                    
+                    this.mapService.clearMarkers();
+                    this.startGpsTracking();
+                    showToast("Modo Rastreamento Online Ativado!", "success");
+                } else {
+                    this.mapMode = 'TODOS';
+                    btnToggle.textContent = '🛰️ MAPA: TODOS';
+                    btnToggle.style.background = 'rgba(255, 255, 255, 0.04)';
+                    btnToggle.style.color = '#fff';
+                    
+                    this.stopGpsTracking();
+                    this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                    showToast("Retornando ao Mapa Geral.", "info");
+                }
+            });
+        }
 
-        btnToggle.addEventListener("click", () => {
-            if (this.mapMode === 'TODOS') {
-                this.mapMode = 'ONLINE';
-                btnToggle.textContent = '🛰️ MAPA: ONLINE';
-                btnToggle.style.background = 'linear-gradient(90deg, #25D366, #10B981)';
-                btnToggle.style.color = '#04111a';
-                
-                this.mapService.clearMarkers();
-                this.startGpsTracking();
-                showToast("Modo Rastreamento Online Ativado!", "success");
-            } else {
-                this.mapMode = 'TODOS';
-                btnToggle.textContent = '🛰️ MAPA: TODOS';
-                btnToggle.style.background = 'rgba(255, 255, 255, 0.04)';
-                btnToggle.style.color = '#fff';
-                
-                this.stopGpsTracking();
-                this.plotarAtendimentos(this.dataService.baseAtendimentos);
-                showToast("Retornando ao Mapa Geral.", "info");
-            }
-        });
+        const btnLayersToggle = document.getElementById("btn-layers-toggle");
+        const layersMenu = document.getElementById("layers-menu");
+        if (btnLayersToggle && layersMenu) {
+            btnLayersToggle.addEventListener("click", (e) => {
+                e.stopPropagation();
+                layersMenu.style.display = layersMenu.style.display === "none" ? "block" : "none";
+            });
+            document.addEventListener("click", () => {
+                layersMenu.style.display = "none";
+            });
+        }
     }
 
     startGpsTracking() {

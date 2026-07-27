@@ -7,99 +7,111 @@ export class MapService {
             throw new Error(`MapService: elemento #${elementId} não encontrado no DOM.`);
         }
         
-        let center = CONFIG.DEFAULT_CENTER;
-        if (Array.isArray(center)) {
-            center = { lat: center[0], lng: center[1] };
+        let center = CONFIG.DEFAULT_CENTER; // Array [lat, lng]
+        if (!Array.isArray(center)) {
+            center = [-22.9068, -43.1729];
         }
 
-        this.map = new google.maps.Map(el, {
-            center: center,
-            zoom: CONFIG.DEFAULT_ZOOM,
-            mapTypeId: 'roadmap',
-            disableDefaultUI: true,
-            zoomControl: true
-        });
+        // Inicializa o mapa com Leaflet
+        this.map = L.map(elementId, {
+            zoomControl: true,
+            attributionControl: false
+        }).setView(center, CONFIG.DEFAULT_ZOOM);
 
-        // Add Traffic Layer
-        this.trafficLayer = new google.maps.TrafficLayer();
-        this.trafficLayer.setMap(this.map);
+        // Define os Provedores de Mapa gratuitos e de alto desempenho
+        this.tileLayers = {
+            mapa: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }),
+            satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19
+            }),
+            terreno: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19
+            })
+        };
+
+        // Adiciona a camada padrão (Mapa)
+        this.tileLayers.mapa.addTo(this.map);
 
         this.markers = [];
         this.routeOverlays = [];
     }
 
     clearMarkers() {
-        this.markers.forEach(m => m.setMap(null));
+        this.markers.forEach(m => this.map.removeLayer(m));
         this.markers = [];
     }
 
     clearRouteOverlay() {
-        this.routeOverlays.forEach(o => o.setMap(null));
+        this.routeOverlays.forEach(o => this.map.removeLayer(o));
         this.routeOverlays = [];
     }
 
-    addMarker(lat, lng, popupContent, icon = null) {
+    addMarker(lat, lng, popupContent, iconOptions = null) {
         if (lat && lng) {
-            const markerOptions = {
-                position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-                map: this.map
-            };
-            if (icon) {
-                markerOptions.icon = icon;
-                markerOptions.label = icon.label || null;
+            let markerOptions = {};
+            
+            // Traduz a opção de cor/símbolo para o DivIcon do Leaflet
+            if (iconOptions) {
+                const color = iconOptions.fillColor || '#EF4444';
+                const size = (iconOptions.scale || 7) * 2;
+                
+                markerOptions.icon = L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2]
+                });
             }
-            const marker = new google.maps.Marker(markerOptions);
+
+            const marker = L.marker([parseFloat(lat), parseFloat(lng)], markerOptions).addTo(this.map);
             
             if (popupContent) {
-                const infoWindow = new google.maps.InfoWindow({
-                    content: popupContent
-                });
-                marker.addListener('click', () => {
-                    infoWindow.open(this.map, marker);
-                });
+                marker.bindPopup(popupContent);
             }
+            
             this.markers.push(marker);
             return marker;
         }
     }
 
     invalidateSize() {
-        // google.maps automatically handles resize events better,
-        // but we can trigger a resize event to be sure
         setTimeout(() => {
-            google.maps.event.trigger(this.map, 'resize');
+            this.map.invalidateSize();
         }, 300);
     }
 
     setView(center, zoom) {
         let c = center;
-        if (Array.isArray(c)) {
-            c = { lat: c[0], lng: c[1] };
+        if (!Array.isArray(c)) {
+            c = [c.lat, c.lng];
         }
-        this.map.setCenter(c);
-        this.map.setZoom(zoom);
+        this.map.setView(c, zoom);
     }
 
     fitBounds(boundsArray) {
-        const bounds = new google.maps.LatLngBounds();
-        boundsArray.forEach(point => {
-            if (Array.isArray(point)) {
-                bounds.extend({ lat: point[0], lng: point[1] });
-            }
-        });
-        this.map.fitBounds(bounds);
+        if (boundsArray && boundsArray.length > 0) {
+            this.map.fitBounds(boundsArray);
+        }
     }
 
     addPolyline(coordsArray, color = '#f5a623', weight = 6) {
-        const path = coordsArray.map(c => ({ lat: c[0], lng: c[1] }));
-        const polyline = new google.maps.Polyline({
-            path: path,
-            geodesic: true,
-            strokeColor: color,
-            strokeOpacity: 1.0,
-            strokeWeight: weight,
-            map: this.map
-        });
+        const polyline = L.polyline(coordsArray, {
+            color: color,
+            weight: weight,
+            opacity: 0.85
+        }).addTo(this.map);
         this.routeOverlays.push(polyline);
+    }
+
+    setMapType(type) {
+        // Remove as outras camadas
+        Object.values(this.tileLayers).forEach(layer => this.map.removeLayer(layer));
+        
+        // Adiciona a selecionada
+        if (this.tileLayers[type]) {
+            this.tileLayers[type].addTo(this.map);
+        }
     }
 }
