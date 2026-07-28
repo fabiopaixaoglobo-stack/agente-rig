@@ -227,8 +227,11 @@ export class DataService {
         this.baseAtendimentos.forEach((a) => {
             const c = cacheCoords.get(a.bairro);
             if (c) {
-                a.lat = c.lat;
-                a.lng = c.lng;
+                // Adiciona um pequeno jitter para evitar que marcadores se sobreponham exatamente no mesmo local do bairro
+                const jitterLat = (Math.random() - 0.5) * 0.0018;
+                const jitterLng = (Math.random() - 0.5) * 0.0018;
+                a.lat = parseFloat(c.lat) + jitterLat;
+                a.lng = parseFloat(c.lon || c.lng) + jitterLng;
             } else {
                 // Fallback com jitter leve em torno do centro do Rio de Janeiro para que aparecam todos no mapa
                 a.lat = -22.9068 + (Math.random() - 0.5) * 0.12;

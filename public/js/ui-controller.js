@@ -259,18 +259,27 @@ export class UiController {
                 .then(data => {
                     if (data.ok) {
                         this.activeTrackers = data.trackers || [];
+                        let statusMudou = false;
 
                         // Sincroniza status de atendimento local
                         if (this.dataService.baseAtendimentos) {
                             this.dataService.baseAtendimentos.forEach(a => {
                                 const active = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                                const antigoStatus = a.statusAtendimento;
+                                let novoStatus = antigoStatus;
+
                                 if (active) {
-                                    a.statusAtendimento = active.status_atendimento || 'EM_TRANSITO';
+                                    novoStatus = active.status_atendimento || 'EM_TRANSITO';
                                 } else {
                                     // Se antes estava em viagem mas nao esta mais nos ativos, virou FINALIZADO
-                                    if (a.statusAtendimento === 'EM_TRANSITO' || a.statusAtendimento === 'PAUSADO') {
-                                        a.statusAtendimento = 'FINALIZADO';
+                                    if (antigoStatus === 'EM_TRANSITO' || antigoStatus === 'PAUSADO') {
+                                        novoStatus = 'FINALIZADO';
                                     }
+                                }
+
+                                if (novoStatus !== antigoStatus) {
+                                    a.statusAtendimento = novoStatus;
+                                    statusMudou = true;
                                 }
                             });
                         }
@@ -281,8 +290,13 @@ export class UiController {
                         if (this.mapMode === 'ONLINE') {
                             this.startGpsTracking();
                         } else {
-                            // Em modo TODOS (estático), apenas atualiza a barra lateral. Não limpa o mapa para evitar piscar!
-                            this.atualizarListaSidebar(filtrados);
+                            if (statusMudou) {
+                                // Se mudou o status, atualiza o mapa e a lista
+                                this.plotarAtendimentos(filtrados);
+                            } else {
+                                // Caso contrário, atualiza apenas a barra lateral (evita piscar o mapa e fechar popups abertos)
+                                this.atualizarListaSidebar(filtrados);
+                            }
                         }
                     }
                 })
@@ -1013,9 +1027,7 @@ export class UiController {
             
             // Destination marker with emoji icon (simulated via label or simple marker)
             this.plannerService.addMarker(lat2, lon2, `Destino: ${escapeHtml(destino)}`, {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="26">🚗</text></svg>'),
-                scaledSize: new google.maps.Size(30, 30),
-                anchor: new google.maps.Point(15, 15)
+                html: '<div style="font-size:26px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">🚗</div>'
             });
 
             // Draw route
@@ -1154,9 +1166,7 @@ export class UiController {
             this.transitoMap.clearRouteOverlay();
             this.transitoMap.addMarker(lat1, lon1, `Origem: ${escapeHtml(origem)}`);
             this.transitoMap.addMarker(lat2, lon2, `Destino: ${escapeHtml(destino)}`, {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="26">⚠️</text></svg>'),
-                scaledSize: new google.maps.Size(30, 30),
-                anchor: new google.maps.Point(15, 15)
+                html: '<div style="font-size:26px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">⚠️</div>'
             });
 
             this.transitoMap.addPolyline(coords, '#f43f5e', 6);
@@ -1169,14 +1179,10 @@ export class UiController {
             const midLat = (lat1 + lat2) / 2;
             const midLon = (lon1 + lon2) / 2;
             this.transitoMap.addMarker(midLat + 0.01, midLon + 0.01, 'Alerta OTT: Operação Policial', {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">🔫</text></svg>'),
-                scaledSize: new google.maps.Size(24, 24),
-                anchor: new google.maps.Point(12, 12)
+                html: '<div style="font-size:20px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">🔫</div>'
             });
             this.transitoMap.addMarker(midLat - 0.01, midLon - 0.01, 'Defesa Civil: Alagamento', {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">⛈️</text></svg>'),
-                scaledSize: new google.maps.Size(24, 24),
-                anchor: new google.maps.Point(12, 12)
+                html: '<div style="font-size:20px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">⛈️</div>'
             });
 
             if (riskContent) {
@@ -1277,9 +1283,7 @@ export class UiController {
                             '</svg>';
                             
                         this.transitoMap.addMarker(alert.lat, alert.lon, popupText, {
-                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(iconSvg),
-                            scaledSize: new google.maps.Size(36, 36),
-                            anchor: new google.maps.Point(18, 18)
+                            html: iconSvg
                         });
                     }
                 });

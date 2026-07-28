@@ -256,6 +256,16 @@ REGRAS:
 
 // ENDPOINT PARA INFORMES OTT RJ
 app.get('/api/ott', async (req, res) => {
+    const mockAlerts = [
+        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "15:05", bairro: "Caju", municipio: "Rio de Janeiro", lat: -22.8850, lon: -43.2183 },
+        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "14:12", bairro: "Bonsucesso", municipio: "Rio de Janeiro", lat: -22.8677, lon: -43.2541 },
+        { tipo: "Tiroteio", data: "24/06/26", hora: "12:29", bairro: "Gardênia Azul", municipio: "Rio de Janeiro", lat: -22.9644, lon: -43.3592 },
+        { tipo: "Tiroteio", data: "24/06/26", hora: "10:15", bairro: "Complexo da Maré", municipio: "Rio de Janeiro", lat: -22.8480, lon: -43.2420 },
+        { tipo: "Operação Policial", data: "24/06/26", hora: "08:30", bairro: "Jacarezinho", municipio: "Rio de Janeiro", lat: -22.8894, lon: -43.2561 },
+        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "06:45", bairro: "Rocinha", municipio: "Rio de Janeiro", lat: -22.9882, lon: -43.2482 }
+    ];
+
+    let data = null;
     try {
         const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
         const response = await fetch(ottUrl, {
@@ -263,18 +273,12 @@ app.get('/api/ott', async (req, res) => {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
         });
-        const data = await response.json();
+        data = await response.json();
+    } catch (fetchErr) {
+        console.warn('⚠️ Falha ao buscar dados do OTT real, usando mockAlerts:', fetchErr.message);
+    }
 
-        // Base sintética realista como fallback
-        const mockAlerts = [
-            { tipo: "Disparos ouvidos", data: "24/06/26", hora: "15:05", bairro: "Caju", municipio: "Rio de Janeiro", lat: -22.8850, lon: -43.2183 },
-            { tipo: "Disparos ouvidos", data: "24/06/26", hora: "14:12", bairro: "Bonsucesso", municipio: "Rio de Janeiro", lat: -22.8677, lon: -43.2541 },
-            { tipo: "Tiroteio", data: "24/06/26", hora: "12:29", bairro: "Gardênia Azul", municipio: "Rio de Janeiro", lat: -22.9644, lon: -43.3592 },
-            { tipo: "Tiroteio", data: "24/06/26", hora: "10:15", bairro: "Complexo da Maré", municipio: "Rio de Janeiro", lat: -22.8480, lon: -43.2420 },
-            { tipo: "Operação Policial", data: "24/06/26", hora: "08:30", bairro: "Jacarezinho", municipio: "Rio de Janeiro", lat: -22.8894, lon: -43.2561 },
-            { tipo: "Disparos ouvidos", data: "24/06/26", hora: "06:45", bairro: "Rocinha", municipio: "Rio de Janeiro", lat: -22.9882, lon: -43.2482 }
-        ];
-
+    try {
         const parsedAlerts = [];
         if (data && Array.isArray(data.items)) {
             // Filtramos alertas do estado do RJ
@@ -297,8 +301,8 @@ app.get('/api/ott', async (req, res) => {
                     hora: horaStr,
                     bairro: item.neighborhood || "Desconhecido",
                     municipio: item.city || "Rio de Janeiro",
-                    lat: item.lat || -22.9068,
-                    lon: item.lng || -43.1729
+                    lat: item.lat ? parseFloat(item.lat) : -22.9068,
+                    lon: item.lng ? parseFloat(item.lng) : -43.1729
                 });
             }
         }
@@ -306,8 +310,8 @@ app.get('/api/ott', async (req, res) => {
         const finalAlerts = parsedAlerts.length > 0 ? parsedAlerts : mockAlerts;
         res.json({ ok: true, alerts: finalAlerts });
     } catch (err) {
-        console.error('Erro ao buscar informes OTT:', err);
-        res.status(500).json({ error: 'Erro ao buscar dados do OTT.' });
+        console.error('Erro ao processar informes OTT:', err);
+        res.status(500).json({ error: 'Erro ao processar dados do OTT.' });
     }
 });
 
@@ -383,13 +387,13 @@ app.post('/api/gps/update', async (req, res) => {
 app.get('/api/gps/active-trackers', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT p.*, r.id as id_rota, r.status_atendimento, r.motorista_telefone 
+            SELECT p.*, p.motorista_nome AS motorista_name, r.id as id_rota, r.status_atendimento, r.motorista_telefone 
             FROM posicoes_motoristas p
             LEFT JOIN (
                 SELECT DISTINCT ON (motorista_nome) id, motorista_nome, status_atendimento, motorista_telefone 
                 FROM rotas_importadas 
                 ORDER BY motorista_nome, id DESC
-            ) r ON p.motorista_name = r.motorista_nome
+            ) r ON p.motorista_nome = r.motorista_nome
         `);
         res.json({ ok: true, trackers: result.rows });
     } catch (err) {
