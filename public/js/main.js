@@ -47,6 +47,29 @@ document.addEventListener("DOMContentLoaded", () => {
         checkDbHealth();
         setInterval(checkDbHealth, 30000); // Executa a cada 30s
 
+        const checkRobotHealth = async () => {
+            try {
+                const res = await fetch('/api/robot/status');
+                const status = await res.json();
+                const robotEl = document.getElementById('robot-status');
+                
+                if (robotEl) {
+                    if (status.ok) {
+                        robotEl.innerHTML = `<span class="dot" id="robot-status-dot" style="background:var(--good); box-shadow:0 0 8px var(--good);"></span> 🤖 ROBÔ: OK`;
+                        robotEl.title = `Último diagnóstico: ${status.last_run ? new Date(status.last_run).toLocaleTimeString() : 'N/D'}`;
+                    } else {
+                        robotEl.innerHTML = `<span class="dot" id="robot-status-dot" style="background:var(--bad); box-shadow:0 0 8px var(--bad);"></span> 🤖 ROBÔ: FALHA`;
+                        robotEl.title = `Erro identificado! Clique para ver detalhes.`;
+                    }
+                }
+            } catch (err) {
+                console.error("Erro no check de saúde do robô:", err);
+            }
+        };
+        
+        checkRobotHealth();
+        setInterval(checkRobotHealth, 15000); // Executa a cada 15s
+
         window.exibirInfoDB = async () => {
             try {
                 const res = await fetch('/api/health');
@@ -58,6 +81,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (err) {
                 alert(`⚠️ Erro ao obter dados de diagnóstico do banco: ${err.message}`);
+            }
+        };
+
+        window.exibirInfoRobo = async () => {
+            try {
+                const resRun = await fetch('/api/robot/run', { method: 'POST' });
+                const status = await resRun.json();
+                
+                let detailsText = `🤖 RELATÓRIO DO ROBÔ DE TESTES OPERACIONAIS\n\n`;
+                detailsText += `Status Geral: ${status.ok ? '✅ TUDO OK' : '⚠️ ALERTA DE FUNCIONALIDADE'}\n`;
+                detailsText += `Última Execução: ${status.last_run ? new Date(status.last_run).toLocaleString() : 'N/D'}\n\n`;
+                
+                detailsText += `[Módulos Diagnosticados]:\n`;
+                detailsText += `- Banco de Dados: [${status.details.database.status}] ${status.details.database.message}\n`;
+                detailsText += `- Geocodificador (Nominatim): [${status.details.nominatim.status}] ${status.details.nominatim.message}\n`;
+                detailsText += `- Roteador (OSRM): [${status.details.osrm.status}] ${status.details.osrm.message}\n`;
+                detailsText += `- Integração OTT (Trânsito): [${status.details.ott_crawler.status}] ${status.details.ott_crawler.message}\n\n`;
+                
+                detailsText += `[Histórico Recente de Execuções]:\n`;
+                detailsText += status.logs.slice(0, 5).join('\n');
+                
+                alert(detailsText);
+                checkRobotHealth();
+            } catch (err) {
+                alert(`⚠️ Erro ao obter dados de diagnóstico do robô: ${err.message}`);
             }
         };
 

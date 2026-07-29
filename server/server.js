@@ -10,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 const { router: geocodeRouter } = require('./geocode');
 const { setupAuthRoutes } = require('./auth');
 const { pool, initDB } = require('./database');
+const { getRobotStatus, triggerDiagnostics } = require('./robot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -427,6 +428,19 @@ app.post('/api/gps/desconectar', async (req, res) => {
     } catch (err) {
         console.error('Erro ao desconectar motorista:', err);
         res.status(500).json({ error: 'Erro interno ao desconectar.' });
+    }
+});
+
+app.get('/api/robot/status', (req, res) => {
+    res.json(getRobotStatus());
+});
+
+app.post('/api/robot/run', async (req, res) => {
+    try {
+        const status = await triggerDiagnostics();
+        res.json(status);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
