@@ -14,7 +14,7 @@ export class CorRio {
     }
 
     async fetchWithTimeout(resource, options = {}) {
-        const { timeout = 2500 } = options; // Timeout curto de 2.5 segundos
+        const { timeout = 10000 } = options; // Timeout mais longo de 10 segundos
         
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
