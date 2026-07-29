@@ -174,7 +174,11 @@ export class UiController {
                 btn.classList.add('active');
                 const targetId = btn.getAttribute('data-tab');
                 const target = document.getElementById(targetId);
-                if (target) target.classList.add('active');
+                if (target) {
+                    target.classList.add('active');
+                    // Force WebKit/iOS redraw to prevent rendering invisibility bugs
+                    void target.offsetHeight;
+                }
                 
                 if (targetId === 'tab-rede') this.carregarMapaRede();
                 
@@ -246,7 +250,10 @@ export class UiController {
         const filtrados = filtradosList.length;
         
         const compartilhando = filtradosList.filter(a => 
-            this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase())
+            this.activeTrackers.some(t => 
+                (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
+                (!t.id_rota || Number(t.id_rota) === Number(a.id))
+            )
         ).length;
 
         el.textContent = `Importados: ${total} (Filtrados: ${filtrados}) | Compartilhando: ${compartilhando}`;
@@ -264,7 +271,10 @@ export class UiController {
                         // Sincroniza status de atendimento local
                         if (this.dataService.baseAtendimentos) {
                             this.dataService.baseAtendimentos.forEach(a => {
-                                const active = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                                const active = this.activeTrackers.find(t => 
+                                    (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
+                                    (!t.id_rota || Number(t.id_rota) === Number(a.id))
+                                );
                                 const antigoStatus = a.statusAtendimento;
                                 let novoStatus = antigoStatus;
 
@@ -437,7 +447,10 @@ export class UiController {
             this.mapService.clearMarkers();
             lista.forEach(a => {
                 if (a.lat && a.lng) {
-                    const activeTracker = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                    const activeTracker = this.activeTrackers.find(t => 
+                        (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
+                        (!t.id_rota || Number(t.id_rota) === Number(a.id))
+                    );
                     const isActive = !!activeTracker;
                     
                     const plotLat = (isActive && activeTracker.lat) ? parseFloat(activeTracker.lat) : a.lat;
@@ -503,7 +516,10 @@ export class UiController {
         listEl.innerHTML = "";
 
         lista.forEach(a => {
-            const isActive = this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+            const isActive = this.activeTrackers.some(t => 
+                (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
+                (!t.id_rota || Number(t.id_rota) === Number(a.id))
+            );
             const p = escapeHtml(a.programa);
             const m = escapeHtml(a.motorista);
             const pl = escapeHtml(a.placa);
