@@ -455,8 +455,24 @@ export class UiController {
             let markerToOpen = null;
 
             this.mapService.clearMarkers();
-            lista.forEach(a => {
-                if (a.lat && a.lng) {
+
+            const validItems = lista.filter(a => a.lat && a.lng);
+            const total = validItems.length;
+            if (total === 0) {
+                this.atualizarListaSidebar(lista);
+                return;
+            }
+
+            // Regra dos 30%
+            const chunkSize = Math.max(1, Math.ceil(total * 0.3));
+            let index = 0;
+
+            const renderNextChunk = () => {
+                if (this.mapMode !== 'TODOS') return; // Cancel if mode changed
+
+                const limit = Math.min(index + chunkSize, total);
+                for (; index < limit; index++) {
+                    const a = validItems[index];
                     const activeTracker = this.activeTrackers.find(t => 
                         (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                         (!t.id_rota || Number(t.id_rota) === Number(a.id))
@@ -486,11 +502,17 @@ export class UiController {
 
                     a._marker = marker;
                 }
-            });
 
-            if (markerToOpen) {
-                markerToOpen.openPopup();
-            }
+                if (index < total) {
+                    setTimeout(renderNextChunk, 10);
+                } else {
+                    if (markerToOpen) {
+                        markerToOpen.openPopup();
+                    }
+                }
+            };
+
+            renderNextChunk();
         }
         
         this.atualizarListaSidebar(lista);
@@ -707,37 +729,20 @@ export class UiController {
             const speed = activeTracker.speed || 0;
             
             setTimeout(() => {
-                const queryUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR&zoom=${speed > 0 ? 16 : 18}`;
-                fetch(queryUrl, {
-                    headers: { 'User-Agent': 'AgenteRIT/1.0 (fabio.paixao.globo@gmail.com)' }
+                const queryUrl = `/api/cor/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`;
+                fetch(queryUrl)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+                    return r.json();
                 })
-                .then(r => r.json())
-                .then(geo => {
+                .then(data => {
                     const el = document.getElementById(addressId);
                     if (el) {
-                        let addressText = '';
-                        if (speed > 0) {
-                            // Veículo em movimento: via mais próxima
-                            const road = geo.address.road || geo.address.suburb || '';
-                            const city = geo.address.city || geo.address.town || '';
-                            addressText = road ? `${road}, ${city}` : (geo.display_name || 'Em trânsito');
-                        } else {
-                            // Veículo parado: endereço exato ou referência
-                            const road = geo.address.road || '';
-                            const houseNumber = geo.address.house_number || '';
-                            const suburb = geo.address.suburb || '';
-                            const ref = geo.address.amenity || geo.address.shop || geo.address.building || '';
-                            let formatted = [];
-                            if (ref) formatted.push(`[${ref}]`);
-                            if (road) formatted.push(road);
-                            if (houseNumber) formatted.push(houseNumber);
-                            if (suburb) formatted.push(suburb);
-                            addressText = formatted.length > 0 ? formatted.join(', ') : (geo.display_name || 'Parado');
-                        }
-                        el.textContent = addressText;
+                        el.textContent = data.address || 'Endereço não localizado';
                     }
                 })
                 .catch(err => {
+                    console.error('[Geocodificador Reverso] Falha ao obter endereço via proxy:', err);
                     const el = document.getElementById(addressId);
                     if (el) el.textContent = 'Indisponível';
                 });

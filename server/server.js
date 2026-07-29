@@ -286,6 +286,63 @@ app.get('/api/cor/calor', async (req, res) => {
     }
 });
 
+app.get('/api/cor/reverse-geocode', async (req, res) => {
+    const { lat, lng, speed } = req.query;
+    if (!lat || !lng) {
+        return res.status(400).json({ error: 'Latitude e Longitude são obrigatórias.' });
+    }
+
+    try {
+        const zoom = speed && Number(speed) > 0 ? 16 : 18;
+        const queryUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR&zoom=${zoom}`;
+        
+        const response = await fetch(queryUrl, {
+            headers: {
+                'User-Agent': 'AgenteRIT/1.0 (fabio.paixao.globo@gmail.com)',
+                'Accept-Language': 'pt-BR'
+            },
+            timeout: 4000
+        });
+
+        if (response.ok) {
+            const geo = await response.json();
+            
+            let addressText = '';
+            const sp = Number(speed || 0);
+            
+            if (geo && geo.address) {
+                if (sp > 0) {
+                    // Veículo em movimento: via mais próxima
+                    const road = geo.address.road || geo.address.suburb || '';
+                    const city = geo.address.city || geo.address.town || '';
+                    addressText = road ? `${road}, ${city}` : (geo.display_name || 'Em trânsito');
+                } else {
+                    // Veículo parado: endereço exato ou referência
+                    const road = geo.address.road || '';
+                    const houseNumber = geo.address.house_number || '';
+                    const suburb = geo.address.suburb || '';
+                    const ref = geo.address.amenity || geo.address.shop || geo.address.building || '';
+                    let formatted = [];
+                    if (ref) formatted.push(`[${ref}]`);
+                    if (road) formatted.push(road);
+                    if (houseNumber) formatted.push(houseNumber);
+                    if (suburb) formatted.push(suburb);
+                    addressText = formatted.length > 0 ? formatted.join(', ') : (geo.display_name || 'Parado');
+                }
+            } else {
+                addressText = geo.display_name || 'Endereço não localizado';
+            }
+
+            res.json({ ok: true, address: addressText });
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (err) {
+        console.error('Erro na geocodificação reversa do COR:', err.message);
+        res.status(500).json({ error: err.message, address: 'Indisponível' });
+    }
+});
+
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { message, contexto } = req.body;
     if (!message || typeof message !== 'string') {
