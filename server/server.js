@@ -286,38 +286,40 @@ app.get('/api/cor/calor', async (req, res) => {
     }
 });
 
-app.get('/api/cor/reverse-geocode', async (req, res) => {
-    const { lat, lng, speed } = req.query;
+const handleReverseGeocode = async (req, res) => {
+    const lat = req.query.lat;
+    const lng = req.query.lng || req.query.lon || req.query.lng;
+    const speed = req.query.speed;
+
     if (!lat || !lng) {
-        return res.status(400).json({ error: 'Latitude e Longitude são obrigatórias.' });
+        return res.status(400).json({ error: 'Latitude e Longitude (lng/lon) são obrigatórias.' });
     }
 
     try {
         const zoom = speed && Number(speed) > 0 ? 16 : 18;
         const queryUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR&zoom=${zoom}`;
         
+        console.log(`[Proxy Geocode] Requisitando OSM: ${queryUrl}`);
+        
         const response = await fetch(queryUrl, {
             headers: {
                 'User-Agent': 'AgenteRIT/1.0 (fabio.paixao.globo@gmail.com)',
                 'Accept-Language': 'pt-BR'
             },
-            timeout: 4000
+            timeout: 5000
         });
 
         if (response.ok) {
             const geo = await response.json();
-            
             let addressText = '';
             const sp = Number(speed || 0);
             
             if (geo && geo.address) {
                 if (sp > 0) {
-                    // Veículo em movimento: via mais próxima
                     const road = geo.address.road || geo.address.suburb || '';
                     const city = geo.address.city || geo.address.town || '';
                     addressText = road ? `${road}, ${city}` : (geo.display_name || 'Em trânsito');
                 } else {
-                    // Veículo parado: endereço exato ou referência
                     const road = geo.address.road || '';
                     const houseNumber = geo.address.house_number || '';
                     const suburb = geo.address.suburb || '';
@@ -333,15 +335,23 @@ app.get('/api/cor/reverse-geocode', async (req, res) => {
                 addressText = geo.display_name || 'Endereço não localizado';
             }
 
-            res.json({ ok: true, address: addressText });
+            return res.json({ ok: true, address: addressText });
         } else {
-            throw new Error(`HTTP ${response.status}`);
+            const errText = await response.text().catch(() => '');
+            console.error(`[Proxy Geocode] Nominatim retornou status ${response.status}: ${errText}`);
+            return res.status(response.status).json({ 
+                error: `Nominatim retornou HTTP ${response.status}`, 
+                details: errText 
+            });
         }
     } catch (err) {
-        console.error('Erro na geocodificação reversa do COR:', err.message);
-        res.status(500).json({ error: err.message, address: 'Indisponível' });
+        console.error('[Proxy Geocode] Erro interno:', err);
+        return res.status(500).json({ error: 'Erro interno no servidor proxy', message: err.message });
     }
-});
+};
+
+app.get('/api/cor/reverse-geocode', handleReverseGeocode);
+app.get('/reverse-geocode', handleReverseGeocode);
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { message, contexto } = req.body;

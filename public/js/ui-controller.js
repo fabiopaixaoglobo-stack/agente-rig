@@ -507,10 +507,10 @@ export class UiController {
                 if (index < total) {
                     setTimeout(renderNextChunk, 10);
                 } else {
-                    this.isRefreshingMarkers = false;
                     if (markerToOpen) {
                         markerToOpen.openPopup();
                     }
+                    this.isRefreshingMarkers = false;
                 }
             };
 
@@ -656,10 +656,10 @@ export class UiController {
                             }
                         });
 
-                        this.isRefreshingMarkers = false;
                         if (markerToOpen) {
                             markerToOpen.openPopup();
                         }
+                        this.isRefreshingMarkers = false;
                     }
                 })
                 .catch(err => console.error("Erro ao rastrear motoristas:", err));
@@ -734,50 +734,29 @@ export class UiController {
             
             console.log('Iniciando Geocoding para:', lat, lng);
             setTimeout(() => {
-                const zoom = speed > 0 ? 16 : 18;
-                const queryUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR&zoom=${zoom}`;
+                const queryUrl = `/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`;
                 console.log('Requisitando URL:', queryUrl);
                 
                 fetch(queryUrl)
-                .then(r => {
+                .then(async r => {
                     console.log('Resposta da API:', r);
-                    if (!r.ok) throw new Error(`HTTP error ${r.status}`);
+                    if (!r.ok) {
+                        const errData = await r.json().catch(() => ({}));
+                        throw new Error(errData.error || errData.message || `HTTP error ${r.status}`);
+                    }
                     return r.json();
                 })
-                .then(geo => {
-                    console.log('Dados da API recebidos:', geo);
+                .then(data => {
+                    console.log('Dados da API recebidos:', data);
                     const el = document.getElementById(addressId);
                     if (el) {
-                        let addressText = '';
-                        if (geo && geo.address) {
-                            if (speed > 0) {
-                                // Veículo em movimento: via mais próxima
-                                const road = geo.address.road || geo.address.suburb || '';
-                                const city = geo.address.city || geo.address.town || '';
-                                addressText = road ? `${road}, ${city}` : (geo.display_name || 'Em trânsito');
-                            } else {
-                                // Veículo parado: endereço exato ou referência
-                                const road = geo.address.road || '';
-                                const houseNumber = geo.address.house_number || '';
-                                const suburb = geo.address.suburb || '';
-                                const ref = geo.address.amenity || geo.address.shop || geo.address.building || '';
-                                let formatted = [];
-                                if (ref) formatted.push(`[${ref}]`);
-                                if (road) formatted.push(road);
-                                if (houseNumber) formatted.push(houseNumber);
-                                if (suburb) formatted.push(suburb);
-                                addressText = formatted.length > 0 ? formatted.join(', ') : (geo.display_name || 'Parado');
-                            }
-                        } else {
-                            addressText = geo.display_name || 'Endereço não localizado';
-                        }
-                        el.textContent = addressText;
+                        el.textContent = data.address || 'Endereço não localizado';
                     }
                 })
                 .catch(error => {
                     console.error('Erro no Geocoding:', error);
                     const el = document.getElementById(addressId);
-                    if (el) el.textContent = 'Indisponível';
+                    if (el) el.textContent = `Erro: ${error.message || 'Indisponível'}`;
                 });
             }, 200);
         } else {
