@@ -323,6 +323,10 @@
     let currentCoords = null;
     let rotaData = null;
 
+    // Silent audio to keep background tracking alive on mobile iOS/Android
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+    silentAudio.loop = true;
+
     // Elementos da tela
     const btnGps = document.getElementById('btn-gps');
     const btnStart = document.getElementById('btn-start');
@@ -353,12 +357,34 @@
           document.getElementById('r-destino').textContent = rotaData.destino || 'N/D';
           document.getElementById('r-inicio').textContent = rotaData.horario || 'N/D';
           document.getElementById('r-termino').textContent = rotaData.horario_termino || 'N/D';
+
+          restaurarEstadoPersistido();
         } else {
           alert("Não foi possível carregar os dados desta rota.");
         }
       } catch (err) {
         console.error(err);
         alert("Erro ao conectar ao servidor.");
+      }
+    }
+
+    function restaurarEstadoPersistido() {
+      if (!idRota) return;
+      
+      const gpsAuthorized = localStorage.getItem('gps_authorized_' + idRota) === 'true';
+      const tripActive = localStorage.getItem('trip_active_' + idRota) === 'true';
+
+      if (gpsAuthorized) {
+        btnStart.disabled = false;
+        btnGps.innerHTML = "🛰️ GPS AUTORIZADO";
+        btnGps.style.background = "rgba(16, 185, 129, 0.2)";
+        btnGps.style.border = "1px solid var(--good)";
+        btnGps.style.color = "var(--good)";
+        btnGps.disabled = true;
+      }
+
+      if (tripActive) {
+        iniciarRastreamento();
       }
     }
 
@@ -378,6 +404,10 @@
           btnGps.style.border = "1px solid var(--good)";
           btnGps.style.color = "var(--good)";
           btnGps.disabled = true;
+
+          if (idRota) {
+            localStorage.setItem('gps_authorized_' + idRota, 'true');
+          }
         },
         (err) => {
           console.error(err);
@@ -388,6 +418,10 @@
     });
 
     btnStart.addEventListener('click', () => {
+      iniciarRastreamento();
+    });
+
+    function iniciarRastreamento() {
       if (!rotaData) return;
 
       trackerActive = true;
@@ -399,10 +433,30 @@
       statusBox.className = "status-panel status-active";
       statusBox.innerHTML = '<div class="pulse-dot"></div><span id="status-text">TRANSMITINDO GPS ONLINE</span>';
 
-      // Envia confirmação de início
-      enviarPosicao('EM_TRANSITO');
+      if (idRota) {
+        localStorage.setItem('trip_active_' + idRota, 'true');
+      }
 
-      // Configura transmissão contínua de GPS
+      // Play background keeping silent loop
+      try {
+        silentAudio.play().catch(e => console.log("Áudio pendente de interação:", e));
+      } catch(e) {}
+
+      // Get initial position immediately
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+          enviarPosicao('EM_TRANSITO', speed);
+        },
+        (err) => console.error(err),
+        { enableHighAccuracy: true }
+      );
+
+      // Continuous tracking
+      if (gpsWatchId) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+      }
       gpsWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -414,6 +468,13 @@
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
+    }
+
+    // Attempt audio activation on touch to guarantee background loop works
+    document.body.addEventListener('click', () => {
+      if (trackerActive && silentAudio.paused) {
+        silentAudio.play().catch(e => {});
+      }
     });
 
     btnPause.addEventListener('click', async () => {
@@ -421,6 +482,9 @@
         navigator.geolocation.clearWatch(gpsWatchId);
         gpsWatchId = null;
       }
+      try {
+        silentAudio.pause();
+      } catch(e) {}
 
       trackerActive = false;
       btnPause.style.display = "none";
@@ -430,6 +494,10 @@
 
       statusBox.className = "status-panel status-standby";
       statusBox.innerHTML = '<span id="status-text">TRANSMISSÃO INTERROMPIDA</span>';
+
+      if (idRota) {
+        localStorage.removeItem('trip_active_' + idRota);
+      }
 
       await enviarPosicao('PAUSADO');
       alert("Transmissão de GPS interrompida temporariamente.");
@@ -441,6 +509,9 @@
           navigator.geolocation.clearWatch(gpsWatchId);
           gpsWatchId = null;
         }
+        try {
+          silentAudio.pause();
+        } catch(e) {}
 
         trackerActive = false;
         btnStart.style.display = "inline-flex";
@@ -451,6 +522,11 @@
         
         statusBox.className = "status-panel status-standby";
         statusBox.innerHTML = '<span id="status-text">ATENDIMENTO FINALIZADO</span>';
+
+        if (idRota) {
+          localStorage.removeItem('trip_active_' + idRota);
+          localStorage.removeItem('gps_authorized_' + idRota);
+        }
 
         await enviarPosicao('FINALIZADO');
         alert("Corrida finalizada com sucesso. Obrigado!");
