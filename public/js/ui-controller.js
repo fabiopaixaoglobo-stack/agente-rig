@@ -105,7 +105,7 @@ export class UiController {
         this.initTabs();
         this.initFilters();
         this.initUpload();
-        this.initNormas();
+        this.initChatRIT();
         this.initModals();
         this.initPlanner();
         this.initEventosLista();
@@ -686,41 +686,196 @@ export class UiController {
         if (sh) sh.innerHTML = '<option value="">Horário de Início</option>' + periodosFiltrados.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
     }
 
-    initNormas() {
-        fetch(CONFIG.API_ENDPOINTS.NORMAS).then(r => r.json()).then(data => {
-            const c = document.getElementById('normas-lista');
-            if(!c) return;
-            c.innerHTML = data.map(n => `<div class="card" data-id="${escapeHtml(n.id)}"><b>${escapeHtml(n.icone)} ${escapeHtml(n.titulo)}</b><br><span style="font-size:9px; color:var(--muted)">${escapeHtml(n.resumo)}</span></div>`).join('');
-            
-            c.querySelectorAll('.card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const id = card.getAttribute('data-id');
-                    const n = data.find(x => x.id == id);
-                    if (n) {
-                        const inp = document.getElementById('pergunta');
-                        if (inp) {
-                            inp.value = `Fale sobre: ${n.titulo}`;
-                            document.getElementById('btn-enviar')?.click();
-                        }
-                    }
-                });
+    initChatRIT() {
+        const fileInput = document.getElementById('chat-rit-file');
+        const dropzone = document.getElementById('doc-dropzone');
+        const infoCard = document.getElementById('doc-info-card');
+        const docName = document.getElementById('doc-name');
+        const docSize = document.getElementById('doc-size');
+        const btnRemover = document.getElementById('btn-remover-doc');
+        const badge = document.getElementById('doc-status-badge');
+        
+        const btnResumo = document.getElementById('prompt-resumo');
+        const btnPontos = document.getElementById('prompt-pontos');
+        const btnAcoes = document.getElementById('prompt-acoes');
+        
+        const inputPergunta = document.getElementById('chat-rit-pergunta');
+        const btnEnviar = document.getElementById('chat-rit-btn-enviar');
+        const chatBox = document.getElementById('chat-rit-box');
+
+        if (!fileInput) return;
+
+        // Ao arrastar arquivo sobre o dropzone
+        if (dropzone) {
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--accent)';
+                dropzone.style.background = 'rgba(0, 209, 255, 0.05)';
             });
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.style.borderColor = 'rgba(0, 209, 255, 0.3)';
+                dropzone.style.background = 'rgba(255, 255, 255, 0.01)';
+            });
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'rgba(0, 209, 255, 0.3)';
+                dropzone.style.background = 'rgba(255, 255, 255, 0.01)';
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileUpload(file);
         });
 
-        // Configurar botões de contexto
-        document.querySelectorAll('.docButtons .btn').forEach(btn => {
-            const onClickAttr = btn.getAttribute('onclick');
-            if (onClickAttr && onClickAttr.includes('setContext')) {
-                const m = onClickAttr.match(/'([^']+)'/);
-                if (!m) return;
-                const ctx = m[1];
-                btn.removeAttribute('onclick');
-                btn.addEventListener('click', () => this.chatService.setContext(ctx));
-            } else if (onClickAttr && onClickAttr.includes('limparChat')) {
-                btn.removeAttribute('onclick');
-                btn.addEventListener('click', () => this.chatService.clear());
+        const appendMsg = (text, isBot) => {
+            if (!chatBox) return;
+            const msg = document.createElement('div');
+            msg.className = `msg ${isBot ? 'bot' : 'user'}`;
+            msg.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+            chatBox.appendChild(msg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        const handleFileUpload = async (file) => {
+            showToast("Enviando e processando documento...", "info");
+            const formData = new FormData();
+            formData.append('doc', file);
+            
+            // Usamos o token do localStorage se disponível para diferenciar sessões
+            const token = localStorage.getItem('rig_token') || 'global';
+            formData.append('token', token);
+
+            try {
+                const res = await fetch('/api/chat-rit/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showToast("Documento processado com sucesso!", "success");
+                    
+                    // Atualiza UI
+                    if (dropzone) dropzone.style.display = 'none';
+                    if (infoCard) {
+                        infoCard.style.display = 'block';
+                        docName.textContent = data.fileName;
+                        docSize.textContent = `Tamanho: ${Math.round(file.size / 1024)} KB`;
+                    }
+                    if (badge) {
+                        badge.textContent = 'DOCUMENTO ATIVO';
+                        badge.style.background = 'rgba(16, 185, 129, 0.2)';
+                        badge.style.color = '#10B981';
+                        badge.style.borderColor = '#10B981';
+                    }
+
+                    // Habilita controles
+                    [btnResumo, btnPontos, btnAcoes, inputPergunta, btnEnviar].forEach(el => {
+                        if (el) el.disabled = false;
+                    });
+                    if (inputPergunta) inputPergunta.placeholder = "Pergunte algo sobre o documento...";
+
+                    // Boas vindas do bot
+                    if (chatBox) chatBox.innerHTML = '';
+                    appendMsg(`Conectado ao arquivo: **${data.fileName}**.\nO que você deseja fazer?\nUse as Ações Rápidas à esquerda ou digite sua dúvida no campo abaixo!`, true);
+                } else {
+                    showToast(data.error || "Erro ao processar documento", "error");
+                }
+            } catch(err) {
+                console.error(err);
+                showToast("Erro de rede ao enviar documento.", "error");
             }
-        });
+        };
+
+        if (btnRemover) {
+            btnRemover.addEventListener('click', async () => {
+                const token = localStorage.getItem('rig_token') || 'global';
+                await fetch('/api/chat-rit/remover', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                // Reset UI
+                if (dropzone) dropzone.style.display = 'block';
+                if (infoCard) infoCard.style.display = 'none';
+                if (badge) {
+                    badge.textContent = 'SEM DOCUMENTO';
+                    badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                    badge.style.color = '#EF4444';
+                    badge.style.borderColor = '#EF4444';
+                }
+
+                [btnResumo, btnPontos, btnAcoes, inputPergunta, btnEnviar].forEach(el => {
+                    if (el) el.disabled = true;
+                });
+                if (inputPergunta) {
+                    inputPergunta.value = '';
+                    inputPergunta.placeholder = "Escolha um arquivo e digite sua dúvida...";
+                }
+                if (chatBox) {
+                    chatBox.innerHTML = '<div class="msg bot">Olá! Sou o Chat RIT. Por favor, anexe um documento de trabalho no painel esquerdo para que eu possa analisar, responder a dúvidas, resumir ou explicar seus detalhes.</div>';
+                }
+                fileInput.value = '';
+                showToast("Documento removido.", "info");
+            });
+        }
+
+        const enviarPergunta = async (acao = '') => {
+            const message = inputPergunta ? inputPergunta.value.trim() : '';
+            if (!message && !acao) return;
+
+            if (inputPergunta && !acao) {
+                appendMsg(message, false);
+                inputPergunta.value = '';
+            } else if (acao) {
+                let acaoNome = "Gerando resumo...";
+                if (acao === 'pontos') acaoNome = "Extraindo pontos-chave...";
+                if (acao === 'acoes') acaoNome = "Identificando ações...";
+                appendMsg(`[Ação] ${acaoNome}`, false);
+            }
+
+            // Exibe indicador de digitação do bot
+            appendMsg("Analisando documento... 🤖", true);
+            const typingMsg = chatBox.lastElementChild;
+
+            const token = localStorage.getItem('rig_token') || 'global';
+            try {
+                const res = await fetch('/api/chat-rit/pergunta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, token, acao })
+                });
+                const data = await res.json();
+                
+                // Remove indicador de digitação e adiciona a resposta
+                if (typingMsg) chatBox.removeChild(typingMsg);
+
+                if (data.ok) {
+                    appendMsg(data.response, true);
+                } else {
+                    appendMsg(`⚠️ Erro: ${data.error || 'Não foi possível processar a requisição.'}`, true);
+                }
+            } catch(err) {
+                if (typingMsg) chatBox.removeChild(typingMsg);
+                appendMsg("⚠️ Erro de comunicação com o servidor.", true);
+            }
+        };
+
+        if (btnEnviar) btnEnviar.addEventListener('click', () => enviarPergunta());
+        if (inputPergunta) {
+            inputPergunta.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') enviarPergunta();
+            });
+        }
+
+        if (btnResumo) btnResumo.addEventListener('click', () => enviarPergunta('resumo'));
+        if (btnPontos) btnPontos.addEventListener('click', () => enviarPergunta('pontos'));
+        if (btnAcoes) btnAcoes.addEventListener('click', () => enviarPergunta('acoes'));
     }
 
     initModals() {

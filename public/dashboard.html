@@ -39,8 +39,7 @@
     <button class="tabBtn" data-tab="tab-transito">Trânsito Real</button>
     <button class="tabBtn" data-tab="tab-rede">Rede Credenciada</button>
     <button class="tabBtn" data-tab="tab-eventos">Eventos</button>
-    <button class="tabBtn" data-tab="tab-normas">Consultor Normativo</button>
-    <button class="tabBtn" data-tab="tab-whatsapp">Monitoramento de Grupos</button>
+    <button class="tabBtn" data-tab="tab-normas">Chat RIT</button>
     <button class="tabBtn" data-tab="tab-cameras">Câmeras RJ</button>
     <button class="tabBtn" data-tab="tab-radar">Radar Meteorológico RJ</button>
     <button class="tabBtn" data-tab="tab-transportes">+ Transportes</button>
@@ -235,60 +234,48 @@
       </section>
     </section>
 
-    <!-- NORMAS -->
+    <!-- CHAT RIT (DOCUMENTOS AI) -->
     <section id="tab-normas" class="tabPane">
       <div class="normasWrap">
-        <aside class="normasSidebar">
-          <div class="panelTitle" style="padding: 10px; border-bottom: 1px solid var(--line);">📖 Base de Conhecimento</div>
+        <aside class="normasSidebar" style="padding: 16px; display: flex; flex-direction: column; gap: 20px;">
+          <div class="panelTitle" style="padding: 0 0 10px 0; border-bottom: 1px solid var(--line); font-weight: 800; color: var(--accent);">🤖 CHAT RIT DOCUMENTOS</div>
           
-          <div class="docButtons">
-            <button class="btn" onclick="setContext('norma')">📄 NORMA</button>
-            <button class="btn" onclick="setContext('contrato-cargas')">🚛 CARGAS</button>
-            <button class="btn" onclick="setContext('contrato-pessoas')">👥 PESSOAS</button>
-            <button class="btn btnDanger" onclick="limparChat()">🗑️ LIMPAR</button>
+          <!-- Dropzone/Upload -->
+          <div id="doc-dropzone" style="border: 2px dashed rgba(0, 209, 255, 0.3); border-radius: 8px; padding: 20px; text-align: center; background: rgba(255,255,255,0.01); cursor: pointer; transition: all 0.3s;" onclick="document.getElementById('chat-rit-file').click()">
+            <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+            <div style="font-size: 12px; font-weight: 600; color: #fff;">Anexar Documento</div>
+            <div style="font-size: 9px; color: var(--muted); margin-top: 4px;">PDF, DOCX, XLSX, TXT, CSV</div>
+            <input type="file" id="chat-rit-file" accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.csv" style="display: none;" />
           </div>
 
-          <div id="normas-lista" class="normaList">
-            <!-- Lista 20 Normas -->
+          <!-- File Info Card -->
+          <div id="doc-info-card" style="display: none; background: rgba(0,209,255,0.05); border: 1px solid var(--accent); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--accent); margin-bottom: 6px; text-transform: uppercase;">ℹ️ Arquivo Ativo</div>
+            <div id="doc-name" style="font-size: 12px; font-weight: 700; color: #fff; word-break: break-all; margin-bottom: 4px;">—</div>
+            <div id="doc-size" style="font-size: 10px; color: var(--muted); margin-bottom: 8px;">Size: —</div>
+            <button class="btn btnSmall btnDanger" id="btn-remover-doc" style="width: 100%; font-size: 10px; padding: 4px;">🗑️ Remover Arquivo</button>
+          </div>
+
+          <!-- Prompts Rapidos -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">⚡ Ações Rápidas</div>
+            <button class="btn btnSmall" id="prompt-resumo" style="font-size: 11px; text-align: left; background: rgba(255,255,255,0.03);" disabled>📋 Gerar Resumo do Documento</button>
+            <button class="btn btnSmall" id="prompt-pontos" style="font-size: 11px; text-align: left; background: rgba(255,255,255,0.03);" disabled>🔑 Extrair Pontos-Chave</button>
+            <button class="btn btnSmall" id="prompt-acoes" style="font-size: 11px; text-align: left; background: rgba(255,255,255,0.03);" disabled>🎯 Identificar Planos de Ação</button>
           </div>
         </aside>
 
         <div class="normasMain">
-          <div class="panelTitle" style="padding: 10px; background: rgba(0,0,0,0.2);">
-            Consultor de Normas Inteligente
-            <button type="button" class="btn btnPrimary" id="btn-guia-visual" style="height: 18px; font-size: 8px;">GUIA VISUAL</button>
+          <div class="panelTitle" style="padding: 10px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center;">
+            <span>🤖 Assistente de Documentos AI</span>
+            <span id="doc-status-badge" style="font-size: 9px; background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; padding: 2px 6px; border-radius: 4px;">SEM DOCUMENTO</span>
           </div>
-          <div id="chat" class="chatBox">
-            <div class="msg bot">Olá. Sou o Consultor RIT. Selecione um documento acima ou digite sua dúvida sobre as normas de transporte e contratos operacionais.</div>
+          <div id="chat-rit-box" class="chatBox">
+            <div class="msg bot" id="chat-rit-welcome-msg">Olá! Sou o Chat RIT. Por favor, anexe um documento de trabalho no painel esquerdo para que eu possa analisar, responder a dúvidas, resumir ou explicar seus detalhes.</div>
           </div>
           <div class="chatInputRow">
-            <input id="pergunta" class="input" style="flex:1; height: 32px;" placeholder="Digite sua consulta..." />
-            <button id="btn-enviar" class="btn btnPrimary" style="height: 32px;">ENVIAR</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- MONITORAMENTO DE GRUPOS (WHATSAPP) -->
-    <section id="tab-whatsapp" class="tabPane">
-      <div class="whatsapp-control-panel">
-        <div class="whatsapp-card">
-          <div class="whatsapp-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-logo">
-            <h2>Painel de Monitoramento de Grupos</h2>
-          </div>
-          <div class="whatsapp-body">
-            <p>Para garantir a segurança e a estabilidade da conexão, o monitoramento de grupos deve ser realizado através da interface oficial do WhatsApp Web.</p>
-            <div class="info-box">
-              <span class="info-icon">ℹ️</span>
-              <p>O WhatsApp Web abrirá em uma nova janela segura, permitindo que você acompanhe as conversas enquanto mantém o Agente RIG aberto para consulta.</p>
-            </div>
-            <button id="btn-open-whatsapp" class="btn-whatsapp-primary" onclick="window.open('https://web.whatsapp.com', '_blank')">
-              <span class="btn-icon">🚀</span> ABRIR WHATSAPP WEB
-            </button>
-          </div>
-          <div class="whatsapp-footer">
-            <p>Sincronizado com Agente RIG Command Center</p>
+            <input id="chat-rit-pergunta" class="input" style="flex:1; height: 32px;" placeholder="Escolha um arquivo e digite sua dúvida..." disabled />
+            <button id="chat-rit-btn-enviar" class="btn btnPrimary" style="height: 32px;" disabled>ENVIAR</button>
           </div>
         </div>
       </div>

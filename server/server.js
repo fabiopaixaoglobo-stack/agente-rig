@@ -158,6 +158,103 @@ app.get('/api/normas', (req, res) => {
     );
 });
 
+// Multer and parser config for Chat RIT
+const multer = require('multer');
+const upload = multer({ limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB limit
+const { parseDocument } = require('./document-parser');
+const activeDocuments = {};
+
+app.post('/api/chat-rit/upload', upload.single('doc'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+        }
+        const fileToken = req.body.token || 'global';
+        const fileBuffer = req.file.buffer;
+        const mimeType = req.file.mimetype;
+        const fileName = req.file.originalname;
+
+        const extractedText = await parseDocument(fileBuffer, mimeType, fileName);
+        
+        activeDocuments[fileToken] = {
+            fileName,
+            text: extractedText,
+            uploadedAt: new Date().toISOString()
+        };
+
+        console.log(`[Chat RIT] Documento carregado: ${fileName} (${extractedText.length} caracteres)`);
+        
+        res.json({
+            ok: true,
+            fileName,
+            charCount: extractedText.length,
+            message: 'Documento processado com sucesso.'
+        });
+    } catch (err) {
+        console.error('Erro ao processar documento no Chat RIT:', err);
+        res.status(500).json({ error: `Erro ao processar arquivo: ${err.message}` });
+    }
+});
+
+app.post('/api/chat-rit/remover', (req, res) => {
+    const fileToken = req.body.token || 'global';
+    delete activeDocuments[fileToken];
+    res.json({ ok: true });
+});
+
+app.post('/api/chat-rit/pergunta', chatLimiter, async (req, res) => {
+    const { message, token, acao } = req.body;
+    const fileToken = token || 'global';
+
+    const docContext = activeDocuments[fileToken];
+    if (!docContext) {
+        return res.status(400).json({ error: 'Nenhum documento ativo. Por favor, anexe um arquivo antes.' });
+    }
+
+    if (!groq) {
+        return res.json({
+            response: '🤖 IA Offline. Configure a GROQ_API_KEY no servidor.',
+            status: 'offline'
+        });
+    }
+
+    try {
+        let userMessage = message;
+        let systemPrompt = `Você é o "Chat RIT", um robô assistente especializado em analisar documentos e responder a perguntas com base no arquivo anexado.
+Use estritamente as informações contidas no documento abaixo para responder, resumir, explicar ou extrair pontos-chave. Se a resposta não estiver no documento, informe isso de forma honesta.
+
+--- CONTEXTO DO DOCUMENTO ---
+Nome do Arquivo: ${docContext.fileName}
+Conteúdo do Documento:
+${docContext.text.slice(0, 150000)}
+-----------------------------
+`;
+
+        if (acao === 'resumo') {
+            userMessage = 'Faça um resumo executivo estruturado e detalhado das informações mais importantes deste documento.';
+        } else if (acao === 'pontos') {
+            userMessage = 'Identifique e extraia os pontos-chave e informações mais críticas presentes neste documento.';
+        } else if (acao === 'acoes') {
+            userMessage = 'Identifique todos os planos de ação recomendados, obrigações, prazos e responsabilidades indicadas neste documento.';
+        }
+
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ],
+            model: 'llama-3.3-70b-versatile',
+            temperature: 0.2
+        });
+
+        const reply = chatCompletion.choices[0].message.content;
+        res.json({ ok: true, response: reply });
+    } catch (err) {
+        console.error('Erro na resposta do Groq no Chat RIT:', err);
+        res.status(500).json({ error: `Erro de processamento da IA: ${err.message}` });
+    }
+});
+
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { message, contexto } = req.body;
     if (!message || typeof message !== 'string') {
