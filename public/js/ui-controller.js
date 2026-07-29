@@ -623,21 +623,40 @@ export class UiController {
                         this.mapService.clearMarkers();
                         
                         data.trackers.forEach(t => {
+                            const addressId = `geo-addr-${t.motorista_name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '')}`;
+                            
                             const popupHtml = `
-                                <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 200px;">
-                                    <div style="background: #e0e7ff; padding: 6px; border-radius: 4px; margin-bottom: 6px;">
-                                        <strong style="color: #312e81;">👤 ${escapeHtml(t.motorista_name)}</strong>
-                                        <span style="font-size: 9px; background: #c7d2fe; color: #3730a3; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">
+                                <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 250px; padding: 4px;">
+                                    <div style="background: #e0e7ff; padding: 6px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                        <strong style="color: #312e81; font-size: 12px;">👤 ${escapeHtml(t.motorista_name)}</strong>
+                                        <span style="font-size: 9px; background: #c7d2fe; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
                                             ${escapeHtml(t.programa || 'GERAL')}
                                         </span>
                                     </div>
-                                    <b>Placa:</b> ${escapeHtml(t.placa || 'N/D')}<br>
-                                    <b>Veículo:</b> ${escapeHtml(t.tipo_veiculo || 'N/D')}<br>
-                                    <b>Contato:</b> ${escapeHtml(t.motorista_telefone || 'N/D')}<br>
-                                    <b>Velocidade:</b> ${t.speed || 0} km/h<br>
-                                    <b>Atualizado em:</b> ${new Date(t.timestamp).toLocaleTimeString()}<br>
-                                    <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
-                                        <button onclick="window.uiController.desconectarMotoristaDirect('${escapeHtml(t.motorista_name)}', '${t.id_rota || ''}')" style="background:#EF4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; width:100%; cursor:pointer; text-align:center;">
+                                    
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
+                                        <div><b>Placa:</b> ${escapeHtml(t.placa || 'N/D')}</div>
+                                        <div><b>Veículo:</b> ${escapeHtml(t.tipo_veiculo || 'N/D')}</div>
+                                    </div>
+                                    
+                                    <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px;">
+                                        <b>Passageiro:</b> ${escapeHtml(t.passageiro || 'Não informado')}<br>
+                                        <b>Contato:</b> ${escapeHtml(t.motorista_telefone || 'N/D')}<br>
+                                        <b>Velocidade:</b> ${t.speed || 0} km/h | <b>Atualizado:</b> ${new Date(t.timestamp).toLocaleTimeString()}
+                                    </div>
+                                    
+                                    <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px; font-size: 10px; color: #475569;">
+                                        <b>📍 Saída:</b> ${escapeHtml(t.origem || 'Não informado')}<br>
+                                        <b>🏁 Destino:</b> ${escapeHtml(t.destino || 'Não informado')}<br>
+                                        <b>⏰ Programado:</b> ${escapeHtml(t.horario || 'N/D')} às ${escapeHtml(t.horario_termino || 'N/D')}
+                                    </div>
+
+                                    <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px; font-size: 10px; background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                        <b>🗺️ Endereço Atual:</b> <span id="${addressId}" style="color: #334155;">Buscando endereço...</span>
+                                    </div>
+                                    
+                                    <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                                        <button onclick="window.uiController.desconectarMotoristaDirect('${escapeHtml(t.motorista_name)}', '${t.id_rota || ''}')" style="background:#EF4444; color:#fff; border:none; padding:6px 8px; border-radius:4px; font-size:10px; font-weight:800; width:100%; cursor:pointer; text-align:center; transition: background 0.2s;">
                                             🛑 Desconectar Transmissão
                                         </button>
                                     </div>
@@ -649,6 +668,22 @@ export class UiController {
                             };
                             
                             this.mapService.addMarker(t.lat, t.lng, popupHtml, pinSymbol);
+                            
+                            // Gatilho de geocodificação reversa assíncrona
+                            setTimeout(() => {
+                                fetch(`https://nominatim.openstreetmap.org/reverse?lat=${t.lat}&lon=${t.lng}&format=json&accept-language=pt-BR`, {
+                                    headers: { 'User-Agent': 'AgenteRIT/1.0 (fabio.paixao.globo@gmail.com)' }
+                                })
+                                .then(r => r.json())
+                                .then(geo => {
+                                    const el = document.getElementById(addressId);
+                                    if (el) el.textContent = geo.display_name || 'Endereço não localizado';
+                                })
+                                .catch(err => {
+                                    const el = document.getElementById(addressId);
+                                    if (el) el.textContent = 'Indisponível';
+                                });
+                            }, 200);
                         });
                     }
                 })

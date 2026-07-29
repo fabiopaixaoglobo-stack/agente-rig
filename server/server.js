@@ -516,10 +516,12 @@ app.post('/api/gps/update', async (req, res) => {
 app.get('/api/gps/active-trackers', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT p.*, p.motorista_nome AS motorista_name, r.id as id_rota, r.status_atendimento, r.motorista_telefone 
+            SELECT p.*, p.motorista_nome AS motorista_name, r.id as id_rota, r.status_atendimento, r.motorista_telefone,
+                   r.passageiro, r.origem, r.destino, r.horario, r.horario_termino, r.placa_veiculo, r.tipo_veiculo
             FROM posicoes_motoristas p
             LEFT JOIN (
-                SELECT DISTINCT ON (motorista_nome) id, motorista_nome, status_atendimento, motorista_telefone 
+                SELECT DISTINCT ON (motorista_nome) id, motorista_nome, status_atendimento, motorista_telefone,
+                       passageiro, origem, destino, horario, horario_termino, placa_veiculo, tipo_veiculo
                 FROM rotas_importadas 
                 ORDER BY motorista_nome, id DESC
             ) r ON p.motorista_nome = r.motorista_nome
