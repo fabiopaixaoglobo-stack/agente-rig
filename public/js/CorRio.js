@@ -35,16 +35,23 @@ export class CorRio {
     async fetchEstagio() {
         if (!this.elEstagio) return;
         try {
-            const response = await this.fetchWithTimeout('https://aplicativo.cocr.com.br/estagio_api');
+            const response = await this.fetchWithTimeout('/api/cor/estagio');
             if (response.ok) {
                 const data = await response.json();
                 this.elEstagio.style.display = 'inline-block';
                 this.elEstagio.style.background = data.cor || '#228d46';
                 this.elEstagio.innerHTML = `<span style="font-weight:900;">${(data.estagio || 'ESTÁGIO').toUpperCase()}</span>`;
+                
+                // Atualiza também o pill de Status Operacional da sidebar
+                const sidebarPill = document.getElementById('status-operacional-pill');
+                if (sidebarPill) {
+                    sidebarPill.textContent = (data.estagio || 'NORMAL').toUpperCase();
+                    sidebarPill.style.background = data.cor || 'var(--good)';
+                    sidebarPill.style.color = '#000';
+                }
             }
         } catch (error) {
-            console.warn('Timeout ou falha ao obter estágio do COR:', error.message);
-            // Oculta indicador silenciosamente em caso de erro para não poluir a interface
+            console.warn('Falha ao obter estágio do COR via proxy:', error.message);
             this.elEstagio.style.display = 'none';
         }
     }
@@ -52,7 +59,7 @@ export class CorRio {
     async fetchCalor() {
         if (!this.elCalor) return;
         try {
-            const response = await this.fetchWithTimeout('https://aplicativo.cocr.com.br/calor_api');
+            const response = await this.fetchWithTimeout('/api/cor/calor');
             if (response.ok) {
                 const text = await response.text(); // e.g. "calor 2"
                 
@@ -77,8 +84,7 @@ export class CorRio {
                 this.elCalor.innerHTML = `<span style="font-weight:900;">${text.toUpperCase()}</span>`;
             }
         } catch (error) {
-            console.warn('Timeout ou falha ao obter calor do COR:', error.message);
-            // Oculta indicador silenciosamente em caso de erro para não poluir a interface
+            console.warn('Falha ao obter calor do COR via proxy:', error.message);
             this.elCalor.style.display = 'none';
         }
     }

@@ -255,6 +255,37 @@ ${docContext.text.slice(0, 150000)}
     }
 });
 
+app.get('/api/cor/estagio', async (req, res) => {
+    try {
+        const response = await fetch('https://aplicativo.cocr.com.br/estagio_api', { timeout: 3000 });
+        if (response.ok) {
+            const data = await response.json();
+            res.json(data);
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (err) {
+        console.error('Erro ao buscar estagio COR:', err.message);
+        // Retorna Estágio 2 como padrão ativo (conforme situação atual do RJ)
+        res.json({ estagio: "Estágio 2", cor: "#f2d024" });
+    }
+});
+
+app.get('/api/cor/calor', async (req, res) => {
+    try {
+        const response = await fetch('https://aplicativo.cocr.com.br/calor_api', { timeout: 3000 });
+        if (response.ok) {
+            const data = await response.text();
+            res.send(data);
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (err) {
+        console.error('Erro ao buscar calor COR:', err.message);
+        res.send("calor 1");
+    }
+});
+
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { message, contexto } = req.body;
     if (!message || typeof message !== 'string') {
