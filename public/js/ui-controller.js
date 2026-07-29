@@ -341,6 +341,32 @@ export class UiController {
         }
     }
 
+    async desconectarMotoristaDirect(motorista, id_rota) {
+        if (!confirm(`Deseja realmente forçar a desconexão do motorista ${motorista}?`)) return;
+        try {
+            const body = {};
+            if (id_rota) body.id_rota = id_rota;
+            else body.motorista = motorista;
+
+            const res = await fetch('/api/gps/desconectar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.ok) {
+                showToast("Motorista desconectado com sucesso!", "success");
+                // Força atualização imediata
+                this.iniciarPoolActiveTrackers();
+            } else {
+                showToast("Erro ao desconectar motorista", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Erro ao conectar ao servidor", "error");
+        }
+    }
+
     initUpload() {
         const input = document.getElementById("upload-mapa");
         const btn = document.getElementById("btn-upload");
@@ -411,7 +437,11 @@ export class UiController {
             this.mapService.clearMarkers();
             lista.forEach(a => {
                 if (a.lat && a.lng) {
-                    const isActive = this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                    const activeTracker = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                    const isActive = !!activeTracker;
+                    
+                    const plotLat = (isActive && activeTracker.lat) ? parseFloat(activeTracker.lat) : a.lat;
+                    const plotLng = (isActive && activeTracker.lng) ? parseFloat(activeTracker.lng) : a.lng;
                     
                     let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
                     if (a.telefone) {
@@ -437,7 +467,7 @@ export class UiController {
                         `;
                     }
                     actionsHtml += `</div>`;
-
+ 
                     const popupHtml = `
                         <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 220px; padding: 4px;">
                             <div style="background: ${isActive ? '#d1fae5' : '#fee2e2'}; padding: 6px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
@@ -453,12 +483,208 @@ export class UiController {
                             ${actionsHtml}
                         </div>
                     `;
-
+ 
                     const pinSymbol = {
                         html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
                     };
+ 
+                    const marker = this.mapService.addMarker(plotLat, plotLng, popupHtml, pinSymbol);
+                    a._marker = marker;
+                }
+            });
+        }
+        
+        this.atualizarListaSidebar(lista);
+    }
 
-                    this.mapService.addMarker(a.lat, a.lng, popupHtml, pinSymbol);
+    atualizarListaSidebar(lista) {
+        const listEl = document.getElementById("listaAtendimentos");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        lista.forEach(a => {
+            const isActive = this.activeTrackers.some(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+            const p = escapeHtml(a.programa);
+            const m = escapeHtml(a.motorista);
+            const pl = escapeHtml(a.placa);
+            const b = escapeHtml(a.bairro);
+            const tel = escapeHtml(a.telefone);
+            const pass = escapeHtml(a.passageiro || 'Não informado');
+            
+            let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
+            if (tel) {
+                let limpo = String(tel).replace(/\D/g, '');
+                const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
+                const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Veículo: ${a.tipoVeiculo || 'Não informado'} (${a.placa || 'Sem placa'})\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
+                actionsHtml += `
+                    <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
+                        💬 Compartilhar Rastreamento
+                    </a>
+                `;
+            }
+            actionsHtml += `
+                <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                    📱 Simular Celular
+                </button>
+            `;
+            if (isActive) {
+                actionsHtml += `
+                    <button onclick="window.uiController.desconectarMotorista('${a.id}')" class="btn btnSmall" style="background:#EF4444; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                        🛑 Desconectar
+                    </button>
+                `;
+            }
+            actionsHtml += `</div>`;
+            
+            const statusBadge = obterBadgeStatusAtendimento(a.statusAtendimento);
+            
+            listEl.innerHTML += `
+                <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:8px; box-shadow: ${isActive ? '0 0 10px rgba(16,185,129,0.15)' : 'none'};">
+                    <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span class="badgeProgram" style="font-size:9px; background:rgba(0,209,255,0.15); color:var(--accent); font-weight:800; padding:2px 6px; border-radius:4px;">${p}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 Motorista: ${m}</div>
+                    <div class="meta-telefone" style="font-size:10px; color:var(--muted); margin-bottom:4px;">📞 Contato: ${tel || 'N/D'}</div>
+                    <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:4px;">👤 Passageiro/Produtor: ${pass}</div>
+                    <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
+                    <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 Destino: ${b}</div>
+                    ${actionsHtml}
+                </div>
+            `;
+        });
+    }
+
+    initMapModeToggle() {
+        const btnToggle = document.getElementById("btn-toggle-map-mode");
+        if (btnToggle) {
+            btnToggle.addEventListener("click", () => {
+                if (this.mapMode === 'TODOS') {
+                    this.mapMode = 'ONLINE';
+                    btnToggle.textContent = '🛰️ MAPA: ONLINE';
+                    btnToggle.style.background = 'linear-gradient(90deg, #25D366, #10B981)';
+                    btnToggle.style.color = '#04111a';
+                    
+                    this.mapService.clearMarkers();
+                    this.startGpsTracking();
+                    showToast("Modo Rastreamento Online Ativado!", "success");
+                } else {
+                    this.mapMode = 'TODOS';
+            try {
+                showToast("Processando e enviando base para o CCO...", "info");
+                
+                const formData = new FormData();
+                formData.append("planilha", file);
+                
+                const res = await fetch("/api/rotas/importar?tipo=monitoramento", {
+                    method: "POST",
+                    body: formData
+                });
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.error || "Erro ao fazer upload da base");
+                }
+                
+                // Filtra apenas registros processados com sucesso no banco de dados
+                const atendimentos = json.resultados
+                    .filter(r => r.status === 'SUCESSO')
+                    .map(r => ({
+                        id: r.id,
+                        motorista: r.motorista_nome || '',
+                        telefone: r.motorista_telefone || '',
+                        tipoVeiculo: r.tipo_veiculo || '',
+                        programa: r.programa || 'RIT',
+                        placa: r.placa_veiculo || '',
+                        bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
+                        dataHoraInicioRaw: r.horario,
+                        dataHoraFimRaw: r.horario_termino,
+                        horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
+                        lat: null,
+                        lng: null,
+                        passageiro: r.passageiro || '',
+                        origem: r.origem || '',
+                        destino: r.destino || ''
+                    }));
+                
+                this.dataService.baseAtendimentos = atendimentos;
+                this.preencherDropdowns(atendimentos);
+                
+                const statusEl = document.getElementById("geo-status");
+                statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando...</span>`;
+                
+                await this.dataService.geocodificar((pct) => {
+                    statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
+                });
+                
+                statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
+                this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                showToast("Base carregada com sucesso!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || "Erro ao processar planilha.", "error");
+            }
+        });
+    }
+
+    plotarAtendimentos(lista) {
+        if (this.mapMode === 'TODOS') {
+            this.mapService.clearMarkers();
+            lista.forEach(a => {
+                if (a.lat && a.lng) {
+                    const activeTracker = this.activeTrackers.find(t => (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase());
+                    const isActive = !!activeTracker;
+                    
+                    const plotLat = (isActive && activeTracker.lat) ? parseFloat(activeTracker.lat) : a.lat;
+                    const plotLng = (isActive && activeTracker.lng) ? parseFloat(activeTracker.lng) : a.lng;
+                    
+                    let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
+                    if (a.telefone) {
+                        let limpo = String(a.telefone).replace(/\D/g, '');
+                        const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
+                        const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Veículo: ${a.tipoVeiculo || 'Não informado'} (${a.placa || 'Sem placa'})\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
+                        actionsHtml += `
+                            <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34;">
+                                💬 Solicitar
+                            </a>
+                        `;
+                    }
+                    actionsHtml += `
+                        <button onclick="window.uiController.abrirEmulador('${a.id}')" style="background:var(--accent); color:#04111a; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                            📱 Simular
+                        </button>
+                    `;
+                    if (isActive) {
+                        actionsHtml += `
+                            <button onclick="window.uiController.desconectarMotorista('${a.id}')" style="background:#EF4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                                🛑 Desconectar
+                            </button>
+                        `;
+                    }
+                    actionsHtml += `</div>`;
+ 
+                    const popupHtml = `
+                        <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 220px; padding: 4px;">
+                            <div style="background: ${isActive ? '#d1fae5' : '#fee2e2'}; padding: 6px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="color: ${isActive ? '#065f46' : '#991b1b'};">👤 ${escapeHtml(a.motorista)}</strong>
+                                ${obterBadgeStatusAtendimento(a.statusAtendimento)}
+                            </div>
+                            <b>Passageiro/Produtor:</b> ${escapeHtml(a.passageiro || 'Não informado')}<br>
+                            <b>Programa:</b> ${escapeHtml(a.programa)}<br>
+                            <b>Veículo:</b> ${escapeHtml(a.placa)} (${escapeHtml(a.tipoVeiculo)})<br>
+                            <b>Contato:</b> ${escapeHtml(a.telefone || 'N/D')}<br>
+                            <b>Destino:</b> ${escapeHtml(a.bairro)}<br>
+                            <b>Horários:</b> ${escapeHtml(a.dataHoraInicioRaw || 'N/D')} - ${escapeHtml(a.dataHoraFimRaw || 'N/D')}<br>
+                            ${actionsHtml}
+                        </div>
+                    `;
+ 
+                    const pinSymbol = {
+                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
+                    };
+ 
+                    const marker = this.mapService.addMarker(plotLat, plotLng, popupHtml, pinSymbol);
+                    a._marker = marker;
                 }
             });
         }
@@ -577,7 +803,7 @@ export class UiController {
                             const popupHtml = `
                                 <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.4; color: #1e293b; min-width: 200px;">
                                     <div style="background: #e0e7ff; padding: 6px; border-radius: 4px; margin-bottom: 6px;">
-                                        <strong style="color: #312e81;">👤 ${escapeHtml(t.motorista_nome)}</strong>
+                                        <strong style="color: #312e81;">👤 ${escapeHtml(t.motorista_name)}</strong>
                                         <span style="font-size: 9px; background: #c7d2fe; color: #3730a3; padding: 1px 4px; border-radius: 3px; font-weight: bold; margin-left: 5px;">
                                             ${escapeHtml(t.programa || 'GERAL')}
                                         </span>
@@ -586,7 +812,12 @@ export class UiController {
                                     <b>Veículo:</b> ${escapeHtml(t.tipo_veiculo || 'N/D')}<br>
                                     <b>Contato:</b> ${escapeHtml(t.motorista_telefone || 'N/D')}<br>
                                     <b>Velocidade:</b> ${t.speed || 0} km/h<br>
-                                    <b>Atualizado em:</b> ${new Date(t.timestamp).toLocaleTimeString()}
+                                    <b>Atualizado em:</b> ${new Date(t.timestamp).toLocaleTimeString()}<br>
+                                    <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+                                        <button onclick="window.uiController.desconectarMotoristaDirect('${escapeHtml(t.motorista_name)}', '${t.id_rota || ''}')" style="background:#EF4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800; width:100%; cursor:pointer; text-align:center;">
+                                            🛑 Desconectar Transmissão
+                                        </button>
+                                    </div>
                                 </div>
                             `;
                             

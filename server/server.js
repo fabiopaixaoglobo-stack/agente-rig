@@ -404,21 +404,24 @@ app.get('/api/gps/active-trackers', async (req, res) => {
 
 app.post('/api/gps/desconectar', async (req, res) => {
     try {
-        const { id_rota } = req.body;
-        if (!id_rota) {
-            return res.status(400).json({ error: 'ID da rota é obrigatório.' });
+        const { id_rota, motorista } = req.body;
+        if (!id_rota && !motorista) {
+            return res.status(400).json({ error: 'ID da rota ou Nome do motorista é obrigatório.' });
         }
         
-        const result = await pool.query('SELECT motorista_nome FROM rotas_importadas WHERE id = $1', [id_rota]);
-        if (result.rows.length > 0) {
-            const motorista = result.rows[0].motorista_nome;
+        if (id_rota) {
+            const result = await pool.query('SELECT motorista_nome FROM rotas_importadas WHERE id = $1', [id_rota]);
+            if (result.rows.length > 0) {
+                const mot = result.rows[0].motorista_nome;
+                await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [mot]);
+            }
+            await pool.query(
+                `UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1`,
+                [id_rota]
+            );
+        } else if (motorista) {
             await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
         }
-        
-        await pool.query(
-            `UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1`,
-            [id_rota]
-        );
         
         res.json({ ok: true, message: 'Motorista desconectado com sucesso.' });
     } catch (err) {
