@@ -77,7 +77,10 @@ export class MapService {
             const marker = L.marker([parseFloat(lat), parseFloat(lng)], markerOptions).addTo(this.map);
             
             if (popupContent) {
-                marker.bindPopup(popupContent);
+                marker.bindPopup(popupContent, {
+                    autoClose: false,
+                    closeOnClick: false
+                });
             }
             
             this.markers.push(marker);
