@@ -7,7 +7,8 @@ import { CamerasRJ } from './CamerasRJ.js';
 import { CorRio } from './CorRio.js';
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.info("[RIT DEBUG] build versão console-cleanup carregado");
+    console.info("[RIT DEBUG] build versão sidebar-focus-layout carregado");
+    console.info("[RIT LAYOUT] layout responsivo carregado");
     console.log("🚀 Agente RIG v3.5.1 - Inicializando módulos...");
     try {
         const mainMap = new MapService("map");

@@ -130,6 +130,36 @@ export class MapService {
         return this.updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions);
     }
 
+    focusMarkerById(idKey, options = {}) {
+        const marker = this.markersMap?.get(idKey);
+
+        if (!marker) {
+            console.warn("[RIT MAP] marcador não encontrado para foco", { idKey });
+            return false;
+        }
+
+        const latLng = marker.getLatLng();
+
+        if (!latLng || isNaN(latLng.lat) || isNaN(latLng.lng)) {
+            console.warn("[RIT MAP] coordenadas inválidas para foco", { idKey });
+            return false;
+        }
+
+        const zoom = options.zoom || 16;
+
+        console.info("[RIT MAP] marcador encontrado para foco", { idKey });
+        this.map.flyTo(latLng, zoom, {
+            animate: true,
+            duration: 0.6
+        });
+
+        marker.openPopup();
+        this.currentOpenedPopupId = idKey;
+
+        console.info("[RIT MAP] popup aberto pela lista", { idKey });
+        return true;
+    }
+
     invalidateSize() {
         setTimeout(() => {
             this.map.invalidateSize();

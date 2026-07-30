@@ -62,20 +62,22 @@
         <div class="panel grow" style="overflow:hidden; display: flex; flex-direction: column; flex: 1;"><div class="panelTitle">Fila de Atendimentos</div><div id="listaAtendimentos" class="listBox" style="flex:1; overflow-y:auto;"></div></div>
       </aside>
       <section class="mapArea">
-        <div class="filterBar">
-          <select id="filtro-programa" class="select" style="width: 140px;"><option value="">Programa</option></select>
-          <select id="filtro-bairro" class="select" style="width: 140px;"><option value="">Bairro</option></select>
-          <select id="filtro-tipo" class="select" style="width: 120px;"><option value="">Veículo</option></select>
-          <select id="filtro-em-atendimento" class="select" style="width: 150px;">
-            <option value="">Todos atendimentos</option>
-            <option value="Em atendimento">Em atendimento</option>
-            <option value="Fora do atendimento">Fora do atendimento</option>
-          </select>
-          <select id="filtro-horario-inicio" class="select" style="width: 140px;"><option value="">Horário de Início</option></select>
-          <button id="btn-limpar" class="btn btnSmall">Limpar</button>
-          <button onclick="window.uiController.abrirManualModal()" class="btn" style="background:#f5a623; color:#000; font-weight:bold; margin-left:8px; border:none; display:flex; align-items:center; gap:4px; font-size:11px; padding:6px 12px; border-radius:4px; cursor:pointer;"><i class="fa-solid fa-plus"></i> + Novo Monitoramento</button>
-          <div style="flex-grow: 1; text-align: right;">
-            <button id="btn-toggle-map-mode" class="btn btn-ghost" style="color: var(--accent); border-color: var(--accent); margin-right: 8px;">🛰️ MAPA: TODOS</button>
+        <div class="filterBar" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 10px; height: auto; min-height: 48px; background: rgba(10, 15, 28, 0.95); border-bottom: 1px solid var(--line);">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+            <select id="filtro-programa" class="select" style="width: 120px;"><option value="">Programa</option></select>
+            <select id="filtro-bairro" class="select" style="width: 120px;"><option value="">Bairro</option></select>
+            <select id="filtro-tipo" class="select" style="width: 110px;"><option value="">Veículo</option></select>
+            <select id="filtro-em-atendimento" class="select" style="width: 135px;">
+              <option value="">Todos atendimentos</option>
+              <option value="Em atendimento">Em atendimento</option>
+              <option value="Fora do atendimento">Fora do atendimento</option>
+            </select>
+            <select id="filtro-horario-inicio" class="select" style="width: 120px;"><option value="">Horário de Início</option></select>
+            <button id="btn-limpar" class="btn btnSmall">Limpar</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex-shrink: 0;">
+            <button onclick="window.uiController.abrirManualModal()" class="btn" style="background:#f5a623; color:#000; font-weight:bold; border:none; display:flex; align-items:center; gap:4px; font-size:11px; padding:5px 10px; border-radius:4px; cursor:pointer;"><i class="fa-solid fa-plus"></i> + Novo Monitoramento</button>
+            <button id="btn-toggle-map-mode" class="btn btn-ghost" style="color: var(--accent); border-color: var(--accent);">🛰️ MAPA: TODOS</button>
             <button id="btn-centralizar" class="btn btnPrimary">Centralizar Mapa</button>
           </div>
         </div>

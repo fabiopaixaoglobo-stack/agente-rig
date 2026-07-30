@@ -620,32 +620,27 @@ export class UiController {
                 (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                 (!t.id_rota || Number(t.id_rota) === Number(a.id))
             );
-            const p = escapeHtml(a.programa);
             const m = escapeHtml(a.motorista);
             const pl = escapeHtml(a.placa);
             const b = escapeHtml(a.bairro);
-            const tel = escapeHtml(a.telefone);
             const pass = escapeHtml(a.passageiro || 'Não informado');
+            const p = escapeHtml(a.programa);
             
-            let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px;">`;
-            if (tel) {
-                let limpo = String(tel).replace(/\D/g, '');
-                const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
-                const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro || 'Não informado'}\n• Veículo: ${a.tipoVeiculo || 'Não informado'} (${a.placa || 'Sem placa'})\n• Período: das ${a.dataHoraInicioRaw || 'N/D'} às ${a.dataHoraFimRaw || 'N/D'}\n• Saída: ${a.origem || 'Não informado'}\n• Destino: ${a.destino || 'Não informado'}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
-                actionsHtml += `
-                    <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" class="btn btnSmall" style="background:#25D366; color:#04111a; text-decoration:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; transition: opacity 0.2s;">
-                        💬 Compartilhar Rastreamento
-                    </a>
-                `;
-            }
+            const driverIdKey = `drv_${(a.motorista || a.motorista_name || a.id || 'desconhecido').toString().trim().toLowerCase().replace(/\s+/g, '_')}`;
+
+            let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px; align-items: center;">`;
             actionsHtml += `
-                <button onclick="window.uiController.abrirEmulador('${a.id}')" class="btn btnSmall" style="background:var(--accent); color:#04111a; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
-                    📱 Simular Celular
+                <button type="button" 
+                        class="btn-focus-map" 
+                        data-action="focus-map" 
+                        data-marker-id="${driverIdKey}" 
+                        style="background: #00d1ff; color: #020408; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                    📍 Ver no Mapa
                 </button>
             `;
             if (isActive) {
                 actionsHtml += `
-                    <button onclick="window.uiController.desconectarMotorista('${a.id}')" class="btn btnSmall" style="background:#EF4444; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; cursor:pointer;">
+                    <button onclick="window.uiController.desconectarMotorista('${a.id}')" class="btn btnSmall" style="background:#EF4444; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-size:10px; font-weight:800; cursor:pointer;">
                         🛑 Desconectar
                     </button>
                 `;
@@ -655,16 +650,15 @@ export class UiController {
             const statusBadge = obterBadgeStatusAtendimento(a.statusAtendimento);
             
             listEl.innerHTML += `
-                <div class="card" style="margin-bottom:10px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:8px; box-shadow: ${isActive ? '0 0 10px rgba(16,185,129,0.15)' : 'none'};">
-                    <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div class="card" style="margin-bottom:8px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:6px; box-shadow: ${isActive ? '0 0 8px rgba(16,185,129,0.15)' : 'none'};">
+                    <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                         <span class="badgeProgram" style="font-size:9px; background:rgba(0,209,255,0.15); color:var(--accent); font-weight:800; padding:2px 6px; border-radius:4px;">${p}</span>
                         ${statusBadge}
                     </div>
-                    <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">👤 Motorista: ${m}</div>
-                    <div class="meta-telefone" style="font-size:10px; color:var(--muted); margin-bottom:4px;">📞 Contato: ${tel || 'N/D'}</div>
-                    <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:4px;">👤 Passageiro/Produtor: ${pass}</div>
-                    <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:4px;">🚗 Placa: ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
-                    <div class="meta-bairro" style="font-size:11px; color:var(--muted);">📍 Destino: ${b}</div>
+                    <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:2px;">👤 ${m}</div>
+                    <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:2px;">👤 Pass: ${pass}</div>
+                    <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:2px;">🚗 ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
+                    <div class="meta-bairro" style="font-size:10px; color:var(--muted);">📍 Destino: ${b}</div>
                     ${actionsHtml}
                 </div>
             `;
