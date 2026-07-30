@@ -552,7 +552,12 @@ export class UiController {
             this.isRefreshingMarkers = true;
             this.mapService.clearMarkers();
 
-            const validItems = lista.filter(a => a.lat && a.lng);
+            const validItems = lista.filter(a => {
+                const activeTracker = this.activeTrackers.find(t => 
+                    (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase()
+                );
+                return (activeTracker && activeTracker.lat && activeTracker.lng) || (a.lat && a.lng);
+            });
             const total = validItems.length;
             if (total === 0) {
                 this.atualizarListaSidebar(lista);
@@ -812,29 +817,24 @@ export class UiController {
         // Se online, exibe Velocidade e Endereço Atual
         let telemetriaHtml = '';
         if (isActive && activeTracker) {
+            const lat = activeTracker.lat;
+            const lng = activeTracker.lng;
+            const speed = activeTracker.speed || 0;
+            const cacheKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
+            window._geoAddressCache = window._geoAddressCache || {};
+            const initialAddr = window._geoAddressCache[cacheKey] || 'Buscando endereço...';
+
             const addressId = `geo-addr-${motoristaName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '')}`;
             telemetriaHtml = `
                 <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px;">
                     <b>Velocidade:</b> ${activeTracker.speed || 0} km/h | <b>Atualizado:</b> ${new Date(activeTracker.timestamp).toLocaleTimeString()}
                 </div>
                 <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px; font-size: 10px; background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                    <b>🗺️ Endereço Atual:</b> <span id="${addressId}" style="color: #334155;">Buscando endereço...</span>
+                    <b>🗺️ Endereço Atual:</b> <span id="${addressId}" style="color: #334155;">${initialAddr}</span>
                 </div>
             `;
             
-            // Gatilho do geocodificador reverso com regra de velocidade
-            const lat = activeTracker.lat;
-            const lng = activeTracker.lng;
-            const speed = activeTracker.speed || 0;
-            
-            const cacheKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
-            window._geoAddressCache = window._geoAddressCache || {};
-            if (window._geoAddressCache[cacheKey]) {
-                setTimeout(() => {
-                    const el = document.getElementById(addressId);
-                    if (el) el.textContent = window._geoAddressCache[cacheKey];
-                }, 50);
-            } else {
+            if (!window._geoAddressCache[cacheKey]) {
                 setTimeout(() => {
                     fetch(`/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`)
                     .then(r => (r && r.ok) ? r.json() : null)
@@ -848,7 +848,7 @@ export class UiController {
                         const el = document.getElementById(addressId);
                         if (el) el.textContent = 'Rio de Janeiro, RJ';
                     });
-                }, 200);
+                }, 100);
             }
         } else {
             telemetriaHtml = `
