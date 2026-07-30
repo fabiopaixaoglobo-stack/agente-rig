@@ -821,14 +821,17 @@ export class UiController {
                     fetch(`/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`)
                     .then(r => (r && r.ok) ? r.json() : null)
                     .then(data => {
-                        const addr = (data && (data.address || data.display_name)) ? (data.address || data.display_name) : 'Rio de Janeiro, RJ';
+                        const addr = (data && data.ok && data.address) ? data.address : 'Endereço indisponível';
                         window._geoAddressCache[cacheKey] = addr;
                         const el = document.getElementById(addressId);
                         if (el) el.textContent = addr;
                     })
-                    .catch(() => {
+                    .catch(err => {
+                        console.warn("[RIT GEO] Falha ao obter endereço", { error: err ? err.message : 'network_error', lat, lng });
+                        const addr = 'Endereço indisponível';
+                        window._geoAddressCache[cacheKey] = addr;
                         const el = document.getElementById(addressId);
-                        if (el) el.textContent = 'Rio de Janeiro, RJ';
+                        if (el) el.textContent = addr;
                     });
                 }, 100);
             }

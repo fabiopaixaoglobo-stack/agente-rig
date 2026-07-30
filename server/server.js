@@ -286,7 +286,6 @@ app.get('/api/cor/calor', async (req, res) => {
     }
 });
 
-const handleReverseGeocode = async (req, res) => {
 const serverGeocodeCache = new Map();
 
 const handleReverseGeocode = async (req, res) => {
@@ -294,8 +293,8 @@ const handleReverseGeocode = async (req, res) => {
     const lng = req.query.lng || req.query.lon;
     const speed = req.query.speed;
 
-    if (!lat || !lng) {
-        return res.status(400).json({ error: 'Latitude e Longitude (lng/lon) são obrigatórias.' });
+    if (!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+        return res.status(400).json({ ok: false, address: 'Endereço indisponível' });
     }
 
     const cacheKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
@@ -312,7 +311,7 @@ const handleReverseGeocode = async (req, res) => {
                 'User-Agent': 'AgenteRIT/1.0 (fabio.paixao.globo@gmail.com)',
                 'Accept-Language': 'pt-BR'
             },
-            timeout: 4000
+            timeout: 3000
         }).catch(() => null);
 
         if (response && response.ok) {
@@ -324,7 +323,7 @@ const handleReverseGeocode = async (req, res) => {
                 if (sp > 0) {
                     const road = geo.address.road || geo.address.suburb || '';
                     const city = geo.address.city || geo.address.town || '';
-                    addressText = road ? `${road}, ${city}` : (geo.display_name || 'Em trânsito');
+                    addressText = road ? `${road}, ${city}` : (geo.display_name || '');
                 } else {
                     const road = geo.address.road || '';
                     const houseNumber = geo.address.house_number || '';
@@ -335,22 +334,24 @@ const handleReverseGeocode = async (req, res) => {
                     if (road) formatted.push(road);
                     if (houseNumber) formatted.push(houseNumber);
                     if (suburb) formatted.push(suburb);
-                    addressText = formatted.length > 0 ? formatted.join(', ') : (geo.display_name || 'Rio de Janeiro, RJ');
+                    addressText = formatted.length > 0 ? formatted.join(', ') : (geo.display_name || '');
                 }
-            } else {
-                addressText = geo.display_name || 'Rio de Janeiro, RJ';
+            } else if (geo && geo.display_name) {
+                addressText = geo.display_name;
             }
 
-            serverGeocodeCache.set(cacheKey, addressText);
-            return res.json({ ok: true, address: addressText });
-        } else {
-            const fallbackAddr = 'Rio de Janeiro, RJ (Em deslocamento)';
-            serverGeocodeCache.set(cacheKey, fallbackAddr);
-            return res.json({ ok: true, address: fallbackAddr });
+            if (addressText) {
+                serverGeocodeCache.set(cacheKey, addressText);
+                return res.json({ ok: true, address: addressText });
+            }
         }
+        
+        console.warn("[RIT GEO] Falha ao obter endereço OSM", { status: response ? response.status : 'timeout/network', lat, lng });
+        const fallbackAddr = 'Endereço indisponível';
+        return res.json({ ok: false, address: fallbackAddr });
     } catch (err) {
-        const fallbackAddr = 'Rio de Janeiro, RJ (Em deslocamento)';
-        return res.json({ ok: true, address: fallbackAddr });
+        console.warn("[RIT GEO] Exceção na geocodificação", { error: err.message, lat, lng });
+        return res.json({ ok: false, address: 'Endereço indisponível' });
     }
 };
 
