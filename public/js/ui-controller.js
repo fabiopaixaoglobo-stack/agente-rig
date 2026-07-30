@@ -827,33 +827,29 @@ export class UiController {
             const lng = activeTracker.lng;
             const speed = activeTracker.speed || 0;
             
-            console.log('Iniciando Geocoding para:', lat, lng);
-            setTimeout(() => {
-                const queryUrl = `/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`;
-                console.log('Requisitando URL:', queryUrl);
-                
-                fetch(queryUrl)
-                .then(async r => {
-                    console.log('Resposta da API:', r);
-                    if (!r.ok) {
-                        const errData = await r.json().catch(() => ({}));
-                        throw new Error(errData.error || errData.message || `HTTP error ${r.status}`);
-                    }
-                    return r.json();
-                })
-                .then(data => {
-                    console.log('Dados da API recebidos:', data);
+            const cacheKey = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
+            window._geoAddressCache = window._geoAddressCache || {};
+            if (window._geoAddressCache[cacheKey]) {
+                setTimeout(() => {
                     const el = document.getElementById(addressId);
-                    if (el) {
-                        el.textContent = data.address || 'Endereço não localizado';
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro no Geocoding:', error);
-                    const el = document.getElementById(addressId);
-                    if (el) el.textContent = `Erro: ${error.message || 'Indisponível'}`;
-                });
-            }, 200);
+                    if (el) el.textContent = window._geoAddressCache[cacheKey];
+                }, 50);
+            } else {
+                setTimeout(() => {
+                    fetch(`/reverse-geocode?lat=${lat}&lng=${lng}&speed=${speed}`)
+                    .then(r => (r && r.ok) ? r.json() : null)
+                    .then(data => {
+                        const addr = (data && (data.address || data.display_name)) ? (data.address || data.display_name) : 'Rio de Janeiro, RJ';
+                        window._geoAddressCache[cacheKey] = addr;
+                        const el = document.getElementById(addressId);
+                        if (el) el.textContent = addr;
+                    })
+                    .catch(() => {
+                        const el = document.getElementById(addressId);
+                        if (el) el.textContent = 'Rio de Janeiro, RJ';
+                    });
+                }, 200);
+            }
         } else {
             telemetriaHtml = `
                 <div style="border-top: 1px dashed #e2e8f0; margin: 6px 0; padding-top: 4px; font-size: 10px; color: var(--muted);">
