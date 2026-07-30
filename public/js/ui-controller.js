@@ -546,30 +546,25 @@ export class UiController {
 
     plotarAtendimentos(lista) {
         if (this.mapMode === 'TODOS') {
-            const openDriver = this.activeGpsPopupDriver;
-            let markerToOpen = null;
-
-            this.isRefreshingMarkers = true;
-            this.mapService.clearMarkers();
-
             const validItems = lista.filter(a => {
                 const activeTracker = this.activeTrackers.find(t => 
                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase()
                 );
                 return (activeTracker && activeTracker.lat && activeTracker.lng) || (a.lat && a.lng);
             });
+            
             const total = validItems.length;
             if (total === 0) {
                 this.atualizarListaSidebar(lista);
                 return;
             }
 
-            // Regra dos 30%
+            const activeIdsSet = new Set();
             const chunkSize = Math.max(1, Math.ceil(total * 0.3));
             let index = 0;
 
             const renderNextChunk = () => {
-                if (this.mapMode !== 'TODOS') return; // Cancel if mode changed
+                if (this.mapMode !== 'TODOS') return;
 
                 const limit = Math.min(index + chunkSize, total);
                 for (; index < limit; index++) {
@@ -589,28 +584,23 @@ export class UiController {
                         html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
                     };
  
-                    const marker = this.mapService.addMarker(plotLat, plotLng, popupHtml, pinSymbol);
-                    
-                    // Salva qual motorista foi clicado para persistir o popup
-                    marker.on('click', () => {
-                        this.activeGpsPopupDriver = a.motorista;
-                        this.activeGpsPopupMode = 'TODOS';
-                    });
+                    const driverIdKey = `item_${a.id || a.motorista}`;
+                    activeIdsSet.add(driverIdKey);
 
-                    if (this.activeGpsPopupMode === 'TODOS' && openDriver && a.motorista === openDriver) {
-                        markerToOpen = marker;
+                    const marker = this.mapService.updateOrAddMarker(driverIdKey, plotLat, plotLng, popupHtml, pinSymbol);
+                    if (marker) {
+                        marker.on('click', () => {
+                            this.activeGpsPopupDriver = a.motorista;
+                            this.activeGpsPopupMode = 'TODOS';
+                        });
+                        a._marker = marker;
                     }
-
-                    a._marker = marker;
                 }
 
                 if (index < total) {
                     setTimeout(renderNextChunk, 10);
                 } else {
-                    if (markerToOpen) {
-                        markerToOpen.openPopup();
-                    }
-                    this.isRefreshingMarkers = false;
+                    this.mapService.syncActiveMarkers(activeIdsSet);
                 }
             };
 
@@ -730,11 +720,7 @@ export class UiController {
                 .then(r => r.json())
                 .then(data => {
                     if (data.ok && this.mapMode === 'ONLINE') {
-                        const openDriver = this.activeGpsPopupDriver;
-                        let markerToOpen = null;
-
-                        this.isRefreshingMarkers = true;
-                        this.mapService.clearMarkers();
+                        const activeIdsSet = new Set();
                         
                         data.trackers.forEach(t => {
                             const popupHtml = this.obterHtmlPopupAtendimento({}, true, t);
@@ -743,23 +729,19 @@ export class UiController {
                                 html: obterIconeVeiculoHTML(t.tipo_veiculo, true)
                             };
                             
-                            const marker = this.mapService.addMarker(t.lat, t.lng, popupHtml, pinSymbol);
-                            
-                            // Salva qual motorista foi clicado para persistir o popup
-                            marker.on('click', () => {
-                                this.activeGpsPopupDriver = t.motorista_name;
-                                this.activeGpsPopupMode = 'ONLINE';
-                            });
+                            const trackerIdKey = `tracker_${t.motorista_name || t.id_rota}`;
+                            activeIdsSet.add(trackerIdKey);
 
-                            if (this.activeGpsPopupMode === 'ONLINE' && openDriver && t.motorista_name === openDriver) {
-                                markerToOpen = marker;
+                            const marker = this.mapService.updateOrAddMarker(trackerIdKey, t.lat, t.lng, popupHtml, pinSymbol);
+                            if (marker) {
+                                marker.on('click', () => {
+                                    this.activeGpsPopupDriver = t.motorista_name;
+                                    this.activeGpsPopupMode = 'ONLINE';
+                                });
                             }
                         });
 
-                        if (markerToOpen) {
-                            markerToOpen.openPopup();
-                        }
-                        this.isRefreshingMarkers = false;
+                        this.mapService.syncActiveMarkers(activeIdsSet);
                     }
                 })
                 .catch(err => console.error("Erro ao rastrear motoristas:", err));

@@ -35,10 +35,13 @@ export class MapService {
         this.tileLayers.mapa.addTo(this.map);
 
         this.markers = [];
+        this.markersMap = new Map();
         this.routeOverlays = [];
     }
 
     clearMarkers() {
+        this.markersMap.forEach(m => this.map.removeLayer(m));
+        this.markersMap.clear();
         this.markers.forEach(m => this.map.removeLayer(m));
         this.markers = [];
     }
@@ -48,44 +51,83 @@ export class MapService {
         this.routeOverlays = [];
     }
 
-    addMarker(lat, lng, popupContent, iconOptions = null) {
-        if (lat && lng) {
-            let markerOptions = {};
-            
-            // Traduz a opção de cor/símbolo para o DivIcon do Leaflet
-            if (iconOptions) {
-                if (iconOptions.html) {
-                    markerOptions.icon = L.divIcon({
-                        className: 'leaflet-custom-marker',
-                        html: iconOptions.html,
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14]
-                    });
-                } else {
-                    const color = iconOptions.fillColor || '#EF4444';
-                    const size = (iconOptions.scale || 7) * 2;
-                    
-                    markerOptions.icon = L.divIcon({
-                        className: 'leaflet-custom-marker',
-                        html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
-                        iconSize: [size, size],
-                        iconAnchor: [size / 2, size / 2]
-                    });
-                }
-            }
+    updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions = null) {
+        if (!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+            return null;
+        }
 
-            const marker = L.marker([parseFloat(lat), parseFloat(lng)], markerOptions).addTo(this.map);
-            
-            if (popupContent) {
-                marker.bindPopup(popupContent, {
-                    autoClose: false,
-                    closeOnClick: false
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
+
+        let iconObj = null;
+        if (iconOptions) {
+            if (iconOptions.html) {
+                iconObj = L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: iconOptions.html,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+            } else {
+                const color = iconOptions.fillColor || '#EF4444';
+                const size = (iconOptions.scale || 7) * 2;
+                iconObj = L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2]
                 });
             }
-            
-            this.markers.push(marker);
-            return marker;
         }
+
+        if (this.markersMap.has(idKey)) {
+            const existingMarker = this.markersMap.get(idKey);
+            
+            // 1. Atualiza apenas a posição sem destruir a instância do marcador
+            existingMarker.setLatLng([parsedLat, parsedLng]);
+            
+            // 2. Atualiza ícone se alterado
+            if (iconObj) {
+                existingMarker.setIcon(iconObj);
+            }
+            
+            // 3. Atualiza conteúdo do popup se o DOM do popup não estiver focado
+            if (popupContent && existingMarker.getPopup()) {
+                existingMarker.setPopupContent(popupContent);
+            }
+            
+            return existingMarker;
+        }
+
+        // Criar novo marcador
+        let markerOptions = {};
+        if (iconObj) markerOptions.icon = iconObj;
+
+        const newMarker = L.marker([parsedLat, parsedLng], markerOptions).addTo(this.map);
+        
+        if (popupContent) {
+            newMarker.bindPopup(popupContent, {
+                autoClose: false,
+                closeOnClick: false
+            });
+        }
+
+        this.markersMap.set(idKey, newMarker);
+        return newMarker;
+    }
+
+    syncActiveMarkers(activeIdsSet) {
+        this.markersMap.forEach((marker, idKey) => {
+            if (!activeIdsSet.has(idKey)) {
+                this.map.removeLayer(marker);
+                this.markersMap.delete(idKey);
+            }
+        });
+    }
+
+    addMarker(lat, lng, popupContent, iconOptions = null) {
+        const idKey = `legacy_${Math.random()}`;
+        return this.updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions);
     }
 
     invalidateSize() {
