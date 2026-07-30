@@ -544,6 +544,17 @@ export class UiController {
         });
     }
 
+    getDriverIdKey(item) {
+        if (!item) return 'item_desconhecido';
+        const idVal = item.id || item.id_rota;
+        if (idVal) {
+            return `item_${idVal}`;
+        }
+        const nameVal = item.motorista || item.motorista_name || 'desconhecido';
+        const cleanName = String(nameVal).trim().toLowerCase().replace(/\s+/g, '_');
+        return `item_${cleanName}`;
+    }
+
     plotarAtendimentos(lista) {
         if (this.mapMode === 'TODOS') {
             const validItems = lista.filter(a => {
@@ -584,7 +595,7 @@ export class UiController {
                         html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
                     };
  
-                    const driverIdKey = `item_${a.id || a.motorista}`;
+                    const driverIdKey = this.getDriverIdKey(a);
                     activeIdsSet.add(driverIdKey);
 
                     const marker = this.mapService.updateOrAddMarker(driverIdKey, plotLat, plotLng, popupHtml, pinSymbol);
@@ -626,7 +637,8 @@ export class UiController {
             const pass = escapeHtml(a.passageiro || 'Não informado');
             const p = escapeHtml(a.programa);
             
-            const driverIdKey = `drv_${(a.motorista || a.motorista_name || a.id || 'desconhecido').toString().trim().toLowerCase().replace(/\s+/g, '_')}`;
+            const driverIdKey = this.getDriverIdKey(a);
+            console.info("[RIT LIST] botão Ver no Mapa renderizado", { driverIdKey, motorista: a.motorista, id: a.id });
 
             let actionsHtml = `<div style="margin-top: 8px; display: flex; gap: 6px; align-items: center;">`;
             actionsHtml += `
@@ -634,7 +646,7 @@ export class UiController {
                         class="btn-focus-map" 
                         data-action="focus-map" 
                         data-marker-id="${driverIdKey}" 
-                        style="background: #00d1ff; color: #020408; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                        style="background: #00d1ff; color: #020408; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s; pointer-events: auto;">
                     📍 Ver no Mapa
                 </button>
             `;
@@ -723,7 +735,7 @@ export class UiController {
                                 html: obterIconeVeiculoHTML(t.tipo_veiculo, true)
                             };
                             
-                            const trackerIdKey = `tracker_${t.motorista_name || t.id_rota}`;
+                            const trackerIdKey = this.getDriverIdKey(t);
                             activeIdsSet.add(trackerIdKey);
 
                             const marker = this.mapService.updateOrAddMarker(trackerIdKey, t.lat, t.lng, popupHtml, pinSymbol);
