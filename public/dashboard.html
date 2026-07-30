@@ -72,6 +72,7 @@
           </select>
           <select id="filtro-horario-inicio" class="select" style="width: 140px;"><option value="">Horário de Início</option></select>
           <button id="btn-limpar" class="btn btnSmall">Limpar</button>
+          <button onclick="window.uiController.abrirManualModal()" class="btn" style="background:#f5a623; color:#000; font-weight:bold; margin-left:8px; border:none; display:flex; align-items:center; gap:4px; font-size:11px; padding:6px 12px; border-radius:4px; cursor:pointer;"><i class="fa-solid fa-plus"></i> + Novo Monitoramento</button>
           <div style="flex-grow: 1; text-align: right;">
             <button id="btn-toggle-map-mode" class="btn btn-ghost" style="color: var(--accent); border-color: var(--accent); margin-right: 8px;">🛰️ MAPA: TODOS</button>
             <button id="btn-centralizar" class="btn btnPrimary">Centralizar Mapa</button>
@@ -462,6 +463,61 @@
     <div class="phone-container">
       <div class="phone-notch"></div>
       <iframe id="iframeEmulador" class="phone-iframe" src=""></iframe>
+    </div>
+  </div>
+
+  <!-- Modal de Inserção Manual de Contingência (RIT) -->
+  <div id="rit-modal-manual" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid var(--rit-accent, #00d1ff); border-radius: 16px; width: 90%; max-width: 500px; padding: 24px; color: white; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <h3 style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase;"><i class="fa-solid fa-file-signature"></i> Novo Monitoramento Manual</h3>
+        <button onclick="window.uiController.fecharManualModal()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="rit-form-manual" onsubmit="window.uiController.handleManualSubmit(event)" style="display: grid; grid-template-cols: 1fr 1fr; gap: 12px;">
+        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Nome do Programa/Produto</label>
+          <input type="text" id="rit-m-programa" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: Estúdio A - Novela" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Nome do Motorista</label>
+          <input type="text" id="rit-m-motorista" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Nome completo" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Contato (Telefone/WhatsApp)</label>
+          <input type="text" id="rit-m-telefone" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="DDD + Número" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Veículo (Tipo/Modelo)</label>
+          <input type="text" id="rit-m-veiculo" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: VAN ou Executivo" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Placa do Veículo</label>
+          <input type="text" id="rit-m-placa" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: ABC-1234" />
+        </div>
+        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Nome do Passageiro/Produtor</label>
+          <input type="text" id="rit-m-passageiro" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: Diretor de Produção ou Nome" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Local de Saída</label>
+          <input type="text" id="rit-m-saida" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Origem da viagem" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Destino (Bairro/Local)</label>
+          <input type="text" id="rit-m-destino" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Bairro destino" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Horário de Início</label>
+          <input type="text" id="rit-m-inicio" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: 08:30" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">Horário de Término</label>
+          <input type="text" id="rit-m-fim" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: white; padding: 8px 12px; font-size: 12px; outline: none;" required placeholder="Ex: 10:00" />
+        </div>
+        <div style="grid-column: span 2; margin-top: 8px;">
+          <button type="submit" style="background: #00d1ff; color: #071018; border: none; border-radius: 6px; padding: 10px 14px; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; width: 100%; text-transform: uppercase; letter-spacing: 0.02em;">Salvar e Gerar Solicitação</button>
+        </div>
+      </form>
     </div>
   </div>
 

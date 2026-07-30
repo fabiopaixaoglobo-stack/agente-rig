@@ -131,37 +131,80 @@ export class UiController {
             const statusEl = document.getElementById("geo-status");
             if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Carregando base...</span>`;
             
-            const res = await fetch("/api/rotas/listar");
-            const json = await res.json();
-            if (json.ok && json.resultados.length > 0) {
-                const atendimentos = json.resultados.map(r => ({
-                    id: r.id,
-                    motorista: r.motorista_nome || '',
-                    telefone: r.motorista_telefone || '',
-                    tipoVeiculo: r.tipo_veiculo || '',
-                    programa: r.programa || 'RIT',
-                    placa: r.placa_veiculo || '',
-                    bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
-                    dataHoraInicioRaw: r.horario,
-                    dataHoraFimRaw: r.horario_termino,
-                    horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
-                    lat: null,
-                    lng: null,
-                    passageiro: r.passageiro || '',
-                    origem: r.origem || '',
-                    destino: r.destino || '',
-                    statusAtendimento: r.status_atendimento
-                }));
-                
-                this.dataService.baseAtendimentos = atendimentos;
-                this.preencherDropdowns(atendimentos);
-                
+            let serverAtendimentos = [];
+            try {
+                const res = await fetch("/api/rotas/listar");
+                const json = await res.json();
+                if (json.ok && json.resultados.length > 0) {
+                    serverAtendimentos = json.resultados.map(r => ({
+                        id: r.id,
+                        motorista: r.motorista_nome || '',
+                        telefone: r.motorista_telefone || '',
+                        tipoVeiculo: r.tipo_veiculo || '',
+                        programa: r.programa || 'RIT',
+                        placa: r.placa_veiculo || '',
+                        bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
+                        dataHoraInicioRaw: r.horario,
+                        dataHoraFimRaw: r.horario_termino,
+                        horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
+                        lat: null,
+                        lng: null,
+                        passageiro: r.passageiro || '',
+                        origem: r.origem || '',
+                        destino: r.destino || '',
+                        statusAtendimento: r.status_atendimento
+                    }));
+                }
+            } catch (e) {
+                console.warn("[RIT-UI] Failed to load server list, using local data:", e);
+            }
+
+            // Load and Merge Manual Monitorings
+            let manualMonitorings = [];
+            try {
+                manualMonitorings = JSON.parse(localStorage.getItem('rit_manual_monitorings') || '[]');
+            } catch (e) {
+                console.error("[RIT-UI] Error reading manual monitorings:", e);
+            }
+
+            const mappedManuals = manualMonitorings.map(m => ({
+                id: m.id,
+                motorista: m.motorista,
+                telefone: m.telefone,
+                tipoVeiculo: m.tipoVeiculo,
+                programa: m.programa,
+                placa: m.placa,
+                bairro: m.destino,
+                dataHoraInicioRaw: m.dataHoraInicioRaw,
+                dataHoraFimRaw: m.dataHoraFimRaw,
+                horarioInicio: m.dataHoraInicioRaw,
+                lat: null,
+                lng: null,
+                passageiro: m.passageiro,
+                origem: m.origem,
+                destino: m.destino,
+                statusAtendimento: m.statusAtendimento || 'AGUARDANDO',
+                isManual: true
+            }));
+
+            // Combine server and manual
+            const combined = [...mappedManuals];
+            serverAtendimentos.forEach(s => {
+                const exists = combined.some(x => String(x.id) === String(s.id) || String(x.placa) === String(s.placa));
+                if (!exists) {
+                    combined.push(s);
+                }
+            });
+
+            this.dataService.baseAtendimentos = combined;
+            this.preencherDropdowns(combined);
+            
+            if (combined.length > 0) {
                 if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando coordenadas...</span>`;
                 await this.dataService.geocodificar((pct) => {
                     if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
                 });
                 if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
-                
                 this.plotarAtendimentos(this.dataService.baseAtendimentos);
             } else {
                 if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Sem base carregada</span>`;
@@ -169,6 +212,57 @@ export class UiController {
         } catch (e) {
             console.error("Erro ao carregar base existente:", e);
         }
+    }
+
+    abrirManualModal() {
+        document.getElementById('rit-modal-manual').style.display = 'flex';
+    }
+
+    fecharManualModal() {
+        document.getElementById('rit-modal-manual').style.display = 'none';
+        document.getElementById('rit-form-manual').reset();
+    }
+
+    handleManualSubmit(e) {
+        e.preventDefault();
+        console.log("[RIT-UI] Processing manual monitoring submission...");
+        
+        const item = {
+            id: 'man_' + Date.now(),
+            programa: document.getElementById('rit-m-programa').value,
+            motorista: document.getElementById('rit-m-motorista').value,
+            telefone: document.getElementById('rit-m-telefone').value,
+            tipoVeiculo: document.getElementById('rit-m-veiculo').value,
+            placa: document.getElementById('rit-m-placa').value,
+            passageiro: document.getElementById('rit-m-passageiro').value,
+            origem: document.getElementById('rit-m-saida').value,
+            destino: document.getElementById('rit-m-destino').value,
+            dataHoraInicioRaw: document.getElementById('rit-m-inicio').value,
+            dataHoraFimRaw: document.getElementById('rit-m-fim').value,
+            statusAtendimento: 'AGUARDANDO',
+            isManual: true
+        };
+
+        try {
+            const list = JSON.parse(localStorage.getItem('rit_manual_monitorings') || '[]');
+            list.push(item);
+            localStorage.setItem('rit_manual_monitorings', JSON.stringify(list));
+            console.log("[RIT-UI] Saved manual monitoring successfully.");
+        } catch (err) {
+            console.error("[RIT-UI] Error saving manual monitoring:", err);
+        }
+
+        this.fecharManualModal();
+        this.carregarBaseExistente();
+
+        // Dispara mensagem no WhatsApp do motorista
+        let telClean = String(item.telefone).replace(/\D/g, '');
+        if (telClean.length === 10 || telClean.length === 11) {
+            telClean = '55' + telClean;
+        }
+        const msgText = `Prezado Sr. ${item.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento de contingência no Portal do Motorista - Conexão Transportes RJ / Agente RIT:\n\n• Produto/Programa: ${item.programa}\n• Passageiro: ${item.passageiro}\n• Veículo: ${item.tipoVeiculo} (${item.placa})\n• Saída: ${item.origem}\n• Destino: ${item.destino}\n\nFavor compartilhar sua posição iniciando o rastreamento no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${item.id}\n\nObrigado.`;
+        const waUrl = `https://wa.me/${telClean}?text=${encodeURIComponent(msgText)}`;
+        window.open(waUrl, '_blank');
     }
 
     initTabs() {
