@@ -19,10 +19,17 @@
         <div class="brandTitle">RIT - <span>ROTA INTELIGENTE DE TRANSPORTES</span></div>
         <div class="brandSub">Centro de Comando e Monitoramento</div>
       </div>
-      <div class="header-bottom-line">TRANSPORTES RJ</div>
+      <div class="header-bottom-line" id="brand-regional">TRANSPORTES RJ</div>
     </div>
 
     <div class="topRight">
+      <select id="seletor-regiao" class="select" style="width: 80px; height: 26px; border: 1px solid var(--accent); background: #071018; color: var(--accent); font-weight: 800; border-radius: 4px; padding: 0 4px; cursor: pointer; margin-right: 10px;">
+        <option value="RJ" selected>RJ</option>
+        <option value="SP">SP</option>
+        <option value="BH">BH</option>
+        <option value="BSB">BSB</option>
+        <option value="REC">REC</option>
+      </select>
       <button class="btn btn-ghost" onclick="doLogout()" style="margin-right: 10px; color: var(--accent); border-color: var(--accent);">SAIR</button>
       <input type="file" id="upload-mapa" accept=".xlsx,.xls" hidden />
       <button id="btn-upload" class="btn btnPrimary">IMPORTAR BASE</button>
@@ -38,12 +45,9 @@
     <button class="tabBtn active" data-tab="tab-monitoramento">Monitoramento</button>
     <button class="tabBtn" data-tab="tab-planejador">Simulador de Transporte por App</button>
     <button class="tabBtn" data-tab="tab-transito">Trânsito Real</button>
-    <button class="tabBtn" data-tab="tab-rede">Rede Credenciada</button>
-    <button class="tabBtn" data-tab="tab-eventos">Eventos</button>
     <button class="tabBtn" data-tab="tab-normas">Chat RIT</button>
-    <button class="tabBtn" data-tab="tab-cameras">Câmeras RJ</button>
-    <button class="tabBtn" data-tab="tab-radar">Radar Meteorológico RJ</button>
-    <button class="tabBtn" data-tab="tab-transportes">+ Transportes</button>
+    <button class="tabBtn" data-tab="tab-cameras" id="tab-btn-cameras">Câmeras RJ</button>
+    <button class="tabBtn" data-tab="tab-radar" id="tab-btn-radar">Radar Meteorológico RJ</button>
   </nav>
 
   <main class="main">
@@ -53,6 +57,15 @@
         <div class="panel">
           <div class="panelTitle">Status Operacional <div class="pill" id="status-operacional-pill" style="background: var(--good); color: #000; font-weight: 800; font-size: 8px; padding: 1px 4px;">NORMAL</div></div>
           <div id="clima-info" style="font-size: 11px; font-weight: 700; color: var(--accent);">28°C ☀️ RIO DE JANEIRO</div>
+        </div>
+        <div class="panel">
+          <div class="panelTitle">Fontes de Informação</div>
+          <div id="fontes-info" style="font-size: 10px; color: var(--muted); line-height: 1.5; padding: 2px;">
+            • COR.RIO<br>
+            • Alerta Rio<br>
+            • CET Rio<br>
+            • Radar Meteorológico
+          </div>
         </div>
         <div class="panel">
           <div class="panelTitle">Georreferenciamento & Resumo</div>
@@ -218,43 +231,7 @@
       </div>
     </section>
 
-    <!-- REDE CREDENCIADA -->
-    <section id="tab-rede" class="tabPane">
-      <div class="filterBar" style="height: 50px; background: rgba(10, 15, 28, 0.98);">
-        <div style="flex: 1; display: flex; align-items: center; gap: 10px;"><label class="label" style="margin:0;">Localizar endereço:</label><input id="rede-busca" class="input" style="width: 300px;" placeholder="Ex: Av. das Américas, RJ" /></div>
-        <button type="button" id="btn-centralizar-rede" class="btn btnPrimary">CENTRALIZAR RJ</button>
-      </div>
-      <section class="mapArea"><iframe id="iframe-rede" data-src="https://maps.goodcard.com.br/ondecomprar/index.php?portal=ticketlog/" width="100%" height="100%" style="border:none;"></iframe></section>
-    </section>
 
-    <!-- EVENTOS -->
-    <section id="tab-eventos" class="tabPane">
-      <aside class="sidebar">
-        <div class="panel">
-          <div class="panelTitle">Gestão de Eventos</div>
-          <div id="eventos-lista" class="listBox" style="max-height: 200px; overflow-y:auto;">
-            <div class="card" data-event-nome="Carnaval 2026" data-event-url="https://www.google.com/maps/d/u/0/viewer?mid=1u63z-Uf9D2z-tW90m5Y8_I-N-eI"><b style="color:var(--accent)">Carnaval 2026</b></div>
-            <div class="card" data-event-nome="Rock in Rio 2026" data-event-url="https://www.google.com/maps/d/u/0/viewer?mid=1_Z5D_Z-O-Z-O"><b style="color:var(--accent)">Rock in Rio 2026</b></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panelTitle">Novo Mapa</div>
-          <input id="evento-url" class="input" placeholder="URL My Maps..." style="margin-bottom:5px;" />
-          <button type="button" id="btn-evento-carregar" class="btn btnPrimary" style="width:100%;">CARREGAR</button>
-        </div>
-        <div class="panel">
-          <div class="panelTitle">Ações</div>
-          <button type="button" id="btn-evento-importar" class="btn btnSmall" style="width:100%; margin-bottom:5px;">IMPORTAR PONTOS</button>
-        </div>
-      </aside>
-      <section class="mapArea">
-        <div class="filterBar" style="background: rgba(10, 15, 28, 0.98);">
-          <div id="evento-titulo" style="font-size:10px; font-weight:900; color:var(--accent);">Nenhum evento selecionado</div>
-          <div style="flex:1; text-align:right;"><button type="button" id="btn-externo-evento" class="btn btnSmall" style="display:none;">ABRIR NO GOOGLE MAPS</button></div>
-        </div>
-        <div class="mapContainer"><iframe id="iframe-evento" src="" width="100%" height="100%" style="border:none;"></iframe></div>
-      </section>
-    </section>
 
     <!-- CHAT RIT (DOCUMENTOS AI) -->
     <section id="tab-normas" class="tabPane">
@@ -380,30 +357,7 @@
       </div>
     </section>
 
-    <!-- + TRANSPORTES (PORTAL SEGURO) -->
-    <section id="tab-transportes" class="tabPane">
-      <div class="transportes-control-panel">
-        <div class="transportes-card">
-          <div class="transportes-header">
-            <div class="transportes-logo-container">🚚</div>
-            <h2>+ Transportes - Sistema Oficial Globo</h2>
-          </div>
-          <div class="transportes-body">
-            <p>Por questões de segurança e restrições do portal de autenticação da Globo (login.g.globo), o acesso ao + Transportes deve ser realizado em uma nova janela isolada e segura.</p>
-            <div class="info-box" style="background: rgba(0, 209, 255, 0.08); border-left: 3px solid #00d1ff;">
-              <span class="info-icon">ℹ️</span>
-              <p style="color: #00d1ff; font-weight: 600; font-size: 11px; margin: 0;">Sua sessão atual do login Globo será utilizada de forma totalmente segura no seu navegador.</p>
-            </div>
-            <button class="btn-transportes-primary" onclick="window.open('https://globo.wiselog360.com/#/app/report', '_blank')">
-              <span class="btn-icon">🚀</span> ABRIR + TRANSPORTES
-            </button>
-          </div>
-          <div class="transportes-footer">
-            <p>Integração Oficial Agente RIT</p>
-          </div>
-        </div>
-      </div>
-    </section>
+
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>

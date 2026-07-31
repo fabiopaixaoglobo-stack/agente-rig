@@ -86,12 +86,13 @@ function obterPeriodo(horario) {
 }
 
 export class UiController {
-    constructor(mapService, plannerService, transitoMap, chatService, dataService) {
+    constructor(mapService, plannerService, transitoMap, chatService, dataService, corRioService = null) {
         this.mapService = mapService;
         this.plannerService = plannerService;
         this.transitoMap = transitoMap;
         this.chatService = chatService;
         this.dataService = dataService;
+        this.corRioService = corRioService;
         this.eventoAtualUrl = '';
         this.tarifasConfig = {
             tarifaBase: 3.50,
@@ -108,7 +109,7 @@ export class UiController {
         this.initChatRIT();
         this.initModals();
         this.initPlanner();
-        this.initEventosLista();
+        this.initRegionalization();
         
         this.mapMode = 'TODOS';
         this.gpsIntervalId = null;
@@ -296,7 +297,7 @@ export class UiController {
                     void target.offsetHeight;
                 }
                 
-                if (targetId === 'tab-rede') this.carregarMapaRede();
+
                 
                 this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
@@ -997,6 +998,105 @@ export class UiController {
 
 
 
+    initRegionalization() {
+        const seletor = document.getElementById('seletor-regiao');
+        if (!seletor) return;
+
+        const brandRegional = document.getElementById('brand-regional');
+        const tabBtnCameras = document.getElementById('tab-btn-cameras');
+        const tabBtnRadar = document.getElementById('tab-btn-radar');
+        const climaInfo = document.getElementById('clima-info');
+        const fontesInfo = document.getElementById('fontes-info');
+        const elEstagio = document.getElementById('cor-estagio');
+        const elCalor = document.getElementById('cor-calor');
+        const sidebarPill = document.getElementById('status-operacional-pill');
+
+        const regioes = {
+            RJ: {
+                nome: 'RIO DE JANEIRO',
+                label: 'RJ',
+                clima: '28°C ☀️ RIO DE JANEIRO',
+                fontes: '• COR.RIO<br>• Alerta Rio<br>• CET Rio<br>• Radar Meteorológico',
+                estagio: 'normal',
+                cor: '#228d46'
+            },
+            SP: {
+                nome: 'SÃO PAULO',
+                label: 'SP',
+                clima: '20°C ☁️ SÃO PAULO',
+                fontes: '• CET-SP<br>• CGE-SP',
+                estagio: 'NORMAL',
+                cor: '#228d46'
+            },
+            BH: {
+                nome: 'BELO HORIZONTE',
+                label: 'BH',
+                clima: '22°C 🌤️ BELO HORIZONTE',
+                fontes: '• BHTRANS<br>• Defesa Civil BH',
+                estagio: 'ATENÇÃO',
+                cor: '#f2d024'
+            },
+            BSB: {
+                nome: 'BRASÍLIA',
+                label: 'BSB',
+                clima: '24°C ☀️ BRASÍLIA',
+                fontes: '• DER-DF<br>• Defesa Civil DF',
+                estagio: 'NORMAL',
+                cor: '#228d46'
+            },
+            REC: {
+                nome: 'RECIFE',
+                label: 'REC',
+                clima: '30°C ☀️ RECIFE',
+                fontes: '• APAC<br>• CTTU',
+                estagio: 'NORMAL',
+                cor: '#228d46'
+            }
+        };
+
+        const aplicarRegiao = (reg) => {
+            const config = regioes[reg];
+            if (!config) return;
+
+            if (brandRegional) brandRegional.textContent = `TRANSPORTES ${config.label}`;
+            if (tabBtnCameras) tabBtnCameras.textContent = `Câmeras ${config.label}`;
+            if (tabBtnRadar) tabBtnRadar.textContent = `Radar Meteorológico ${config.label}`;
+            
+            if (climaInfo) climaInfo.innerHTML = config.clima;
+            if (fontesInfo) fontesInfo.innerHTML = config.fontes;
+
+            if (reg === 'RJ') {
+                if (elCalor) elCalor.style.display = 'inline-block';
+                if (this.corRioService) {
+                    this.corRioService.fetchEstagio();
+                    this.corRioService.fetchCalor();
+                }
+            } else {
+                if (elCalor) elCalor.style.display = 'none';
+                if (elEstagio) {
+                    elEstagio.style.display = 'inline-block';
+                    elEstagio.style.background = config.cor;
+                    elEstagio.style.color = config.estagio === 'ATENÇÃO' ? '#000' : '#fff';
+                    elEstagio.innerHTML = `<span style="font-weight:900;">${config.estagio}</span>`;
+                }
+                if (sidebarPill) {
+                    sidebarPill.textContent = config.estagio;
+                    sidebarPill.style.background = config.cor;
+                    sidebarPill.style.color = config.estagio === 'ATENÇÃO' ? '#000' : '#fff';
+                }
+            }
+
+            console.log(`[REGIONALIZAÇÃO] Região alterada para: ${reg}`, config);
+            showToast(`Região alterada para ${config.nome}`, 'info');
+        };
+
+        seletor.addEventListener('change', (e) => {
+            aplicarRegiao(e.target.value);
+        });
+
+        aplicarRegiao(seletor.value);
+    }
+
     initMapModeToggle() {
         const btnToggle = document.getElementById("btn-toggle-map-mode");
         if (btnToggle) {
@@ -1428,7 +1528,6 @@ export class UiController {
 
         document.getElementById('btn-mapa-live')?.addEventListener('click', () => this.atualizarMapaLive());
         document.getElementById('btn-abrir-rota-waze')?.addEventListener('click', () => this.abrirRotaExterna());
-        document.getElementById('btn-centralizar-rede')?.addEventListener('click', () => this.carregarMapaRede());
         document.getElementById('btn-atualizar-ott')?.addEventListener('click', () => this.atualizarInformesOTT());
     }
 
@@ -1816,55 +1915,7 @@ export class UiController {
         }
     }
 
-    initEventosLista() {
-        const lista = document.getElementById('eventos-lista');
-        if (lista) {
-            lista.querySelectorAll('.card[data-event-url]').forEach((card) => {
-                card.addEventListener('click', () => {
-                    const nome = card.getAttribute('data-event-nome') || 'Evento';
-                    const url = card.getAttribute('data-event-url') || '';
-                    this.carregarEvento(nome, url);
-                });
-            });
-        }
-        document.getElementById('btn-evento-carregar')?.addEventListener('click', () => this.adicionarEventoCustom());
-        document.getElementById('btn-evento-importar')?.addEventListener('click', () => this.importarDadosEvento());
-        document.getElementById('btn-externo-evento')?.addEventListener('click', () => this.abrirMapaExterno());
-    }
 
-    carregarEvento(nome, url) {
-        this.eventoAtualUrl = url;
-        const titulo = document.getElementById('evento-titulo');
-        const iframe = document.getElementById('iframe-evento');
-        const btnExt = document.getElementById('btn-externo-evento');
-        if (titulo) titulo.textContent = nome;
-        let embedUrl = url;
-        if (url.includes('mid=')) {
-            const mid = url.split('mid=')[1].split('&')[0];
-            embedUrl = `https://www.google.com/maps/d/embed?mid=${mid}`;
-        }
-        if (iframe) iframe.src = embedUrl;
-        if (btnExt) btnExt.style.display = 'inline-flex';
-    }
-
-    abrirMapaExterno() {
-        if (this.eventoAtualUrl) window.open(this.eventoAtualUrl, '_blank', 'noopener,noreferrer');
-    }
-
-    adicionarEventoCustom() {
-        const input = document.getElementById('evento-url');
-        const url = input?.value?.trim() || '';
-        if (!url) {
-            showToast('Cole a URL do My Maps.', 'error');
-            return;
-        }
-        this.carregarEvento('Mapa personalizado', url);
-        showToast('Mapa carregado.', 'success');
-    }
-
-    importarDadosEvento() {
-        showToast('Importação de pontos em lote ainda não está ligada a uma API.', 'info');
-    }
 
     async atualizarMapaLive() {
         const origem = document.getElementById('waze-origem')?.value?.trim() || '';
@@ -1961,13 +2012,7 @@ export class UiController {
         }
     }
 
-    carregarMapaRede() {
-        const i = document.getElementById('iframe-rede');
-        if (i) {
-            i.src = i.getAttribute('data-src');
-            showToast("Centralizando rede RJ...", "info");
-        }
-    }
+
 
     async atualizarInformesOTT() {
         const listEl = document.getElementById('ott-reports-list');

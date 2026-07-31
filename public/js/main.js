@@ -17,10 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const chat = new ChatService("chat", "pergunta", "btn-enviar");
         const data = new DataService();
 
-        const ui = new UiController(mainMap, plannerMap, transitoMap, chat, data);
+        const corRio = new CorRio();
+        const ui = new UiController(mainMap, plannerMap, transitoMap, chat, data, corRio);
         const whatsapp = new MonitoramentoGrupos("btn-open-whatsapp");
         const camerasRJ = new CamerasRJ();
-        const corRio = new CorRio();
 
         // Monitoramento da Saúde do Banco de Dados para Administrador
         const checkDbHealth = async () => {
