@@ -252,6 +252,8 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             const horarioTermino = formatarHorarioExcel(rawHorarioTermino);
             
             const programa = findValueByHeader(row, ['programa', 'projeto', 'grupo']) || '';
+            const ot = findValueByHeader(row, ['ot', 'numero da ot', 'numero ot', 'nº ot']) || '';
+            const codigoOtDetalhado = findValueByHeader(row, ['codigo ot detalhado', 'codigo ot detalhada', 'codigo ot', 'código ot detalhado', 'código ot detalhada']) || '';
 
             if (!origemStr || !destinoStr) {
                 resultados.push({
@@ -272,11 +274,12 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                     const insertResult = await pool.query(
                         `INSERT INTO rotas_importadas 
                         (id_lote, origem, destino, horario, status, matricula, nome_colaborador, area, transito, chuva,
-                         motorista_nome, motorista_telefone, tipo_veiculo, placa_veiculo, horario_termino, programa, localidade_origem, localidade_destino, passageiro) 
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id`,
+                         motorista_nome, motorista_telefone, tipo_veiculo, placa_veiculo, horario_termino, programa, localidade_origem, localidade_destino, passageiro, ot, codigo_ot_detalhado) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING id`,
                         [
                             id_lote, origemStr, destinoStr, horarioStr, 'SUCESSO', matriculaStr, nomeStr, areaStr, transito, chuva,
-                            motoristaNome, motoristaTelefone, tipoVeiculo, placaVeiculo, horarioTermino, programa, localidadeOrigem, localidadeDestino, passageiro
+                            motoristaNome, motoristaTelefone, tipoVeiculo, placaVeiculo, horarioTermino, programa, localidadeOrigem, localidadeDestino, passageiro,
+                            ot ? String(ot).trim() : '', codigoOtDetalhado ? String(codigoOtDetalhado).trim() : ''
                         ]
                     );
                     const insertedId = insertResult.rows[0]?.id;
@@ -298,7 +301,9 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                         programa: programa,
                         localidade_origem: localidadeOrigem,
                         localidade_destino: localidadeDestino,
-                        passageiro: passageiro
+                        passageiro: passageiro,
+                        ot: ot ? String(ot).trim() : '',
+                        codigo_ot_detalhado: codigoOtDetalhado ? String(codigoOtDetalhado).trim() : ''
                     });
                     continue;
                 } catch (err) {

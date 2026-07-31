@@ -163,7 +163,9 @@ export class UiController {
                         passageiro: r.passageiro || '',
                         origem: r.origem || '',
                         destino: r.destino || '',
-                        statusAtendimento: r.status_atendimento
+                        statusAtendimento: r.status_atendimento,
+                        ot: r.ot || '',
+                        codigo_ot_detalhado: r.codigo_ot_detalhado || ''
                     }));
                 }
             } catch (e) {
@@ -208,6 +210,7 @@ export class UiController {
             });
 
             this.dataService.baseAtendimentos = combined;
+            window.transportMapData = combined;
             this.preencherDropdowns(combined);
             
             if (combined.length > 0) {
@@ -311,6 +314,17 @@ export class UiController {
         const btnLimpar = document.getElementById("btn-limpar");
         const btnCentralizar = document.getElementById("btn-centralizar");
 
+        const searchType = document.getElementById("searchType");
+        const searchInput = document.getElementById("dynamicSearchInput");
+
+        const normalizeText = (value) => {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        };
+
         const filtrar = () => {
             const f = this.obterAtendimentosFiltrados();
             this.plotarAtendimentos(f);
@@ -318,17 +332,195 @@ export class UiController {
         };
 
         [sp, sb, st, se, sh].forEach(s => s?.addEventListener("change", filtrar));
+
+        searchType?.addEventListener("change", () => {
+            if (searchInput) searchInput.value = "";
+            this.updateDynamicSearchSuggestions();
+            filtrar();
+            
+            console.log('[BUSCA DINÂMICA] Tipo selecionado:', searchType.value);
+        });
+
+        searchInput?.addEventListener("input", () => {
+            const searchValue = searchInput.value;
+            const type = searchType?.value || "OT";
+            const query = normalizeText(searchValue);
+            
+            const datalist = document.getElementById("dynamicSearchSuggestions");
+            if (datalist && type) {
+                datalist.innerHTML = "";
+                const data = this.dataService.baseAtendimentos || [];
+                const fieldName = {
+                    OT: 'ot',
+                    CODIGO_OT_DETALHADA: 'codigo_ot_detalhado',
+                    MOTORISTA: 'motorista'
+                }[type];
+
+                if (fieldName) {
+                    const values = data
+                        .map(item => item[fieldName])
+                        .filter(value => value !== null && value !== undefined && String(value).trim() !== '')
+                        .map(value => String(value).trim());
+                    const uniqueValues = [...new Set(values)];
+                    
+                    const matching = uniqueValues
+                        .filter(val => normalizeText(val).includes(query))
+                        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+                    
+                    console.log('[BUSCA DINÂMICA] Sugestões geradas:', matching.length);
+
+                    matching.slice(0, 10).forEach(value => {
+                        const option = document.createElement('option');
+                        option.value = value;
+                        datalist.appendChild(option);
+                    });
+                }
+            }
+
+            filtrar();
+
+            const fieldName = {
+                OT: 'ot',
+                CODIGO_OT_DETALHADA: 'codigo_ot_detalhado',
+                MOTORISTA: 'motorista'
+            }[type];
+            console.log('[BUSCA DINÂMICA] Base carregada:', window.transportMapData?.length);
+            console.log('[BUSCA DINÂMICA] Campo utilizado:', fieldName);
+            console.log('[BUSCA DINÂMICA] Valor digitado:', searchValue);
+
+            const filteredData = this.obterAtendimentosFiltrados();
+            console.log('[BUSCA DINÂMICA] Resultados filtrados:', filteredData.length);
+
+            if (filteredData.length === 0 && searchValue.trim() !== "") {
+                showToast("Nenhum atendimento encontrado para a busca informada.", "warning");
+                console.warn('[BUSCA DINÂMICA] Nenhum atendimento encontrado para a busca:', searchValue);
+            } else if (filteredData.length > 0 && searchValue.trim() !== "") {
+                const hasCoords = filteredData.some(item => (item.lat && item.lng));
+                if (!hasCoords) {
+                    showToast("Atendimento encontrado, mas sem coordenadas para exibição no mapa.", "warning");
+                    console.warn('[BUSCA DINÂMICA] Atendimentos encontrados sem coordenadas geográficas.');
+                }
+            }
+
+            if (filteredData.length === 1) {
+                const item = filteredData[0];
+                const driverIdKey = this.getDriverIdKey(item);
+                
+                setTimeout(() => {
+                    const marker = this.mapService.markersMap.get(driverIdKey);
+                    if (marker) {
+                        const latLng = marker.getLatLng();
+                        this.mapService.map.setView(latLng, 17, {
+                            animate: true,
+                            duration: 1
+                        });
+                        marker.openPopup();
+                        
+                        marker.setZIndexOffset(1000);
+                        const iconEl = marker.getElement();
+                        if (iconEl) {
+                            iconEl.style.transition = 'all 0.3s ease';
+                            iconEl.style.transform = (iconEl.style.transform || '') + ' scale(1.5)';
+                            iconEl.style.filter = 'drop-shadow(0 0 12px #00d1ff) brightness(1.2)';
+                            iconEl.style.border = '2px solid #00d1ff';
+                            iconEl.style.borderRadius = '50%';
+                        }
+                        setTimeout(() => {
+                            marker.setZIndexOffset(0);
+                            if (iconEl) {
+                                iconEl.style.transform = iconEl.style.transform.replace(' scale(1.5)', '');
+                                iconEl.style.filter = '';
+                                iconEl.style.border = '';
+                                iconEl.style.borderRadius = '';
+                            }
+                        }, 5000);
+                    }
+                }, 200);
+            } else if (filteredData.length > 1) {
+                setTimeout(() => {
+                    const markers = [];
+                    filteredData.forEach(item => {
+                        const driverIdKey = this.getDriverIdKey(item);
+                        const marker = this.mapService.markersMap.get(driverIdKey);
+                        if (marker) {
+                            markers.push(marker);
+                        }
+                    });
+                    if (markers.length > 0) {
+                        const group = L.featureGroup(markers);
+                        this.mapService.map.fitBounds(group.getBounds(), { padding: [30, 30] });
+                    }
+                }, 200);
+            }
+        });
+
+        searchInput?.addEventListener("focus", () => {
+            if (!this.dataService.baseAtendimentos || this.dataService.baseAtendimentos.length === 0) {
+                showToast("Importe uma base de transportes antes de usar a busca.", "warning");
+                console.warn('[BUSCA DINÂMICA] Tentativa de busca sem base de dados carregada.');
+            } else {
+                const type = searchType?.value;
+                const fieldName = {
+                    OT: 'ot',
+                    CODIGO_OT_DETALHADA: 'codigo_ot_detalhado',
+                    MOTORISTA: 'motorista'
+                }[type];
+                if (fieldName) {
+                    const firstItem = this.dataService.baseAtendimentos[0];
+                    if (firstItem && !(fieldName in firstItem)) {
+                        showToast("Campo de busca não encontrado no arquivo importado.", "error");
+                        console.error('[BUSCA DINÂMICA] Campo de busca ausente na base:', fieldName);
+                    }
+                }
+            }
+        });
+
         btnLimpar?.addEventListener("click", () => {
             if(sp) sp.value = "";
             if(sb) sb.value = "";
             if(st) st.value = "";
             if(se) se.value = "";
             if(sh) sh.value = "";
+
+            if (searchType) searchType.value = "OT";
+            if (searchInput) searchInput.value = "";
+            this.updateDynamicSearchSuggestions();
+
             this.plotarAtendimentos(this.dataService.baseAtendimentos);
             this.atualizarResumoContadores();
         });
+
         btnCentralizar?.addEventListener("click", () => {
             this.mapService.setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
+        });
+    }
+
+    updateDynamicSearchSuggestions() {
+        const type = document.getElementById("searchType")?.value;
+        const datalist = document.getElementById("dynamicSearchSuggestions");
+        if (!type || !datalist) return;
+
+        datalist.innerHTML = "";
+        const data = this.dataService.baseAtendimentos || [];
+        const fieldName = {
+            OT: 'ot',
+            CODIGO_OT_DETALHADA: 'codigo_ot_detalhado',
+            MOTORISTA: 'motorista'
+        }[type];
+
+        if (!fieldName) return;
+
+        const values = data
+            .map(item => item[fieldName])
+            .filter(value => value !== null && value !== undefined && String(value).trim() !== '')
+            .map(value => String(value).trim());
+
+        const uniqueValues = [...new Set(values)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+        uniqueValues.slice(0, 200).forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            datalist.appendChild(option);
         });
     }
 
@@ -339,9 +531,12 @@ export class UiController {
         const se = document.getElementById("filtro-em-atendimento");
         const sh = document.getElementById("filtro-horario-inicio");
 
+        const searchType = document.getElementById("searchType");
+        const searchInput = document.getElementById("dynamicSearchInput");
+
         if (!sp || !sb) return this.dataService.baseAtendimentos || [];
 
-        return (this.dataService.baseAtendimentos || []).filter(a => {
+        let filtered = (this.dataService.baseAtendimentos || []).filter(a => {
             const matchP = !sp.value || a.programa === sp.value;
             const matchB = !sb.value || a.bairro === sb.value;
             const matchT = !st || !st.value || a.tipoVeiculo === st.value;
@@ -352,6 +547,38 @@ export class UiController {
             const matchH = !sh || !sh.value || obterPeriodo(a.horarioInicio) === sh.value;
             return matchP && matchB && matchT && matchE && matchH;
         });
+
+        if (searchInput && searchInput.value && searchType && searchType.value) {
+            const query = String(searchInput.value || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+
+            if (query !== '') {
+                const type = searchType.value;
+                const fieldName = {
+                    OT: 'ot',
+                    CODIGO_OT_DETALHADA: 'codigo_ot_detalhado',
+                    MOTORISTA: 'motorista'
+                }[type];
+
+                if (fieldName) {
+                    filtered = filtered.filter(item => {
+                        const val = item[fieldName];
+                        if (val === null || val === undefined) return false;
+                        const normalizedVal = String(val)
+                            .trim()
+                            .toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+                        return normalizedVal.includes(query);
+                    });
+                }
+            }
+        }
+
+        return filtered;
     }
 
     atualizarResumoContadores() {
@@ -532,10 +759,14 @@ export class UiController {
                         lng: null,
                         passageiro: r.passageiro || '',
                         origem: r.origem || '',
-                        destino: r.destino || ''
+                        destino: r.destino || '',
+                        ot: r.ot || '',
+                        codigo_ot_detalhado: r.codigo_ot_detalhado || ''
                     }));
                 
                 this.dataService.baseAtendimentos = atendimentos;
+                window.transportMapData = atendimentos;
+                this.updateDynamicSearchSuggestions();
                 this.preencherDropdowns(atendimentos);
                 
                 const statusEl = document.getElementById("geo-status");

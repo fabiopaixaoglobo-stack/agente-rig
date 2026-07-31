@@ -73,6 +73,24 @@
               <option value="Fora do atendimento">Fora do atendimento</option>
             </select>
             <select id="filtro-horario-inicio" class="select" style="width: 120px;"><option value="">Horário de Início</option></select>
+            <div class="filter-group search-filter-group" style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 6px;">
+              <span style="font-size: 10px; font-weight: 700; color: var(--accent); white-space: nowrap; text-transform: uppercase;">Buscar por</span>
+              <select id="searchType" class="select" style="width: 140px; border: none; background: transparent; padding: 0 4px; height: 26px; color: #fff;">
+                <option value="OT">OT</option>
+                <option value="CODIGO_OT_DETALHADA">Código OT Detalhada</option>
+                <option value="MOTORISTA">Motorista</option>
+              </select>
+              <input
+                id="dynamicSearchInput"
+                class="select"
+                type="text"
+                placeholder="Digite para buscar..."
+                autocomplete="off"
+                list="dynamicSearchSuggestions"
+                style="width: 160px; border: none; background: transparent; padding: 0 6px; height: 26px; color: #fff;"
+              />
+              <datalist id="dynamicSearchSuggestions"></datalist>
+            </div>
             <button id="btn-limpar" class="btn btnSmall">Limpar</button>
           </div>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex-shrink: 0;">

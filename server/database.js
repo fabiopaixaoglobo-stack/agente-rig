@@ -83,6 +83,8 @@ async function initDB() {
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS localidade_destino TEXT;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS passageiro TEXT;
             ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS status_atendimento TEXT DEFAULT 'PENDENTE';
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS ot TEXT;
+            ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS codigo_ot_detalhado TEXT;
         `);
         await client.query(`
             CREATE TABLE IF NOT EXISTS posicoes_motoristas (
