@@ -123,6 +123,17 @@ export class UiController {
         this.initMapModeToggle();
         this.iniciarPoolActiveTrackers();
         this.carregarBaseExistente();
+        
+        // Delegação de evento para o botão "Ver no Mapa" na lista de atendimentos
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-focus-map');
+            if (!btn) return;
+            
+            const markerId = btn.getAttribute('data-marker-id');
+            console.log('[VER NO MAPA] Botão Ver no Mapa clicado:', markerId);
+            this.focarMarcadorNoMapa(markerId);
+        });
+
         window.uiController = this;
     }
 
@@ -553,6 +564,64 @@ export class UiController {
         const nameVal = item.motorista || item.motorista_name || 'desconhecido';
         const cleanName = String(nameVal).trim().toLowerCase().replace(/\s+/g, '_');
         return `item_${cleanName}`;
+    }
+
+    focarMarcadorNoMapa(markerId) {
+        console.log('[VER NO MAPA] Atendimento:', markerId);
+        const marker = this.mapService.markersMap.get(markerId);
+        console.log('[VER NO MAPA] Marker:', marker);
+
+        if (!marker) {
+            console.error(`[VER NO MAPA] Marker não encontrado para ${markerId}`);
+            showToast("Não foi possível localizar o atendimento no mapa.", "error");
+            return;
+        }
+
+        const latLng = marker.getLatLng();
+        console.log('[VER NO MAPA] Coordenadas:', latLng);
+
+        if (!latLng || !latLng.lat || !latLng.lng) {
+            showToast("Atendimento sem coordenadas geográficas.", "warning");
+            return;
+        }
+
+        // Centralizar o mapa na coordenada do atendimento com zoom
+        this.mapService.map.setView(latLng, 17, {
+            animate: true,
+            duration: 1
+        });
+
+        // Abrir automaticamente o popup do atendimento
+        marker.openPopup();
+
+        // Aplicar destaque temporário (Melhoria Visual Obrigatória)
+        marker.setZIndexOffset(1000);
+        
+        const iconElement = marker.getElement();
+        if (iconElement) {
+            iconElement.style.transition = 'all 0.3s ease';
+            iconElement.style.transform = (iconElement.style.transform || '') + ' scale(1.5)';
+            iconElement.style.filter = 'drop-shadow(0 0 12px #00d1ff) brightness(1.2)';
+            iconElement.style.border = '2px solid #00d1ff';
+            iconElement.style.borderRadius = '50%';
+        }
+
+        setTimeout(() => {
+            marker.setZIndexOffset(0);
+            if (iconElement) {
+                iconElement.style.transform = iconElement.style.transform.replace(' scale(1.5)', '');
+                iconElement.style.filter = '';
+                iconElement.style.border = '';
+                iconElement.style.borderRadius = '';
+            }
+        }, 5000);
+
+        // Caso o atendimento possua rota desenhada, destacar e enquadrar a rota
+        if (this.mapService.routeOverlays && this.mapService.routeOverlays.length > 0) {
+            console.log('[VER NO MAPA] Rotas encontradas no mapa, enquadrando...');
+            const bounds = L.featureGroup(this.mapService.routeOverlays).getBounds();
+            this.mapService.map.fitBounds(bounds);
+        }
     }
 
     plotarAtendimentos(lista) {
