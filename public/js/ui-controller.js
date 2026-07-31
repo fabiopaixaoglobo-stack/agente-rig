@@ -484,8 +484,14 @@ export class UiController {
 
             if (searchType) searchType.value = "OT";
             if (searchInput) searchInput.value = "";
+            
+            if (window.transportMapData) {
+                this.dataService.baseAtendimentos = window.transportMapData;
+            }
+            
             this.updateDynamicSearchSuggestions();
 
+            this._fitBoundsAfterPlot = true;
             this.plotarAtendimentos(this.dataService.baseAtendimentos);
             this.atualizarResumoContadores();
         });
@@ -912,6 +918,18 @@ export class UiController {
                     setTimeout(renderNextChunk, 10);
                 } else {
                     this.mapService.syncActiveMarkers(activeIdsSet);
+                    if (this._fitBoundsAfterPlot) {
+                        this._fitBoundsAfterPlot = false;
+                        const markers = [];
+                        activeIdsSet.forEach(idKey => {
+                            const m = this.mapService.markersMap.get(idKey);
+                            if (m) markers.push(m);
+                        });
+                        if (markers.length > 0) {
+                            const group = L.featureGroup(markers);
+                            this.mapService.map.fitBounds(group.getBounds(), { padding: [30, 30] });
+                        }
+                    }
                 }
             };
 
