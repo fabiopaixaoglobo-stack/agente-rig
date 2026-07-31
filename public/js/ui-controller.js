@@ -2017,33 +2017,71 @@ export class UiController {
     async atualizarInformesOTT() {
         const listEl = document.getElementById('ott-reports-list');
         if (listEl) {
-            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;">Buscando informes do OTT...</div>';
+            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;">Buscando informes do local...</div>';
         }
 
-        try {
-            showToast("Carregando informes OTT das últimas 24h...", "info");
-            const res = await fetch('/api/ott');
-            const data = await res.json();
+        const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
 
-            if (!data.ok || !data.alerts) {
-                throw new Error("Erro na resposta da API.");
+        try {
+            let alerts = [];
+            let center = [-22.908, -43.200];
+            let label = 'OTT';
+            let iconText = '🔫';
+
+            if (reg === 'RJ') {
+                showToast("Carregando informes OTT das últimas 24h...", "info");
+                const res = await fetch('/api/ott');
+                const data = await res.json();
+                if (!data.ok || !data.alerts) {
+                    throw new Error("Erro na resposta da API.");
+                }
+                alerts = data.alerts;
+            } else {
+                showToast(`Simulando ocorrências de segurança para ${reg}...`, "info");
+                label = reg === 'SP' ? 'CGE/SP' : reg === 'BH' ? 'Defesa Civil' : reg === 'REC' ? 'APAC' : 'DETRAN';
+                iconText = reg === 'SP' ? '⛈️' : reg === 'BH' ? '⚠️' : reg === 'REC' ? '🌧️' : '🚨';
+                
+                if (reg === 'SP') {
+                    center = [-23.5505, -46.6333];
+                    alerts = [
+                        { tipo: 'Manifestação na Av. Paulista', data: 'Hoje', hora: '14:00', bairro: 'Bela Vista', municipio: 'São Paulo', lat: -23.5615, lon: -46.6560 },
+                        { tipo: 'Alagamento Marginal Tietê', data: 'Hoje', hora: '15:30', bairro: 'Barra Funda', municipio: 'São Paulo', lat: -23.5180, lon: -46.6250 }
+                    ];
+                } else if (reg === 'BH') {
+                    center = [-19.9191, -43.9378];
+                    alerts = [
+                        { tipo: 'Acidente na Av. Amazonas', data: 'Hoje', hora: '12:15', bairro: 'Prado', municipio: 'Belo Horizonte', lat: -19.9245, lon: -43.9550 },
+                        { tipo: 'Interdição na Av. Afonso Pena', data: 'Hoje', hora: '16:00', bairro: 'Centro', municipio: 'Belo Horizonte', lat: -19.9230, lon: -43.9350 }
+                    ];
+                } else if (reg === 'BSB') {
+                    center = [-15.7942, -47.8822];
+                    alerts = [
+                        { tipo: 'Bloqueio no Eixo Monumental', data: 'Hoje', hora: '11:00', bairro: 'Asa Sul', municipio: 'Brasília', lat: -15.7900, lon: -47.8900 },
+                        { tipo: 'Radar Móvel na Ponte JK', data: 'Hoje', hora: '15:10', bairro: 'Lago Sul', municipio: 'Brasília', lat: -15.8250, lon: -47.8200 }
+                    ];
+                } else if (reg === 'REC') {
+                    center = [-8.0539, -34.8811];
+                    alerts = [
+                        { tipo: 'Alagamento na Av. Agamenon Magalhães', data: 'Hoje', hora: '13:00', bairro: 'Graças', municipio: 'Recife', lat: -8.0510, lon: -34.8920 },
+                        { tipo: 'Manifestação na Av. Sul', data: 'Hoje', hora: '16:45', bairro: 'São José', municipio: 'Recife', lat: -8.0730, lon: -34.8880 }
+                    ];
+                }
             }
 
-            // Limpa marcadores anteriores do mapa de trânsito
             if (this.transitoMap) {
                 this.transitoMap.clearMarkers();
+                this.transitoMap.setView(center, 12);
             }
 
             if (listEl) {
-                if (data.alerts.length === 0) {
-                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhum tiroteio registrado nas últimas 24h.</div>';
+                if (alerts.length === 0) {
+                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência registrada nas últimas 24h.</div>';
                     showToast("Nenhum informe encontrado.", "info");
                     return;
                 }
 
                 listEl.innerHTML = '';
-                data.alerts.forEach(alert => {
-                    // Adiciona na lista lateral
+                alerts.forEach(alert => {
                     const item = document.createElement('div');
                     item.style.padding = '8px 0';
                     item.style.borderBottom = '1px solid #222';
@@ -2054,23 +2092,21 @@ export class UiController {
                     `;
                     listEl.appendChild(item);
 
-                    // Plota no mapa de trânsito real
                     if (this.transitoMap && alert.lat && alert.lon) {
                         const popupText = `
                             <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
-                                <strong style="color:#e11d48; font-size:12px;">🔴 Ocorrência OTT</strong><br>
+                                <strong style="color:#e11d48; font-size:12px;">🔴 Ocorrência ${label}</strong><br>
                                 <b>Tipo:</b> ${escapeHtml(alert.tipo)}<br>
                                 <b>Data/Hora:</b> ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}<br>
                                 <b>Local:</b> ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)}
                             </div>
                         `;
                         
-                        // Custom Marker com logotipo "OTT" em SVG
-                        const iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">' +
-                            '<circle cx="18" cy="18" r="16" fill="#000000" stroke="#f43f5e" stroke-width="2"/>' +
-                            '<text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="900" fill="#ffffff">OTT</text>' +
-                            '<text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#f43f5e">🔫</text>' +
-                            '</svg>';
+                        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">` +
+                            `<circle cx="18" cy="18" r="16" fill="#000000" stroke="#f43f5e" stroke-width="2"/>` +
+                            `<text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="900" fill="#ffffff">${label}</text>` +
+                            `<text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#f43f5e">${iconText}</text>` +
+                            `</svg>`;
                             
                         this.transitoMap.addMarker(alert.lat, alert.lon, popupText, {
                             html: iconSvg
@@ -2078,12 +2114,11 @@ export class UiController {
                     }
                 });
 
-                showToast("Informes OTT atualizados!", "success");
+                showToast(`Informes ${label} atualizados!`, "success");
             }
         } catch (err) {
             console.error(err);
             if (listEl) {
-                listEl.innerHTML = '<div style="color:var(--bad); text-align:center; padding:10px 0;">Erro ao atualizar informes do OTT.</div>';
             }
             showToast("Erro ao processar informes OTT.", "error");
         }
