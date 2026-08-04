@@ -36,8 +36,9 @@ function obterIconeVeiculoHTML(tipo, isActive) {
         : `filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) grayscale(0.2);`;
 
     return `
-        <div style="width: 36px; height: 36px; display: flex; justify-content: center; align-items: center;">
-            <img src="/img/veiculos/${filename}" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none; ${activeStyle}" alt="${t}" />
+        <div style="position: relative; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; ${activeStyle}">
+            <div class="vehicle-icon-background" style="position: absolute; width: 29px; height: 29px; background: #FFFFFF; border-radius: 50%; z-index: 1; overflow: hidden;"></div>
+            <img src="/img/veiculos/${filename}" style="position: absolute; width: 100%; height: 100%; z-index: 2; object-fit: contain; pointer-events: none;" alt="${t}" />
         </div>
     `;
 }
