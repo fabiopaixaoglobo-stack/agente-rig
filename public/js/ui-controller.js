@@ -365,7 +365,15 @@ export class UiController {
                     const uniqueValues = [...new Set(values)];
                     
                     const matching = uniqueValues
-                        .filter(val => normalizeText(val).includes(query))
+                        .filter(val => {
+                            let normVal = normalizeText(val);
+                            let normQuery = query;
+                            if (type === 'OT' || type === 'CODIGO_OT_DETALHADA') {
+                                normVal = normVal.replace(/\s+/g, '');
+                                normQuery = normQuery.replace(/\s+/g, '');
+                            }
+                            return normVal.includes(normQuery);
+                        })
                         .sort((a, b) => a.localeCompare(b, 'pt-BR'));
                     
                     console.log('[BUSCA DINÂMICA] Sugestões geradas:', matching.length);
@@ -556,7 +564,7 @@ export class UiController {
         });
 
         if (searchInput && searchInput.value && searchType && searchType.value) {
-            const query = String(searchInput.value || '')
+            let query = String(searchInput.value || '')
                 .trim()
                 .toLowerCase()
                 .normalize('NFD')
@@ -570,15 +578,22 @@ export class UiController {
                     MOTORISTA: 'motorista'
                 }[type];
 
+                if (type === 'OT' || type === 'CODIGO_OT_DETALHADA') {
+                    query = query.replace(/\s+/g, '');
+                }
+
                 if (fieldName) {
                     filtered = filtered.filter(item => {
                         const val = item[fieldName];
                         if (val === null || val === undefined) return false;
-                        const normalizedVal = String(val)
+                        let normalizedVal = String(val)
                             .trim()
                             .toLowerCase()
                             .normalize('NFD')
                             .replace(/[\u0300-\u036f]/g, '');
+                        if (type === 'OT' || type === 'CODIGO_OT_DETALHADA') {
+                            normalizedVal = normalizedVal.replace(/\s+/g, '');
+                        }
                         return normalizedVal.includes(query);
                     });
                 }

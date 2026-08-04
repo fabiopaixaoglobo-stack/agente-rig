@@ -255,35 +255,55 @@ ${docContext.text.slice(0, 150000)}
     }
 });
 
-app.get('/api/cor/estagio', async (req, res) => {
+// Cache do status do COR-Rio com atualização periódica a cada 3 horas
+let corCache = {
+    estagio: { estagio: "Estágio 1", cor: "#228d46" },
+    calor: "calor 1",
+    lastUpdated: null
+};
+
+async function atualizarCacheCOR() {
     try {
-        const response = await fetch('https://aplicativo.cocr.com.br/estagio_api', { timeout: 3000 });
-        if (response.ok) {
-            const data = await response.json();
-            res.json(data);
+        console.log('[COR-CACHE] Atualizando cache de status do COR-Rio...');
+        const resEstagio = await fetch('https://appcor.cor-rio.work/estagio_cidade', { timeout: 10000 });
+        if (resEstagio.ok) {
+            const data = await resEstagio.json();
+            if (data && data.estagio) {
+                corCache.estagio = {
+                    estagio: data.estagio,
+                    cor: data.cor || '#228d46'
+                };
+            }
         } else {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`Estágio API HTTP ${resEstagio.status}`);
         }
+        
+        const resCalor = await fetch('https://appcor.cor-rio.work/calor_api', { timeout: 10000 });
+        if (resCalor.ok) {
+            const data = await resCalor.json();
+            const nivel = data.nivel || data.level || data.heat_level || 1;
+            corCache.calor = `calor ${nivel}`;
+        } else {
+            throw new Error(`Calor API HTTP ${resCalor.status}`);
+        }
+        
+        corCache.lastUpdated = new Date().toISOString();
+        console.log('[COR-CACHE] Cache atualizado com sucesso:', corCache);
     } catch (err) {
-        console.error('Erro ao buscar estagio COR:', err.message);
-        // Retorna Estágio 2 como padrão ativo (conforme situação atual do RJ)
-        res.json({ estagio: "Estágio 2", cor: "#f2d024" });
+        console.error('[COR-CACHE] Erro ao atualizar cache do COR-Rio:', err.message);
     }
+}
+
+// Inicializa a primeira busca e agenda a execução a cada 3 horas
+atualizarCacheCOR();
+setInterval(atualizarCacheCOR, 3 * 60 * 60 * 1000);
+
+app.get('/api/cor/estagio', (req, res) => {
+    res.json(corCache.estagio);
 });
 
-app.get('/api/cor/calor', async (req, res) => {
-    try {
-        const response = await fetch('https://aplicativo.cocr.com.br/calor_api', { timeout: 3000 });
-        if (response.ok) {
-            const data = await response.text();
-            res.send(data);
-        } else {
-            throw new Error(`HTTP ${response.status}`);
-        }
-    } catch (err) {
-        console.error('Erro ao buscar calor COR:', err.message);
-        res.send("calor 1");
-    }
+app.get('/api/cor/calor', (req, res) => {
+    res.send(corCache.calor);
 });
 
 const serverGeocodeCache = new Map();
