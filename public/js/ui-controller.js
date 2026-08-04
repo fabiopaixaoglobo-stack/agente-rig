@@ -7,24 +7,41 @@ const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
 function obterIconeVeiculoHTML(tipo, isActive) {
     const t = String(tipo || '').toLowerCase();
-    let emoji = '🚗'; // default
-    if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) {
-        emoji = '🚌';
-    } else if (t.includes('van') || t.includes('minivan') || t.includes('combi') || t.includes('truckvan') || t.includes('camarim')) {
-        emoji = '🚐';
+    let filename = 'passeio.png'; // default fallback
+
+    // Mapeamento oficial dos tipos de veículos
+    if (t.includes('blindado')) {
+        filename = 'passeio_blindado.png';
+    } else if (t.includes('mixto') || t.includes('misto')) {
+        filename = 'furgao_mixto.png';
+    } else if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) {
+        filename = 'onibus.png';
+    } else if (t.includes('van') || t.includes('combi') || t.includes('camarim')) {
+        filename = 'van.png';
+    } else if (t.includes('furgao') || t.includes('furgão') || t.includes('fiorino') || t.includes('cargo') || t.includes('kangoo') || t.includes('doblo')) {
+        filename = 'furgao.png';
     } else if (t.includes('caminhao') || t.includes('caminhão') || t.includes('truck') || t.includes('figurino')) {
-        emoji = '🚛';
-    } else if (t.includes('moto')) {
-        emoji = '🏍️';
+        filename = 'caminhao.png';
+    } else if (t.includes('pickup') || t.includes('picap') || t.includes('picape') || t.includes('toro') || t.includes('hilux') || t.includes('s10') || t.includes('ranger')) {
+        filename = 'pickup.png';
+    } else if (t.includes('suv') || t.includes('renegade') || t.includes('compass') || t.includes('creta') || t.includes('hrv') || t.includes('tracker')) {
+        filename = 'suv.png';
+    } else {
+        filename = 'passeio.png';
     }
-    const bg = isActive ? '#10B981' : '#F59E0B'; // Green if online, Yellow/Orange if offline
-    const anim = isActive ? 'animation: pulseGlow 1.5s infinite;' : '';
+
+    const glowColor = isActive ? '#00ffaa' : '#ffaa00';
+    const activeStyle = isActive 
+        ? `filter: drop-shadow(0 0 6px ${glowColor}) brightness(1.1); animation: vehiclePulse 2s infinite ease-in-out;` 
+        : `filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) grayscale(0.2);`;
+
     return `
-        <div style="display:flex; justify-content:center; align-items:center; background-color:${bg}; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.4); font-size:15px; ${anim}">
-            ${emoji}
+        <div style="width: 36px; height: 36px; display: flex; justify-content: center; align-items: center;">
+            <img src="/img/veiculos/${filename}" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none; ${activeStyle}" alt="${t}" />
         </div>
     `;
 }
+
 
 function obterBadgeStatusAtendimento(status) {
     if (status === 'EM_TRANSITO') return `<span style="font-size:9px; background:#10B981; color:#04111a; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;">🟢 EM VIAGEM</span>`;
@@ -914,7 +931,9 @@ export class UiController {
                     const popupHtml = this.obterHtmlPopupAtendimento(a, isActive, activeTracker);
  
                     const pinSymbol = {
-                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive)
+                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive),
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
                     };
  
                     const driverIdKey = this.getDriverIdKey(a);
@@ -995,6 +1014,17 @@ export class UiController {
             
             const statusBadge = obterBadgeStatusAtendimento(a.statusAtendimento);
             
+            let filename = 'passeio.png';
+            const t = String(a.tipoVeiculo || '').toLowerCase();
+            if (t.includes('blindado')) filename = 'passeio_blindado.png';
+            else if (t.includes('mixto') || t.includes('misto')) filename = 'furgao_mixto.png';
+            else if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) filename = 'onibus.png';
+            else if (t.includes('van') || t.includes('combi') || t.includes('camarim')) filename = 'van.png';
+            else if (t.includes('furgao') || t.includes('furgão') || t.includes('fiorino') || t.includes('cargo') || t.includes('kangoo') || t.includes('doblo')) filename = 'furgao.png';
+            else if (t.includes('caminhao') || t.includes('caminhão') || t.includes('truck') || t.includes('figurino')) filename = 'caminhao.png';
+            else if (t.includes('pickup') || t.includes('picap') || t.includes('picape') || t.includes('toro') || t.includes('hilux') || t.includes('s10') || t.includes('ranger')) filename = 'pickup.png';
+            else if (t.includes('suv') || t.includes('renegade') || t.includes('compass') || t.includes('creta') || t.includes('hrv') || t.includes('tracker')) filename = 'suv.png';
+
             listEl.innerHTML += `
                 <div class="card" style="margin-bottom:8px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid ${isActive ? '#10B981' : 'rgba(255,255,255,0.06)'}; border-radius:6px; box-shadow: ${isActive ? '0 0 8px rgba(16,185,129,0.15)' : 'none'};">
                     <div class="row1" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -1003,7 +1033,10 @@ export class UiController {
                     </div>
                     <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:2px;">👤 ${m}</div>
                     <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:2px;">👤 Pass: ${pass}</div>
-                    <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:2px;">🚗 ${pl} (${escapeHtml(a.tipoVeiculo)})</div>
+                    <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                        <img src="/img/veiculos/${filename}" style="width:16px; height:16px; object-fit:contain;" /> 
+                        ${pl} (${escapeHtml(a.tipoVeiculo)})
+                    </div>
                     <div class="meta-bairro" style="font-size:10px; color:var(--muted);">📍 Destino: ${b}</div>
                     ${actionsHtml}
                 </div>
@@ -1165,8 +1198,10 @@ export class UiController {
                             const popupHtml = this.obterHtmlPopupAtendimento({}, true, t);
                             
                             const pinSymbol = {
-                                html: obterIconeVeiculoHTML(t.tipo_veiculo, true)
-                            };
+                                 html: obterIconeVeiculoHTML(t.tipo_veiculo, true),
+                                 iconSize: [36, 36],
+                                 iconAnchor: [18, 18]
+                             };
                             
                             const trackerIdKey = this.getDriverIdKey(t);
                             activeIdsSet.add(trackerIdKey);

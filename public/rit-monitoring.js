@@ -128,6 +128,43 @@
     </div>
     `;
 
+    function obterIconeVeiculoHTML(tipo, isActive) {
+        const t = String(tipo || '').toLowerCase();
+        let filename = 'passeio.png'; // default fallback
+
+        // Mapeamento oficial dos tipos de veículos
+        if (t.includes('blindado')) {
+            filename = 'passeio_blindado.png';
+        } else if (t.includes('mixto') || t.includes('misto')) {
+            filename = 'furgao_mixto.png';
+        } else if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) {
+            filename = 'onibus.png';
+        } else if (t.includes('van') || t.includes('combi') || t.includes('camarim')) {
+            filename = 'van.png';
+        } else if (t.includes('furgao') || t.includes('furgão') || t.includes('fiorino') || t.includes('cargo') || t.includes('kangoo') || t.includes('doblo')) {
+            filename = 'furgao.png';
+        } else if (t.includes('caminhao') || t.includes('caminhão') || t.includes('truck') || t.includes('figurino')) {
+            filename = 'caminhao.png';
+        } else if (t.includes('pickup') || t.includes('picap') || t.includes('picape') || t.includes('toro') || t.includes('hilux') || t.includes('s10') || t.includes('ranger')) {
+            filename = 'pickup.png';
+        } else if (t.includes('suv') || t.includes('renegade') || t.includes('compass') || t.includes('creta') || t.includes('hrv') || t.includes('tracker')) {
+            filename = 'suv.png';
+        } else {
+            filename = 'passeio.png';
+        }
+
+        const glowColor = isActive ? '#00ffaa' : '#ffaa00';
+        const activeStyle = isActive 
+            ? `filter: drop-shadow(0 0 6px ${glowColor}) brightness(1.1); animation: vehiclePulse 2s infinite ease-in-out;` 
+            : `filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) grayscale(0.2);`;
+
+        return `
+            <div style="width: 36px; height: 36px; display: flex; justify-content: center; align-items: center;">
+                <img src="/img/veiculos/${filename}" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none; ${activeStyle}" alt="${t}" />
+            </div>
+        `;
+    }
+
     class RitMonitoringController {
         constructor() {
             this.map = null;
@@ -503,9 +540,9 @@
                 // Custom DivIcon style to represent driver
                 const icon = L.divIcon({
                     className: 'rit-map-marker',
-                    html: `<div style="background-color:#10B981; width:22px; height:22px; border-radius:50%; border:2.5px solid #fff; box-shadow:0 0 10px #10B981; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-car-side" style="color:#000; font-size:9px;"></i></div>`,
-                    iconSize: [22, 22],
-                    iconAnchor: [11, 11]
+                    html: obterIconeVeiculoHTML(match.tipoVeiculo || t.tipo_veiculo, true),
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
                 });
 
                 if (t.lat && t.lng) {

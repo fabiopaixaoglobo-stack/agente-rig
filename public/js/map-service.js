@@ -65,8 +65,8 @@ export class MapService {
                 iconObj = L.divIcon({
                     className: 'leaflet-custom-marker',
                     html: iconOptions.html,
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14]
+                    iconSize: iconOptions.iconSize || [28, 28],
+                    iconAnchor: iconOptions.iconAnchor || [14, 14]
                 });
             } else {
                 const color = iconOptions.fillColor || '#EF4444';
