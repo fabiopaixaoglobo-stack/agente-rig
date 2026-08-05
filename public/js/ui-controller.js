@@ -89,7 +89,7 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
     
     const prioridade = a.prioridade || (programa.includes('ALTO') || programa.includes('VIP') ? 'ALTA' : 'MÉDIA');
     const previsao = a.previsao || (horarioFim ? horarioFim : 'N/D');
-    const atendimentoId = a.id || 'N/D';
+    const atendimentoId = a.id || activeTracker?.id_rota || activeTracker?.id || 'N/D';
 
     // Data do atendimento
     const dateFormatted = a.data_atendimento || (activeTracker ? activeTracker.data_atendimento : null) || extrairDataDeHorario(horarioInicio);
@@ -153,10 +153,11 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
                 <span>Passageiro: ${passageiro}</span>
             </div>
         </div>
-        <div class="premium-rit-details-actions">
-            <button class="btn-primary" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
-            <button class="btn-secondary" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
-            <button class="btn-close" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
+        <div class="premium-rit-details-actions" style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <button class="btn-primary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
+            <button class="btn-primary" style="flex: 1; min-width: 80px; background: #00d1ff; color: #071018;" onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
+            <button class="btn-close" style="flex: 1; min-width: 80px;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
 }
