@@ -856,8 +856,9 @@ app.post('/api/gps/update', async (req, res) => {
         );
 
         // Gravação da trilha GPS em tempo real na tabela de histórico
-        if (id_rota) {
-            const rResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [id_rota]);
+        const idAtendimentoInt = parseInt(id_rota, 10);
+        if (id_rota && !isNaN(idAtendimentoInt)) {
+            const rResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimentoInt]);
             const statusAt = rResult.rows[0]?.status_atendimento;
 
             if (statusAt !== 'FINALIZADO') {
@@ -866,7 +867,7 @@ app.post('/api/gps/update', async (req, res) => {
                 const vel = parseFloat(speed) || 0;
 
                 // Verifica se é o primeiro ponto da rota
-                const countPointsRes = await pool.query('SELECT COUNT(*) FROM gps_historico_atendimento WHERE id_atendimento = $1', [id_rota]);
+                const countPointsRes = await pool.query('SELECT COUNT(*) FROM gps_historico_atendimento WHERE id_atendimento = $1', [idAtendimentoInt]);
                 const isFirst = parseInt(countPointsRes.rows[0].count, 10) === 0;
 
                 let tipoEv = 'GPS';
@@ -880,20 +881,20 @@ app.post('/api/gps/update', async (req, res) => {
                     `INSERT INTO gps_historico_atendimento 
                      (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
                      VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)`,
-                    [id_rota, lat, lng, vel, pr, statusAt || 'EM_TRANSITO', tipoEv, fl]
+                    [idAtendimentoInt, lat, lng, vel, pr, statusAt || 'EM_TRANSITO', tipoEv, fl]
                 );
             }
         }
 
         // Se passar id_rota e status_atendimento, atualiza o status de atendimento
-        if (id_rota && status_atendimento) {
+        if (id_rota && !isNaN(idAtendimentoInt) && status_atendimento) {
             // Verifica o status anterior para evitar duplicidade de logs no histórico
-            const statusResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [id_rota]);
+            const statusResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimentoInt]);
             const prevStatus = statusResult.rows[0]?.status_atendimento;
 
             await pool.query(
                 `UPDATE rotas_importadas SET status_atendimento = $1 WHERE id = $2`,
-                [status_atendimento, id_rota]
+                [status_atendimento, idAtendimentoInt]
             );
 
             if (prevStatus !== status_atendimento) {
@@ -907,7 +908,7 @@ app.post('/api/gps/update', async (req, res) => {
                     );
                     await pool.query(
                         "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Veículo vinculado', NOW() - INTERVAL '2 minutes')",
-                        [id_rota]
+                        [idAtendimentoInt]
                     );
                 }
 
@@ -918,7 +919,7 @@ app.post('/api/gps/update', async (req, res) => {
 
                 await pool.query(
                     'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
-                    [id_rota, eventText]
+                    [idAtendimentoInt, eventText]
                 );
             }
             
@@ -928,7 +929,7 @@ app.post('/api/gps/update', async (req, res) => {
                     `INSERT INTO gps_historico_atendimento 
                      (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
                      VALUES ($1, $2, $3, 0, NOW(), 10, 'FINALIZADO', 'FIM', 'GPS')`,
-                    [id_rota, lat, lng]
+                    [idAtendimentoInt, lat, lng]
                 );
                 await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
             }
