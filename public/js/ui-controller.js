@@ -5,7 +5,134 @@ import { parseDataHora } from './data-service.js';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
-function obterIconeVeiculoHTML(tipo, isActive) {
+function getPremiumRitStatus(a, isActive, activeTracker) {
+    if (!isActive) {
+        return {
+            label: 'SEM COMUNICAÇÃO',
+            className: 'status-sem-comunicacao',
+            color: '#9CA3AF'
+        };
+    }
+    const statusAtendimento = (a && a.statusAtendimento) || (activeTracker && activeTracker.status_atendimento) || 'EM_TRANSITO';
+    const speed = activeTracker ? (activeTracker.speed || 0) : 0;
+    
+    if (statusAtendimento === 'PAUSADO') {
+        return {
+            label: 'ATENÇÃO',
+            className: 'status-atencao',
+            color: '#FBBF24'
+        };
+    }
+    if (speed > 80) {
+        return {
+            label: 'ALERTA',
+            className: 'status-alerta',
+            color: '#EF4444'
+        };
+    }
+    if (speed > 0) {
+        return {
+            label: 'COMPARTILHANDO LOCALIZAÇÃO',
+            className: 'status-compartilhando',
+            color: '#3B82F6'
+        };
+    }
+    return {
+        label: 'ONLINE',
+        className: 'status-online',
+        color: '#22C55E'
+    };
+}
+
+function exibirPainelAtendimento(a, isActive, activeTracker) {
+    let panel = document.getElementById('premium-rit-details-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'premium-rit-details-panel';
+        panel.className = 'premium-rit-details-panel';
+        document.body.appendChild(panel);
+    }
+    
+    const motoristaName = a.motorista || (activeTracker ? activeTracker.motorista_name : 'Motorista');
+    const programa = a.programa || (activeTracker ? activeTracker.programa : 'GERAL');
+    const placa = a.placa || (activeTracker ? activeTracker.placa : 'N/D');
+    const tipoVeiculo = a.tipoVeiculo || (activeTracker ? activeTracker.tipo_veiculo : 'N/D');
+    const passageiro = a.passageiro || (activeTracker ? activeTracker.passageiro : 'Não informado');
+    const telefone = a.telefone || (activeTracker ? activeTracker.motorista_telefone : 'N/D');
+    const origem = a.origem || (activeTracker ? activeTracker.origem : 'Não informado');
+    const destino = a.destino || (activeTracker ? activeTracker.destino : 'Não informado');
+    const horarioInicio = a.dataHoraInicioRaw || (activeTracker ? activeTracker.horario : 'N/D');
+    const horarioFim = a.dataHoraFimRaw || (activeTracker ? activeTracker.horario_termino : 'N/D');
+    const statusInfo = getPremiumRitStatus(a, isActive, activeTracker);
+    
+    const prioridade = a.prioridade || (programa.includes('ALTO') || programa.includes('VIP') ? 'ALTA' : 'MÉDIA');
+    const previsao = a.previsao || (horarioFim ? horarioFim : 'N/D');
+    const atendimentoId = a.id || 'N/D';
+    
+    panel.style.display = 'flex';
+    panel.innerHTML = `
+        <div class="premium-rit-details-header">
+            <h3>ATENDIMENTO #${atendimentoId} | ${programa}</h3>
+            <button class="close-btn" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">&times;</button>
+        </div>
+        <div class="premium-rit-details-grid">
+            <div class="premium-rit-details-item">
+                <label>Veículo</label>
+                <span>${tipoVeiculo}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Origem</label>
+                <span>${origem}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Placa</label>
+                <span>${placa}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Destino</label>
+                <span>${destino}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Status</label>
+                <span style="color: ${statusInfo.color}; font-weight: 800;">● ${statusInfo.label}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Horário de Início</label>
+                <span>${horarioInicio}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Motorista</label>
+                <span>${motoristaName}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Previsão</label>
+                <span>${previsao}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Telefone</label>
+                <span>${telefone}</span>
+            </div>
+            <div class="premium-rit-details-item">
+                <label>Prioridade</label>
+                <span style="color: ${prioridade === 'ALTA' ? '#EF4444' : '#FBBF24'}; font-weight: 700;">${prioridade}</span>
+            </div>
+            <div class="premium-rit-details-item" style="grid-column: span 2;">
+                <label>Observações</label>
+                <span>Passageiro: ${passageiro}</span>
+            </div>
+        </div>
+        <div class="premium-rit-details-actions">
+            <button class="btn-primary" onclick="alert('Detalhes do atendimento #${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" onclick="alert('Histórico de rotas do atendimento #${atendimentoId}')">Histórico</button>
+            <button class="btn-close" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
+        </div>
+    `;
+}
+
+window.getPremiumRitStatus = getPremiumRitStatus;
+window.exibirPainelAtendimento = exibirPainelAtendimento;
+
+function obterIconeVeiculoHTML(tipo, isActive, a, activeTracker) {
     const t = String(tipo || '').toLowerCase();
     let filename = 'passeio.png'; // default fallback
 
@@ -30,15 +157,18 @@ function obterIconeVeiculoHTML(tipo, isActive) {
         filename = 'passeio.png';
     }
 
-    const glowColor = isActive ? '#00ffaa' : '#ffaa00';
-    const activeStyle = isActive 
-        ? `filter: drop-shadow(0 0 6px ${glowColor}) brightness(1.1); animation: vehiclePulse 2s infinite ease-in-out;` 
-        : `filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) grayscale(0.2);`;
+    const statusInfo = getPremiumRitStatus(a, isActive, activeTracker);
 
     return `
-        <div style="position: relative; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; ${activeStyle}">
-            <div class="vehicle-icon-background" style="position: absolute; width: 29px; height: 29px; background: #FFFFFF; border-radius: 50%; z-index: 1; overflow: hidden;"></div>
-            <img src="/img/veiculos/${filename}" style="position: absolute; width: 100%; height: 100%; z-index: 2; object-fit: contain; pointer-events: none;" alt="${t}" />
+        <div class="premium-rit-marker ${statusInfo.className}" style="--premium-status-color: ${statusInfo.color};">
+            <div class="premium-rit-outer-ring">
+                <div class="premium-rit-inner-ring">
+                    <div class="premium-rit-vehicle-area">
+                        <img class="premium-rit-vehicle-img" src="/img/veiculos/${filename}" alt="${t}" />
+                    </div>
+                </div>
+            </div>
+            <span class="premium-rit-status-dot"></span>
         </div>
     `;
 }
@@ -932,7 +1062,7 @@ export class UiController {
                     const popupHtml = this.obterHtmlPopupAtendimento(a, isActive, activeTracker);
  
                     const pinSymbol = {
-                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive),
+                        html: obterIconeVeiculoHTML(a.tipoVeiculo, isActive, a, activeTracker),
                         iconSize: [36, 36],
                         iconAnchor: [18, 18]
                     };
@@ -945,7 +1075,55 @@ export class UiController {
                         marker.on('click', () => {
                             this.activeGpsPopupDriver = a.motorista;
                             this.activeGpsPopupMode = 'TODOS';
+                            exibirPainelAtendimento(a, isActive, activeTracker);
                         });
+
+                        // Tooltip com delay aproximado de 300ms
+                        let hoverTimeout;
+                        marker.on('mouseover', (e) => {
+                            hoverTimeout = setTimeout(() => {
+                                const statusInfo = getPremiumRitStatus(a, isActive, activeTracker);
+                                const t = String(a.tipoVeiculo || '').toLowerCase();
+                                let filename = 'passeio.png';
+                                if (t.includes('blindado')) filename = 'passeio_blindado.png';
+                                else if (t.includes('mixto') || t.includes('misto')) filename = 'furgao_mixto.png';
+                                else if (t.includes('onibus') || t.includes('ônibus') || t.includes('bus') || t.includes('micro')) filename = 'onibus.png';
+                                else if (t.includes('van')) filename = 'van.png';
+                                else if (t.includes('furgao') || t.includes('furgão')) filename = 'furgao.png';
+                                else if (t.includes('caminhao') || t.includes('caminhão')) filename = 'caminhao.png';
+                                else if (t.includes('pickup')) filename = 'pickup.png';
+                                else if (t.includes('suv')) filename = 'suv.png';
+
+                                const tooltipHtml = `
+                                    <div class="premium-rit-tooltip" style="--premium-status-color: ${statusInfo.color};">
+                                        <div class="premium-rit-tooltip-image">
+                                            <img src="/img/veiculos/${filename}" alt="${a.tipoVeiculo}" />
+                                        </div>
+                                        <div class="premium-rit-tooltip-content">
+                                            <strong>${String(a.tipoVeiculo || 'VEÍCULO').toUpperCase()}</strong>
+                                            <span>${a.placa || 'N/D'}</span>
+                                            <span class="status-line">
+                                                <i class="status-dot"></i> ${statusInfo.label}
+                                            </span>
+                                            <span>${a.bairro || 'Rio de Janeiro'}</span>
+                                        </div>
+                                    </div>
+                                `;
+                                marker.bindTooltip(tooltipHtml, {
+                                    direction: 'right',
+                                    permanent: false,
+                                    sticky: false,
+                                    opacity: 0.96,
+                                    className: 'premium-rit-tooltip-container'
+                                }).openTooltip();
+                            }, 300);
+                        });
+
+                        marker.on('mouseout', (e) => {
+                            clearTimeout(hoverTimeout);
+                            marker.closeTooltip();
+                        });
+
                         a._marker = marker;
                     }
                 }
@@ -1196,10 +1374,15 @@ export class UiController {
                         const activeIdsSet = new Set();
                         
                         data.trackers.forEach(t => {
-                            const popupHtml = this.obterHtmlPopupAtendimento({}, true, t);
+                            const match = (this.dataService.baseAtendimentos || []).find(a => 
+                                (a.motorista || '').trim().toLowerCase() === (t.motorista_name || '').trim().toLowerCase() ||
+                                (t.id_rota && String(t.id_rota) === String(a.id))
+                            ) || {};
+
+                            const popupHtml = this.obterHtmlPopupAtendimento(match, true, t);
                             
                             const pinSymbol = {
-                                 html: obterIconeVeiculoHTML(t.tipo_veiculo, true),
+                                 html: obterIconeVeiculoHTML(t.tipo_veiculo, true, match, t),
                                  iconSize: [36, 36],
                                  iconAnchor: [18, 18]
                              };
@@ -1209,9 +1392,59 @@ export class UiController {
 
                             const marker = this.mapService.updateOrAddMarker(trackerIdKey, t.lat, t.lng, popupHtml, pinSymbol);
                             if (marker) {
+                                marker.off('click'); // remove old click listener
                                 marker.on('click', () => {
                                     this.activeGpsPopupDriver = t.motorista_name;
                                     this.activeGpsPopupMode = 'ONLINE';
+                                    exibirPainelAtendimento(match, true, t);
+                                });
+
+                                // Tooltip com delay aproximado de 300ms
+                                let hoverTimeout;
+                                marker.off('mouseover');
+                                marker.on('mouseover', (e) => {
+                                    hoverTimeout = setTimeout(() => {
+                                        const statusInfo = getPremiumRitStatus(match, true, t);
+                                        const vt = String(t.tipo_veiculo || match.tipoVeiculo || '').toLowerCase();
+                                        let filename = 'passeio.png';
+                                        if (vt.includes('blindado')) filename = 'passeio_blindado.png';
+                                        else if (vt.includes('mixto') || vt.includes('misto')) filename = 'furgao_mixto.png';
+                                        else if (vt.includes('onibus') || vt.includes('ônibus') || vt.includes('bus') || vt.includes('micro')) filename = 'onibus.png';
+                                        else if (vt.includes('van')) filename = 'van.png';
+                                        else if (vt.includes('furgao') || vt.includes('furgão')) filename = 'furgao.png';
+                                        else if (vt.includes('caminhao') || vt.includes('caminhão')) filename = 'caminhao.png';
+                                        else if (vt.includes('pickup')) filename = 'pickup.png';
+                                        else if (vt.includes('suv')) filename = 'suv.png';
+
+                                        const tooltipHtml = `
+                                            <div class="premium-rit-tooltip" style="--premium-status-color: ${statusInfo.color};">
+                                                <div class="premium-rit-tooltip-image">
+                                                    <img src="/img/veiculos/${filename}" alt="${t.tipo_veiculo}" />
+                                                </div>
+                                                <div class="premium-rit-tooltip-content">
+                                                    <strong>${String(t.tipo_veiculo || match.tipoVeiculo || 'VEÍCULO').toUpperCase()}</strong>
+                                                    <span>${t.placa || match.placa || 'N/D'}</span>
+                                                    <span class="status-line">
+                                                        <i class="status-dot"></i> ${statusInfo.label}
+                                                    </span>
+                                                    <span>${match.bairro || 'Rio de Janeiro'}</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                        marker.bindTooltip(tooltipHtml, {
+                                            direction: 'right',
+                                            permanent: false,
+                                            sticky: false,
+                                            opacity: 0.96,
+                                            className: 'premium-rit-tooltip-container'
+                                        }).openTooltip();
+                                    }, 300);
+                                });
+
+                                marker.off('mouseout');
+                                marker.on('mouseout', (e) => {
+                                    clearTimeout(hoverTimeout);
+                                    marker.closeTooltip();
                                 });
                             }
                         });

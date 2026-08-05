@@ -128,7 +128,7 @@
     </div>
     `;
 
-    function obterIconeVeiculoHTML(tipo, isActive) {
+    function obterIconeVeiculoHTML(tipo, isActive, a, activeTracker) {
         const t = String(tipo || '').toLowerCase();
         let filename = 'passeio.png'; // default fallback
 
@@ -153,15 +153,22 @@
             filename = 'passeio.png';
         }
 
-        const glowColor = isActive ? '#00ffaa' : '#ffaa00';
-        const activeStyle = isActive 
-            ? `filter: drop-shadow(0 0 6px ${glowColor}) brightness(1.1); animation: vehiclePulse 2s infinite ease-in-out;` 
-            : `filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)) grayscale(0.2);`;
+        const statusInfo = window.getPremiumRitStatus ? window.getPremiumRitStatus(a, isActive, activeTracker) : {
+            label: isActive ? 'ONLINE' : 'SEM COMUNICAÇÃO',
+            className: isActive ? 'status-online' : 'status-sem-comunicacao',
+            color: isActive ? '#22C55E' : '#9CA3AF'
+        };
 
         return `
-            <div style="position: relative; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; ${activeStyle}">
-                <div class="vehicle-icon-background" style="position: absolute; width: 29px; height: 29px; background: #FFFFFF; border-radius: 50%; z-index: 1; overflow: hidden;"></div>
-                <img src="/img/veiculos/${filename}" style="position: absolute; width: 100%; height: 100%; z-index: 2; object-fit: contain; pointer-events: none;" alt="${t}" />
+            <div class="premium-rit-marker ${statusInfo.className}" style="--premium-status-color: ${statusInfo.color};">
+                <div class="premium-rit-outer-ring">
+                    <div class="premium-rit-inner-ring">
+                        <div class="premium-rit-vehicle-area">
+                            <img class="premium-rit-vehicle-img" src="/img/veiculos/${filename}" alt="${t}" />
+                        </div>
+                    </div>
+                </div>
+                <span class="premium-rit-status-dot"></span>
             </div>
         `;
     }
@@ -541,7 +548,7 @@
                 // Custom DivIcon style to represent driver
                 const icon = L.divIcon({
                     className: 'rit-map-marker',
-                    html: obterIconeVeiculoHTML(match.tipoVeiculo || t.tipo_veiculo, true),
+                    html: obterIconeVeiculoHTML(match.tipoVeiculo || t.tipo_veiculo, true, match, t),
                     iconSize: [36, 36],
                     iconAnchor: [18, 18]
                 });
@@ -552,6 +559,61 @@
                     
                     marker.on('popupopen', () => {
                         this.reverseGeocode(t.lat, t.lng, `rit-addr-${name.replace(/\s+/g, '-')}`);
+                    });
+
+                    marker.on('click', () => {
+                        if (window.exibirPainelAtendimento) {
+                            window.exibirPainelAtendimento(match, true, t);
+                        }
+                    });
+
+                    // Tooltip com delay aproximado de 300ms
+                    let hoverTimeout;
+                    marker.on('mouseover', (e) => {
+                        hoverTimeout = setTimeout(() => {
+                            const statusInfo = window.getPremiumRitStatus ? window.getPremiumRitStatus(match, true, t) : {
+                                label: 'ONLINE',
+                                color: '#22C55E'
+                            };
+                            const vt = String(match.tipoVeiculo || t.tipo_veiculo || '').toLowerCase();
+                            let filename = 'passeio.png';
+                            if (vt.includes('blindado')) filename = 'passeio_blindado.png';
+                            else if (vt.includes('mixto') || vt.includes('misto')) filename = 'furgao_mixto.png';
+                            else if (vt.includes('onibus') || vt.includes('ônibus') || vt.includes('bus') || vt.includes('micro')) filename = 'onibus.png';
+                            else if (vt.includes('van')) filename = 'van.png';
+                            else if (vt.includes('furgao') || vt.includes('furgão')) filename = 'furgao.png';
+                            else if (vt.includes('caminhao') || vt.includes('caminhão')) filename = 'caminhao.png';
+                            else if (vt.includes('pickup')) filename = 'pickup.png';
+                            else if (vt.includes('suv')) filename = 'suv.png';
+
+                            const tooltipHtml = `
+                                <div class="premium-rit-tooltip" style="--premium-status-color: ${statusInfo.color};">
+                                    <div class="premium-rit-tooltip-image">
+                                        <img src="/img/veiculos/${filename}" alt="${match.tipoVeiculo || t.tipo_veiculo}" />
+                                    </div>
+                                    <div class="premium-rit-tooltip-content">
+                                        <strong>${String(match.tipoVeiculo || t.tipo_veiculo || 'VEÍCULO').toUpperCase()}</strong>
+                                        <span>${match.placa || t.placa || 'N/D'}</span>
+                                        <span class="status-line">
+                                            <i class="status-dot"></i> ${statusInfo.label}
+                                        </span>
+                                        <span>${match.bairro || 'Rio de Janeiro'}</span>
+                                    </div>
+                                </div>
+                            `;
+                            marker.bindTooltip(tooltipHtml, {
+                                direction: 'right',
+                                permanent: false,
+                                sticky: false,
+                                opacity: 0.96,
+                                className: 'premium-rit-tooltip-container'
+                            }).openTooltip();
+                        }, 300);
+                    });
+
+                    marker.on('mouseout', (e) => {
+                        clearTimeout(hoverTimeout);
+                        marker.closeTooltip();
                     });
 
                     this.markers.set(name, marker);
