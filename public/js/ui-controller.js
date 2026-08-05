@@ -1122,6 +1122,7 @@ export class UiController {
                         marker.on('mouseout', (e) => {
                             clearTimeout(hoverTimeout);
                             marker.closeTooltip();
+                            marker.unbindTooltip();
                         });
 
                         a._marker = marker;
@@ -1445,6 +1446,7 @@ export class UiController {
                                 marker.on('mouseout', (e) => {
                                     clearTimeout(hoverTimeout);
                                     marker.closeTooltip();
+                                    marker.unbindTooltip();
                                 });
                             }
                         });

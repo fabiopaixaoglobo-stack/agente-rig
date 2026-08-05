@@ -614,6 +614,7 @@
                     marker.on('mouseout', (e) => {
                         clearTimeout(hoverTimeout);
                         marker.closeTooltip();
+                        marker.unbindTooltip();
                     });
 
                     this.markers.set(name, marker);

@@ -574,7 +574,6 @@ body {
   border-radius: 50%;
   border: 1.5px solid var(--premium-status-color);
   background: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 1.5px 5px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -604,11 +603,16 @@ body {
 }
 
 .premium-rit-vehicle-img {
-  max-width: 21px; /* 80% of 26px area is ~21px */
-  max-height: 21px;
+  width: 24px !important;
+  height: auto !important;
+  max-width: 24px !important;
+  max-height: 20px !important;
   object-fit: contain;
   display: block;
   pointer-events: none;
+}
+
+.premium-rit-marker:hover .premium-rit-vehicle-img {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
@@ -621,6 +625,9 @@ body {
   border-radius: 50%;
   background: var(--premium-status-color);
   border: 1px solid #1f2937;
+}
+
+.premium-rit-marker:hover .premium-rit-status-dot {
   box-shadow: 0 0.5px 2px rgba(0,0,0,0.3);
 }
 
