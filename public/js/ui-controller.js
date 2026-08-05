@@ -339,6 +339,8 @@ export class UiController {
                         bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
                         dataHoraInicioRaw: r.horario,
                         dataHoraFimRaw: r.horario_termino,
+                        horario: r.horario,
+                        data_atendimento: r.data_atendimento,
                         horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
                         lat: null,
                         lng: null,
@@ -1315,7 +1317,7 @@ export class UiController {
             const pass = escapeHtml(a.passageiro || 'Não informado');
             const p = escapeHtml(a.programa);
 
-            const dateFormatted = a.data_atendimento || extrairDataDeHorario(a.horario);
+            const dateFormatted = a.data_atendimento || (a.horario ? extrairDataDeHorario(a.horario) : null) || (a.dataHoraInicioRaw ? extrairDataDeHorario(a.dataHoraInicioRaw) : null) || 'Data não informada';
             if (dateFormatted === 'Data não informada') {
                 console.warn(`[DATA INCONSISTENTE] Atendimento #${a.id} sem data de atendimento válida na fila lateral.`);
             }
@@ -2719,12 +2721,38 @@ export class UiController {
                 const formattedTime = new Date(pt.data_hora).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
                 poly.bindTooltip(`${formattedTime} | ${Math.round(speed)} km/h`, { sticky: true, className: 'premium-rit-tooltip-mini' });
 
-                // Popup completo ao clicar
+                // Popup completo ao clicar (com geocoding reverso lazily carregado)
+                const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+                const addressId = `track-addr-${pt.id || i}-${i}`;
+
+                poly.on('click', () => {
+                    window._geoAddressCache = window._geoAddressCache || {};
+                    const cachedAddr = window._geoAddressCache[cacheKey];
+                    if (cachedAddr) {
+                        const el = document.getElementById(addressId);
+                        if (el) el.textContent = cachedAddr;
+                    } else {
+                        fetch(`/reverse-geocode?lat=${lat}&lng=${lng}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                const addr = (data && data.ok && data.address) ? data.address : 'Endereço indisponível';
+                                window._geoAddressCache[cacheKey] = addr;
+                                const el = document.getElementById(addressId);
+                                if (el) el.textContent = addr;
+                            })
+                            .catch(() => {
+                                const el = document.getElementById(addressId);
+                                if (el) el.textContent = 'Endereço indisponível';
+                            });
+                    }
+                });
+
                 poly.bindPopup(`
-                    <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b;">
+                    <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b; min-width: 210px;">
                         <strong style="color:#00d1ff; font-size:12px;">📊 Ponto de Telemetria</strong><br>
                         <b>Horário:</b> ${new Date(pt.data_hora).toLocaleString()}<br>
                         <b>Velocidade:</b> ${Math.round(speed)} km/h<br>
+                        <b>🗺️ Endereço:</b> <span id="${addressId}" style="color:#475569; font-weight:bold;">Buscando endereço...</span><br>
                         <b>Precisão:</b> ${pt.precisao} m<br>
                         <b>Fonte:</b> ${pt.fonte_localizacao || 'GPS'}<br>
                         <b>Coordenadas:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}
@@ -2746,7 +2774,36 @@ export class UiController {
                 iconSize: [20, 20],
                 iconAnchor: [10, 10]
             })
-        }).addTo(this.trackLeafletMap).bindPopup("<b>▶ INÍCIO DO COMPARTILHAMENTO</b><br>" + new Date(first.data_hora).toLocaleString());
+        }).addTo(this.trackLeafletMap);
+
+        const startAddrId = `track-addr-start`;
+        startMarker.on('click', () => {
+            const sLat = parseFloat(first.latitude);
+            const sLng = parseFloat(first.longitude);
+            const cacheKey = `${sLat.toFixed(4)},${sLng.toFixed(4)}`;
+            window._geoAddressCache = window._geoAddressCache || {};
+            const cachedAddr = window._geoAddressCache[cacheKey];
+            if (cachedAddr) {
+                const el = document.getElementById(startAddrId);
+                if (el) el.textContent = cachedAddr;
+            } else {
+                fetch(`/reverse-geocode?lat=${sLat}&lng=${sLng}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const addr = (data && data.ok && data.address) ? data.address : 'Endereço indisponível';
+                        window._geoAddressCache[cacheKey] = addr;
+                        const el = document.getElementById(startAddrId);
+                        if (el) el.textContent = addr;
+                    });
+            }
+        });
+        startMarker.bindPopup(`
+            <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b; min-width:200px;">
+                <b>▶ INÍCIO DO COMPARTILHAMENTO</b><br>
+                <b>Horário:</b> ${new Date(first.data_hora).toLocaleString()}<br>
+                <b>Endereço:</b> <span id="${startAddrId}" style="color:#475569; font-weight:bold;">Buscando endereço...</span>
+            </div>
+        `);
         this.trackOverlays.push(startMarker);
 
         const endMarker = L.marker([parseFloat(last.latitude), parseFloat(last.longitude)], {
@@ -2756,7 +2813,36 @@ export class UiController {
                 iconSize: [20, 20],
                 iconAnchor: [10, 10]
             })
-        }).addTo(this.trackLeafletMap).bindPopup("<b>■ FIM DO COMPARTILHAMENTO</b><br>" + new Date(last.data_hora).toLocaleString());
+        }).addTo(this.trackLeafletMap);
+
+        const endAddrId = `track-addr-end`;
+        endMarker.on('click', () => {
+            const eLat = parseFloat(last.latitude);
+            const eLng = parseFloat(last.longitude);
+            const cacheKey = `${eLat.toFixed(4)},${eLng.toFixed(4)}`;
+            window._geoAddressCache = window._geoAddressCache || {};
+            const cachedAddr = window._geoAddressCache[cacheKey];
+            if (cachedAddr) {
+                const el = document.getElementById(endAddrId);
+                if (el) el.textContent = cachedAddr;
+            } else {
+                fetch(`/reverse-geocode?lat=${eLat}&lng=${eLng}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const addr = (data && data.ok && data.address) ? data.address : 'Endereço indisponível';
+                        window._geoAddressCache[cacheKey] = addr;
+                        const el = document.getElementById(endAddrId);
+                        if (el) el.textContent = addr;
+                    });
+            }
+        });
+        endMarker.bindPopup(`
+            <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b; min-width:200px;">
+                <b>■ FIM DO COMPARTILHAMENTO</b><br>
+                <b>Horário:</b> ${new Date(last.data_hora).toLocaleString()}<br>
+                <b>Endereço:</b> <span id="${endAddrId}" style="color:#475569; font-weight:bold;">Buscando endereço...</span>
+            </div>
+        `);
         this.trackOverlays.push(endMarker);
 
         // Marcadores de paradas intermediarias
@@ -2764,6 +2850,8 @@ export class UiController {
             if (pt.tipo_evento === 'PARADA' && idx > 0) {
                 const pLat = parseFloat(pt.latitude);
                 const pLng = parseFloat(pt.longitude);
+                const stopAddrId = `track-addr-stop-${pt.id || idx}-${idx}`;
+
                 const stopMarker = L.marker([pLat, pLng], {
                     icon: L.divIcon({
                         className: 'custom-track-marker-icon',
@@ -2771,7 +2859,34 @@ export class UiController {
                         iconSize: [16, 16],
                         iconAnchor: [8, 8]
                     })
-                }).addTo(this.trackLeafletMap).bindPopup(`<b>⏸ PARADA OPERACIONAL DETECTADA</b><br>Horário: ${new Date(pt.data_hora).toLocaleTimeString()}`);
+                }).addTo(this.trackLeafletMap);
+
+                stopMarker.on('click', () => {
+                    const cacheKey = `${pLat.toFixed(4)},${pLng.toFixed(4)}`;
+                    window._geoAddressCache = window._geoAddressCache || {};
+                    const cachedAddr = window._geoAddressCache[cacheKey];
+                    if (cachedAddr) {
+                        const el = document.getElementById(stopAddrId);
+                        if (el) el.textContent = cachedAddr;
+                    } else {
+                        fetch(`/reverse-geocode?lat=${pLat}&lng=${pLng}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                const addr = (data && data.ok && data.address) ? data.address : 'Endereço indisponível';
+                                window._geoAddressCache[cacheKey] = addr;
+                                const el = document.getElementById(stopAddrId);
+                                if (el) el.textContent = addr;
+                            });
+                    }
+                });
+
+                stopMarker.bindPopup(`
+                    <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b; min-width:200px;">
+                        <b>⏸ PARADA OPERACIONAL DETECTADA</b><br>
+                        <b>Horário:</b> ${new Date(pt.data_hora).toLocaleTimeString()}<br>
+                        <b>Endereço:</b> <span id="${stopAddrId}" style="color:#475569; font-weight:bold;">Buscando endereço...</span>
+                    </div>
+                `);
                 this.trackOverlays.push(stopMarker);
             }
         });
