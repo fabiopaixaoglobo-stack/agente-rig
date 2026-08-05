@@ -660,7 +660,39 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
 
         // Trilha GPS
         const trackRes = await pool.query('SELECT * FROM gps_historico_atendimento WHERE id_atendimento = $1 ORDER BY data_hora ASC', [id]);
-        const points = trackRes.rows;
+        let points = trackRes.rows;
+
+        // Se a trilha está vazia, mas o motorista tem uma posição ativa, inicializamos o início retroativo
+        if (points.length === 0) {
+            const posRes = await pool.query(
+                `SELECT p.* FROM posicoes_motoristas p 
+                 JOIN rotas_importadas r ON (p.motorista_name || '') = (r.motorista_nome || '')
+                 WHERE r.id = $1`, [id]
+            );
+            if (posRes.rows.length > 0) {
+                const pos = posRes.rows[0];
+                const newPt = {
+                    id_atendimento: id,
+                    latitude: parseFloat(pos.lat),
+                    longitude: parseFloat(pos.lng),
+                    velocidade: parseFloat(pos.speed) || 0,
+                    data_hora: pos.timestamp || new Date(),
+                    precisao: 10,
+                    status: rota.status_atendimento || 'EM_TRANSITO',
+                    tipo_evento: 'INICIO',
+                    fonte_localizacao: 'GPS'
+                };
+                points = [newPt];
+
+                // Salva no banco para que o histórico continue gravando a partir daqui
+                await pool.query(
+                    `INSERT INTO gps_historico_atendimento 
+                     (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
+                     VALUES ($1, $2, $3, $4, $5, 10, $6, 'INICIO', 'GPS')`,
+                    [id, pos.lat, pos.lng, pos.speed || 0, pos.timestamp || new Date(), rota.status_atendimento || 'EM_TRANSITO']
+                );
+            }
+        }
 
         // Metadados básicos
         const metadata = {

@@ -2616,8 +2616,14 @@ export class UiController {
             const meta = this.trackMetadata;
             
             let classColor = '#22C55E';
-            if (m.classificacao === 'Possível Desvio' || m.classificacao === 'Tempo Parado Elevado') classColor = '#F59E0B';
-            if (m.classificacao === 'Falha de Sinal' || m.classificacao === 'Velocidade Excessiva') classColor = '#EF4444';
+            let labelClass = m.classificacao;
+            if (m.total_pontos <= 1) {
+                classColor = '#00d1ff';
+                labelClass = '📡 Rastreamento Ativo';
+            } else {
+                if (m.classificacao === 'Possível Desvio' || m.classificacao === 'Tempo Parado Elevado') classColor = '#F59E0B';
+                if (m.classificacao === 'Falha de Sinal' || m.classificacao === 'Velocidade Excessiva') classColor = '#EF4444';
+            }
             
             panel.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px;">
@@ -2647,7 +2653,7 @@ export class UiController {
                 </div>
                 <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding-left:4px;">
                     <span style="font-size:9px; color:#8a99a8; text-transform:uppercase; margin-bottom:4px;">Classificação CCO</span>
-                    <span style="background:${classColor}; color:#071018; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${m.classificacao}</span>
+                    <span style="background:${classColor}; color:#071018; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${labelClass}</span>
                 </div>
             `;
         }
