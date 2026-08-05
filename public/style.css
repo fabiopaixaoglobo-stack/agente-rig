@@ -555,6 +555,11 @@ body {
   transform-origin: center center;
   transition: transform 200ms ease-out, filter 200ms ease-out;
   z-index: 10;
+  box-sizing: border-box;
+}
+
+.premium-rit-marker * {
+  box-sizing: border-box;
 }
 
 .premium-rit-marker:hover {
@@ -567,9 +572,9 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid var(--premium-status-color);
+  border: 1.5px solid var(--premium-status-color);
   background: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1.5px 5px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -577,46 +582,46 @@ body {
 }
 
 .premium-rit-inner-ring {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1.5px solid var(--premium-status-color);
   background: rgba(255, 255, 255, 0.62);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .premium-rit-vehicle-area {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .premium-rit-vehicle-img {
-  max-width: 34px;
-  max-height: 27px;
+  max-width: 21px; /* 80% of 26px area is ~21px */
+  max-height: 21px;
   object-fit: contain;
   display: block;
   pointer-events: none;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
 .premium-rit-status-dot {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 9px;
-  height: 9px;
+  top: -1px;
+  right: -1px;
+  width: 7.5px;
+  height: 7.5px;
   border-radius: 50%;
   background: var(--premium-status-color);
-  border: 1.5px solid #1f2937;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+  border: 1px solid #1f2937;
+  box-shadow: 0 0.5px 2px rgba(0,0,0,0.3);
 }
 
 .premium-rit-marker:hover .premium-rit-outer-ring {
