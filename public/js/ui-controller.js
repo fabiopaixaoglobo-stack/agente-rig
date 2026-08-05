@@ -1211,11 +1211,16 @@ export class UiController {
 
                     const marker = this.mapService.updateOrAddMarker(driverIdKey, plotLat, plotLng, popupHtml, pinSymbol);
                     if (marker) {
-                        marker.on('click', () => {
+                        if (marker._customClick) {
+                            marker.off('click', marker._customClick);
+                        }
+                        const clickHandler = () => {
                             this.activeGpsPopupDriver = a.motorista;
                             this.activeGpsPopupMode = 'TODOS';
                             exibirPainelAtendimento(a, isActive, activeTracker);
-                        });
+                        };
+                        marker._customClick = clickHandler;
+                        marker.on('click', clickHandler);
 
                         // Tooltip com delay aproximado de 300ms
                         let hoverTimeout;
@@ -1515,6 +1520,7 @@ export class UiController {
                 .then(r => r.json())
                 .then(data => {
                     if (data.ok && this.mapMode === 'ONLINE') {
+                        this.activeTrackers = data.trackers || [];
                         const activeIdsSet = new Set();
                         
                         data.trackers.forEach(t => {
@@ -1536,12 +1542,16 @@ export class UiController {
 
                             const marker = this.mapService.updateOrAddMarker(trackerIdKey, t.lat, t.lng, popupHtml, pinSymbol);
                             if (marker) {
-                                marker.off('click'); // remove old click listener
-                                marker.on('click', () => {
+                                if (marker._customClick) {
+                                    marker.off('click', marker._customClick);
+                                }
+                                const clickHandler = () => {
                                     this.activeGpsPopupDriver = t.motorista_name;
                                     this.activeGpsPopupMode = 'ONLINE';
                                     exibirPainelAtendimento(match, true, t);
-                                });
+                                };
+                                marker._customClick = clickHandler;
+                                marker.on('click', clickHandler);
 
                                 // Tooltip com delay aproximado de 300ms
                                 let hoverTimeout;

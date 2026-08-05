@@ -91,9 +91,16 @@ export class MapService {
                 existingMarker.setIcon(iconObj);
             }
             
-            // 3. Atualiza conteúdo do popup se o DOM do popup não estiver focado
-            if (popupContent && existingMarker.getPopup()) {
-                existingMarker.setPopupContent(popupContent);
+            // 3. Atualiza conteúdo do popup ou vincula se não existir
+            if (popupContent) {
+                if (existingMarker.getPopup()) {
+                    existingMarker.setPopupContent(popupContent);
+                } else {
+                    existingMarker.bindPopup(popupContent, {
+                        autoClose: false,
+                        closeOnClick: false
+                    });
+                }
             }
             
             return existingMarker;
