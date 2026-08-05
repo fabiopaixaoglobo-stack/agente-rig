@@ -666,7 +666,7 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
         if (points.length === 0) {
             const posRes = await pool.query(
                 `SELECT p.* FROM posicoes_motoristas p 
-                 JOIN rotas_importadas r ON (p.motorista_name || '') = (r.motorista_nome || '')
+                 JOIN rotas_importadas r ON p.motorista_nome = r.motorista_nome
                  WHERE r.id = $1`, [id]
             );
             if (posRes.rows.length > 0) {
