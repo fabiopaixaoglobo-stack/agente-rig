@@ -283,6 +283,12 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                         ]
                     );
                     const insertedId = insertResult.rows[0]?.id;
+                    if (insertedId) {
+                        await pool.query(
+                            'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
+                            [insertedId, 'Atendimento criado']
+                        );
+                    }
 
                     resultados.push({
                         id: insertedId,
@@ -358,6 +364,12 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
                     ]
                 );
                 const insertedId = insertResult.rows[0]?.id;
+                if (insertedId) {
+                    await pool.query(
+                        'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
+                        [insertedId, 'Atendimento criado']
+                    );
+                }
 
                 resultados.push({
                     id: insertedId,

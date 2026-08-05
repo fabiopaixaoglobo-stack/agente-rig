@@ -101,6 +101,14 @@ async function initDB() {
         await client.query(`
             ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS ultimo_ping TIMESTAMPTZ;
         `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS historico_atendimentos (
+                id SERIAL PRIMARY KEY,
+                id_atendimento INTEGER NOT NULL,
+                data_hora TIMESTAMPTZ DEFAULT NOW(),
+                evento TEXT NOT NULL
+            );
+        `);
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
     } catch (err) {
         console.error('❌ Erro ao inicializar banco de dados:', err.message);

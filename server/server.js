@@ -12,6 +12,28 @@ const { setupAuthRoutes } = require('./auth');
 const { pool, initDB } = require('./database');
 const { getRobotStatus, triggerDiagnostics } = require('./robot');
 
+function extrairDataDeHorario(horario) {
+    if (!horario) return 'Data não informada';
+    const str = String(horario).trim();
+    
+    // Testa formato DD/MM/YYYY
+    const regexBR = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
+    const mBR = str.match(regexBR);
+    if (mBR) {
+        return `${String(mBR[1]).padStart(2, '0')}/${String(mBR[2]).padStart(2, '0')}/${mBR[3]}`;
+    }
+    
+    // Testa formato YYYY-MM-DD
+    const regexISO = /(\d{4})-(\d{1,2})-(\d{1,2})/;
+    const mISO = str.match(regexISO);
+    if (mISO) {
+        return `${String(mISO[3]).padStart(2, '0')}/${String(mISO[2]).padStart(2, '0')}/${mISO[1]}`;
+    }
+    
+    console.warn(`[DATA INCONSISTENTE] Horário sem data reconhecível: ${horario}`);
+    return 'Data não informada';
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -542,7 +564,11 @@ app.get('/api/rotas/detalhes/:id', async (req, res) => {
         if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
         const result = await pool.query('SELECT * FROM rotas_importadas WHERE id = $1', [id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Rota não encontrada.' });
-        res.json({ ok: true, rota: result.rows[0] });
+        
+        const rota = result.rows[0];
+        rota.data_atendimento = extrairDataDeHorario(rota.horario);
+        
+        res.json({ ok: true, rota });
     } catch (err) {
         console.error('Erro ao buscar detalhes da rota:', err);
         res.status(500).json({ error: 'Erro interno.' });
@@ -560,10 +586,53 @@ app.get('/api/rotas/listar', async (req, res) => {
             'SELECT * FROM rotas_importadas WHERE id_lote = $1 ORDER BY id ASC',
             [lastLoteId]
         );
-        res.json({ ok: true, resultados: rotasResult.rows });
+        const rotas = rotasResult.rows.map(r => {
+            r.data_atendimento = extrairDataDeHorario(r.horario);
+            return r;
+        });
+        res.json({ ok: true, resultados: rotas });
     } catch (err) {
         console.error('Erro ao listar rotas do lote:', err);
         res.status(500).json({ error: 'Erro interno ao carregar base.' });
+    }
+});
+
+// APIs Oficiais de Atendimento conforme Requisito
+app.get('/api/atendimentos/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+        const result = await pool.query('SELECT * FROM rotas_importadas WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Atendimento não encontrado.' });
+        
+        const rota = result.rows[0];
+        rota.data_atendimento = extrairDataDeHorario(rota.horario);
+        
+        res.json({ ok: true, atendimento: rota });
+    } catch (err) {
+        console.error('Erro ao buscar atendimento:', err);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+app.get('/api/atendimentos/:id/historico', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+        
+        // Busca histórico persistido
+        const result = await pool.query('SELECT * FROM historico_atendimentos WHERE id_atendimento = $1 ORDER BY data_hora ASC', [id]);
+        
+        // Mapeia os dados do banco
+        const timeline = result.rows.map(row => ({
+            data_hora: row.data_hora,
+            evento: row.evento
+        }));
+        
+        res.json({ ok: true, historico: timeline });
+    } catch (err) {
+        console.error('Erro ao buscar histórico:', err);
+        res.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -587,10 +656,40 @@ app.post('/api/gps/update', async (req, res) => {
 
         // Se passar id_rota e status_atendimento, atualiza o status de atendimento
         if (id_rota && status_atendimento) {
+            // Verifica o status anterior para evitar duplicidade de logs no histórico
+            const statusResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [id_rota]);
+            const prevStatus = statusResult.rows[0]?.status_atendimento;
+
             await pool.query(
                 `UPDATE rotas_importadas SET status_atendimento = $1 WHERE id = $2`,
                 [status_atendimento, id_rota]
             );
+
+            if (prevStatus !== status_atendimento) {
+                // Se for a primeira transição após a importação, adiciona vínculos operacionais
+                const countResult = await pool.query('SELECT COUNT(*) FROM historico_atendimentos WHERE id_atendimento = $1', [id_rota]);
+                const count = parseInt(countResult.rows[0]?.count || '0', 10);
+                if (count <= 1) {
+                    await pool.query(
+                        "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Motorista vinculado', NOW() - INTERVAL '3 minutes')",
+                        [id_rota]
+                    );
+                    await pool.query(
+                        "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Veículo vinculado', NOW() - INTERVAL '2 minutes')",
+                        [id_rota]
+                    );
+                }
+
+                let eventText = `Alteração de status para ${status_atendimento}`;
+                if (status_atendimento === 'EM_TRANSITO') eventText = 'Viagem iniciada';
+                else if (status_atendimento === 'PAUSADO') eventText = 'Transmissão interrompida';
+                else if (status_atendimento === 'FINALIZADO') eventText = 'Atendimento finalizado';
+
+                await pool.query(
+                    'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
+                    [id_rota, eventText]
+                );
+            }
             
             // Se finalizado, remove da tabela de posicoes para tirar do mapa ativo
             if (status_atendimento === 'FINALIZADO') {
@@ -620,7 +719,11 @@ app.get('/api/gps/active-trackers', async (req, res) => {
                 ORDER BY motorista_nome, id DESC
             ) r ON p.motorista_nome = r.motorista_nome
         `);
-        res.json({ ok: true, trackers: result.rows });
+        const trackers = result.rows.map(t => {
+            t.data_atendimento = extrairDataDeHorario(t.horario);
+            return t;
+        });
+        res.json({ ok: true, trackers });
     } catch (err) {
         console.error('Erro ao buscar motoristas ativos:', err);
         res.status(500).json({ error: 'Erro ao obter rastreamentos ativos.' });

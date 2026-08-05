@@ -499,6 +499,41 @@
     </div>
   </div>
 
+  <!-- Modal Detalhes do Atendimento -->
+  <div id="modalDetalhesAtendimento" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 16px; width: 90%; max-width: 600px; padding: 24px; color: white; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <h3 style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase;"><i class="fa-solid fa-circle-info"></i> Detalhes do Atendimento</h3>
+        <button onclick="document.getElementById('modalDetalhesAtendimento').style.display='none'" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <div id="detalhesContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 4px;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+      <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 8px;">
+        <button onclick="document.getElementById('modalDetalhesAtendimento').style.display='none'" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s;">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Histórico do Atendimento -->
+  <div id="modalHistoricoAtendimento" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 16px; width: 90%; max-width: 500px; padding: 24px; color: white; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <h3 id="historicoHeaderTitle" style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase;"><i class="fa-solid fa-clock-rotate-left"></i> Histórico do Atendimento</h3>
+        <button onclick="document.getElementById('modalHistoricoAtendimento').style.display='none'" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <div id="historicoDataHeader" style="font-size: 13px; font-weight: 700; color: #8a99a8; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; border-left: 3px solid #00d1ff;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+      <div id="historicoContent" style="display: flex; flex-direction: column; gap: 16px; max-height: 350px; overflow-y: auto; padding-right: 4px; padding-left: 8px; margin-top: 8px;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+      <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 8px;">
+        <button onclick="document.getElementById('modalHistoricoAtendimento').style.display='none'" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s;">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
   <script src="session-manager.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>

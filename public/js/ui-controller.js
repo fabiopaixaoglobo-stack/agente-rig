@@ -5,6 +5,28 @@ import { parseDataHora } from './data-service.js';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
 
+function extrairDataDeHorario(horario) {
+    if (!horario) return 'Data não informada';
+    const str = String(horario).trim();
+    
+    // Testa formato DD/MM/YYYY
+    const regexBR = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
+    const mBR = str.match(regexBR);
+    if (mBR) {
+        return `${String(mBR[1]).padStart(2, '0')}/${String(mBR[2]).padStart(2, '0')}/${mBR[3]}`;
+    }
+    
+    // Testa formato YYYY-MM-DD
+    const regexISO = /(\d{4})-(\d{1,2})-(\d{1,2})/;
+    const mISO = str.match(regexISO);
+    if (mISO) {
+        return `${String(mISO[3]).padStart(2, '0')}/${String(mISO[2]).padStart(2, '0')}/${mISO[1]}`;
+    }
+    
+    console.warn(`[DATA INCONSISTENTE] Horário sem data reconhecível: ${horario}`);
+    return 'Data não informada';
+}
+
 function getPremiumRitStatus(a, isActive, activeTracker) {
     if (!isActive) {
         return {
@@ -68,12 +90,22 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
     const prioridade = a.prioridade || (programa.includes('ALTO') || programa.includes('VIP') ? 'ALTA' : 'MÉDIA');
     const previsao = a.previsao || (horarioFim ? horarioFim : 'N/D');
     const atendimentoId = a.id || 'N/D';
+
+    // Data do atendimento
+    const dateFormatted = a.data_atendimento || (activeTracker ? activeTracker.data_atendimento : null) || extrairDataDeHorario(horarioInicio);
+    if (dateFormatted === 'Data não informada') {
+        console.warn(`[DATA INCONSISTENTE] Atendimento #${atendimentoId} sem data de atendimento válida.`);
+    }
     
     panel.style.display = 'flex';
     panel.innerHTML = `
-        <div class="premium-rit-details-header">
-            <h3>ATENDIMENTO #${atendimentoId} | ${programa}</h3>
-            <button class="close-btn" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">&times;</button>
+        <div class="premium-rit-details-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; position: relative;">
+            <button class="close-btn" style="position: absolute; right: 0; top: 0;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">&times;</button>
+            <h3 style="margin: 0; font-size: 13px;">ATENDIMENTO #${atendimentoId}</h3>
+            <div style="font-size: 12px; font-weight: 800; color: #00d1ff; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                <span>📅 ${dateFormatted}</span>
+            </div>
+            <span style="font-size: 10px; color: var(--muted);">${programa}</span>
         </div>
         <div class="premium-rit-details-grid">
             <div class="premium-rit-details-item">
@@ -122,8 +154,8 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
             </div>
         </div>
         <div class="premium-rit-details-actions">
-            <button class="btn-primary" onclick="alert('Detalhes do atendimento #${atendimentoId}')">Ver Detalhes</button>
-            <button class="btn-secondary" onclick="alert('Histórico de rotas do atendimento #${atendimentoId}')">Histórico</button>
+            <button class="btn-primary" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
             <button class="btn-close" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
@@ -384,6 +416,113 @@ export class UiController {
     fecharManualModal() {
         document.getElementById('rit-modal-manual').style.display = 'none';
         document.getElementById('rit-form-manual').reset();
+    }
+
+    async abrirModalDetalhes(id) {
+        try {
+            const resp = await fetch(`/api/atendimentos/${id}`);
+            const data = await resp.json();
+            if (!data.ok || !data.atendimento) {
+                alert("Erro ao buscar detalhes do atendimento.");
+                return;
+            }
+            
+            const a = data.atendimento;
+            const container = document.getElementById("detalhesContent");
+            if (!container) return;
+            
+            const dateFormatted = a.data_atendimento || extrairDataDeHorario(a.horario);
+            if (dateFormatted === 'Data não informada') {
+                console.warn(`[DATA INCONSISTENTE] Atendimento #${a.id} sem data de atendimento.`);
+            }
+            
+            const fields = [
+                { label: "ID Atendimento", val: a.id },
+                { label: "Data do Atendimento", val: `📅 ${dateFormatted}`, highlight: true },
+                { label: "Programa", val: a.programa || "N/D" },
+                { label: "Passageiro", val: a.passageiro || "Não informado" },
+                { label: "Motorista", val: a.motorista_nome || a.motorista || "Não informado" },
+                { label: "Cooperativa", val: a.area || "N/D" },
+                { label: "Veículo", val: a.tipo_veiculo || a.tipoVeiculo || "N/D" },
+                { label: "Placa", val: a.placa_veiculo || a.placa || "N/D" },
+                { label: "Origem", val: a.origem || "Não informado" },
+                { label: "Destino", val: a.destino || "Não informado" },
+                { label: "Horário de Início", val: a.horario || "N/D" },
+                { label: "Horário Previsto", val: a.horario_termino || "N/D" },
+                { label: "Status Operacional", val: a.status_atendimento || a.statusAtendimento || "AGUARDANDO" },
+                { label: "Prioridade", val: a.prioridade || "MÉDIA" },
+                { label: "Observações", val: a.observacoes || "Sem observações" },
+                { label: "Última Atualização", val: a.timestamp ? new Date(a.timestamp).toLocaleString("pt-BR") : "N/D" }
+            ];
+            
+            container.innerHTML = fields.map(f => `
+                <div style="display: flex; flex-direction: column; gap: 4px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); ${f.highlight ? 'border-color: #00d1ff;' : ''}">
+                    <label style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a99a8;">${f.label}</label>
+                    <span style="font-size: 12px; color: ${f.highlight ? '#00d1ff' : 'white'}; font-weight: ${f.highlight ? '800' : 'normal'};">${escapeHtml(String(f.val))}</span>
+                </div>
+            `).join("");
+            
+            document.getElementById("modalDetalhesAtendimento").style.display = "flex";
+        } catch (err) {
+            console.error("Erro ao carregar detalhes:", err);
+            alert("Erro ao buscar detalhes.");
+        }
+    }
+
+    async abrirModalHistorico(id) {
+        try {
+            const respAt = await fetch(`/api/atendimentos/${id}`);
+            const dataAt = await respAt.json();
+            if (!dataAt.ok || !dataAt.atendimento) {
+                alert("Erro ao buscar dados do atendimento.");
+                return;
+            }
+            const a = dataAt.atendimento;
+            const dateFormatted = a.data_atendimento || extrairDataDeHorario(a.horario);
+            
+            const titleEl = document.getElementById("historicoHeaderTitle");
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> Histórico do Atendimento #${id}`;
+            
+            const dataHeader = document.getElementById("historicoDataHeader");
+            if (dataHeader) dataHeader.innerHTML = `📅 Data do Atendimento: ${dateFormatted}`;
+            
+            if (dateFormatted === 'Data não informada') {
+                console.warn(`[DATA INCONSISTENTE] Atendimento #${id} sem data de atendimento.`);
+            }
+
+            const respHist = await fetch(`/api/atendimentos/${id}/historico`);
+            const dataHist = await respHist.json();
+            const container = document.getElementById("historicoContent");
+            if (!container) return;
+            
+            if (!dataHist.ok || !dataHist.historico || dataHist.historico.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #8a99a8; font-size: 13px;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 24px; margin-bottom: 8px; display: block; color: rgba(255,255,255,0.1);"></i>
+                        Nenhum histórico encontrado para este atendimento.
+                    </div>
+                `;
+            } else {
+                container.innerHTML = dataHist.historico.map((h, idx) => {
+                    const dt = new Date(h.data_hora).toLocaleString("pt-BR");
+                    return `
+                        <div style="display: flex; gap: 12px; position: relative; padding-bottom: 8px;">
+                            ${idx < dataHist.historico.length - 1 ? '<div style="position: absolute; left: 6px; top: 12px; bottom: 0; width: 2px; background: rgba(255,255,255,0.08);"></div>' : ''}
+                            <div style="width: 14px; height: 14px; border-radius: 50%; background: #00d1ff; border: 3px solid #0a0f1c; z-index: 2; margin-top: 2px;"></div>
+                            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+                                <span style="font-size: 10px; color: #8a99a8; font-weight: 700;">${dt}</span>
+                                <span style="font-size: 12px; color: white;">${escapeHtml(h.evento)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+            
+            document.getElementById("modalHistoricoAtendimento").style.display = "flex";
+        } catch (err) {
+            console.error("Erro ao carregar histórico:", err);
+            alert("Erro ao buscar histórico.");
+        }
     }
 
     handleManualSubmit(e) {
@@ -1169,6 +1308,11 @@ export class UiController {
             const b = escapeHtml(a.bairro);
             const pass = escapeHtml(a.passageiro || 'Não informado');
             const p = escapeHtml(a.programa);
+
+            const dateFormatted = a.data_atendimento || extrairDataDeHorario(a.horario);
+            if (dateFormatted === 'Data não informada') {
+                console.warn(`[DATA INCONSISTENTE] Atendimento #${a.id} sem data de atendimento válida na fila lateral.`);
+            }
             
             const driverIdKey = this.getDriverIdKey(a);
             console.info("[RIT LIST] botão Ver no Mapa renderizado", { driverIdKey, motorista: a.motorista, id: a.id });
@@ -1211,6 +1355,7 @@ export class UiController {
                         <span class="badgeProgram" style="font-size:9px; background:rgba(0,209,255,0.15); color:var(--accent); font-weight:800; padding:2px 6px; border-radius:4px;">${p}</span>
                         ${statusBadge}
                     </div>
+                    <div class="meta-data-atendimento" style="font-size:11px; font-weight:700; color:#00d1ff; margin-bottom:4px;">📅 ${dateFormatted}</div>
                     <div class="meta-motorista" style="font-size:12px; font-weight:700; color:#fff; margin-bottom:2px;">👤 ${m}</div>
                     <div class="meta-passageiro" style="font-size:11px; color:#fff; margin-bottom:2px;">👤 Pass: ${pass}</div>
                     <div class="meta-veiculo" style="font-size:10px; color:var(--muted); margin-bottom:2px; display:flex; align-items:center; gap:4px;">
@@ -1223,8 +1368,6 @@ export class UiController {
             `;
         });
     }
-
-
 
     initRegionalization() {
         const seletor = document.getElementById('seletor-regiao');
