@@ -636,9 +636,210 @@ app.get('/api/atendimentos/:id/historico', async (req, res) => {
     }
 });
 
+// Helper de distância haversine para telemetria
+function calcularDistanciaGps(lat1, lon1, lat2, lon2) {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+app.get('/api/atendimentos/:id/track', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+        // Detalhes da Rota
+        const rRes = await pool.query('SELECT * FROM rotas_importadas WHERE id = $1', [id]);
+        if (rRes.rows.length === 0) return res.status(404).json({ error: 'Atendimento não encontrado.' });
+        const rota = rRes.rows[0];
+
+        // Trilha GPS
+        const trackRes = await pool.query('SELECT * FROM gps_historico_atendimento WHERE id_atendimento = $1 ORDER BY data_hora ASC', [id]);
+        const points = trackRes.rows;
+
+        // Metadados básicos
+        const metadata = {
+            id: rota.id,
+            motorista: rota.motorista_nome || rota.motorista || 'Não informado',
+            veiculo: rota.tipo_veiculo || rota.tipoVeiculo || 'N/D',
+            placa: rota.placa_veiculo || rota.placa || 'N/D',
+            programa: rota.programa || 'RIT',
+            distancia_prevista: parseFloat(rota.distancia_km) || 0,
+            origem: rota.origem,
+            destino: rota.destino
+        };
+
+        if (points.length === 0) {
+            return res.json({
+                ok: true,
+                metadata,
+                points: [],
+                metrics: {
+                    distancia_percorrida: 0,
+                    distancia_linha_reta: 0,
+                    tempo_total: '0 min',
+                    tempo_total_min: 0,
+                    tempo_rodando_min: 0,
+                    tempo_parado_min: 0,
+                    maior_parada_min: 0,
+                    qtd_paradas: 0,
+                    velocidade_media: 0,
+                    velocidade_maxima: 0,
+                    precisao_media: 0,
+                    maior_falha_sinal_min: 0,
+                    total_pontos: 0,
+                    classificacao: 'Dentro da Rota'
+                }
+            });
+        }
+
+        // Calculos de Distancia e Velocidade
+        let distPercorrida = 0;
+        let velMaxima = 0;
+        let velSoma = 0;
+        let precSoma = 0;
+        let maiorFalhaSinalMs = 0;
+        let tempoParadoMs = 0;
+        let maiorParadaMs = 0;
+        let qtdParadas = 0;
+
+        const firstPt = points[0];
+        const lastPt = points[points.length - 1];
+        const distLinhaReta = calcularDistanciaGps(
+            parseFloat(firstPt.latitude), parseFloat(firstPt.longitude),
+            parseFloat(lastPt.latitude), parseFloat(lastPt.longitude)
+        );
+
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            const v = parseFloat(p.velocidade) || 0;
+            velSoma += v;
+            precSoma += parseFloat(p.precisao) || 10;
+            if (v > velMaxima) velMaxima = v;
+
+            if (i > 0) {
+                const prev = points[i - 1];
+                const d = calcularDistanciaGps(
+                    parseFloat(prev.latitude), parseFloat(prev.longitude),
+                    parseFloat(p.latitude), parseFloat(p.longitude)
+                );
+                distPercorrida += d;
+
+                // Gap de tempo / perda de sinal
+                const diffMs = new Date(p.data_hora) - new Date(prev.data_hora);
+                if (diffMs > 5 * 60 * 1000) {
+                    if (diffMs > maiorFalhaSinalMs) {
+                        maiorFalhaSinalMs = diffMs;
+                    }
+                }
+
+                // Calculo de tempo parado (quando speed === 0 consecutivamente)
+                if (parseFloat(prev.velocidade) === 0 && parseFloat(p.velocidade) === 0) {
+                    tempoParadoMs += diffMs;
+                    if (diffMs > maiorParadaMs) {
+                        maiorParadaMs = diffMs;
+                    }
+                    if (diffMs >= 2 * 60 * 1000) {
+                        qtdParadas++;
+                    }
+                }
+            }
+        }
+
+        const tempoTotalMs = new Date(lastPt.data_hora) - new Date(firstPt.data_hora);
+        const tempoTotalMin = Math.round(tempoTotalMs / 60000);
+        const tempoParadoMin = Math.round(tempoParadoMs / 60000);
+        const tempoRodandoMin = Math.max(0, tempoTotalMin - tempoParadoMin);
+
+        // Classificação Automática
+        let classificacao = 'Dentro da Rota';
+        const distPrevista = metadata.distancia_prevista;
+        if (distPrevista > 0 && (distPercorrida - distPrevista > 5 || distPercorrida / distPrevista > 1.3)) {
+            classificacao = 'Possível Desvio';
+        } else if (tempoParadoMin > 30) {
+            classificacao = 'Tempo Parado Elevado';
+        } else if (maiorFalhaSinalMs > 15 * 60 * 1000) {
+            classificacao = 'Falha de Sinal';
+        } else if (velMaxima > 80) {
+            classificacao = 'Velocidade Excessiva';
+        }
+
+        res.json({
+            ok: true,
+            metadata,
+            points,
+            metrics: {
+                distancia_percorrida: parseFloat(distPercorrida.toFixed(2)),
+                distancia_linha_reta: parseFloat(distLinhaReta.toFixed(2)),
+                tempo_total: tempoTotalMin + ' min',
+                tempo_total_min: tempoTotalMin,
+                tempo_rodando_min: tempoRodandoMin,
+                tempo_parado_min: tempoParadoMin,
+                maior_parada_min: Math.round(maiorParadaMs / 60000),
+                qtd_paradas: qtdParadas,
+                velocidade_media: Math.round(velSoma / points.length),
+                velocidade_maxima: velMaxima,
+                precisao_media: Math.round(precSoma / points.length),
+                maior_falha_sinal_min: Math.round(maiorFalhaSinalMs / 60000),
+                total_pontos: points.length,
+                classificacao
+            }
+        });
+    } catch (err) {
+        console.error('Erro no track do atendimento:', err);
+        res.status(500).json({ error: 'Erro interno ao obter telemetria.' });
+    }
+});
+
+app.get('/api/atendimentos/:id/auditoria-consolidada', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+        const histRes = await pool.query('SELECT * FROM historico_atendimentos WHERE id_atendimento = $1', [id]);
+        const gpsEventsRes = await pool.query("SELECT * FROM gps_historico_atendimento WHERE id_atendimento = $1 AND tipo_evento IN ('INICIO', 'PARADA', 'FIM') ORDER BY data_hora ASC", [id]);
+
+        const merged = [];
+        
+        histRes.rows.forEach(r => {
+            merged.push({
+                data_hora: r.data_hora,
+                evento: r.evento,
+                tipo: 'OPERACIONAL'
+            });
+        });
+
+        gpsEventsRes.rows.forEach(r => {
+            let label = r.tipo_evento === 'INICIO' ? 'Compartilhamento iniciado'
+                      : r.tipo_evento === 'FIM' ? 'Compartilhamento encerrado'
+                      : `Parada detectada (Velocidade: 0 km/h)`;
+            merged.push({
+                data_hora: r.data_hora,
+                evento: label,
+                tipo: 'TELEMETRIA',
+                latitude: r.latitude,
+                longitude: r.longitude
+            });
+        });
+
+        // Ordenacao Cronologica
+        merged.sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
+
+        res.json({ ok: true, timeline: merged });
+    } catch (err) {
+        console.error('Erro na auditoria consolidada:', err);
+        res.status(500).json({ error: 'Erro interno ao buscar auditoria.' });
+    }
+});
+
 app.post('/api/gps/update', async (req, res) => {
     try {
-        const { motorista, lat, lng, placa, tipo_veiculo, programa, speed, id_rota, status_atendimento } = req.body;
+        const { motorista, lat, lng, placa, tipo_veiculo, programa, speed, id_rota, status_atendimento, precisao, fonte_localizacao } = req.body;
         if (!motorista || !lat || !lng) {
             return res.status(400).json({ error: 'Dados incompletos (motorista, lat, lng são obrigatórios).' });
         }
@@ -653,6 +854,36 @@ app.post('/api/gps/update', async (req, res) => {
                  speed = EXCLUDED.speed, timestamp = NOW()`,
             [motorista, lat, lng, placa, tipo_veiculo, programa, speed || 0]
         );
+
+        // Gravação da trilha GPS em tempo real na tabela de histórico
+        if (id_rota) {
+            const rResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [id_rota]);
+            const statusAt = rResult.rows[0]?.status_atendimento;
+
+            if (statusAt !== 'FINALIZADO') {
+                const pr = parseFloat(precisao) || 10;
+                const fl = String(fonte_localizacao || 'GPS').trim();
+                const vel = parseFloat(speed) || 0;
+
+                // Verifica se é o primeiro ponto da rota
+                const countPointsRes = await pool.query('SELECT COUNT(*) FROM gps_historico_atendimento WHERE id_atendimento = $1', [id_rota]);
+                const isFirst = parseInt(countPointsRes.rows[0].count, 10) === 0;
+
+                let tipoEv = 'GPS';
+                if (isFirst) {
+                    tipoEv = 'INICIO';
+                } else if (vel === 0) {
+                    tipoEv = 'PARADA';
+                }
+
+                await pool.query(
+                    `INSERT INTO gps_historico_atendimento 
+                     (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
+                     VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)`,
+                    [id_rota, lat, lng, vel, pr, statusAt || 'EM_TRANSITO', tipoEv, fl]
+                );
+            }
+        }
 
         // Se passar id_rota e status_atendimento, atualiza o status de atendimento
         if (id_rota && status_atendimento) {
@@ -691,8 +922,14 @@ app.post('/api/gps/update', async (req, res) => {
                 );
             }
             
-            // Se finalizado, remove da tabela de posicoes para tirar do mapa ativo
+            // Se finalizado, remove da tabela de posicoes para tirar do mapa ativo e insere evento final FIM no historico GPS
             if (status_atendimento === 'FINALIZADO') {
+                await pool.query(
+                    `INSERT INTO gps_historico_atendimento 
+                     (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
+                     VALUES ($1, $2, $3, 0, NOW(), 10, 'FINALIZADO', 'FIM', 'GPS')`,
+                    [id_rota, lat, lng]
+                );
                 await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
             }
         }

@@ -109,7 +109,32 @@ async function initDB() {
                 evento TEXT NOT NULL
             );
         `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS gps_historico_atendimento (
+                id SERIAL PRIMARY KEY,
+                id_atendimento INTEGER NOT NULL,
+                latitude NUMERIC NOT NULL,
+                longitude NUMERIC NOT NULL,
+                velocidade NUMERIC NOT NULL,
+                data_hora TIMESTAMPTZ DEFAULT NOW(),
+                precisao NUMERIC DEFAULT 10,
+                status TEXT,
+                tipo_evento TEXT DEFAULT 'GPS',
+                fonte_localizacao TEXT DEFAULT 'GPS'
+            );
+            CREATE INDEX IF NOT EXISTS idx_gps_atendimento ON gps_historico_atendimento(id_atendimento);
+            CREATE INDEX IF NOT EXISTS idx_gps_datahora ON gps_historico_atendimento(data_hora);
+            CREATE INDEX IF NOT EXISTS idx_gps_atendimento_datahora ON gps_historico_atendimento(id_atendimento, data_hora);
+        `);
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
+        
+        // Limpeza de posições GPS obsoletas (Retenção de 12 meses)
+        try {
+            const deleteRes = await client.query("DELETE FROM gps_historico_atendimento WHERE data_hora < NOW() - INTERVAL '12 months'");
+            console.log(`🧹 [RETENÇÃO GPS] Limpeza efetuada: ${deleteRes.rowCount} registros com mais de 12 meses removidos.`);
+        } catch (gcErr) {
+            console.warn('⚠️ [RETENÇÃO GPS] Falha ao executar rotina de limpeza:', gcErr.message);
+        }
     } catch (err) {
         console.error('❌ Erro ao inicializar banco de dados:', err.message);
         throw err;

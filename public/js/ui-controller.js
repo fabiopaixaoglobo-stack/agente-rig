@@ -153,10 +153,11 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
                 <span>Passageiro: ${passageiro}</span>
             </div>
         </div>
-        <div class="premium-rit-details-actions">
-            <button class="btn-primary" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
-            <button class="btn-secondary" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
-            <button class="btn-close" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
+        <div class="premium-rit-details-actions" style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <button class="btn-primary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
+            <button class="btn-primary" style="flex: 1; min-width: 80px; background: #00d1ff; color: #071018;" onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
+            <button class="btn-close" style="flex: 1; min-width: 80px;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
 }
@@ -2558,10 +2559,350 @@ export class UiController {
         } catch (err) {
             console.error(err);
             if (listEl) {
+                            <span style="color:white; font-weight:bold;">${escapeHtml(evt.evento)}</span>
+                            ${evt.latitude ? `<span style="color:#00d1ff; font-size:9px; cursor:pointer; margin-top:2px; text-decoration:underline;" onclick="window.uiController.focusMapOnCoords(${evt.latitude}, ${evt.longitude})">📍 Ir para o ponto</span>` : ''}
+                        </div>
+                    `;
+                }).join("");
             }
-            showToast("Erro ao processar informes OTT.", "error");
+        }
+
+        // 3. Leaflet Map para o percurso
+        if (!this.trackLeafletMap) {
+            this.trackLeafletMap = L.map('trackMap', { zoomControl: true }).setView([-22.9068, -43.1729], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.trackLeafletMap);
+        }
+
+        // Limpar overlays anteriores
+        if (this.trackOverlays) {
+            this.trackOverlays.forEach(layer => this.trackLeafletMap.removeLayer(layer));
+        }
+        this.trackOverlays = [];
+
+        if (this.trackPoints.length === 0) return;
+
+        // Desenhar segmentos coloridos (Heatmap)
+        const latlngs = [];
+        for (let i = 0; i < this.trackPoints.length; i++) {
+            const pt = this.trackPoints[i];
+            const lat = parseFloat(pt.latitude);
+            const lng = parseFloat(pt.longitude);
+            latlngs.push([lat, lng]);
+
+            if (i > 0) {
+                const prev = this.trackPoints[i - 1];
+                const prevLat = parseFloat(prev.latitude);
+                const prevLng = parseFloat(prev.longitude);
+                const speed = parseFloat(pt.velocidade) || 0;
+
+                let color = '#22C55E'; // Verde <= 40
+                if (speed > 40 && speed <= 70) color = '#F59E0B'; // Amarelo 41-70
+                if (speed > 70) color = '#EF4444'; // Vermelho > 70
+
+                const poly = L.polyline([[prevLat, prevLng], [lat, lng]], {
+                    color: color,
+                    weight: 5,
+                    opacity: 0.9
+                }).addTo(this.trackLeafletMap);
+
+                // Tooltip
+                const formattedTime = new Date(pt.data_hora).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+                poly.bindTooltip(`${formattedTime} | ${Math.round(speed)} km/h`, { sticky: true, className: 'premium-rit-tooltip-mini' });
+
+                // Popup completo ao clicar
+                poly.bindPopup(`
+                    <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b;">
+                        <strong style="color:#00d1ff; font-size:12px;">📊 Ponto de Telemetria</strong><br>
+                        <b>Horário:</b> ${new Date(pt.data_hora).toLocaleString()}<br>
+                        <b>Velocidade:</b> ${Math.round(speed)} km/h<br>
+                        <b>Precisão:</b> ${pt.precisao} m<br>
+                        <b>Fonte:</b> ${pt.fonte_localizacao || 'GPS'}<br>
+                        <b>Coordenadas:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+                    </div>
+                `);
+
+                this.trackOverlays.push(poly);
+            }
+        }
+
+        // Marcos Especiais: Inicio, Paradas, Fim
+        const first = this.trackPoints[0];
+        const last = this.trackPoints[this.trackPoints.length - 1];
+
+        const startMarker = L.marker([parseFloat(first.latitude), parseFloat(first.longitude)], {
+            icon: L.divIcon({
+                className: 'custom-track-marker-icon',
+                html: `<div style="background:#22C55E; color:#071018; border:2px solid white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900;">▶</div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            })
+        }).addTo(this.trackLeafletMap).bindPopup("<b>▶ INÍCIO DO COMPARTILHAMENTO</b><br>" + new Date(first.data_hora).toLocaleString());
+        this.trackOverlays.push(startMarker);
+
+        const endMarker = L.marker([parseFloat(last.latitude), parseFloat(last.longitude)], {
+            icon: L.divIcon({
+                className: 'custom-track-marker-icon',
+                html: `<div style="background:#EF4444; color:white; border:2px solid white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900;">■</div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            })
+        }).addTo(this.trackLeafletMap).bindPopup("<b>■ FIM DO COMPARTILHAMENTO</b><br>" + new Date(last.data_hora).toLocaleString());
+        this.trackOverlays.push(endMarker);
+
+        // Marcadores de paradas intermediarias
+        this.trackPoints.forEach((pt, idx) => {
+            if (pt.tipo_evento === 'PARADA' && idx > 0) {
+                const pLat = parseFloat(pt.latitude);
+                const pLng = parseFloat(pt.longitude);
+                const stopMarker = L.marker([pLat, pLng], {
+                    icon: L.divIcon({
+                        className: 'custom-track-marker-icon',
+                        html: `<div style="background:#F59E0B; color:#071018; border:2px solid white; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:900;">⏸</div>`,
+                        iconSize: [16, 16],
+                        iconAnchor: [8, 8]
+                    })
+                }).addTo(this.trackLeafletMap).bindPopup(`<b>⏸ PARADA OPERACIONAL DETECTADA</b><br>Horário: ${new Date(pt.data_hora).toLocaleTimeString()}`);
+                this.trackOverlays.push(stopMarker);
+            }
+        });
+
+        // Enquadrar percurso
+        try {
+            this.trackLeafletMap.fitBounds(L.polyline(latlngs).getBounds(), { padding: [30, 30] });
+        } catch (err) {
+            console.warn("[LEAFLET FITBOUNDS]", err);
         }
     }
 
-}
+    focusMapOnCoords(lat, lng) {
+        if (this.trackLeafletMap) {
+            this.trackLeafletMap.setView([lat, lng], 16);
+        }
+    }
 
+    filterTrackPoints(filterType) {
+        this.stopTrackReplay();
+        if (filterType === 'all') {
+            this.trackPoints = [...this.trackPointsRaw];
+        } else if (filterType === '1min') {
+            const filtered = [];
+            let lastTime = 0;
+            this.trackPointsRaw.forEach((pt, idx) => {
+                const ms = new Date(pt.data_hora).getTime();
+                if (idx === 0 || idx === this.trackPointsRaw.length - 1 || (ms - lastTime) >= 60 * 1000) {
+                    filtered.push(pt);
+                    lastTime = ms;
+                }
+            });
+            this.trackPoints = filtered;
+        } else if (filterType === 'events') {
+            this.trackPoints = this.trackPointsRaw.filter((pt, idx) => 
+                idx === 0 || 
+                idx === this.trackPointsRaw.length - 1 || 
+                pt.tipo_evento === 'PARADA' || 
+                pt.tipo_evento === 'INICIO' || 
+                pt.tipo_evento === 'FIM'
+            );
+        }
+        this.renderTrackModal();
+    }
+
+    toggleTrackReplay() {
+        const btn = document.getElementById("btnTrackPlay");
+        if (!btn) return;
+        
+        if (this.trackPlayInterval) {
+            this.pauseTrackReplay();
+            btn.innerHTML = '▶ Reproduzir';
+            btn.style.background = '#22C55E';
+        } else {
+            btn.innerHTML = '⏸ Pausar';
+            btn.style.background = '#F59E0B';
+            this.startTrackReplay();
+        }
+    }
+
+    startTrackReplay() {
+        if (this.trackPoints.length === 0) return;
+        
+        if (!this.trackReplayMarker) {
+            const first = this.trackPoints[0];
+            this.trackReplayMarker = L.marker([parseFloat(first.latitude), parseFloat(first.longitude)], {
+                icon: L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: obterIconeVeiculoHTML(this.trackMetadata.veiculo, true, { tipoVeiculo: this.trackMetadata.veiculo }, null),
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                })
+            }).addTo(this.trackLeafletMap);
+            this.trackOverlays.push(this.trackReplayMarker);
+            this.trackCurrentIndex = 0;
+        }
+
+        const speedFactor = parseFloat(this.trackReplaySpeed) || 1;
+        const intervalMs = Math.max(100, 1000 / speedFactor);
+
+        this.trackPlayInterval = setInterval(() => {
+            if (this.trackCurrentIndex >= this.trackPoints.length) {
+                this.stopTrackReplay();
+                return;
+            }
+
+            const pt = this.trackPoints[this.trackCurrentIndex];
+            const lat = parseFloat(pt.latitude);
+            const lng = parseFloat(pt.longitude);
+            
+            this.trackReplayMarker.setLatLng([lat, lng]);
+            this.trackLeafletMap.setView([lat, lng]);
+            
+            this.trackReplayMarker.bindPopup(`
+                <div style="font-family:sans-serif; font-size:11px; line-height:1.4; color:#1e293b;">
+                    <strong style="color:#22C55E;">▶ Replay Ativo</strong><br>
+                    <b>Horário:</b> ${new Date(pt.data_hora).toLocaleTimeString()}<br>
+                    <b>Velocidade:</b> ${Math.round(pt.velocidade)} km/h<br>
+                    <b>Precisão:</b> ${pt.precisao} m
+                </div>
+            `).openPopup();
+
+            this.trackCurrentIndex++;
+        }, intervalMs);
+    }
+
+    pauseTrackReplay() {
+        if (this.trackPlayInterval) {
+            clearInterval(this.trackPlayInterval);
+            this.trackPlayInterval = null;
+        }
+    }
+
+    stopTrackReplay() {
+        this.pauseTrackReplay();
+        const btn = document.getElementById("btnTrackPlay");
+        if (btn) {
+            btn.innerHTML = '▶ Reproduzir';
+            btn.style.background = '#22C55E';
+        }
+        if (this.trackReplayMarker) {
+            this.trackLeafletMap.removeLayer(this.trackReplayMarker);
+            this.trackReplayMarker = null;
+        }
+        this.trackCurrentIndex = 0;
+    }
+
+    changeTrackReplaySpeed(speed) {
+        this.trackReplaySpeed = parseFloat(speed) || 1;
+        if (this.trackPlayInterval) {
+            this.pauseTrackReplay();
+            this.startTrackReplay();
+        }
+    }
+
+    exportTrackExcel() {
+        if (this.trackPoints.length === 0) {
+            alert("Sem posições para exportar.");
+            return;
+        }
+        const headers = ['ID Atendimento', 'Data Hora', 'Latitude', 'Longitude', 'Velocidade (km/h)', 'Precisao (m)', 'Fonte Localizacao', 'Evento'];
+        const rows = this.trackPoints.map(pt => [
+            this.trackMetadata.id,
+            new Date(pt.data_hora).toISOString(),
+            pt.latitude,
+            pt.longitude,
+            pt.velocidade,
+            pt.precisao,
+            pt.fonte_localizacao || 'GPS',
+            pt.tipo_evento
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+            + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `track_atendimento_${this.trackMetadata.id}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    exportTrackPDF() {
+        const m = this.trackMetrics;
+        const meta = this.trackMetadata;
+        
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) {
+            alert("Por favor, permita popups para gerar o relatório.");
+            return;
+        }
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Relatório de Track - Atendimento #${meta.id}</title>
+                <style>
+                    body { font-family: system-ui, -apple-system, sans-serif; color: #111; margin: 40px; line-height: 1.5; }
+                    h1 { color: #0084ff; border-bottom: 2px solid #0084ff; padding-bottom: 8px; font-size: 22px; }
+                    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+                    .box { background: #f4f6f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; }
+                    .title { font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666; }
+                    .val { font-size: 14px; font-weight: bold; color: #111; margin-top: 4px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background: #f4f6f9; }
+                </style>
+            </head>
+            <body>
+                <h1>📋 RELATÓRIO OPERACIONAL DE TRACK - ATENDIMENTO #${meta.id}</h1>
+                <div class="grid">
+                    <div class="box">
+                        <div class="title">Motorista</div>
+                        <div class="val">${meta.motorista}</div>
+                    </div>
+                    <div class="box">
+                        <div class="title">Veículo / Placa</div>
+                        <div class="val">${meta.veiculo} (${meta.placa})</div>
+                    </div>
+                    <div class="box">
+                        <div class="title">Quilometragem Percorrida</div>
+                        <div class="val">Real: ${m.distancia_percorrida} km | Prevista: ${meta.distancia_prevista} km</div>
+                    </div>
+                    <div class="box">
+                        <div class="title">Tempo de Operação</div>
+                        <div class="val">Total: ${m.tempo_total} | Parado: ${m.tempo_parado_min} min</div>
+                    </div>
+                    <div class="box">
+                        <div class="title">Velocidade Média/Máxima</div>
+                        <div class="val">${m.velocidade_media} km/h / ${m.velocidade_maxima} km/h</div>
+                    </div>
+                    <div class="box">
+                        <div class="title">Classificação Final CCO</div>
+                        <div class="val" style="color: red;">${m.classificacao}</div>
+                    </div>
+                </div>
+                <h3>Histórico de Auditoria do Trajeto</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Horário</th>
+                            <th>Evento / Informação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${this.trackTimeline.map(evt => `
+                            <tr>
+                                <td>${new Date(evt.data_hora).toLocaleString()}</td>
+                                <td><b>${evt.evento}</b></td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+                <script>
+                    window.onload = function() { window.print(); };
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
+}

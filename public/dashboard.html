@@ -534,6 +534,68 @@
     </div>
   </div>
 
+  <!-- Modal Track e Telemetria do Atendimento (Auditoria CCO) -->
+  <div id="modalTrackAtendimento" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 16px; width: 95%; max-width: 1200px; height: 92%; padding: 20px; color: white; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box; position: relative;">
+      
+      <!-- Topo: Cabecalho e Fechar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+        <h3 id="trackModalTitle" style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase;"><i class="fa-solid fa-route"></i> Track & Auditoria do Atendimento</h3>
+        <button onclick="window.uiController.fecharModalTrack()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Metricas Operacionais CCO Dashboard -->
+      <div id="trackMetricsPanel" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+
+      <!-- Area de Trabalho: Timeline Lateral + Mapa -->
+      <div style="flex: 1; display: flex; gap: 12px; height: calc(100% - 150px); min-height: 0;">
+        
+        <!-- Coluna Esquerda: Timeline de Auditoria -->
+        <div style="width: 320px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; display: flex; flex-direction: column; padding: 12px; box-sizing: border-box;">
+          <h4 style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #00d1ff; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-list-check"></i> Timeline Auditoria CCO</h4>
+          <div id="trackTimelineContent" style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Preenchido dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Mapa e Replay -->
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0;">
+          <!-- Barra de Controles e Filtros -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap; gap: 8px;">
+            <!-- Controles do Replay -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button id="btnTrackPlay" onclick="window.uiController.toggleTrackReplay()" style="background: #22C55E; color: #071018; border: none; border-radius: 4px; padding: 5px 12px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">▶ Reproduzir</button>
+              <button id="btnTrackStop" onclick="window.uiController.stopTrackReplay()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 5px 10px; font-size: 11px; cursor: pointer;">■ Parar</button>
+              <select id="selectTrackSpeed" onchange="window.uiController.changeTrackReplaySpeed(this.value)" style="background: #0a0f1c; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 4px; font-size: 11px; outline: none;">
+                <option value="1">1x (Normal)</option>
+                <option value="2">2x (Rápido)</option>
+                <option value="4">4x (Super)</option>
+              </select>
+            </div>
+
+            <!-- Filtros de Trilha -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="filterTrackPositions" onchange="window.uiController.filterTrackPoints(this.value)" style="background: #0a0f1c; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 5px 8px; font-size: 11px; outline: none;">
+                <option value="all">Todas as posições</option>
+                <option value="1min">Pontos resumidos (a cada 1 min)</option>
+                <option value="events">Apenas marcos/eventos</option>
+              </select>
+              <button onclick="window.uiController.exportTrackExcel()" style="background: rgba(0,209,255,0.1); color: #00d1ff; border: 1px solid rgba(0,209,255,0.2); border-radius: 4px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-file-excel"></i> EXPORTAR EXCEL</button>
+              <button onclick="window.uiController.exportTrackPDF()" style="background: rgba(239,68,68,0.1); color: #EF4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 4px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-file-pdf"></i> EXPORTAR PDF</button>
+            </div>
+          </div>
+
+          <!-- Mapa do Track -->
+          <div id="trackMap" style="flex: 1; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: #070b13;"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <script src="session-manager.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
