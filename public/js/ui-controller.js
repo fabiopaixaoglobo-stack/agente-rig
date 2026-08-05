@@ -153,11 +153,10 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
                 <span>Passageiro: ${passageiro}</span>
             </div>
         </div>
-        <div class="premium-rit-details-actions" style="display: flex; gap: 4px; flex-wrap: wrap;">
-            <button class="btn-primary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
-            <button class="btn-secondary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
-            <button class="btn-primary" style="flex: 1; min-width: 80px; background: #00d1ff; color: #071018;" onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
-            <button class="btn-close" style="flex: 1; min-width: 80px;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
+        <div class="premium-rit-details-actions">
+            <button class="btn-primary" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
+            <button class="btn-close" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
 }
@@ -2559,6 +2558,116 @@ export class UiController {
         } catch (err) {
             console.error(err);
             if (listEl) {
+            }
+            showToast("Erro ao processar informes OTT.", "error");
+        }
+    }
+
+    // ==========================================
+    // MÓDULO TRACK & AUDITORIA DE ROTA (V3 CCO)
+    // ==========================================
+    async abrirModalTrack(id) {
+        try {
+            const resp = await fetch(`/api/atendimentos/${id}/track`);
+            const data = await resp.json();
+            if (!data.ok) {
+                alert("Erro ao obter dados de telemetria do atendimento.");
+                return;
+            }
+            
+            this.trackPointsRaw = data.points || [];
+            this.trackPoints = [...this.trackPointsRaw];
+            this.trackMetadata = data.metadata;
+            this.trackMetrics = data.metrics;
+            
+            // Busca a timeline consolidada da API
+            const timelineResp = await fetch(`/api/atendimentos/${id}/auditoria-consolidada`);
+            const timelineData = await timelineResp.json();
+            this.trackTimeline = timelineData.ok ? timelineData.timeline : [];
+            
+            this.renderTrackModal();
+            document.getElementById("modalTrackAtendimento").style.display = "flex";
+            
+            // Força o Leaflet a redefinir dimensões do container do mapa
+            setTimeout(() => {
+                if (this.trackLeafletMap) {
+                    this.trackLeafletMap.invalidateSize();
+                }
+            }, 200);
+        } catch (err) {
+            console.error("Erro ao carregar modal de track:", err);
+            alert("Falha ao inicializar auditoria de rota.");
+        }
+    }
+
+    fecharModalTrack() {
+        this.stopTrackReplay();
+        document.getElementById("modalTrackAtendimento").style.display = "none";
+    }
+
+    renderTrackModal() {
+        // 1. Dashboard de Métricas
+        const panel = document.getElementById("trackMetricsPanel");
+        if (panel) {
+            const m = this.trackMetrics;
+            const meta = this.trackMetadata;
+            
+            let classColor = '#22C55E';
+            if (m.classificacao === 'Possível Desvio' || m.classificacao === 'Tempo Parado Elevado') classColor = '#F59E0B';
+            if (m.classificacao === 'Falha de Sinal' || m.classificacao === 'Velocidade Excessiva') classColor = '#EF4444';
+            
+            panel.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase;">Motorista / Rota</span>
+                    <strong style="font-size:11px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(meta.motorista)}">${escapeHtml(meta.motorista)}</strong>
+                    <span style="font-size:10px; color:#00d1ff;">${escapeHtml(meta.placa)} (${escapeHtml(meta.veiculo)})</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px; padding-left:4px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase;">Quilometragem</span>
+                    <strong style="font-size:11px; color:white;">Percorrida: ${m.distancia_percorrida} km</strong>
+                    <span style="font-size:10px; color:#aaa;">Prevista: ${meta.distancia_prevista} km</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px; padding-left:4px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase;">Tempo e Paradas</span>
+                    <strong style="font-size:11px; color:white;">Total: ${m.tempo_total}</strong>
+                    <span style="font-size:10px; color:#aaa;">Parado: ${m.tempo_parado_min} min (${m.qtd_paradas} paradas)</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px; padding-left:4px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase;">Velocidade Média</span>
+                    <strong style="font-size:11px; color:white;">Média: ${m.velocidade_media} km/h</strong>
+                    <span style="font-size:10px; color:#aaa;">Máxima: ${m.velocidade_maxima} km/h</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px; border-right:1px solid rgba(255,255,255,0.06); padding-right:8px; padding-left:4px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase;">Conexão e Sinal</span>
+                    <strong style="font-size:11px; color:white;">Precisão Média: ${m.precisao_media}m</strong>
+                    <span style="font-size:10px; color:#aaa;">Maior Gap: ${m.maior_falha_sinal_min} min</span>
+                </div>
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding-left:4px;">
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase; margin-bottom:4px;">Classificação CCO</span>
+                    <span style="background:${classColor}; color:#071018; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${m.classificacao}</span>
+                </div>
+            `;
+        }
+
+        // 2. Timeline Lateral
+        const timelineContent = document.getElementById("trackTimelineContent");
+        if (timelineContent) {
+            if (this.trackTimeline.length === 0) {
+                timelineContent.innerHTML = `<span style="font-size:11px; color:#666; text-align:center; margin-top:20px;">Nenhum histórico operacional.</span>`;
+            } else {
+                timelineContent.innerHTML = this.trackTimeline.map(evt => {
+                    const date = new Date(evt.data_hora);
+                    const timeStr = date.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const isTelemetria = evt.tipo === 'TELEMETRIA';
+                    const icon = isTelemetria ? '📡' : '📋';
+                    const border = isTelemetria ? 'border-left: 2px solid #00d1ff;' : 'border-left: 2px solid #22C55E;';
+                    
+                    return `
+                        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); ${border} border-radius:4px; padding:8px; display:flex; flex-direction:column; gap:2px; font-size:11px;">
+                            <div style="display:flex; justify-content:space-between; color:#8a99a8; font-size:9px;">
+                                <span>${icon} ${evt.tipo}</span>
+                                <span>${timeStr}</span>
+                            </div>
                             <span style="color:white; font-weight:bold;">${escapeHtml(evt.evento)}</span>
                             ${evt.latitude ? `<span style="color:#00d1ff; font-size:9px; cursor:pointer; margin-top:2px; text-decoration:underline;" onclick="window.uiController.focusMapOnCoords(${evt.latitude}, ${evt.longitude})">📍 Ir para o ponto</span>` : ''}
                         </div>
@@ -2906,3 +3015,4 @@ export class UiController {
     }
 
 }
+
