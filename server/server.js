@@ -1070,6 +1070,7 @@ app.post('/api/robot/run', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
 app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
     try {
         const { atendimento, placa, motorista } = req.body;
