@@ -706,11 +706,38 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
             destino: rota.destino
         };
 
+        const onlineRes = await pool.query('SELECT COUNT(*) FROM posicoes_motoristas WHERE motorista_nome = $1', [rota.motorista_nome]);
+        const veiculoOnline = parseInt(onlineRes.rows[0].count, 10) > 0;
+
+        const totalPosicoes = points.length;
+        const rastreamentoDisponivel = totalPosicoes > 0;
+        let classificacaoTrack = 'SEM_TELEMETRIA';
+        if (totalPosicoes === 0) {
+            classificacaoTrack = 'SEM_TELEMETRIA';
+        } else if (veiculoOnline) {
+            classificacaoTrack = 'RASTREAMENTO_ATIVO';
+        } else {
+            classificacaoTrack = 'HISTORICO_DISPONIVEL';
+        }
+
+        console.log('[TRACK]', {
+            atendimento: id,
+            placa: metadata.placa,
+            motorista: metadata.motorista,
+            total_posicoes: totalPosicoes,
+            veiculo_online: veiculoOnline,
+            classificacao: classificacaoTrack
+        });
+
         if (points.length === 0) {
             return res.json({
                 ok: true,
                 metadata,
                 points: [],
+                total_posicoes: 0,
+                veiculo_online: veiculoOnline,
+                rastreamento_disponivel: false,
+                classificacao_track: classificacaoTrack,
                 metrics: {
                     distancia_percorrida: 0,
                     distancia_linha_reta: 0,
@@ -725,7 +752,7 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
                     precisao_media: 0,
                     maior_falha_sinal_min: 0,
                     total_pontos: 0,
-                    classificacao: 'Dentro da Rota'
+                    classificacao: 'SEM TELEMETRIA'
                 }
             });
         }
@@ -805,6 +832,10 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
             ok: true,
             metadata,
             points,
+            total_posicoes: totalPosicoes,
+            veiculo_online: veiculoOnline,
+            rastreamento_disponivel: true,
+            classificacao_track: classificacaoTrack,
             metrics: {
                 distancia_percorrida: parseFloat(distPercorrida.toFixed(2)),
                 distancia_linha_reta: parseFloat(distLinhaReta.toFixed(2)),
@@ -819,7 +850,7 @@ app.get('/api/atendimentos/:id/track', async (req, res) => {
                 precisao_media: Math.round(precSoma / points.length),
                 maior_falha_sinal_min: Math.round(maiorFalhaSinalMs / 60000),
                 total_pontos: points.length,
-                classificacao
+                classificacao: classificacaoTrack
             }
         });
     } catch (err) {
@@ -1038,6 +1069,22 @@ app.post('/api/robot/run', async (req, res) => {
         res.json(status);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
+    try {
+        const { atendimento, placa, motorista } = req.body;
+        const usuario = req.headers['x-user-matricula'] || 'CCO Operator';
+
+        await pool.query(
+            `INSERT INTO auditoria_operacional (usuario, atendimento, placa, motorista, data_hora, evento)
+             VALUES ($1, $2, $3, $4, NOW(), 'SOLICITACAO_POSICAO_GPS')`,
+            [usuario, parseInt(atendimento, 10) || null, placa || null, motorista || null]
+        );
+
+        res.json({ ok: true, message: 'Solicitação registrada na auditoria operacional.' });
+    } catch (err) {
+        console.error('Erro ao salvar auditoria operacional:', err);
+        res.status(500).json({ error: 'Erro ao registrar auditoria.' });
     }
 });
 

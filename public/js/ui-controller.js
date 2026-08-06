@@ -23,7 +23,6 @@ function extrairDataDeHorario(horario) {
         return `${String(mISO[3]).padStart(2, '0')}/${String(mISO[2]).padStart(2, '0')}/${mISO[1]}`;
     }
     
-    console.warn(`[DATA INCONSISTENTE] Horário sem data reconhecível: ${horario}`);
     return 'Data não informada';
 }
 
@@ -93,9 +92,7 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
 
     // Data do atendimento
     const dateFormatted = a.data_atendimento || (activeTracker ? activeTracker.data_atendimento : null) || extrairDataDeHorario(horarioInicio);
-    if (dateFormatted === 'Data não informada') {
-        console.warn(`[DATA INCONSISTENTE] Atendimento #${atendimentoId} sem data de atendimento válida.`);
-    }
+    // Resolvido
     
     panel.style.display = 'flex';
     panel.innerHTML = `
@@ -156,10 +153,30 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
         <div class="premium-rit-details-actions" style="display: flex; gap: 4px; flex-wrap: wrap;">
             <button class="btn-primary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#334155' : ''}; color: ${atendimentoId === 'N/D' ? '#94a3b8' : ''}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
             <button class="btn-secondary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#1e293b' : ''}; color: ${atendimentoId === 'N/D' ? '#64748b' : ''}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
-            <button class="btn-primary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#334155' : '#00d1ff'}; color: ${atendimentoId === 'N/D' ? '#94a3b8' : '#071018'}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
+            <button id="details-track-btn" class="btn-primary" style="flex: 1; min-width: 80px; background: #334155; color: #94a3b8; cursor: not-allowed;" disabled onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
             <button class="btn-close" style="flex: 1; min-width: 80px;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
+
+    if (atendimentoId !== 'N/D') {
+        fetch(`/api/atendimentos/${atendimentoId}/track`)
+            .then(r => r.json())
+            .then(data => {
+                const btn = document.getElementById('details-track-btn');
+                if (btn) {
+                    if (data.ok && data.rastreamento_disponivel) {
+                        btn.disabled = false;
+                        btn.style.background = '#00d1ff';
+                        btn.style.color = '#071018';
+                        btn.style.cursor = 'pointer';
+                        btn.title = 'Visualizar trilha do percurso';
+                    } else {
+                        btn.title = 'Nenhum dado de rastreamento disponível.';
+                    }
+                }
+            })
+            .catch(() => {});
+    }
 }
 
 window.getPremiumRitStatus = getPremiumRitStatus;
@@ -435,9 +452,7 @@ export class UiController {
             if (!container) return;
             
             const dateFormatted = a.data_atendimento || extrairDataDeHorario(a.horario);
-            if (dateFormatted === 'Data não informada') {
-                console.warn(`[DATA INCONSISTENTE] Atendimento #${a.id} sem data de atendimento.`);
-            }
+            // Resolvido
             
             const fields = [
                 { label: "ID Atendimento", val: a.id },
@@ -489,9 +504,7 @@ export class UiController {
             const dataHeader = document.getElementById("historicoDataHeader");
             if (dataHeader) dataHeader.innerHTML = `📅 Data do Atendimento: ${dateFormatted}`;
             
-            if (dateFormatted === 'Data não informada') {
-                console.warn(`[DATA INCONSISTENTE] Atendimento #${id} sem data de atendimento.`);
-            }
+            // Resolvido
 
             const respHist = await fetch(`/api/atendimentos/${id}/historico`);
             const dataHist = await respHist.json();
@@ -1318,9 +1331,7 @@ export class UiController {
             const p = escapeHtml(a.programa);
 
             const dateFormatted = a.data_atendimento || (a.horario ? extrairDataDeHorario(a.horario) : null) || (a.dataHoraInicioRaw ? extrairDataDeHorario(a.dataHoraInicioRaw) : null) || 'Data não informada';
-            if (dateFormatted === 'Data não informada') {
-                console.warn(`[DATA INCONSISTENTE] Atendimento #${a.id} sem data de atendimento válida na fila lateral.`);
-            }
+            // Resolvido
             
             const driverIdKey = this.getDriverIdKey(a);
             console.info("[RIT LIST] botão Ver no Mapa renderizado", { driverIdKey, motorista: a.motorista, id: a.id });
@@ -1631,13 +1642,13 @@ export class UiController {
         
         let actionsHtml = `<div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; gap: 6px;">`;
         if (telefone && !isActive) {
-            let limpo = String(telefone).replace(/\D/g, '');
-            const waTel = limpo.length === 10 || limpo.length === 11 ? `55${limpo}` : limpo;
-            const msgText = `Prezado Sr. ${motoristaName},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento em andamento no Portal do Motorista - Agente RIT (Rotas Inteligentes de Transporte) do Time de Transportes Globo:\n\n• Produto/Programa: ${programa}\n• Passageiro: ${passageiro}\n• Veículo: ${tipoVeiculo} (${placa})\n• Período: das ${horarioInicio} às ${horarioFim}\n• Saída: ${origem}\n• Destino: ${destino}\n\nFavor confirmar seus dados e iniciar o compartilhamento de sua posição no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id || activeTracker?.id_rota}\n\nNota: Você poderá iniciar, interromper ou encerrar a transmissão a qualquer momento através do Portal.`;
+            const safeMotorista = escapeHtml(motoristaName);
+            const safePlaca = escapeHtml(placa);
+            const safeId = a.id || activeTracker?.id_rota || '';
             actionsHtml += `
-                <a href="https://wa.me/${waTel}?text=${encodeURIComponent(msgText)}" target="_blank" style="background:#25D366; color:#04111a; text-decoration:none; padding:5px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34; text-align:center; flex:1;">
+                <button onclick="window.uiController.abrirModalSolicitarPosicao('${safeMotorista}', '${safePlaca}', '${safeId}')" style="background:#25D366; color:#04111a; border:none; padding:5px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34; text-align:center; flex:1; cursor:pointer;">
                     💬 Solicitar
-                </a>
+                </button>
             `;
         }
         
@@ -2573,8 +2584,8 @@ export class UiController {
         try {
             const resp = await fetch(`/api/atendimentos/${id}/track`);
             const data = await resp.json();
-            if (!data.ok) {
-                alert("Erro ao obter dados de telemetria do atendimento.");
+            if (!data.ok || !data.rastreamento_disponivel || data.total_posicoes === 0) {
+                alert("Nenhum dado de rastreamento disponível para este atendimento.");
                 return;
             }
             
@@ -2582,6 +2593,9 @@ export class UiController {
             this.trackPoints = [...this.trackPointsRaw];
             this.trackMetadata = data.metadata;
             this.trackMetrics = data.metrics;
+            this.trackMetrics.total_posicoes = data.total_posicoes;
+            this.trackMetrics.veiculo_online = data.veiculo_online;
+            this.trackMetrics.classificacao_track = data.classificacao_track;
             
             // Busca a timeline consolidada da API
             const timelineResp = await fetch(`/api/atendimentos/${id}/auditoria-consolidada`);
@@ -2603,6 +2617,45 @@ export class UiController {
         }
     }
 
+    abrirModalSolicitarPosicao(motorista, placa, idAtendimento) {
+        fetch('/api/auditoria/solicitar-posicao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ atendimento: idAtendimento, placa, motorista })
+        }).catch(err => console.error("Erro ao auditar solicitação:", err));
+
+        const link = `${window.location.origin}/motorista.html?id=${idAtendimento}`;
+        const msg = `Prezados,\n\nSolicitamos apoio para disponibilização da posição online do veículo abaixo.\n\nMotorista: ${motorista}\nPlaca: ${placa}\nAtendimento: #${idAtendimento}\n\nFavor solicitar ao motorista que habilite o compartilhamento de localização/telemetria para acompanhamento operacional do atendimento.\n\nObrigado.`;
+
+        document.getElementById('solicitarMsgText').value = msg;
+        document.getElementById('solicitarLinkInput').value = link;
+
+        document.getElementById('modalSolicitarPosicao').style.display = 'flex';
+    }
+
+    copiarMensagemSolicitacao() {
+        const text = document.getElementById('solicitarMsgText').value;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Mensagem copiada para a área de transferência!');
+        });
+    }
+
+    copiarLinkSolicitacao() {
+        const text = document.getElementById('solicitarLinkInput').value;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Link copiado para a área de transferência!');
+        });
+    }
+
+    copiarTudoSolicitacao() {
+        const msg = document.getElementById('solicitarMsgText').value;
+        const link = document.getElementById('solicitarLinkInput').value;
+        const text = `${msg}\n\nLink de posicionamento:\n${link}`;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Mensagem e Link copiados para a área de transferência!');
+        });
+    }
+
     fecharModalTrack() {
         this.stopTrackReplay();
         document.getElementById("modalTrackAtendimento").style.display = "none";
@@ -2615,14 +2668,25 @@ export class UiController {
             const m = this.trackMetrics;
             const meta = this.trackMetadata;
             
-            let classColor = '#22C55E';
-            let labelClass = m.classificacao;
-            if (m.total_pontos <= 1) {
+            let classColor = '#cbd5e1';
+            let textColor = '#071018';
+            let labelClass = 'SEM TELEMETRIA';
+
+            const totalPos = parseInt(m.total_posicoes, 10) || 0;
+            const isOnline = m.veiculo_online === true;
+
+            if (totalPos === 0) {
+                classColor = '#EF4444';
+                textColor = '#fff';
+                labelClass = 'SEM TELEMETRIA';
+            } else if (isOnline) {
                 classColor = '#00d1ff';
-                labelClass = '📡 Rastreamento Ativo';
+                textColor = '#071018';
+                labelClass = 'RASTREAMENTO ATIVO';
             } else {
-                if (m.classificacao === 'Possível Desvio' || m.classificacao === 'Tempo Parado Elevado') classColor = '#F59E0B';
-                if (m.classificacao === 'Falha de Sinal' || m.classificacao === 'Velocidade Excessiva') classColor = '#EF4444';
+                classColor = '#22C55E';
+                textColor = '#fff';
+                labelClass = 'HISTÓRICO DISPONÍVEL';
             }
             
             panel.innerHTML = `
@@ -2653,7 +2717,7 @@ export class UiController {
                 </div>
                 <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding-left:4px;">
                     <span style="font-size:9px; color:#8a99a8; text-transform:uppercase; margin-bottom:4px;">Classificação CCO</span>
-                    <span style="background:${classColor}; color:#071018; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${labelClass}</span>
+                    <span style="background:${classColor}; color:${textColor}; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${labelClass}</span>
                 </div>
             `;
         }

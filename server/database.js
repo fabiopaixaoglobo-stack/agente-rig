@@ -125,6 +125,15 @@ async function initDB() {
             CREATE INDEX IF NOT EXISTS idx_gps_atendimento ON gps_historico_atendimento(id_atendimento);
             CREATE INDEX IF NOT EXISTS idx_gps_datahora ON gps_historico_atendimento(data_hora);
             CREATE INDEX IF NOT EXISTS idx_gps_atendimento_datahora ON gps_historico_atendimento(id_atendimento, data_hora);
+            CREATE TABLE IF NOT EXISTS auditoria_operacional (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                atendimento INTEGER,
+                placa TEXT,
+                motorista TEXT,
+                data_hora TIMESTAMPTZ DEFAULT NOW(),
+                evento TEXT DEFAULT 'SOLICITACAO_POSICAO_GPS'
+            );
         `);
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
         

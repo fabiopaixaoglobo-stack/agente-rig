@@ -592,7 +592,30 @@
         </div>
 
       </div>
-
+  <!-- Modal Solicitação de Disponibilização de Posição -->
+  <div id="modalSolicitarPosicao" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 16px; width: 90%; max-width: 550px; padding: 24px; color: white; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+        <h3 style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase;"><i class="fa-solid fa-circle-info"></i> Solicitação de Disponibilização de Posição</h3>
+        <button onclick="document.getElementById('modalSolicitarPosicao').style.display='none'" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <p style="font-size: 12px; line-height: 1.5; color: #cbd5e1; margin: 0;">
+        Por regra contratual, o contato não deve ser realizado diretamente com o motorista. Copie a mensagem abaixo e encaminhe ao supervisor da Empresa/Cooperativa responsável para que ele solicite ao motorista a disponibilização da posição online.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 11px; color: #8a99a8; text-transform: uppercase; font-weight: 700;">Mensagem Padrão</label>
+        <textarea id="solicitarMsgText" readonly style="width: 100%; height: 160px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px; color: white; font-family: monospace; font-size: 11px; resize: none; outline: none;"></textarea>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 11px; color: #8a99a8; text-transform: uppercase; font-weight: 700;">Link de posicionamento</label>
+        <input id="solicitarLinkInput" type="text" readonly style="width: 100%; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; color: #00d1ff; font-size: 11px; outline: none;" />
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
+        <button onclick="window.uiController.copiarMensagemSolicitacao()" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Mensagem</button>
+        <button onclick="window.uiController.copiarLinkSolicitacao()" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Link</button>
+        <button onclick="window.uiController.copiarTudoSolicitacao()" class="btn" style="background: #00d1ff; color: #071018; border: none; padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Tudo</button>
+        <button onclick="document.getElementById('modalSolicitarPosicao').style.display='none'" class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Fechar</button>
+      </div>
     </div>
   </div>
 
