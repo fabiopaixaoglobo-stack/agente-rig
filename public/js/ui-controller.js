@@ -573,15 +573,8 @@ export class UiController {
         this.fecharManualModal();
         this.carregarBaseExistente();
 
-        // Dispara mensagem no WhatsApp do motorista
-        let telClean = String(item.telefone).replace(/\D/g, '');
-        if (telClean.length === 10 || telClean.length === 11) {
-            telClean = '55' + telClean;
-        }
-        const driverLink = `${window.location.origin}/motorista.html?id=${encodeURIComponent(item.id)}&nome=${encodeURIComponent(item.motorista)}&placa=${encodeURIComponent(item.placa)}&veiculo=${encodeURIComponent(item.tipoVeiculo)}&passageiro=${encodeURIComponent(item.passageiro)}&programa=${encodeURIComponent(item.programa)}&destino=${encodeURIComponent(item.destino)}&saida=${encodeURIComponent(item.origem)}&inicio=${encodeURIComponent(item.dataHoraInicioRaw)}&fim=${encodeURIComponent(item.dataHoraFimRaw)}`;
-        const msgText = `Prezado Sr. ${item.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento de contingência no Portal do Motorista - Conexão Transportes RJ / Agente RIT:\n\n• Produto/Programa: ${item.programa}\n• Passageiro: ${item.passageiro}\n• Veículo: ${item.tipoVeiculo} (${item.placa})\n• Saída: ${item.origem}\n• Destino: ${item.destino}\n\nFavor compartilhar sua posição iniciando o rastreamento no link abaixo:\n🔗 ${driverLink}\n\nObrigado.`;
-        const waUrl = `https://wa.me/${telClean}?text=${encodeURIComponent(msgText)}`;
-        window.open(waUrl, '_blank');
+        // Abre o modal de compliance para cópia e envio pelo supervisor
+        this.abrirModalSolicitarPosicao(item.motorista, item.placa, item.id);
     }
 
     initTabs() {

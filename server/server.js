@@ -1090,7 +1090,7 @@ app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
 
 app.use(express.static(publicPath, {
     setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
+        if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
