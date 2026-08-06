@@ -2,8 +2,26 @@ import { CONFIG } from './config.js';
 import { showToast, escapeHtml } from './utils.js';
 import { parseDataHora } from './data-service.js';
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-const OSRM_ROUTE = 'https://router.project-osrm.org/route/v1/driving';
+function abrirCanalExterno(url) {
+    if (
+        typeof url === 'string' &&
+        (
+            url.includes('api.whatsapp.com') ||
+            url.includes('wa.me') ||
+            url.toLowerCase().includes('whatsapp')
+        )
+    ) {
+        console.warn('[BLOQUEIO_CANAL_EXTERNO]', {
+            url,
+            motivo: 'Abertura direta de WhatsApp bloqueada por regra contratual.'
+        });
+        showToast('Contato direto com motorista não permitido. Use o fluxo de solicitação ao supervisor.', 'warning');
+        return false;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return true;
+}
+window.abrirCanalExterno = abrirCanalExterno;
 
 function extrairDataDeHorario(horario) {
     if (!horario) return 'Data não informada';
@@ -1638,8 +1656,16 @@ export class UiController {
             const safeMotorista = escapeHtml(motoristaName);
             const safePlaca = escapeHtml(placa);
             const safeId = a.id || activeTracker?.id_rota || '';
+            const empresaCooperativa = motoristaName.includes(' - ') ? motoristaName.split(' - ').slice(1).join(' - ') : 'Conexão Transportes';
+            const safeEmpresa = escapeHtml(empresaCooperativa);
+            const safeProg = escapeHtml(programa);
+            const safeOrig = escapeHtml(origem);
+            const safeDest = escapeHtml(destino);
+            const safeStart = escapeHtml(horarioInicio);
+            const safeEnd = escapeHtml(horarioFim);
+
             actionsHtml += `
-                <button onclick="window.uiController.abrirModalSolicitarPosicao('${safeMotorista}', '${safePlaca}', '${safeId}')" style="background:#25D366; color:#04111a; border:none; padding:5px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34; text-align:center; flex:1; cursor:pointer;">
+                <button onclick="window.uiController.abrirModalSolicitarPosicao('${safeMotorista}', '${safePlaca}', '${safeId}', '${safeEmpresa}', '${safeProg}', '${safeOrig}', '${safeDest}', '${safeStart}', '${safeEnd}')" style="background:#25D366; color:#04111a; border:none; padding:5px 10px; border-radius:4px; font-size:10px; font-weight:800; display:inline-block; border:1px solid #1e7e34; text-align:center; flex:1; cursor:pointer;">
                     💬 Solicitar
                 </button>
             `;
@@ -2452,7 +2478,7 @@ export class UiController {
         const o = document.getElementById('waze-origem').value;
         const d = document.getElementById('waze-destino').value;
         if (o && d) {
-            window.open(`https://www.waze.com/ul?q=${encodeURIComponent(d)}&from=${encodeURIComponent(o)}&navigate=yes`, '_blank');
+            abrirCanalExterno(`https://www.waze.com/ul?q=${encodeURIComponent(d)}&from=${encodeURIComponent(o)}&navigate=yes`);
         } else {
             showToast("Informe origem e destino.", "error");
         }
@@ -2610,43 +2636,134 @@ export class UiController {
         }
     }
 
-    abrirModalSolicitarPosicao(motorista, placa, idAtendimento) {
+    abrirModalSolicitarPosicao(motorista, placa, idAtendimento, empresaCooperativa = 'Conexão Transportes', programa = 'N/D', origem = 'N/D', destino = 'N/D', horarioInicio = 'N/D', horarioFim = 'N/D') {
+        console.log('[SOLICITAR_POSICAO_CLICK]', {
+            atendimento: idAtendimento,
+            placa,
+            motorista,
+            fluxo: 'modal_compliance',
+            bloqueio_whatsapp_direto: true
+        });
+
         fetch('/api/auditoria/solicitar-posicao', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ atendimento: idAtendimento, placa, motorista })
-        }).catch(err => console.error("Erro ao auditar solicitação:", err));
+            body: JSON.stringify({ 
+                atendimento: idAtendimento, 
+                placa, 
+                motorista, 
+                acao: 'SOLICITACAO_POSICAO_MODAL_ABERTO' 
+            })
+        }).catch(err => console.error("Erro ao auditar abertura de modal:", err));
 
-        const link = `${window.location.origin}/motorista.html?id=${idAtendimento}`;
-        const msg = `Prezados,\n\nSolicitamos apoio para disponibilização da posição online do veículo abaixo.\n\nMotorista: ${motorista}\nPlaca: ${placa}\nAtendimento: #${idAtendimento}\n\nFavor solicitar ao motorista que habilite o compartilhamento de localização/telemetria para acompanhamento operacional do atendimento.\n\nObrigado.`;
+        const link = idAtendimento ? `${window.location.origin}/motorista.html?id=${idAtendimento}` : 'Nenhum link de posicionamento disponível para este atendimento.';
+        
+        const msg = `Prezados,
+
+Solicitamos apoio para disponibilização da posição online do veículo abaixo.
+
+Atendimento: #${idAtendimento || 'N/D'}
+Motorista: ${motorista || 'N/D'}
+Empresa/Cooperativa: ${empresaCooperativa || 'Conexão Transportes'}
+Veículo: RIT
+Placa: ${placa || 'N/D'}
+Programa: ${programa || 'N/D'}
+Origem: ${origem || 'N/D'}
+Destino: ${destino || 'N/D'}
+Horário previsto: ${horarioInicio || 'N/D'} até ${horarioFim || 'N/D'}
+
+Por gentileza, solicitem ao motorista que disponibilize a posição online para acompanhamento operacional do atendimento.
+
+Link de disponibilização de posição:
+${link}
+
+Importante: por regra contratual, esta solicitação deve ser feita pela Empresa/Cooperativa responsável, sem contato direto do CCO com o motorista.
+
+Obrigado.`;
 
         document.getElementById('solicitarMsgText').value = msg;
         document.getElementById('solicitarLinkInput').value = link;
 
+        const btnCopyLink = document.querySelector('button[onclick*="copiarLinkSolicitacao"]');
+        if (btnCopyLink) {
+            if (!idAtendimento) {
+                btnCopyLink.disabled = true;
+                btnCopyLink.style.opacity = '0.5';
+                btnCopyLink.style.cursor = 'not-allowed';
+            } else {
+                btnCopyLink.disabled = false;
+                btnCopyLink.style.opacity = '1';
+                btnCopyLink.style.cursor = 'pointer';
+            }
+        }
+
         document.getElementById('modalSolicitarPosicao').style.display = 'flex';
+    }
+
+    async copiarTextoOperacional(texto, mensagemSucesso) {
+        if (!texto || !texto.trim()) {
+            showToast('Nenhum conteúdo disponível para copiar.', 'warning');
+            return false;
+        }
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(texto);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = texto;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+            showToast(mensagemSucesso || 'Conteúdo copiado para a área de transferência.', 'success');
+            return true;
+        } catch (error) {
+            console.error('[COPIA_SOLICITACAO_POSICAO_ERRO]', error);
+            showToast('Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.', 'error');
+            return false;
+        }
     }
 
     copiarMensagemSolicitacao() {
         const text = document.getElementById('solicitarMsgText').value;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Mensagem copiada para a área de transferência!');
-        });
+        this.copiarTextoOperacional(text, 'Mensagem copiada para a área de transferência.');
+        this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_MENSAGEM_COPIADA');
     }
 
     copiarLinkSolicitacao() {
         const text = document.getElementById('solicitarLinkInput').value;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Link copiado para a área de transferência!');
-        });
+        if (!text || text === 'Nenhum link de posicionamento disponível para este atendimento.') {
+            showToast('Nenhum link de posicionamento disponível para este atendimento.', 'warning');
+            return;
+        }
+        this.copiarTextoOperacional(text, 'Link copiado para a área de transferência.');
+        this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_LINK_COPIADO');
     }
 
     copiarTudoSolicitacao() {
         const msg = document.getElementById('solicitarMsgText').value;
         const link = document.getElementById('solicitarLinkInput').value;
-        const text = `${msg}\n\nLink de posicionamento:\n${link}`;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Mensagem e Link copiados para a área de transferência!');
-        });
+        const linkStr = (link && link !== 'Nenhum link de posicionamento disponível para este atendimento.') ? link : '';
+        const text = linkStr ? `${msg}\n\nLink de posicionamento:\n${linkStr}` : msg;
+        this.copiarTextoOperacional(text, 'Mensagem e Link copiados para a área de transferência.');
+        this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_TUDO_COPIADO');
+    }
+
+    registrarAuditoriaSolicitacao(acao) {
+        const msgVal = document.getElementById('solicitarMsgText').value;
+        const motorista = msgVal.match(/Motorista:\s*(.*)/)?.[1] || '';
+        const placa = msgVal.match(/Placa:\s*(.*)/)?.[1] || '';
+        const atendimento = msgVal.match(/Atendimento:\s*#\s*(\d+)/)?.[1] || '';
+        
+        fetch('/api/auditoria/solicitar-posicao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ atendimento, placa, motorista, acao })
+        }).catch(err => console.error("Erro ao registrar auditoria operacional:", err));
     }
 
     fecharModalTrack() {
