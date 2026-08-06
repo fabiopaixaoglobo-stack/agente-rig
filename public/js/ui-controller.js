@@ -154,9 +154,9 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
             </div>
         </div>
         <div class="premium-rit-details-actions" style="display: flex; gap: 4px; flex-wrap: wrap;">
-            <button class="btn-primary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
-            <button class="btn-secondary" style="flex: 1; min-width: 80px;" onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
-            <button class="btn-primary" style="flex: 1; min-width: 80px; background: #00d1ff; color: #071018;" onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
+            <button class="btn-primary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#334155' : ''}; color: ${atendimentoId === 'N/D' ? '#94a3b8' : ''}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalDetalhes('${atendimentoId}')">Ver Detalhes</button>
+            <button class="btn-secondary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#1e293b' : ''}; color: ${atendimentoId === 'N/D' ? '#64748b' : ''}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalHistorico('${atendimentoId}')">Histórico</button>
+            <button class="btn-primary" style="flex: 1; min-width: 80px; background: ${atendimentoId === 'N/D' ? '#334155' : '#00d1ff'}; color: ${atendimentoId === 'N/D' ? '#94a3b8' : '#071018'}; cursor: ${atendimentoId === 'N/D' ? 'not-allowed' : 'pointer'};" ${atendimentoId === 'N/D' ? 'disabled' : ''} onclick="window.uiController.abrirModalTrack('${atendimentoId}')">Track</button>
             <button class="btn-close" style="flex: 1; min-width: 80px;" onclick="document.getElementById('premium-rit-details-panel').style.display='none'">Fechar</button>
         </div>
     `;
