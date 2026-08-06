@@ -1,10 +1,10 @@
-import { MapService } from './map-service.js';
-import { ChatService } from './chat-service.js';
-import { DataService } from './data-service.js';
-import { UiController } from './ui-controller.js';
-import { MonitoramentoGrupos } from './MonitoramentoGrupos.js';
-import { CamerasRJ } from './CamerasRJ.js';
-import { CorRio } from './CorRio.js';
+import { MapService } from './map-service.js?v=3.5.2';
+import { ChatService } from './chat-service.js?v=3.5.2';
+import { DataService } from './data-service.js?v=3.5.2';
+import { UiController } from './ui-controller.js?v=3.5.2';
+import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=3.5.2';
+import { CamerasRJ } from './CamerasRJ.js?v=3.5.2';
+import { CorRio } from './CorRio.js?v=3.5.2';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
