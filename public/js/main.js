@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = new DataService();
 
         const corRio = new CorRio();
+        window.corRio = corRio;
         const ui = new UiController(mainMap, plannerMap, transitoMap, chat, data, corRio);
         const whatsapp = new MonitoramentoGrupos("btn-open-whatsapp");
         const camerasRJ = new CamerasRJ();

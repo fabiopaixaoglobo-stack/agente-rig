@@ -277,55 +277,151 @@ ${docContext.text.slice(0, 150000)}
     }
 });
 
-// Cache do status do COR-Rio com atualização periódica a cada 3 horas
+// Cache do status do COR-Rio com atualização periódica
 let corCache = {
     estagio: { estagio: "Estágio 1", cor: "#228d46" },
     calor: "calor 1",
     lastUpdated: null
 };
 
-async function atualizarCacheCOR() {
+// 15-second TTL cache for the live endpoint to prevent external API abuse
+let lastLiveFetchTime = 0;
+const LIVE_CACHE_TTL_MS = 15000; // 15 seconds
+
+async function parseEstagioFromHtml() {
     try {
-        console.log('[COR-CACHE] Atualizando cache de status do COR-Rio...');
-        const resEstagio = await fetch('https://appcor.cor-rio.work/estagio_cidade', { timeout: 10000 });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch('https://cor.rio/', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+            const html = await res.text();
+            
+            // Regex patterns to identify stage in title tags, news headings or banner filenames
+            const regexes = [
+                /entrou em Estágio\s*([1-5])/i,
+                /entrou no Estágio\s*([1-5])/i,
+                /Cidade em Estágio\s*([1-5])/i,
+                /Cidade do Rio em Estágio\s*([1-5])/i,
+                /2025-painel-cor-estagio-0([1-5])/i
+            ];
+            
+            for (const regex of regexes) {
+                const match = html.match(regex);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num >= 1 && num <= 5) {
+                        return num;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[SCRAPE-COR] Erro ao parsear HTML de cor.rio:', e.message);
+    }
+    return null;
+}
+
+const STAGE_COLORS = {
+    1: '#228d46',
+    2: '#f2c94c',
+    3: '#f2994a',
+    4: '#e05757',
+    5: '#8e1f24'
+};
+
+async function atualizarCacheCORLive(force = false) {
+    const agora = Date.now();
+    if (!force && (agora - lastLiveFetchTime < LIVE_CACHE_TTL_MS) && corCache.lastUpdated) {
+        return corCache;
+    }
+    
+    console.log('[COR-CACHE] Atualizando status em tempo real do COR-Rio...');
+    
+    let estagioNum = null;
+    let estagioCor = null;
+    let estagioNome = null;
+    
+    // 1. Tentar API do estágio
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+        const resEstagio = await fetch('https://appcor.cor-rio.work/estagio_cidade', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         if (resEstagio.ok) {
             const data = await resEstagio.json();
             if (data && data.estagio) {
-                corCache.estagio = {
-                    estagio: data.estagio,
-                    cor: data.cor || '#228d46'
-                };
+                const match = data.estagio.match(/Estágio\s*([1-5])/i);
+                if (match) {
+                    estagioNum = parseInt(match[1], 10);
+                    estagioNome = `Estágio ${estagioNum}`;
+                    estagioCor = data.cor || STAGE_COLORS[estagioNum];
+                }
             }
-        } else {
-            throw new Error(`Estágio API HTTP ${resEstagio.status}`);
         }
+    } catch (err) {
+        console.warn('[COR-CACHE] API de Estágio offline, tentando fallback scraping:', err.message);
+    }
+    
+    // 2. Se a API de Estágio falhou ou retornou inválido, tenta o Scraper de cor.rio
+    if (!estagioNum) {
+        const scrapedNum = await parseEstagioFromHtml();
+        if (scrapedNum) {
+            estagioNum = scrapedNum;
+            estagioNome = `Estágio ${estagioNum}`;
+            estagioCor = STAGE_COLORS[estagioNum];
+            console.log(`[COR-CACHE] Estágio obtido via Scraping HTML de cor.rio: ${estagioNome}`);
+        }
+    }
+    
+    // Atualiza estágio se encontrado
+    if (estagioNum) {
+        corCache.estagio = {
+            estagio: estagioNome,
+            cor: estagioCor
+        };
+    }
+    
+    // 3. Tentar API de Calor
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const resCalor = await fetch('https://aplicativo.cocr.com.br/calor_api', { signal: controller.signal });
+        clearTimeout(timeoutId);
         
-        const resCalor = await fetch('https://appcor.cor-rio.work/calor_api', { timeout: 10000 });
         if (resCalor.ok) {
             const data = await resCalor.json();
             const nivel = data.nivel || data.level || data.heat_level || 1;
             corCache.calor = `calor ${nivel}`;
-        } else {
-            throw new Error(`Calor API HTTP ${resCalor.status}`);
         }
-        
-        corCache.lastUpdated = new Date().toISOString();
-        console.log('[COR-CACHE] Cache atualizado com sucesso:', corCache);
     } catch (err) {
-        console.error('[COR-CACHE] Erro ao atualizar cache do COR-Rio:', err.message);
+        console.warn('[COR-CACHE] API de Calor indisponível:', err.message);
     }
+    
+    corCache.lastUpdated = new Date().toISOString();
+    lastLiveFetchTime = agora;
+    console.log('[COR-CACHE] Cache atualizado:', corCache);
+    return corCache;
 }
 
-// Inicializa a primeira busca e agenda a execução a cada 3 horas
-atualizarCacheCOR();
-setInterval(atualizarCacheCOR, 3 * 60 * 60 * 1000);
+// Inicializa a primeira busca
+atualizarCacheCORLive(true).catch(err => console.error('[COR-CACHE] Erro inicial:', err.message));
 
-app.get('/api/cor/estagio', (req, res) => {
-    res.json(corCache.estagio);
+app.get('/api/status-operacional', async (req, res) => {
+    const force = req.query.force === 'true';
+    const cache = await atualizarCacheCORLive(force);
+    res.json(cache);
 });
 
-app.get('/api/cor/calor', (req, res) => {
-    res.send(corCache.calor);
+app.get('/api/cor/estagio', async (req, res) => {
+    const cache = await atualizarCacheCORLive(false);
+    res.json(cache.estagio);
+});
+
+app.get('/api/cor/calor', async (req, res) => {
+    const cache = await atualizarCacheCORLive(false);
+    res.send(cache.calor);
 });
 
 const serverGeocodeCache = new Map();
