@@ -136,6 +136,73 @@ async function initDB() {
             );
         `);
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
+
+        // Correção de dados históricos corrompidos (horários gigantes oriundos do erro do Excel)
+        try {
+            function restaurarHorarioCorrompido(str) {
+                if (!str) return null;
+                const parts = str.split(':');
+                if (parts.length !== 2) return str;
+                const hours = parseInt(parts[0], 10);
+                const minutes = parseInt(parts[1], 10);
+                if (isNaN(hours) || isNaN(minutes) || hours < 100) return str;
+                
+                const totalMinutes = hours * 60 + minutes;
+                const serial = totalMinutes / (24 * 60);
+                
+                const epoch = Date.UTC(1899, 11, 30);
+                const ms = Math.round(serial * 24 * 60 * 60 * 1000);
+                const date = new Date(epoch + ms);
+                
+                const dia = String(date.getUTCDate()).padStart(2, '0');
+                const mes = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const ano = date.getUTCFullYear();
+                const hr = String(date.getUTCHours()).padStart(2, '0');
+                const min = String(date.getUTCMinutes()).padStart(2, '0');
+                return `${dia}/${mes}/${ano} ${hr}:${min}`;
+            }
+
+            const selectRes = await client.query("SELECT id, horario, horario_termino FROM rotas_importadas WHERE (horario LIKE '%:%') OR (horario_termino LIKE '%:%')");
+            let corrigidas = 0;
+            const updates = [];
+            for (const row of selectRes.rows) {
+                let alterado = false;
+                let novoHorario = row.horario;
+                let novoHorarioTermino = row.horario_termino;
+                
+                if (row.horario && row.horario.includes(':')) {
+                    const hPart = parseInt(row.horario.split(':')[0], 10);
+                    if (!isNaN(hPart) && hPart >= 100) {
+                        novoHorario = restaurarHorarioCorrompido(row.horario);
+                        alterado = true;
+                    }
+                }
+                
+                if (row.horario_termino && row.horario_termino.includes(':')) {
+                    const hPart = parseInt(row.horario_termino.split(':')[0], 10);
+                    if (!isNaN(hPart) && hPart >= 100) {
+                        novoHorarioTermino = restaurarHorarioCorrompido(row.horario_termino);
+                        alterado = true;
+                    }
+                }
+                
+                if (alterado) {
+                    updates.push({ id: row.id, horario: novoHorario, horario_termino: novoHorarioTermino });
+                }
+            }
+            
+            if (updates.length > 0) {
+                await client.query("BEGIN");
+                for (const u of updates) {
+                    await client.query("UPDATE rotas_importadas SET horario = $1, horario_termino = $2 WHERE id = $3", [u.horario, u.horario_termino, u.id]);
+                    corrigidas++;
+                }
+                await client.query("COMMIT");
+                console.log(`✅ [MIGRAÇÃO DADOS] Corrigidos ${corrigidas} registros de rotas históricas com horários corrompidos.`);
+            }
+        } catch (migErr) {
+            console.warn('⚠️ [MIGRAÇÃO DADOS] Falha ao corrigir horários corrompidos históricos:', migErr.message);
+        }
         
         // Limpeza de posições GPS obsoletas (Retenção de 12 meses)
         try {

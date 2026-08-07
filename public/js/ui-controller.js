@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { showToast, escapeHtml } from './utils.js';
+import { showToast, escapeHtml, formatarHorario } from './utils.js';
 import { parseDataHora } from './data-service.js';
 
 function abrirCanalExterno(url) {
@@ -100,12 +100,14 @@ function exibirPainelAtendimento(a, isActive, activeTracker) {
     const telefone = a.telefone || (activeTracker ? activeTracker.motorista_telefone : 'N/D');
     const origem = a.origem || (activeTracker ? activeTracker.origem : 'Não informado');
     const destino = a.destino || (activeTracker ? activeTracker.destino : 'Não informado');
-    const horarioInicio = a.dataHoraInicioRaw || (activeTracker ? activeTracker.horario : 'N/D');
-    const horarioFim = a.dataHoraFimRaw || (activeTracker ? activeTracker.horario_termino : 'N/D');
+    const rawInicio = a.dataHoraInicioRaw || (activeTracker ? activeTracker.horario : null);
+    const rawFim = a.dataHoraFimRaw || (activeTracker ? activeTracker.horario_termino : null);
+    const horarioInicio = formatarHorario(rawInicio);
+    const horarioFim = formatarHorario(rawFim);
     const statusInfo = getPremiumRitStatus(a, isActive, activeTracker);
     
     const prioridade = a.prioridade || (programa.includes('ALTO') || programa.includes('VIP') ? 'ALTA' : 'MÉDIA');
-    const previsao = a.previsao || (horarioFim ? horarioFim : 'N/D');
+    const previsao = formatarHorario(a.previsao || rawFim);
     const atendimentoId = a.id || activeTracker?.id_rota || activeTracker?.id || 'N/D';
 
     // Data do atendimento
@@ -483,8 +485,8 @@ export class UiController {
                 { label: "Placa", val: a.placa_veiculo || a.placa || "N/D" },
                 { label: "Origem", val: a.origem || "Não informado" },
                 { label: "Destino", val: a.destino || "Não informado" },
-                { label: "Horário de Início", val: a.horario || "N/D" },
-                { label: "Horário Previsto", val: a.horario_termino || "N/D" },
+                { label: "Horário de Início", val: formatarHorario(a.horario) },
+                { label: "Horário Previsto", val: formatarHorario(a.horario_termino) },
                 { label: "Status Operacional", val: a.status_atendimento || a.statusAtendimento || "AGUARDANDO" },
                 { label: "Prioridade", val: a.prioridade || "MÉDIA" },
                 { label: "Observações", val: a.observacoes || "Sem observações" },
@@ -1062,7 +1064,7 @@ export class UiController {
             if (!file) return;
             
             try {
-                showToast("Processando e enviando base para o CCO...", "info");
+                showToast("Processando e enviando base para a Equipe de Transportes...", "info");
                 
                 const formData = new FormData();
                 formData.append("planilha", file);
@@ -1648,8 +1650,10 @@ export class UiController {
         const telefone = a.telefone || (activeTracker ? activeTracker.motorista_telefone : 'N/D');
         const origem = a.origem || (activeTracker ? activeTracker.origem : 'Não informado');
         const destino = a.destino || (activeTracker ? activeTracker.destino : 'Não informado');
-        const horarioInicio = a.dataHoraInicioRaw || (activeTracker ? activeTracker.horario : 'N/D');
-        const horarioFim = a.dataHoraFimRaw || (activeTracker ? activeTracker.horario_termino : 'N/D');
+        const rawInicio = a.dataHoraInicioRaw || (activeTracker ? activeTracker.horario : null);
+        const rawFim = a.dataHoraFimRaw || (activeTracker ? activeTracker.horario_termino : null);
+        const horarioInicio = formatarHorario(rawInicio);
+        const horarioFim = formatarHorario(rawFim);
         
         let actionsHtml = `<div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; gap: 6px;">`;
         if (telefone && !isActive) {
@@ -2677,7 +2681,7 @@ Por gentileza, solicitem ao motorista que disponibilize a posição online para 
 Link de disponibilização de posição:
 ${link}
 
-Importante: por regra contratual, esta solicitação deve ser feita pela Empresa/Cooperativa responsável, sem contato direto do CCO com o motorista.
+Importante: por regra contratual, esta solicitação deve ser feita pela Empresa/Cooperativa responsável, sem contato direto da Equipe de Transportes com o motorista.
 
 Obrigado.`;
 
@@ -2700,7 +2704,7 @@ Obrigado.`;
         document.getElementById('modalSolicitarPosicao').style.display = 'flex';
     }
 
-    async copiarTextoOperacional(texto, mensagemSucesso) {
+    async copiarTextoOperacional(texto, mensagemSucesso, duration = 3000) {
         if (!texto || !texto.trim()) {
             showToast('Nenhum conteúdo disponível para copiar.', 'warning');
             return false;
@@ -2719,7 +2723,7 @@ Obrigado.`;
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
             }
-            showToast(mensagemSucesso || 'Conteúdo copiado para a área de transferência.', 'success');
+            showToast(mensagemSucesso || 'Conteúdo copiado para a área de transferência.', 'success', duration);
             return true;
         } catch (error) {
             console.error('[COPIA_SOLICITACAO_POSICAO_ERRO]', error);
@@ -2728,28 +2732,50 @@ Obrigado.`;
         }
     }
 
-    copiarMensagemSolicitacao() {
+    animarBotaoCopiado(btn, textoOriginal) {
+        if (!btn) return;
+        btn.style.transform = 'scale(0.97)';
+        btn.style.transition = 'all 0.2s ease';
+        setTimeout(() => {
+            btn.style.transform = '';
+        }, 150);
+
+        btn.innerText = 'COPIADO ✓';
+        btn.style.color = '#00d1ff';
+        btn.style.borderColor = '#00d1ff';
+        
+        setTimeout(() => {
+            btn.innerText = textoOriginal;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    }
+
+    copiarMensagemSolicitacao(btn) {
         const text = document.getElementById('solicitarMsgText').value;
-        this.copiarTextoOperacional(text, 'Mensagem copiada para a área de transferência.');
+        this.copiarTextoOperacional(text, '✅ Mensagem copiada!', 2000);
+        this.animarBotaoCopiado(btn, 'Copiar Mensagem');
         this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_MENSAGEM_COPIADA');
     }
 
-    copiarLinkSolicitacao() {
+    copiarLinkSolicitacao(btn) {
         const text = document.getElementById('solicitarLinkInput').value;
         if (!text || text === 'Nenhum link de posicionamento disponível para este atendimento.') {
             showToast('Nenhum link de posicionamento disponível para este atendimento.', 'warning');
             return;
         }
-        this.copiarTextoOperacional(text, 'Link copiado para a área de transferência.');
+        this.copiarTextoOperacional(text, '✅ Link copiado!', 2000);
+        this.animarBotaoCopiado(btn, 'Copiar Link');
         this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_LINK_COPIADO');
     }
 
-    copiarTudoSolicitacao() {
+    copiarTudoSolicitacao(btn) {
         const msg = document.getElementById('solicitarMsgText').value;
         const link = document.getElementById('solicitarLinkInput').value;
         const linkStr = (link && link !== 'Nenhum link de posicionamento disponível para este atendimento.') ? link : '';
         const text = linkStr ? `${msg}\n\nLink de posicionamento:\n${linkStr}` : msg;
-        this.copiarTextoOperacional(text, 'Mensagem e Link copiados para a área de transferência.');
+        this.copiarTextoOperacional(text, 'Mensagem e Link copiados para a área de transferência.', 2000);
+        this.animarBotaoCopiado(btn, 'Copiar Tudo');
         this.registrarAuditoriaSolicitacao('SOLICITACAO_POSICAO_TUDO_COPIADO');
     }
 
@@ -2826,7 +2852,7 @@ Obrigado.`;
                     <span style="font-size:10px; color:#aaa;">Maior Gap: ${m.maior_falha_sinal_min} min</span>
                 </div>
                 <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding-left:4px;">
-                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase; margin-bottom:4px;">Classificação CCO</span>
+                    <span style="font-size:9px; color:#8a99a8; text-transform:uppercase; margin-bottom:4px;">Classificação Equipe de Transportes</span>
                     <span style="background:${classColor}; color:${textColor}; padding:3px 8px; border-radius:4px; font-size:9px; font-weight:900; text-transform:uppercase; box-shadow:0 0 10px ${classColor}55;">${labelClass}</span>
                 </div>
             `;
@@ -3280,7 +3306,7 @@ Obrigado.`;
                         <div class="val">${m.velocidade_media} km/h / ${m.velocidade_maxima} km/h</div>
                     </div>
                     <div class="box">
-                        <div class="title">Classificação Final CCO</div>
+                        <div class="title">Classificação Final Equipe de Transportes</div>
                         <div class="val" style="color: red;">${m.classificacao}</div>
                     </div>
                 </div>

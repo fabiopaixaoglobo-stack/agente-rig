@@ -1074,7 +1074,7 @@ app.post('/api/robot/run', async (req, res) => {
 app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
     try {
         const { atendimento, placa, motorista } = req.body;
-        const usuario = req.headers['x-user-matricula'] || 'CCO Operator';
+        const usuario = req.headers['x-user-matricula'] || 'Operador Equipe de Transportes';
 
         await pool.query(
             `INSERT INTO auditoria_operacional (usuario, atendimento, placa, motorista, data_hora, evento)

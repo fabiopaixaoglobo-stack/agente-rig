@@ -534,7 +534,7 @@
     </div>
   </div>
 
-  <!-- Modal Track e Telemetria do Atendimento (Auditoria CCO) -->
+  <!-- Modal Track e Telemetria do Atendimento (Auditoria Equipe de Transportes) -->
   <div id="modalTrackAtendimento" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 99999; justify-content: center; align-items: center;">
     <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 16px; width: 95%; max-width: 1200px; height: 92%; padding: 20px; color: white; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 25px rgba(0, 209, 255, 0.15); box-sizing: border-box; position: relative;">
       
@@ -544,7 +544,7 @@
         <button onclick="window.uiController.fecharModalTrack()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
       </div>
 
-      <!-- Metricas Operacionais CCO Dashboard -->
+      <!-- Metricas Operacionais Equipe de Transportes Dashboard -->
       <div id="trackMetricsPanel" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
         <!-- Preenchido dinamicamente via JS -->
       </div>
@@ -554,7 +554,7 @@
         
         <!-- Coluna Esquerda: Timeline de Auditoria -->
         <div style="width: 320px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; display: flex; flex-direction: column; padding: 12px; box-sizing: border-box;">
-          <h4 style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #00d1ff; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-list-check"></i> Timeline Auditoria CCO</h4>
+          <h4 style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #00d1ff; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-list-check"></i> Timeline Auditoria Equipe de Transportes</h4>
           <div id="trackTimelineContent" style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 12px;">
             <!-- Preenchido dinamicamente via JS -->
           </div>
@@ -613,9 +613,8 @@
         <input id="solicitarLinkInput" type="text" readonly style="width: 100%; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; color: #00d1ff; font-size: 11px; outline: none;" />
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
-        <button onclick="window.uiController.copiarMensagemSolicitacao()" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Mensagem</button>
-        <button onclick="window.uiController.copiarLinkSolicitacao()" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Link</button>
-        <button onclick="window.uiController.copiarTudoSolicitacao()" class="btn" style="background: #00d1ff; color: #071018; border: none; padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Tudo</button>
+        <button onclick="window.uiController.copiarMensagemSolicitacao(this)" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Mensagem</button>
+        <button onclick="window.uiController.copiarLinkSolicitacao(this)" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Link</button>
         <button onclick="document.getElementById('modalSolicitarPosicao').style.display='none'" class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Fechar</button>
       </div>
     </div>

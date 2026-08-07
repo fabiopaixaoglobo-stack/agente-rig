@@ -178,21 +178,63 @@ function findValueByHeader(row, keywords) {
     return null;
 }
 
+function restaurarHorarioCorrompido(str) {
+    if (!str) return null;
+    const parts = str.split(':');
+    if (parts.length !== 2) return str;
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    if (isNaN(hours) || isNaN(minutes) || hours < 100) return str;
+    
+    const totalMinutes = hours * 60 + minutes;
+    const serial = totalMinutes / (24 * 60);
+    
+    const epoch = Date.UTC(1899, 11, 30);
+    const ms = Math.round(serial * 24 * 60 * 60 * 1000);
+    const date = new Date(epoch + ms);
+    
+    const dia = String(date.getUTCDate()).padStart(2, '0');
+    const mes = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const ano = date.getUTCFullYear();
+    const hr = String(date.getUTCHours()).padStart(2, '0');
+    const min = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${dia}/${mes}/${ano} ${hr}:${min}`;
+}
+
 function formatarHorarioExcel(valor) {
-    if (valor == null) return '12:00';
+    if (valor == null) return 'Horário não informado';
     if (typeof valor === 'string') {
-        if (valor.includes(':')) return valor.trim();
-        const num = parseFloat(valor);
-        if (isNaN(num)) return valor.trim();
+        const trimmed = valor.trim();
+        if (trimmed.includes(':')) {
+            if (/^\d+:\d+$/.test(trimmed)) {
+                const restored = restaurarHorarioCorrompido(trimmed);
+                if (restored) return restored;
+            }
+            return trimmed;
+        }
+        const num = parseFloat(trimmed);
+        if (isNaN(num)) return trimmed;
         valor = num;
     }
     if (typeof valor === 'number') {
-        const totalMinutos = Math.round(valor * 24 * 60);
-        const horas = Math.floor(totalMinutos / 60);
-        const minutos = totalMinutos % 60;
-        return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+        if (valor > 1) {
+            const epoch = Date.UTC(1899, 11, 30);
+            const ms = Math.round(valor * 24 * 60 * 60 * 1000);
+            const date = new Date(epoch + ms);
+            const dia = String(date.getUTCDate()).padStart(2, '0');
+            const mes = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const ano = date.getUTCFullYear();
+            const hr = String(date.getUTCHours()).padStart(2, '0');
+            const min = String(date.getUTCMinutes()).padStart(2, '0');
+            return `${dia}/${mes}/${ano} ${hr}:${min}`;
+        } else {
+            const totalMinutos = Math.round(valor * 24 * 60);
+            const hr = String(Math.floor(totalMinutos / 60)).padStart(2, '0');
+            const min = String(totalMinutos % 60).padStart(2, '0');
+            return `${hr}:${min}`;
+        }
     }
-    return String(valor).trim();
+    return String(valor).trim() || 'Horário não informado';
 }
 
 router.post('/importar', upload.single('planilha'), async (req, res) => {
