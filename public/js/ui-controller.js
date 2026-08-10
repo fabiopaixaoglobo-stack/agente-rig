@@ -455,6 +455,7 @@ export class UiController {
             this.preencherDropdowns(combined);
             
             if (combined.length > 0) {
+                this._fitBoundsAfterPlot = true;
                 if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando coordenadas...</span>`;
                 await this.dataService.geocodificar((pct) => {
                     if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
@@ -1233,20 +1234,25 @@ export class UiController {
         if (!Array.isArray(lista)) lista = [];
         lista = lista.filter(Boolean);
 
+        console.log('[RIT MAP DIAGNOSTIC] ATENDIMENTOS RECEBIDOS:', lista.length);
+        console.table(lista.slice(0, 5));
+
         if (this.mapMode === 'TODOS') {
             const validItems = lista.filter(a => {
                 if (!a) return false;
                 const activeTracker = (this.activeTrackers || []).find(t => t && 
                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase()
                 );
-                const hasTrackerCoords = activeTracker && isFinite(parseFloat(activeTracker.lat)) && isFinite(parseFloat(activeTracker.lng));
-                const hasOwnCoords = isFinite(parseFloat(a.lat)) && isFinite(parseFloat(a.lng));
-                return hasTrackerCoords || hasOwnCoords;
+                const hasTrackerCoords = activeTracker && !isNaN(parseFloat(activeTracker.lat)) && !isNaN(parseFloat(activeTracker.lng));
+                const hasItemCoords = !isNaN(parseFloat(a.lat)) && !isNaN(parseFloat(a.lng));
+                return hasTrackerCoords || hasItemCoords;
             });
-            console.log(`[PLOT] Total: ${lista.length} | Com coordenadas: ${validItems.length} | Sem coordenadas: ${lista.length - validItems.length}`);
+            
+            console.log('[RIT MAP DIAGNOSTIC] REGISTROS COM COORDENADAS VÁLIDAS:', validItems.length);
             
             const total = validItems.length;
             if (total === 0) {
+                this.mapService.clearMarkers();
                 this.atualizarListaSidebar(lista);
                 return;
             }
@@ -1268,8 +1274,8 @@ export class UiController {
                     );
                     const isActive = !!activeTracker;
                     
-                    const plotLat = (isActive && activeTracker.lat) ? parseFloat(activeTracker.lat) : a.lat;
-                    const plotLng = (isActive && activeTracker.lng) ? parseFloat(activeTracker.lng) : a.lng;
+                    const plotLat = (isActive && activeTracker.lat) ? parseFloat(activeTracker.lat) : parseFloat(a.lat);
+                    const plotLng = (isActive && activeTracker.lng) ? parseFloat(activeTracker.lng) : parseFloat(a.lng);
                     
                     const popupHtml = this.obterHtmlPopupAtendimento(a, isActive, activeTracker);
  
@@ -1350,18 +1356,25 @@ export class UiController {
                     setTimeout(renderNextChunk, 10);
                 } else {
                     this.mapService.syncActiveMarkers(activeIdsSet);
-                    if (this._fitBoundsAfterPlot) {
-                        this._fitBoundsAfterPlot = false;
-                        const markers = [];
-                        activeIdsSet.forEach(idKey => {
-                            const m = this.mapService.markersMap.get(idKey);
-                            if (m) markers.push(m);
-                        });
-                        if (markers.length > 0) {
-                            const group = L.featureGroup(markers);
-                            this.mapService.map.fitBounds(group.getBounds(), { padding: [30, 30] });
+                    this.mapService.invalidateSize();
+                    
+                    const markers = [];
+                    activeIdsSet.forEach(idKey => {
+                        const m = this.mapService.markersMap.get(idKey);
+                        if (m) markers.push(m);
+                    });
+                    
+                    console.log('[RIT MAP DIAGNOSTIC] TOTAL DE MARCADORES NA CAMADA:', markers.length);
+                    
+                    if (markers.length > 0) {
+                        const group = L.featureGroup(markers);
+                        const bounds = group.getBounds();
+                        console.log('[RIT MAP DIAGNOSTIC] BOUNDS VÁLIDOS:', bounds.isValid(), bounds);
+                        if (bounds.isValid()) {
+                            this.mapService.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
                         }
                     }
+                    this._fitBoundsAfterPlot = false;
                 }
             };
 

@@ -117,9 +117,19 @@ body {
 
 /* MAIN LAYOUT */
 .main {
-  padding-top: calc(var(--header-h) + var(--tabs-h));
-  height: 100vh;
+  margin-top: calc(var(--header-h) + var(--tabs-h));
+  height: calc(100vh - var(--header-h) - var(--tabs-h));
   display: flex;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.leaflet-custom-marker {
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .tabPane { 
