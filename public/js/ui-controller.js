@@ -321,13 +321,13 @@ export class UiController {
             fatorMadrugada: 1.2
         };
 
-        this.initTabs();
-        this.initFilters();
-        this.initUpload();
-        this.initChatRIT();
-        this.initModals();
-        this.initPlanner();
-        this.initRegionalization();
+        try { this.initTabs(); } catch (e) { console.error("Erro initTabs:", e); }
+        try { this.initFilters(); } catch (e) { console.error("Erro initFilters:", e); }
+        try { this.initUpload(); } catch (e) { console.error("Erro initUpload:", e); }
+        try { this.initChatRIT(); } catch (e) { console.error("Erro initChatRIT:", e); }
+        try { this.initModals(); } catch (e) { console.error("Erro initModals:", e); }
+        try { this.initPlanner(); } catch (e) { console.error("Erro initPlanner:", e); }
+        try { this.initRegionalization(); } catch (e) { console.error("Erro initRegionalization:", e); }
         
         this.mapMode = 'TODOS';
         this.gpsIntervalId = null;
@@ -335,13 +335,16 @@ export class UiController {
         this.activeGpsPopupDriver = null;
         this.activeGpsPopupMode = null;
         
-        this.mapService.map.on('popupclose', () => {
-            this.activeGpsPopupDriver = null;
-            this.activeGpsPopupMode = null;
-        });
-        this.initMapModeToggle();
-        this.iniciarPoolActiveTrackers();
-        this.carregarBaseExistente();
+        if (this.mapService?.map) {
+            this.mapService.map.on('popupclose', () => {
+                this.activeGpsPopupDriver = null;
+                this.activeGpsPopupMode = null;
+            });
+        }
+        
+        try { this.initMapModeToggle(); } catch (e) { console.error("Erro initMapModeToggle:", e); }
+        try { this.iniciarPoolActiveTrackers(); } catch (e) { console.error("Erro iniciarPoolActiveTrackers:", e); }
+        try { this.carregarBaseExistente(); } catch (e) { console.error("Erro carregarBaseExistente:", e); }
         
         // Delegação de evento para o botão "Ver no Mapa" na lista de atendimentos
         document.addEventListener('click', (e) => {
@@ -1552,8 +1555,15 @@ export class UiController {
             if (reg === 'RJ') {
                 if (elCalor) elCalor.style.display = 'inline-block';
                 if (this.corRioService) {
-                    this.corRioService.fetchEstagio();
-                    this.corRioService.fetchCalor();
+                    try {
+                        if (typeof this.corRioService.fetchStatusOperacional === 'function') {
+                            this.corRioService.fetchStatusOperacional();
+                        } else if (typeof this.corRioService.fetchEstagio === 'function') {
+                            this.corRioService.fetchEstagio();
+                        }
+                    } catch (corErr) {
+                        console.warn("[RIT] Erro ao buscar status COR.RIO:", corErr);
+                    }
                 }
             } else {
                 if (elCalor) elCalor.style.display = 'none';
