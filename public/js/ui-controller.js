@@ -357,78 +357,98 @@ export class UiController {
     }
 
     async carregarBaseExistente() {
+        const regional = (document.getElementById('seletor-regiao')?.value || 'RJ');
+        console.log('[LOAD] Regional selecionada:', regional);
+        console.log('[LOAD] Buscando mapa ativo');
+        
         try {
             const statusEl = document.getElementById("geo-status");
             if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Carregando base...</span>`;
             
             let serverAtendimentos = [];
             try {
-                const res = await fetch("/api/rotas/listar");
+                const res = await fetch(`/api/rotas/mapa-ativo?regional=${regional}`);
                 const json = await res.json();
-                if (json.ok && json.resultados.length > 0) {
-                    serverAtendimentos = json.resultados.map(r => ({
-                        id: r.id,
-                        motorista: r.motorista_nome || '',
-                        telefone: r.motorista_telefone || '',
-                        tipoVeiculo: r.tipo_veiculo || '',
-                        programa: r.programa || 'RIT',
-                        placa: r.placa_veiculo || '',
-                        bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
-                        dataHoraInicioRaw: r.horario,
-                        dataHoraFimRaw: r.horario_termino,
-                        horario: r.horario,
-                        data_atendimento: r.data_atendimento,
-                        horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
-                        lat: null,
-                        lng: null,
-                        passageiro: r.passageiro || '',
-                        origem: r.origem || '',
-                        destino: r.destino || '',
-                        statusAtendimento: r.status_atendimento,
-                        ot: r.ot || '',
-                        codigo_ot_detalhado: r.codigo_ot_detalhado || ''
-                    }));
+                
+                const resultados = (json && Array.isArray(json.resultados)) ? json.resultados : [];
+                console.log('[LOAD] Mapa encontrado');
+                console.log('[LOAD] Quantidade de registros carregados:', resultados.length);
+                
+                if (resultados.length > 0) {
+                    serverAtendimentos = resultados.map(r => {
+                        if (!r) return null;
+                        return {
+                            id: r.id,
+                            motorista: r.motorista_nome || '',
+                            telefone: r.motorista_telefone || '',
+                            tipoVeiculo: r.tipo_veiculo || '',
+                            programa: r.programa || 'RIT',
+                            placa: r.placa_veiculo || '',
+                            bairro: (r.destino || '').split(',').pop().trim() || 'Rio de Janeiro',
+                            dataHoraInicioRaw: r.horario,
+                            dataHoraFimRaw: r.horario_termino,
+                            horario: r.horario,
+                            data_atendimento: r.data_atendimento,
+                            horarioInicio: r.horario ? (r.horario.split(' ')[1] || r.horario) : '12:00',
+                            lat: null,
+                            lng: null,
+                            passageiro: r.passageiro || '',
+                            origem: r.origem || '',
+                            destino: r.destino || '',
+                            statusAtendimento: r.status_atendimento,
+                            ot: r.ot || '',
+                            codigo_ot_detalhado: r.codigo_ot_detalhado || ''
+                        };
+                    }).filter(Boolean);
                 }
             } catch (e) {
-                console.warn("[RIT-UI] Failed to load server list, using local data:", e);
+                console.error('[ERROR] Endpoint: GET /mapa-ativo | Regional:', regional, '| Mensagem original:', e.message, '| Stack completa:', e.stack);
             }
 
             // Load and Merge Manual Monitorings
             let manualMonitorings = [];
             try {
-                manualMonitorings = JSON.parse(localStorage.getItem('rit_manual_monitorings') || '[]');
+                const rawManual = localStorage.getItem('rit_manual_monitorings');
+                manualMonitorings = rawManual ? JSON.parse(rawManual) : [];
+                if (!Array.isArray(manualMonitorings)) manualMonitorings = [];
             } catch (e) {
                 console.error("[RIT-UI] Error reading manual monitorings:", e);
             }
 
-            const mappedManuals = manualMonitorings.map(m => ({
-                id: m.id,
-                motorista: m.motorista,
-                telefone: m.telefone,
-                tipoVeiculo: m.tipoVeiculo,
-                programa: m.programa,
-                placa: m.placa,
-                bairro: m.destino,
-                dataHoraInicioRaw: m.dataHoraInicioRaw,
-                dataHoraFimRaw: m.dataHoraFimRaw,
-                horarioInicio: m.dataHoraInicioRaw,
-                lat: null,
-                lng: null,
-                passageiro: m.passageiro,
-                origem: m.origem,
-                destino: m.destino,
-                statusAtendimento: m.statusAtendimento || 'AGUARDANDO',
-                isManual: true
-            }));
+            const mappedManuals = (manualMonitorings || []).map(m => {
+                if (!m) return null;
+                return {
+                    id: m.id,
+                    motorista: m.motorista,
+                    telefone: m.telefone,
+                    tipoVeiculo: m.tipoVeiculo,
+                    programa: m.programa,
+                    placa: m.placa,
+                    bairro: m.destino,
+                    dataHoraInicioRaw: m.dataHoraInicioRaw,
+                    dataHoraFimRaw: m.dataHoraFimRaw,
+                    horarioInicio: m.dataHoraInicioRaw,
+                    lat: null,
+                    lng: null,
+                    passageiro: m.passageiro,
+                    origem: m.origem,
+                    destino: m.destino,
+                    statusAtendimento: m.statusAtendimento || 'AGUARDANDO',
+                    isManual: true
+                };
+            }).filter(Boolean);
 
             // Combine server and manual
             const combined = [...mappedManuals];
-            serverAtendimentos.forEach(s => {
-                const exists = combined.some(x => String(x.id) === String(s.id) || String(x.placa) === String(s.placa));
-                if (!exists) {
-                    combined.push(s);
-                }
-            });
+            if (Array.isArray(serverAtendimentos)) {
+                serverAtendimentos.forEach(s => {
+                    if (!s) return;
+                    const exists = combined.some(x => x && (String(x.id) === String(s.id) || String(x.placa) === String(s.placa)));
+                    if (!exists) {
+                        combined.push(s);
+                    }
+                });
+            }
 
             this.dataService.baseAtendimentos = combined;
             window.transportMapData = combined;
@@ -441,11 +461,18 @@ export class UiController {
                 });
                 if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
                 this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                this.atualizarResumoContadores();
             } else {
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Sem base carregada</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Nenhum mapa ativo encontrado para esta regional.</span>`;
+                this.plotarAtendimentos([]);
+                this.atualizarResumoContadores();
             }
         } catch (e) {
-            console.error("Erro ao carregar base existente:", e);
+            console.error('[ERROR] Endpoint: carregarBaseExistente | Regional:', regional, '| Mensagem original:', e.message, '| Stack completa:', e.stack);
+            const statusEl = document.getElementById("geo-status");
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--bad)">Nenhum mapa ativo encontrado para esta regional.</span>`;
+            this.plotarAtendimentos([]);
+            this.atualizarResumoContadores();
         }
     }
 
@@ -720,7 +747,7 @@ export class UiController {
                 showToast("Nenhum atendimento encontrado para a busca informada.", "warning");
                 console.warn('[BUSCA DINÂMICA] Nenhum atendimento encontrado para a busca:', searchValue);
             } else if (filteredData.length > 0 && searchValue.trim() !== "") {
-                const hasCoords = filteredData.some(item => (item.lat && item.lng));
+                const hasCoords = (filteredData || []).some(item => item && (item.lat && item.lng));
                 if (!hasCoords) {
                     showToast("Atendimento encontrado, mas sem coordenadas para exibição no mapa.", "warning");
                     console.warn('[BUSCA DINÂMICA] Atendimentos encontrados sem coordenadas geográficas.');
@@ -924,11 +951,11 @@ export class UiController {
         if (!el) return;
 
         const total = (this.dataService.baseAtendimentos || []).length;
-        const filtradosList = this.obterAtendimentosFiltrados();
+        const filtradosList = this.obterAtendimentosFiltrados() || [];
         const filtrados = filtradosList.length;
         
         const compartilhando = filtradosList.filter(a => 
-            this.activeTrackers.some(t => 
+            a && (this.activeTrackers || []).some(t => t && 
                 (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                 (!t.id_rota || Number(t.id_rota) === Number(a.id))
             )
@@ -942,14 +969,15 @@ export class UiController {
             fetch('/api/gps/active-trackers')
                 .then(r => r.json())
                 .then(data => {
-                    if (data.ok) {
-                        this.activeTrackers = data.trackers || [];
+                    if (data && data.ok) {
+                        this.activeTrackers = Array.isArray(data.trackers) ? data.trackers : [];
                         let statusMudou = false;
 
                         // Sincroniza status de atendimento local
-                        if (this.dataService.baseAtendimentos) {
+                        if (Array.isArray(this.dataService.baseAtendimentos)) {
                             this.dataService.baseAtendimentos.forEach(a => {
-                                const active = this.activeTrackers.find(t => 
+                                if (!a) return;
+                                const active = (this.activeTrackers || []).find(t => t && 
                                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                                     (!t.id_rota || Number(t.id_rota) === Number(a.id))
                                 );
@@ -1063,25 +1091,31 @@ export class UiController {
             const file = e.target.files[0];
             if (!file) return;
             
+            const regional = document.getElementById('seletor-regiao')?.value || 'RJ';
+            console.log('[IMPORT] Arquivo recebido:', file.name);
+            console.log('[IMPORT] Regional selecionada:', regional);
+
             try {
                 showToast("Processando e enviando base para a Equipe de Transportes...", "info");
                 
                 const formData = new FormData();
                 formData.append("planilha", file);
                 
-                const res = await fetch("/api/rotas/importar?tipo=monitoramento", {
+                const res = await fetch(`/api/rotas/importar?tipo=monitoramento&regional=${regional}`, {
                     method: "POST",
                     body: formData
                 });
                 const json = await res.json();
                 
-                if (!json.ok) {
-                    throw new Error(json.error || "Erro ao fazer upload da base");
+                if (!json || !json.ok) {
+                    throw new Error((json && json.error) || "Erro ao fazer upload da base");
                 }
                 
-                // Filtra apenas registros processados com sucesso no banco de dados
-                const atendimentos = json.resultados
-                    .filter(r => r.status === 'SUCESSO')
+                const resultados = Array.isArray(json.resultados) ? json.resultados : [];
+                console.log('[IMPORT] Quantidade de registros:', resultados.length);
+
+                const atendimentos = resultados
+                    .filter(r => r && r.status === 'SUCESSO')
                     .map(r => ({
                         id: r.id,
                         motorista: r.motorista_nome || '',
@@ -1108,17 +1142,19 @@ export class UiController {
                 this.preencherDropdowns(atendimentos);
                 
                 const statusEl = document.getElementById("geo-status");
-                statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando...</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando...</span>`;
                 
                 await this.dataService.geocodificar((pct) => {
-                    statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
                 });
                 
-                statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
                 this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                this.atualizarResumoContadores();
                 showToast("Base carregada com sucesso!", "success");
+                console.log('[IMPORT] Processo concluído.');
             } catch (err) {
-                console.error(err);
+                console.error('[ERROR] Endpoint: POST /importar | Regional:', regional, '| Mensagem original:', err.message, '| Stack completa:', err.stack);
                 showToast(err.message || "Erro ao processar planilha.", "error");
             }
         });
@@ -1194,9 +1230,13 @@ export class UiController {
     }
 
     plotarAtendimentos(lista) {
+        if (!Array.isArray(lista)) lista = [];
+        lista = lista.filter(Boolean);
+
         if (this.mapMode === 'TODOS') {
             const validItems = lista.filter(a => {
-                const activeTracker = this.activeTrackers.find(t => 
+                if (!a) return false;
+                const activeTracker = (this.activeTrackers || []).find(t => t && 
                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase()
                 );
                 return (activeTracker && activeTracker.lat && activeTracker.lng) || (a.lat && a.lng);
@@ -1218,7 +1258,8 @@ export class UiController {
                 const limit = Math.min(index + chunkSize, total);
                 for (; index < limit; index++) {
                     const a = validItems[index];
-                    const activeTracker = this.activeTrackers.find(t => 
+                    if (!a) continue;
+                    const activeTracker = (this.activeTrackers || []).find(t => t && 
                         (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                         (!t.id_rota || Number(t.id_rota) === Number(a.id))
                     );
@@ -1332,8 +1373,11 @@ export class UiController {
         if (!listEl) return;
         listEl.innerHTML = "";
 
+        if (!Array.isArray(lista)) return;
+
         lista.forEach(a => {
-            const isActive = this.activeTrackers.some(t => 
+            if (!a) return;
+            const isActive = (this.activeTrackers || []).some(t => t && 
                 (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() &&
                 (!t.id_rota || Number(t.id_rota) === Number(a.id))
             );
@@ -1461,6 +1505,8 @@ export class UiController {
             const config = regioes[reg];
             if (!config) return;
 
+            localStorage.setItem('rit_selected_regional', reg);
+
             if (brandRegional) brandRegional.textContent = `TRANSPORTES ${config.label}`;
             if (tabBtnCameras) tabBtnCameras.textContent = `Câmeras ${config.label}`;
             if (tabBtnRadar) tabBtnRadar.textContent = `Radar Meteorológico ${config.label}`;
@@ -1495,7 +1541,13 @@ export class UiController {
 
         seletor.addEventListener('change', (e) => {
             aplicarRegiao(e.target.value);
+            this.carregarBaseExistente();
         });
+
+        const savedRegional = localStorage.getItem('rit_selected_regional');
+        if (savedRegional && regioes[savedRegional]) {
+            seletor.value = savedRegional;
+        }
 
         aplicarRegiao(seletor.value);
     }
@@ -1547,13 +1599,14 @@ export class UiController {
                 .then(r => r.json())
                 .then(data => {
                     if (data.ok && this.mapMode === 'ONLINE') {
-                        this.activeTrackers = data.trackers || [];
+                        this.activeTrackers = Array.isArray(data.trackers) ? data.trackers : [];
                         const activeIdsSet = new Set();
                         
-                        data.trackers.forEach(t => {
+                        this.activeTrackers.forEach(t => {
+                            if (!t) return;
                             const match = (this.dataService.baseAtendimentos || []).find(a => 
-                                (a.motorista || '').trim().toLowerCase() === (t.motorista_name || '').trim().toLowerCase() ||
-                                (t.id_rota && String(t.id_rota) === String(a.id))
+                                a && ((a.motorista || '').trim().toLowerCase() === (t.motorista_name || '').trim().toLowerCase() ||
+                                (t.id_rota && String(t.id_rota) === String(a.id)))
                             ) || {};
 
                             const popupHtml = this.obterHtmlPopupAtendimento(match, true, t);
@@ -2146,8 +2199,11 @@ export class UiController {
         ];
         
         const pedagiosDetectados = [];
+        if (!Array.isArray(coordinates)) return pedagiosDetectados;
+        
         for (const p of pedagios) {
             const cruzou = coordinates.some(coord => {
+                if (!coord || coord.length < 2) return false;
                 // coordenadas no Leaflet/OSRM do UI controller mapeadas em [lat, lon]
                 const lat = coord[0];
                 const lon = coord[1];

@@ -156,7 +156,7 @@ body {
   padding: 6px; /* Reduzido */
   overflow-y: hidden;
   backdrop-filter: blur(10px);
-  height: calc(100vh - 120px);
+  height: 100%;
 }
 
 .sidebar .panel { padding: 8px; margin-bottom: 6px; }

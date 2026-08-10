@@ -330,12 +330,25 @@
                 try {
                     const trackRes = await fetch(`${apiBase}/gps/active-trackers`);
                     if (trackRes.ok) {
-                        fetchedTrackers = await trackRes.json();
+                        const trackData = await trackRes.json();
+                        // API returns {ok: true, trackers: [...]} — extract the array
+                        if (Array.isArray(trackData)) {
+                            fetchedTrackers = trackData;
+                        } else if (trackData && Array.isArray(trackData.trackers)) {
+                            fetchedTrackers = trackData.trackers;
+                        } else {
+                            fetchedTrackers = [];
+                        }
                     } else {
                         // Fallback to active endpoint
                         const trackRes2 = await fetch(`${apiBase}/gps/active`);
                         if (trackRes2.ok) {
-                            fetchedTrackers = await trackRes2.json();
+                            const trackData2 = await trackRes2.json();
+                            if (Array.isArray(trackData2)) {
+                                fetchedTrackers = trackData2;
+                            } else if (trackData2 && Array.isArray(trackData2.trackers)) {
+                                fetchedTrackers = trackData2.trackers;
+                            }
                         }
                     }
                 } catch (e) {
@@ -345,45 +358,51 @@
                 }
 
                 // Merge Manual and Auto
-                const manuals = getManualMonitorings();
+                const manuals = typeof getManualMonitorings === 'function' ? getManualMonitorings() : [];
                 
                 // Keep manual items first, then server items
-                const combined = [...manuals];
+                const combined = Array.isArray(manuals) ? [...manuals] : [];
                 
-                fetchedRotas.forEach(r => {
-                    // Check if already mapped to prevent duplicate
-                    const exists = combined.some(x => String(x.id) === String(r.id) || String(x.placa) === String(r.placa_veiculo));
-                    if (!exists) {
-                        combined.push({
-                            id: r.id,
-                            programa: r.programa,
-                            motorista: r.motorista_nome || r.motorista,
-                            telefone: r.motorista_telefone || r.telefone,
-                            tipoVeiculo: r.tipo_veiculo || r.tipoVeiculo,
-                            placa: r.placa_veiculo || r.placa,
-                            passageiro: r.passageiro,
-                            origem: r.origem,
-                            destino: r.destino,
-                            dataHoraInicioRaw: r.horario,
-                            dataHoraFimRaw: r.horario_termino,
-                            statusAtendimento: r.status_atendimento || 'AGUARDANDO'
-                        });
-                    }
-                });
+                if (Array.isArray(fetchedRotas)) {
+                    fetchedRotas.forEach(r => {
+                        if (!r) return;
+                        // Check if already mapped to prevent duplicate
+                        const exists = combined.some(x => x && (String(x.id) === String(r.id) || String(x.placa) === String(r.placa_veiculo)));
+                        if (!exists) {
+                            combined.push({
+                                id: r.id,
+                                programa: r.programa,
+                                motorista: r.motorista_nome || r.motorista,
+                                telefone: r.motorista_telefone || r.telefone,
+                                tipoVeiculo: r.tipo_veiculo || r.tipoVeiculo,
+                                placa: r.placa_veiculo || r.placa,
+                                passageiro: r.passageiro,
+                                origem: r.origem,
+                                destino: r.destino,
+                                dataHoraInicioRaw: r.horario,
+                                dataHoraFimRaw: r.horario_termino,
+                                statusAtendimento: r.status_atendimento || 'AGUARDANDO'
+                            });
+                        }
+                    });
+                }
 
                 this.atendimentos = combined;
                 this.activeTrackers = Array.isArray(fetchedTrackers) ? fetchedTrackers : [];
                 
                 // Auto active status update for manual
-                this.atendimentos.forEach(a => {
-                    const online = this.activeTrackers.some(t => 
-                        (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() ||
-                        (t.id_rota && String(t.id_rota) === String(a.id))
-                    );
-                    if (online) {
-                        a.statusAtendimento = 'EM VIAGEM';
-                    }
-                });
+                if (Array.isArray(this.atendimentos)) {
+                    this.atendimentos.forEach(a => {
+                        if (!a) return;
+                        const online = (this.activeTrackers || []).some(t => t && (
+                            (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() ||
+                            (t.id_rota && String(t.id_rota) === String(a.id))
+                        ));
+                        if (online) {
+                            a.statusAtendimento = 'EM VIAGEM';
+                        }
+                    });
+                }
 
                 this.updateFiltersOptions();
                 this.render();
@@ -397,11 +416,14 @@
             const bairros = new Set();
             const tipos = new Set();
 
-            this.atendimentos.forEach(a => {
-                if (a.programa) progs.add(a.programa);
-                if (a.destino) bairros.add(a.destino);
-                if (a.tipoVeiculo) tipos.add(a.tipoVeiculo);
-            });
+            if (Array.isArray(this.atendimentos)) {
+                this.atendimentos.forEach(a => {
+                    if (!a) return;
+                    if (a.programa) progs.add(a.programa);
+                    if (a.destino) bairros.add(a.destino);
+                    if (a.tipoVeiculo) tipos.add(a.tipoVeiculo);
+                });
+            }
 
             this.populateSelect('rit-filtro-programa', progs, this.filters.programa, 'Programa');
             this.populateSelect('rit-filtro-bairro', bairros, this.filters.bairro, 'Bairro');
@@ -426,7 +448,8 @@
             if (!listEl) return;
 
             // Apply Filters
-            const filtered = this.atendimentos.filter(a => {
+            const filtered = (this.atendimentos || []).filter(a => {
+                if (!a) return false;
                 if (this.filters.programa && a.programa !== this.filters.programa) return false;
                 if (this.filters.bairro && a.destino !== this.filters.bairro) return false;
                 if (this.filters.tipo && a.tipoVeiculo !== this.filters.tipo) return false;
@@ -440,19 +463,21 @@
             listEl.innerHTML = '';
             
             // Update counts
-            const total = this.atendimentos.length;
-            const onlineCount = this.activeTrackers.length;
-            document.getElementById('rit-resumo').textContent = `Importados: ${total} | Compartilhando: ${onlineCount}`;
+            const total = (this.atendimentos || []).length;
+            const onlineCount = (this.activeTrackers || []).length;
+            const resumoEl = document.getElementById('rit-resumo');
+            if (resumoEl) resumoEl.textContent = `Importados: ${total} | Compartilhando: ${onlineCount}`;
 
             if (filtered.length === 0) {
                 listEl.innerHTML = `<div style="text-align:center; padding:20px; color:var(--rit-muted); font-size:11px;">Nenhum atendimento corresponde aos filtros.</div>`;
             }
 
             filtered.forEach(a => {
-                const isOnline = this.activeTrackers.some(t => 
+                if (!a) return;
+                const isOnline = (this.activeTrackers || []).some(t => t && (
                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase() ||
                     (t.id_rota && String(t.id_rota) === String(a.id))
-                );
+                ));
 
                 const card = document.createElement('div');
                 card.className = 'rit-card';
@@ -505,15 +530,16 @@
             this.markers.forEach(m => this.map.removeLayer(m));
             this.markers.clear();
 
-            this.activeTrackers.forEach(t => {
+            (this.activeTrackers || []).forEach(t => {
+                if (!t) return;
                 const name = t.motorista_name || t.motorista || 'Motorista';
                 const speed = t.speed || 0;
                 const timestamp = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '--:--:--';
                 
                 // Find matching itinerary
-                const match = this.atendimentos.find(a => 
-                    (a.motorista || '').trim().toLowerCase() === name.trim().toLowerCase() ||
-                    (t.id_rota && String(t.id_rota) === String(a.id))
+                const match = (this.atendimentos || []).find(a => 
+                    a && ((a.motorista || '').trim().toLowerCase() === name.trim().toLowerCase() ||
+                    (t.id_rota && String(t.id_rota) === String(a.id)))
                 ) || {};
 
                 const popupHtml = `

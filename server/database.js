@@ -110,6 +110,20 @@ async function initDB() {
             );
         `);
         await client.query(`
+            CREATE TABLE IF NOT EXISTS monitoramento_bases (
+                id SERIAL PRIMARY KEY,
+                regional TEXT NOT NULL,
+                nome_arquivo TEXT,
+                json_mapa JSONB NOT NULL,
+                qtd_registros INTEGER,
+                checksum TEXT,
+                ativo BOOLEAN DEFAULT TRUE,
+                data_importacao TIMESTAMPTZ DEFAULT NOW(),
+                criado_por TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_bases_regional_ativo ON monitoramento_bases(regional, ativo);
+        `);
+        await client.query(`
             CREATE TABLE IF NOT EXISTS gps_historico_atendimento (
                 id SERIAL PRIMARY KEY,
                 id_atendimento INTEGER NOT NULL,

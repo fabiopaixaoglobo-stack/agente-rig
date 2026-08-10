@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const xlsx = require('xlsx');
+const crypto = require('crypto');
 const { pool } = require('./database');
 const { getGeocode } = require('./geocode');
 
@@ -465,11 +466,98 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             }
         }
 
+        if (req.query.tipo === 'monitoramento') {
+            const regional = req.query.regional || 'RJ';
+            const checksum = crypto.createHash('md5').update(req.file.buffer).digest('hex');
+            console.log('[IMPORT] Arquivo recebido:', req.file.originalname);
+            console.log('[IMPORT] Regional selecionada:', regional);
+            const successfulResults = (resultados || []).filter(r => r.status === 'SUCESSO');
+            const qtd_registros = successfulResults.length;
+            console.log('[IMPORT] Quantidade de registros:', qtd_registros);
+            console.log('[IMPORT] Checksum calculado:', checksum);
+
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                console.log(`[IMPORT] Mapa anterior inativado para a regional: ${regional}`);
+                await client.query(
+                    'UPDATE monitoramento_bases SET ativo = FALSE WHERE regional = $1',
+                    [regional]
+                );
+                console.log(`[IMPORT] Nova base criada e ativada para a regional: ${regional}`);
+                await client.query(
+                    `INSERT INTO monitoramento_bases 
+                    (regional, nome_arquivo, json_mapa, qtd_registros, checksum, ativo, criado_por) 
+                    VALUES ($1, $2, $3, $4, $5, TRUE, $6)`,
+                    [
+                        regional,
+                        req.file.originalname,
+                        JSON.stringify(resultados),
+                        qtd_registros,
+                        checksum,
+                        id_usuario ? String(id_usuario) : 'Sistema'
+                    ]
+                );
+                await client.query('COMMIT');
+                console.log('[IMPORT] Processo concluído.');
+            } catch (txErr) {
+                await client.query('ROLLBACK');
+                console.error('[ERROR] Falha na transação de importação da base. Executado ROLLBACK:', txErr);
+                throw txErr;
+            } finally {
+                client.release();
+            }
+        }
+
         res.json({ ok: true, id_lote, resultados });
 
     } catch (error) {
-        console.error('Erro no upload de base:', error);
+        console.error('[ERROR] Endpoint: POST /importar | Mensagem original:', error.message, '| Stack:', error.stack);
         res.status(500).json({ error: 'Falha ao processar o arquivo de lotes.' });
+    }
+});
+
+router.get('/mapa-ativo', async (req, res) => {
+    const regional = req.query.regional;
+    console.log(`[LOAD] Regional selecionada: ${regional}`);
+    console.log(`[LOAD] Buscando mapa ativo`);
+    
+    if (!regional) {
+        console.error('[ERROR] Endpoint: GET /mapa-ativo | Mensagem original: Regional não informada.');
+        return res.status(400).json({ error: 'Regional não informada.' });
+    }
+    
+    try {
+        const result = await pool.query(
+            `SELECT id, regional, nome_arquivo, json_mapa, qtd_registros, ativo, data_importacao 
+             FROM monitoramento_bases 
+             WHERE regional = $1 AND ativo = TRUE 
+             LIMIT 1`,
+            [regional]
+        );
+        
+        if (result.rows.length === 0) {
+            console.log(`[LOAD] Nenhum mapa ativo encontrado para a regional: ${regional}`);
+            return res.json({ ok: true, resultados: [] });
+        }
+        
+        const row = result.rows[0];
+        const resultados = typeof row.json_mapa === 'string' ? JSON.parse(row.json_mapa) : row.json_mapa;
+        console.log(`[LOAD] Mapa encontrado`);
+        console.log(`[LOAD] Quantidade de registros carregados: ${row.qtd_registros}`);
+        
+        res.json({
+            ok: true,
+            regional: row.regional,
+            ativo: row.ativo,
+            data_importacao: row.data_importacao,
+            qtd_registros: row.qtd_registros,
+            nome_arquivo: row.nome_arquivo,
+            resultados: resultados
+        });
+    } catch (err) {
+        console.error('[ERROR] Endpoint: GET /mapa-ativo | Regional:', regional, '| Mensagem original:', err.message, '| Stack:', err.stack);
+        res.status(500).json({ error: 'Erro interno ao buscar mapa ativo.' });
     }
 });
 
