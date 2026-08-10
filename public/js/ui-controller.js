@@ -1239,8 +1239,11 @@ export class UiController {
                 const activeTracker = (this.activeTrackers || []).find(t => t && 
                     (t.motorista_name || '').trim().toLowerCase() === (a.motorista || '').trim().toLowerCase()
                 );
-                return (activeTracker && activeTracker.lat && activeTracker.lng) || (a.lat && a.lng);
+                const hasTrackerCoords = activeTracker && isFinite(parseFloat(activeTracker.lat)) && isFinite(parseFloat(activeTracker.lng));
+                const hasOwnCoords = isFinite(parseFloat(a.lat)) && isFinite(parseFloat(a.lng));
+                return hasTrackerCoords || hasOwnCoords;
             });
+            console.log(`[PLOT] Total: ${lista.length} | Com coordenadas: ${validItems.length} | Sem coordenadas: ${lista.length - validItems.length}`);
             
             const total = validItems.length;
             if (total === 0) {
