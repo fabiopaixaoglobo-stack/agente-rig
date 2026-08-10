@@ -2,9 +2,15 @@ import { CONFIG } from './config.js';
 
 export class MapService {
     constructor(elementId) {
+        this.markers = [];
+        this.markersMap = new Map();
+        this.routeOverlays = [];
+        this.map = null;
+
         const el = document.getElementById(elementId);
         if (!el) {
-            throw new Error(`MapService: elemento #${elementId} não encontrado no DOM.`);
+            console.warn(`[MapService] Elemento #${elementId} não encontrado no DOM. Mapa desabilitado silenciosamente.`);
+            return;
         }
         
         let center = CONFIG.DEFAULT_CENTER; // Array [lat, lng]
@@ -12,47 +18,54 @@ export class MapService {
             center = [-22.9068, -43.1729];
         }
 
-        // Inicializa o mapa com Leaflet
-        this.map = L.map(elementId, {
-            zoomControl: true,
-            attributionControl: false
-        }).setView(center, CONFIG.DEFAULT_ZOOM);
+        try {
+            // Inicializa o mapa com Leaflet
+            this.map = L.map(elementId, {
+                zoomControl: true,
+                attributionControl: false
+            }).setView(center, CONFIG.DEFAULT_ZOOM);
 
-        // Define os Provedores de Mapa gratuitos e de alto desempenho
-        this.tileLayers = {
-            mapa: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19
-            }),
-            satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19
-            }),
-            terreno: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19
-            })
-        };
+            // Define os Provedores de Mapa gratuitos e de alto desempenho
+            this.tileLayers = {
+                mapa: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19
+                }),
+                satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19
+                }),
+                terreno: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19
+                })
+            };
 
-        // Adiciona a camada padrão (Mapa)
-        this.tileLayers.mapa.addTo(this.map);
-
-        this.markers = [];
-        this.markersMap = new Map();
-        this.routeOverlays = [];
+            // Adiciona a camada padrão (Mapa)
+            this.tileLayers.mapa.addTo(this.map);
+        } catch (err) {
+            console.error(`[MapService] Erro ao inicializar Leaflet no elemento #${elementId}:`, err);
+            this.map = null;
+        }
     }
 
     clearMarkers() {
-        this.markersMap.forEach(m => this.map.removeLayer(m));
-        this.markersMap.clear();
-        this.markers.forEach(m => this.map.removeLayer(m));
-        this.markers = [];
+        if (this.map && this.markersMap) {
+            this.markersMap.forEach(m => this.map.removeLayer(m));
+            this.markersMap.clear();
+        }
+        if (this.map && this.markers) {
+            this.markers.forEach(m => this.map.removeLayer(m));
+            this.markers = [];
+        }
     }
 
     clearRouteOverlay() {
-        this.routeOverlays.forEach(o => this.map.removeLayer(o));
-        this.routeOverlays = [];
+        if (this.map && this.routeOverlays) {
+            this.routeOverlays.forEach(o => this.map.removeLayer(o));
+            this.routeOverlays = [];
+        }
     }
 
     updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions = null) {
-        if (!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+        if (!this.map || !lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
             return null;
         }
 

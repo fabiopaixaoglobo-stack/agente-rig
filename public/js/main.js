@@ -1,26 +1,29 @@
-import { MapService } from './map-service.js?v=3.9.0';
-import { ChatService } from './chat-service.js?v=3.9.0';
-import { DataService } from './data-service.js?v=3.9.0';
-import { UiController } from './ui-controller.js?v=3.9.0';
-import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=3.9.0';
-import { CamerasRJ } from './CamerasRJ.js?v=3.9.0';
-import { CorRio } from './CorRio.js?v=3.9.0';
+import { MapService } from './map-service.js?v=4.0.0';
+import { ChatService } from './chat-service.js?v=4.0.0';
+import { DataService } from './data-service.js?v=4.0.0';
+import { UiController } from './ui-controller.js?v=4.0.0';
+import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.0.0';
+import { CamerasRJ } from './CamerasRJ.js?v=4.0.0';
+import { CorRio } from './CorRio.js?v=4.0.0';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
     console.info("[RIT LAYOUT] layout responsivo carregado");
-    console.log("🚀 Agente RIG v3.5.1 - Inicializando módulos...");
+    console.log("🚀 Agente RIG v4.0.0 - Inicializando módulos...");
     try {
-        const mainMap = new MapService("map");
-        const plannerMap = new MapService("mapPlanner");
-        const transitoMap = new MapService("mapTransito");
-        const chat = new ChatService("chat", "pergunta", "btn-enviar");
+        const mainMap = document.getElementById("map") ? new MapService("map") : null;
+        const plannerMap = document.getElementById("mapPlanner") ? new MapService("mapPlanner") : null;
+        const transitoMap = document.getElementById("mapTransito") ? new MapService("mapTransito") : null;
+        const chat = new ChatService("chat-rit-box", "chat-rit-pergunta", "chat-rit-btn-enviar");
         const data = new DataService();
 
         const corRio = new CorRio();
         window.corRio = corRio;
+        
+        const btnWhatsapp = document.getElementById("btn-open-whatsapp");
+        const whatsapp = btnWhatsapp ? new MonitoramentoGrupos("btn-open-whatsapp") : null;
+        
         const ui = new UiController(mainMap, plannerMap, transitoMap, chat, data, corRio);
-        const whatsapp = new MonitoramentoGrupos("btn-open-whatsapp");
         const camerasRJ = new CamerasRJ();
 
         // Monitoramento da Saúde do Banco de Dados para Administrador
