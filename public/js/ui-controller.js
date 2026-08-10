@@ -405,7 +405,7 @@ export class UiController {
                 console.error('[ERROR] Endpoint: GET /mapa-ativo | Regional:', regional, '| Mensagem original:', e.message, '| Stack completa:', e.stack);
             }
 
-            // Load and Merge Manual Monitorings
+            // Load and Merge Manual Monitorings for active regional
             let manualMonitorings = [];
             try {
                 const rawManual = localStorage.getItem('rit_manual_monitorings');
@@ -415,28 +415,31 @@ export class UiController {
                 console.error("[RIT-UI] Error reading manual monitorings:", e);
             }
 
-            const mappedManuals = (manualMonitorings || []).map(m => {
-                if (!m) return null;
-                return {
-                    id: m.id,
-                    motorista: m.motorista,
-                    telefone: m.telefone,
-                    tipoVeiculo: m.tipoVeiculo,
-                    programa: m.programa,
-                    placa: m.placa,
-                    bairro: m.destino,
-                    dataHoraInicioRaw: m.dataHoraInicioRaw,
-                    dataHoraFimRaw: m.dataHoraFimRaw,
-                    horarioInicio: m.dataHoraInicioRaw,
-                    lat: null,
-                    lng: null,
-                    passageiro: m.passageiro,
-                    origem: m.origem,
-                    destino: m.destino,
-                    statusAtendimento: m.statusAtendimento || 'AGUARDANDO',
-                    isManual: true
-                };
-            }).filter(Boolean);
+            const mappedManuals = (manualMonitorings || [])
+                .filter(m => m && (!m.regional || m.regional === regional))
+                .map(m => {
+                    if (!m) return null;
+                    return {
+                        id: m.id,
+                        motorista: m.motorista,
+                        telefone: m.telefone,
+                        tipoVeiculo: m.tipoVeiculo,
+                        programa: m.programa,
+                        placa: m.placa,
+                        bairro: m.destino,
+                        dataHoraInicioRaw: m.dataHoraInicioRaw,
+                        dataHoraFimRaw: m.dataHoraFimRaw,
+                        horarioInicio: m.dataHoraInicioRaw,
+                        lat: m.lat || null,
+                        lng: m.lng || null,
+                        passageiro: m.passageiro,
+                        origem: m.origem,
+                        destino: m.destino,
+                        statusAtendimento: m.statusAtendimento || 'AGUARDANDO',
+                        isManual: true,
+                        regional: m.regional || regional
+                    };
+                }).filter(Boolean);
 
             // Combine server and manual
             const combined = [...mappedManuals];
@@ -450,21 +453,30 @@ export class UiController {
                 });
             }
 
+            // INSTANT COORDINATES & INSTANT PLOTTING BEFORE ANY NETWORK GEOCALLS
+            this.dataService.garantirCoordenadas(combined);
             this.dataService.baseAtendimentos = combined;
             window.transportMapData = combined;
             this.preencherDropdowns(combined);
             
             if (combined.length > 0) {
                 this._fitBoundsAfterPlot = true;
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando coordenadas...</span>`;
-                await this.dataService.geocodificar((pct) => {
-                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
-                });
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
-                this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (${combined.length} carregados)</span>`;
+                this.plotarAtendimentos(combined);
                 this.atualizarResumoContadores();
+
+                // Background refinement (non-blocking)
+                this.dataService.geocodificar((pct) => {
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Geocodificando ${pct}%...</span>`;
+                }).then(() => {
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
+                    this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                    this.atualizarResumoContadores();
+                }).catch(geoErr => {
+                    console.warn("[GEOCODE] Erro no background geocode:", geoErr);
+                });
             } else {
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Nenhum mapa ativo encontrado para esta regional.</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--muted)">Nenhum mapa ativo encontrado para a regional ${regional}.</span>`;
                 this.plotarAtendimentos([]);
                 this.atualizarResumoContadores();
             }
@@ -1137,21 +1149,28 @@ export class UiController {
                         codigo_ot_detalhado: r.codigo_ot_detalhado || ''
                     }));
                 
+                this.dataService.garantirCoordenadas(atendimentos);
                 this.dataService.baseAtendimentos = atendimentos;
                 window.transportMapData = atendimentos;
                 this.updateDynamicSearchSuggestions();
                 this.preencherDropdowns(atendimentos);
                 
                 const statusEl = document.getElementById("geo-status");
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando...</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (${atendimentos.length} carregados)</span>`;
                 
-                await this.dataService.geocodificar((pct) => {
-                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Sincronizando ${pct}%...</span>`;
-                });
-                
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
-                this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                this._fitBoundsAfterPlot = true;
+                this.plotarAtendimentos(atendimentos);
                 this.atualizarResumoContadores();
+
+                // Background refinement
+                this.dataService.geocodificar((pct) => {
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent)">Geocodificando ${pct}%...</span>`;
+                }).then(() => {
+                    if (statusEl) statusEl.innerHTML = `<span style="color:var(--good)">Pronto (OK)</span>`;
+                    this.plotarAtendimentos(this.dataService.baseAtendimentos);
+                    this.atualizarResumoContadores();
+                }).catch(geoErr => console.warn("[GEOCODE] Erro no upload background geocode:", geoErr));
+
                 showToast("Base carregada com sucesso!", "success");
                 console.log('[IMPORT] Processo concluído.');
             } catch (err) {

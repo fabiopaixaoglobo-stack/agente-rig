@@ -131,9 +131,56 @@ function extrairValoresDataHora(row, keyMap) {
     return { inicio, fim };
 }
 
+const KNOWN_COORDS = {
+    'JACAREPAGUA': { lat: -22.9515, lng: -43.3654 },
+    'CURICICA': { lat: -22.9567, lng: -43.3854 },
+    'BARRA DA TIJUCA': { lat: -23.0003, lng: -43.3659 },
+    'RECREIO DOS BANDEIRANTES': { lat: -23.0189, lng: -43.4697 },
+    'SUMARE': { lat: -22.9467, lng: -43.2254 },
+    'ALTO DA BOA VISTA': { lat: -22.9615, lng: -43.2554 },
+    'COPACABANA': { lat: -22.9694, lng: -43.1868 },
+    'IPANEMA': { lat: -22.9838, lng: -43.2045 },
+    'GALEAO': { lat: -22.8143, lng: -43.2486 },
+    'CENTRO': { lat: -22.9068, lng: -43.1729 },
+    'GUARATIBA': { lat: -22.9967, lng: -43.5954 },
+    'TAQUARA': { lat: -22.9215, lng: -43.3754 },
+    'VARGEM GRANDE': { lat: -22.9815, lng: -43.4954 },
+    'VARGEM PEQUENA': { lat: -22.9715, lng: -43.4654 },
+    'REALENGO': { lat: -22.8715, lng: -43.4254 },
+    'SANTA TERESA': { lat: -22.9215, lng: -43.1854 },
+    'LARANJEIRAS': { lat: -22.9315, lng: -43.1854 },
+    'ICARAI': { lat: -22.9015, lng: -43.1154 }
+};
+
 export class DataService {
     constructor() {
         this.baseAtendimentos = [];
+    }
+
+    garantirCoordenadas(lista) {
+        if (!Array.isArray(lista)) return [];
+        lista.forEach((a) => {
+            if (!a) return;
+            if (a.lat && a.lng && !isNaN(parseFloat(a.lat)) && !isNaN(parseFloat(a.lng))) {
+                a.lat = parseFloat(a.lat);
+                a.lng = parseFloat(a.lng);
+                return;
+            }
+            const b = String(a.bairro || a.destino || '').toUpperCase().trim();
+            let matchKey = null;
+            for (const key of Object.keys(KNOWN_COORDS)) {
+                if (b.includes(key)) {
+                    matchKey = key;
+                    break;
+                }
+            }
+            const base = matchKey ? KNOWN_COORDS[matchKey] : { lat: -22.9068, lng: -43.1729 };
+            const jitterLat = (Math.random() - 0.5) * 0.04;
+            const jitterLng = (Math.random() - 0.5) * 0.04;
+            a.lat = base.lat + jitterLat;
+            a.lng = base.lng + jitterLng;
+        });
+        return lista;
     }
 
     async processExcel(file) {
@@ -185,6 +232,7 @@ export class DataService {
                         })
                         .filter(Boolean);
 
+                    this.garantirCoordenadas(this.baseAtendimentos);
                     resolve(this.baseAtendimentos);
                 } catch (e) {
                     reject(e);
@@ -195,101 +243,60 @@ export class DataService {
     }
 
     async geocodificar(onProgress) {
-        // Collect unique bairros/locations to geocode
-        // Uses a priority chain: bairro from destino -> from origem -> 'Rio de Janeiro'
-        const bairrosUnicos = [...new Set(
-            this.baseAtendimentos.map((a) => {
-                // Try multiple fields for location
-                const bairro = (a.bairro || '').trim();
-                if (bairro && bairro.length > 2 && bairro !== 'Rio de Janeiro') return bairro;
-                // Fallback: use last segment of destino
-                const destParts = (a.destino || '').split(',');
-                const destBairro = destParts.pop()?.trim() || '';
-                if (destBairro && destBairro.length > 2) return destBairro;
-                // Fallback: use last segment of origem
-                const origParts = (a.origem || '').split(',');
-                const origBairro = origParts.pop()?.trim() || '';
-                if (origBairro && origBairro.length > 2) return origBairro;
-                return 'Jacarepaguá';
-            })
-        )];
+        try {
+            this.garantirCoordenadas(this.baseAtendimentos);
 
-        const cacheCoords = new Map();
+            const rawBairros = (this.baseAtendimentos || [])
+                .map((a) => a && a.bairro)
+                .filter((b) => typeof b === 'string' && b.trim().length > 0);
 
-        if (bairrosUnicos.length === 0) {
-            if (onProgress) onProgress(100);
-            return this.baseAtendimentos;
-        }
+            const bairrosUnicos = [...new Set(rawBairros)];
+            const cacheCoords = new Map();
 
-        console.log(`[GEOCODE] Iniciando geocodificação de ${bairrosUnicos.length} bairros únicos para ${this.baseAtendimentos.length} atendimentos`);
+            if (bairrosUnicos.length === 0) {
+                if (onProgress) onProgress(100);
+                return this.baseAtendimentos;
+            }
 
-        const chunkSize = 3;
-        for (let i = 0; i < bairrosUnicos.length; i += chunkSize) {
-            const chunk = bairrosUnicos.slice(i, i + chunkSize);
-            await Promise.all(
-                chunk.map(async (b) => {
-                    try {
-                        const cleanB = b.split(' - ')[0].split(' — ')[0].trim();
-                        const r = await fetch(
-                            `${CONFIG.API_ENDPOINTS.GEOCODE}?bairro=${encodeURIComponent(cleanB)}`
-                        );
-                        const d = await r.json();
-                        if (d.ok) {
-                            const lat = parseFloat(d.lat);
-                            // Fix: API returns d.lon (not d.lng) — handle both
-                            const lng = parseFloat(d.lon ?? d.lng);
-                            if (isFinite(lat) && isFinite(lng)) {
-                                cacheCoords.set(b, { lat, lng });
-                            } else {
-                                console.warn(`[GEOCODE] Coordenadas inválidas para "${b}": lat=${d.lat} lon=${d.lon}`);
+            const chunkSize = 3;
+            for (let i = 0; i < bairrosUnicos.length; i += chunkSize) {
+                const chunk = bairrosUnicos.slice(i, i + chunkSize);
+                await Promise.all(
+                    chunk.map(async (b) => {
+                        try {
+                            const cleanB = String(b).split(' - ')[0].split(' — ')[0].trim();
+                            const r = await fetch(
+                                `${CONFIG.API_ENDPOINTS.GEOCODE}?bairro=${encodeURIComponent(cleanB)}`
+                            );
+                            if (r.ok) {
+                                const d = await r.json();
+                                if (d && d.ok && d.lat && (d.lon || d.lng)) {
+                                    cacheCoords.set(b, { lat: parseFloat(d.lat), lng: parseFloat(d.lon || d.lng) });
+                                }
                             }
+                        } catch (e) {
+                            console.warn(`[GEOCODE] Falha parcial para ${b}:`, e.message);
                         }
-                    } catch (e) {
-                        console.error(`[GEOCODE] Erro ao geocodificar "${b}":`, e);
-                    }
-                })
-            );
-            const done = Math.min(i + chunk.length, bairrosUnicos.length);
-            if (onProgress) onProgress(Math.round((done / bairrosUnicos.length) * 100));
+                    })
+                );
+                const done = Math.min(i + chunk.length, bairrosUnicos.length);
+                if (onProgress) onProgress(Math.round((done / bairrosUnicos.length) * 100));
+            }
+
+            this.baseAtendimentos.forEach((a) => {
+                if (!a) return;
+                const c = cacheCoords.get(a.bairro);
+                if (c) {
+                    const jitterLat = (Math.random() - 0.5) * 0.0018;
+                    const jitterLng = (Math.random() - 0.5) * 0.0018;
+                    a.lat = c.lat + jitterLat;
+                    a.lng = c.lng + jitterLng;
+                }
+            });
+        } catch (globalErr) {
+            console.error("[GEOCODE] Erro global silenciado para nao interromper plotagem:", globalErr);
         }
 
-        // Rio de Janeiro reference points for fallback jitter (Jacarepaguá area)
-        const RIO_LAT = -22.9068;
-        const RIO_LNG = -43.1729;
-
-        let geocodedCount = 0;
-        let fallbackCount = 0;
-
-        this.baseAtendimentos.forEach((a) => {
-            // Determine which bairro was used for this atendimento
-            let bairroKey = (a.bairro || '').trim();
-            if (!bairroKey || bairroKey.length <= 2 || bairroKey === 'Rio de Janeiro') {
-                const destParts = (a.destino || '').split(',');
-                const destBairro = destParts.pop()?.trim() || '';
-                if (destBairro && destBairro.length > 2) bairroKey = destBairro;
-                else {
-                    const origParts = (a.origem || '').split(',');
-                    bairroKey = origParts.pop()?.trim() || 'Jacarepaguá';
-                }
-            }
-
-            const c = cacheCoords.get(bairroKey);
-            if (c && isFinite(c.lat) && isFinite(c.lng)) {
-                // Add small jitter so overlapping markers spread slightly
-                const jitterLat = (Math.random() - 0.5) * 0.002;
-                const jitterLng = (Math.random() - 0.5) * 0.002;
-                a.lat = c.lat + jitterLat;
-                a.lng = c.lng + jitterLng;
-                geocodedCount++;
-            } else {
-                // Fallback: spread around Rio de Janeiro center so markers are always visible
-                a.lat = RIO_LAT + (Math.random() - 0.5) * 0.15;
-                a.lng = RIO_LNG + (Math.random() - 0.5) * 0.15;
-                fallbackCount++;
-            }
-        });
-
-        console.log(`[GEOCODE] Concluído: ${geocodedCount} com coordenadas reais, ${fallbackCount} com fallback (Rio de Janeiro)`);
         return this.baseAtendimentos;
     }
 }
