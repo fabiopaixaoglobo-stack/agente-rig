@@ -5,7 +5,10 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "build": "npm install"
+    "build": "npm install",
+    "docs:security:update": "node scripts/update-security-architecture.js",
+    "docs:security:check": "node scripts/update-security-architecture.js --check",
+    "test:security": "node scripts/test-security-architecture.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -7,10 +7,54 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { router: geocodeRouter } = require('./geocode');
-const { setupAuthRoutes } = require('./auth');
+const { setupAuthRoutes, verifyToken } = require('./auth');
 const { pool, initDB } = require('./database');
 const { getRobotStatus, triggerDiagnostics } = require('./robot');
+
+function generateOpaqueToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+function hashToken(token) {
+    if (!token) return '';
+    return crypto.createHash('sha256').update(String(token).trim()).digest('hex');
+}
+
+function minimizarNome(nome) {
+    if (!nome || typeof nome !== 'string') return null;
+    let limpo = nome.trim().replace(/^(dr\.|dra\.|prof\.|profª\.|sr\.|sra\.)\s+/i, '');
+    const partes = limpo.split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return null;
+    if (partes.length === 1) return partes[0];
+    const primeiro = partes[0];
+    const inicialSegundo = partes[1].charAt(0).toUpperCase();
+    return `${primeiro} ${inicialSegundo}.`;
+}
+
+async function registrarEventoSeguranca(tipo_evento, entidade, entidade_id, usuario, ip_origem, user_agent, resultado, motivo, metadados = {}) {
+    try {
+        await pool.query(
+            `INSERT INTO eventos_seguranca (tipo_evento, entidade, entidade_id, usuario, ip_origem, user_agent, resultado, motivo, data_hora, metadados)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)`,
+            [
+                tipo_evento,
+                entidade || null,
+                entidade_id ? String(entidade_id) : null,
+                usuario || 'SISTEMA',
+                ip_origem || null,
+                user_agent || null,
+                resultado,
+                motivo || null,
+                JSON.stringify(metadados)
+            ]
+        );
+    } catch (e) {
+        console.warn('⚠️ [AUDITORIA SEGURANÇA] Falha ao gravar evento_seguranca:', e.message);
+    }
+}
 
 function extrairDataDeHorario(horario) {
     if (!horario) return 'Data não informada';
@@ -654,7 +698,174 @@ app.get('/api/ott', async (req, res) => {
     }
 });
 
-app.get('/api/rotas/detalhes/:id', async (req, res) => {
+app.get('/api/motorista/atendimento', async (req, res) => {
+    try {
+        const rawToken = req.query.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+        if (!rawToken) {
+            await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', null, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_NAO_FORNECIDO');
+            return res.status(401).json({
+                erro: 'LINK_EXPIRADO',
+                mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.'
+            });
+        }
+
+        const tokenHash = hashToken(rawToken);
+        const tokenPrefix = String(rawToken).substring(0, 8);
+
+        const result = await pool.query(
+            `SELECT a.*, r.id as rota_id, r.motorista_nome, r.placa_veiculo, r.tipo_veiculo, r.programa,
+                    r.origem, r.destino, r.horario, r.horario_termino, r.passageiro, r.nome_colaborador, r.status_atendimento
+             FROM acessos_externos_atendimento a
+             JOIN rotas_importadas r ON a.id_atendimento = r.id
+             WHERE a.token_hash = $1`,
+            [tokenHash]
+        );
+
+        if (result.rows.length === 0) {
+            await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', null, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_INVALIDO', { token_prefix: tokenPrefix });
+            return res.status(401).json({
+                erro: 'LINK_EXPIRADO',
+                mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.'
+            });
+        }
+
+        const acesso = result.rows[0];
+
+        // 1. Checa status da rota. Se o atendimento estiver FINALIZADO, ENCERRADO ou CANCELADO, invalida imediatamente o token!
+        const statusRota = (acesso.status_atendimento || '').toUpperCase();
+        if (['FINALIZADO', 'ENCERRADO', 'CANCELADO'].includes(statusRota)) {
+            if (acesso.status === 'ATIVO') {
+                await pool.query(
+                    `UPDATE acessos_externos_atendimento 
+                     SET status = 'FINALIZADO', finalizado_em = NOW(), motivo_finalizacao = 'ATENDIMENTO_CONCLUIDO' 
+                     WHERE id = $1`,
+                    [acesso.id]
+                );
+            }
+            await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', acesso.id_atendimento, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'ATENDIMENTO_FINALIZADO', { token_prefix: tokenPrefix, status_atendimento: statusRota });
+            return res.status(401).json({
+                erro: 'LINK_EXPIRADO',
+                mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.'
+            });
+        }
+
+        // 2. Checa status do token, validade de tempo e expiração por inatividade (padrão 30 minutos ou LINK_INATIVIDADE_MINUTOS)
+        const minInatividade = parseInt(process.env.LINK_INATIVIDADE_MINUTOS, 10) || 30;
+        const ultimaInteracao = acesso.usado_em ? new Date(acesso.usado_em) : new Date(acesso.criado_em);
+        const limiteInatividade = new Date(Date.now() - minInatividade * 60 * 1000);
+
+        if (acesso.status !== 'ATIVO' || new Date(acesso.expira_em) < new Date() || ultimaInteracao < limiteInatividade) {
+            let tipoEventoAudit = 'CONSULTA_LINK_EXTERNO';
+            let motivoBloqueio = 'TOKEN_EXPIRADO_OU_INATIVO';
+
+            if (ultimaInteracao < limiteInatividade && acesso.status === 'ATIVO') {
+                tipoEventoAudit = 'TOKEN_EXPIRADO_POR_INATIVIDADE';
+                motivoBloqueio = 'Inatividade superior ao limite configurado';
+                await pool.query(
+                    `UPDATE acessos_externos_atendimento 
+                     SET status = 'EXPIRADO', motivo_finalizacao = 'Inatividade superior ao limite configurado' 
+                     WHERE id = $1`,
+                    [acesso.id]
+                );
+            } else if (acesso.status === 'ATIVO' && new Date(acesso.expira_em) < new Date()) {
+                await pool.query("UPDATE acessos_externos_atendimento SET status = 'EXPIRADO' WHERE id = $1", [acesso.id]);
+            }
+
+            await registrarEventoSeguranca(tipoEventoAudit, 'acessos_externos_atendimento', acesso.id_atendimento, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', motivoBloqueio, { token_prefix: tokenPrefix, status_token: acesso.status, inatividade_minutos: minInatividade });
+            return res.status(401).json({
+                erro: 'LINK_EXPIRADO',
+                mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.'
+            });
+        }
+
+        // Marca uso do token
+        await pool.query('UPDATE acessos_externos_atendimento SET usado_em = NOW() WHERE id = $1', [acesso.id]);
+        await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', acesso.id_atendimento, 'PUBLICO', req.ip, req.headers['user-agent'], 'SUCESSO', 'CONSULTA_AUTORIZADA', { token_prefix: tokenPrefix });
+
+        // Retorna payload mínimo sem PII sensível (sem telefone de passageiro, sem e-mail, sem matrícula)
+        const nomeMinimizado = minimizarNome(acesso.passageiro || acesso.nome_colaborador);
+        res.json({
+            ok: true,
+            atendimento: {
+                id_atendimento: acesso.rota_id,
+                motorista_nome: acesso.motorista_nome || 'Motorista RIT',
+                placa_veiculo: acesso.placa_veiculo || 'N/D',
+                tipo_veiculo: acesso.tipo_veiculo || 'Executivo',
+                programa: acesso.programa || 'RIT',
+                origem: acesso.origem,
+                destino: acesso.destino,
+                horario: acesso.horario,
+                horario_termino: acesso.horario_termino,
+                status_atendimento: acesso.status_atendimento || 'PENDENTE',
+                passageiro_resumido: nomeMinimizado,
+                passageiro: nomeMinimizado,
+                nome_colaborador: nomeMinimizado
+            }
+        });
+    } catch (err) {
+        console.error('Erro ao consultar atendimento via token:', err.message);
+        res.status(500).json({ error: 'Erro interno ao processar requisição.' });
+    }
+});
+
+app.post('/api/motorista/finalizar', async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ error: 'TOKEN_INVALIDO', mensagem: 'Token de acesso não fornecido.' });
+        }
+
+        const tokenHash = hashToken(token);
+        const tokenPrefix = String(token).substring(0, 8);
+
+        const tokenRes = await pool.query(
+            `SELECT a.*, r.id as id_rota, r.motorista_nome as rota_motorista
+             FROM acessos_externos_atendimento a
+             JOIN rotas_importadas r ON a.id_atendimento = r.id
+             WHERE a.token_hash = $1`,
+            [tokenHash]
+        );
+
+        if (tokenRes.rows.length === 0) {
+            return res.status(401).json({ erro: 'LINK_EXPIRADO', mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.' });
+        }
+
+        const acesso = tokenRes.rows[0];
+        const idAtendimentoInt = acesso.id_rota;
+
+        // 1. Atualiza status da rota para FINALIZADO
+        await pool.query("UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1", [idAtendimentoInt]);
+
+        // 2. Invalida imediatamente todos os tokens ativos vinculados a este atendimento
+        await pool.query(
+            `UPDATE acessos_externos_atendimento 
+             SET status = 'FINALIZADO', finalizado_em = NOW(), motivo_finalizacao = 'FINALIZADO_PELO_MOTORISTA' 
+             WHERE id_atendimento = $1 AND status = 'ATIVO'`,
+            [idAtendimentoInt]
+        );
+
+        // 3. Remove do mapa ativo e registra historico/auditoria
+        if (acesso.rota_motorista) {
+            await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [acesso.rota_motorista]);
+        }
+        await pool.query(
+            "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Atendimento finalizado pelo motorista', NOW())",
+            [idAtendimentoInt]
+        );
+        await registrarEventoSeguranca('UPDATE_GPS', 'rotas_importadas', idAtendimentoInt, acesso.rota_motorista || 'MOTORISTA', req.ip, req.headers['user-agent'], 'SUCESSO', 'ATENDIMENTO_FINALIZADO_TOKEN_REVOGADO', { token_prefix: tokenPrefix });
+
+        return res.json({
+            ok: true,
+            erro: 'ATENDIMENTO_FINALIZADO',
+            mensagem: 'O atendimento foi finalizado com sucesso e o compartilhamento de localização foi encerrado.'
+        });
+    } catch (err) {
+        console.error('Erro ao finalizar atendimento via token:', err.message);
+        res.status(500).json({ error: 'Erro interno ao finalizar atendimento.' });
+    }
+});
+
+app.get('/api/rotas/detalhes/:id', verifyToken, async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
@@ -664,9 +875,10 @@ app.get('/api/rotas/detalhes/:id', async (req, res) => {
         const rota = result.rows[0];
         rota.data_atendimento = extrairDataDeHorario(rota.horario);
         
+        await registrarEventoSeguranca('CONSULTA_ROTA_OPERADOR', 'rotas_importadas', id, req.user?.matricula || 'OPERADOR', req.ip, req.headers['user-agent'], 'SUCESSO', 'ACESSO_JWT');
         res.json({ ok: true, rota });
     } catch (err) {
-        console.error('Erro ao buscar detalhes da rota:', err);
+        console.error('Erro ao buscar detalhes da rota:', err.message);
         res.status(500).json({ error: 'Erro interno.' });
     }
 });
@@ -998,12 +1210,101 @@ app.get('/api/atendimentos/:id/auditoria-consolidada', async (req, res) => {
 
 app.post('/api/gps/update', async (req, res) => {
     try {
-        const { motorista, lat, lng, placa, tipo_veiculo, programa, speed, id_rota, status_atendimento, precisao, fonte_localizacao } = req.body;
-        if (!motorista || !lat || !lng) {
-            return res.status(400).json({ error: 'Dados incompletos (motorista, lat, lng são obrigatórios).' });
+        const { token, motorista, lat, lng, placa, tipo_veiculo, programa, speed, status_atendimento, precisao, fonte_localizacao } = req.body;
+        
+        // 1. Exige token opaco
+        if (!token) {
+            await registrarEventoSeguranca('UPDATE_GPS', 'gps_historico_atendimento', null, motorista || 'ANONIMO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_GPS_NAO_FORNECIDO');
+            return res.status(401).json({ error: 'TOKEN_INVALIDO', mensagem: 'Token de acesso inválido ou não fornecido.' });
         }
 
-        // Upsert na tabela posicoes_motoristas
+        const tokenHash = hashToken(token);
+        const tokenPrefix = String(token).substring(0, 8);
+
+        // Busca o token e a rota vinculada
+        const tokenRes = await pool.query(
+            `SELECT a.*, r.id as id_rota, r.status_atendimento as rota_status, r.motorista_nome as rota_motorista
+             FROM acessos_externos_atendimento a
+             JOIN rotas_importadas r ON a.id_atendimento = r.id
+             WHERE a.token_hash = $1`,
+            [tokenHash]
+        );
+
+        if (tokenRes.rows.length === 0) {
+            await registrarEventoSeguranca('UPDATE_GPS', 'acessos_externos_atendimento', null, motorista || 'ANONIMO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_GPS_INVALIDO', { token_prefix: tokenPrefix });
+            return res.status(401).json({ error: 'LINK_EXPIRADO', mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.' });
+        }
+
+        const acesso = tokenRes.rows[0];
+        const idAtendimentoInt = acesso.id_rota;
+
+        // 2. Checa se o atendimento está FINALIZADO, ENCERRADO ou CANCELADO
+        const currentStatusRota = (acesso.rota_status || '').toUpperCase();
+        if (['FINALIZADO', 'ENCERRADO', 'CANCELADO'].includes(currentStatusRota)) {
+            if (acesso.status === 'ATIVO') {
+                await pool.query(
+                    `UPDATE acessos_externos_atendimento 
+                     SET status = 'FINALIZADO', finalizado_em = NOW(), motivo_finalizacao = 'ATENDIMENTO_CONCLUIDO' 
+                     WHERE id = $1`,
+                    [acesso.id]
+                );
+            }
+            await registrarEventoSeguranca('UPDATE_GPS', 'rotas_importadas', idAtendimentoInt, motorista || acesso.rota_motorista, req.ip, req.headers['user-agent'], 'BLOQUEADO', 'ATENDIMENTO_FINALIZADO', { token_prefix: tokenPrefix });
+            return res.status(409).json({
+                erro: 'ATENDIMENTO_FINALIZADO',
+                mensagem: 'O atendimento foi finalizado e o compartilhamento de localização foi encerrado.'
+            });
+        }
+
+        // 3. Checa validade do token e expiração por inatividade (padrão 30 minutos ou LINK_INATIVIDADE_MINUTOS)
+        const minInatividadeGPS = parseInt(process.env.LINK_INATIVIDADE_MINUTOS, 10) || 30;
+        const ultimaInteracaoGPS = acesso.usado_em ? new Date(acesso.usado_em) : new Date(acesso.criado_em);
+        const limiteInatividadeGPS = new Date(Date.now() - minInatividadeGPS * 60 * 1000);
+
+        if (acesso.status !== 'ATIVO' || new Date(acesso.expira_em) < new Date() || ultimaInteracaoGPS < limiteInatividadeGPS) {
+            let tipoEventoAuditGPS = 'UPDATE_GPS';
+            let motivoBloqueioGPS = 'TOKEN_EXPIRADO_OU_INATIVO';
+
+            if (ultimaInteracaoGPS < limiteInatividadeGPS && acesso.status === 'ATIVO') {
+                tipoEventoAuditGPS = 'TOKEN_EXPIRADO_POR_INATIVIDADE';
+                motivoBloqueioGPS = 'Inatividade superior ao limite configurado';
+                await pool.query(
+                    `UPDATE acessos_externos_atendimento 
+                     SET status = 'EXPIRADO', motivo_finalizacao = 'Inatividade superior ao limite configurado' 
+                     WHERE id = $1`,
+                    [acesso.id]
+                );
+            }
+
+            await registrarEventoSeguranca(tipoEventoAuditGPS, 'acessos_externos_atendimento', idAtendimentoInt, motorista || acesso.rota_motorista, req.ip, req.headers['user-agent'], 'BLOQUEADO', motivoBloqueioGPS, { token_prefix: tokenPrefix, inatividade_minutos: minInatividadeGPS });
+            return res.status(401).json({
+                erro: 'LINK_EXPIRADO',
+                mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.'
+            });
+        }
+
+        // Atualiza marca de última atividade GPS
+        await pool.query('UPDATE acessos_externos_atendimento SET usado_em = NOW() WHERE id = $1', [acesso.id]);
+
+        // 4. Validação estrita de coordenadas e velocidade
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lng);
+        const velocidade = parseFloat(speed) || 0;
+        const prec = parseFloat(precisao) || 10;
+
+        if (isNaN(latitude) || latitude < -90 || latitude > 90 ||
+            isNaN(longitude) || longitude < -180 || longitude > 180 ||
+            velocidade < 0 || velocidade > 200) {
+            await registrarEventoSeguranca('UPDATE_GPS', 'gps_historico_atendimento', idAtendimentoInt, motorista || acesso.rota_motorista, req.ip, req.headers['user-agent'], 'BLOQUEADO', 'COORDENADAS_INVALIDAS', { lat, lng, speed });
+            return res.status(400).json({
+                erro: 'COORDENADAS_INVALIDAS',
+                mensagem: 'Coordenadas geográficas ou dados de velocidade fora dos limites operacionais.'
+            });
+        }
+
+        const motNome = motorista || acesso.rota_motorista || 'Motorista RIT';
+
+        // Upsert na tabela posicoes_motoristas (somente se não finalizado)
         await pool.query(
             `INSERT INTO posicoes_motoristas (motorista_nome, lat, lng, placa, tipo_veiculo, programa, speed, timestamp)
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
@@ -1011,92 +1312,77 @@ app.post('/api/gps/update', async (req, res) => {
              SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, placa = EXCLUDED.placa, 
                  tipo_veiculo = EXCLUDED.tipo_veiculo, programa = EXCLUDED.programa, 
                  speed = EXCLUDED.speed, timestamp = NOW()`,
-            [motorista, lat, lng, placa, tipo_veiculo, programa, speed || 0]
+            [motNome, latitude, longitude, placa, tipo_veiculo, programa, Math.round(velocidade)]
         );
 
-        // Gravação da trilha GPS em tempo real na tabela de histórico
-        const idAtendimentoInt = parseInt(id_rota, 10);
-        if (id_rota && !isNaN(idAtendimentoInt)) {
-            const rResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimentoInt]);
-            const statusAt = rResult.rows[0]?.status_atendimento;
+        // Gravação da trilha GPS na tabela de histórico
+        const countPointsRes = await pool.query('SELECT COUNT(*) FROM gps_historico_atendimento WHERE id_atendimento = $1', [idAtendimentoInt]);
+        const isFirst = parseInt(countPointsRes.rows[0].count, 10) === 0;
 
-            if (statusAt !== 'FINALIZADO') {
-                const pr = parseFloat(precisao) || 10;
-                const fl = String(fonte_localizacao || 'GPS').trim();
-                const vel = parseFloat(speed) || 0;
-
-                // Verifica se é o primeiro ponto da rota
-                const countPointsRes = await pool.query('SELECT COUNT(*) FROM gps_historico_atendimento WHERE id_atendimento = $1', [idAtendimentoInt]);
-                const isFirst = parseInt(countPointsRes.rows[0].count, 10) === 0;
-
-                let tipoEv = 'GPS';
-                if (isFirst) {
-                    tipoEv = 'INICIO';
-                } else if (vel === 0) {
-                    tipoEv = 'PARADA';
-                }
-
-                await pool.query(
-                    `INSERT INTO gps_historico_atendimento 
-                     (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
-                     VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)`,
-                    [idAtendimentoInt, lat, lng, vel, pr, statusAt || 'EM_TRANSITO', tipoEv, fl]
-                );
-            }
+        let tipoEv = 'GPS';
+        if (isFirst) {
+            tipoEv = 'INICIO';
+        } else if (velocidade === 0) {
+            tipoEv = 'PARADA';
         }
 
-        // Se passar id_rota e status_atendimento, atualiza o status de atendimento
-        if (id_rota && !isNaN(idAtendimentoInt) && status_atendimento) {
-            // Verifica o status anterior para evitar duplicidade de logs no histórico
-            const statusResult = await pool.query('SELECT status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimentoInt]);
-            const prevStatus = statusResult.rows[0]?.status_atendimento;
+        await pool.query(
+            `INSERT INTO gps_historico_atendimento 
+             (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
+             VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)`,
+            [idAtendimentoInt, latitude, longitude, velocidade, prec, status_atendimento || currentStatusRota || 'EM_TRANSITO', tipoEv, fonte_localizacao || 'GPS']
+        );
+
+        // Se status_atendimento for passado e houver transição de estado
+        if (status_atendimento) {
+            const statusNorm = String(status_atendimento).toUpperCase();
+            await pool.query('UPDATE rotas_importadas SET status_atendimento = $1 WHERE id = $2', [statusNorm, idAtendimentoInt]);
+
+            let eventText = `Alteração de status para ${statusNorm}`;
+            if (statusNorm === 'EM_TRANSITO') eventText = 'Viagem iniciada';
+            else if (statusNorm === 'PAUSADO') eventText = 'Transmissão interrompida';
+            else if (statusNorm === 'FINALIZADO') eventText = 'Atendimento finalizado';
 
             await pool.query(
-                `UPDATE rotas_importadas SET status_atendimento = $1 WHERE id = $2`,
-                [status_atendimento, idAtendimentoInt]
+                'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
+                [idAtendimentoInt, eventText]
             );
 
-            if (prevStatus !== status_atendimento) {
-                // Se for a primeira transição após a importação, adiciona vínculos operacionais
-                const countResult = await pool.query('SELECT COUNT(*) FROM historico_atendimentos WHERE id_atendimento = $1', [id_rota]);
-                const count = parseInt(countResult.rows[0]?.count || '0', 10);
-                if (count <= 1) {
-                    await pool.query(
-                        "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Motorista vinculado', NOW() - INTERVAL '3 minutes')",
-                        [id_rota]
-                    );
-                    await pool.query(
-                        "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Veículo vinculado', NOW() - INTERVAL '2 minutes')",
-                        [idAtendimentoInt]
-                    );
-                }
-
-                let eventText = `Alteração de status para ${status_atendimento}`;
-                if (status_atendimento === 'EM_TRANSITO') eventText = 'Viagem iniciada';
-                else if (status_atendimento === 'PAUSADO') eventText = 'Transmissão interrompida';
-                else if (status_atendimento === 'FINALIZADO') eventText = 'Atendimento finalizado';
-
+            // SE O MOTORISTA FINALIZOU A CORRIDA: Invalida o token opaco imediatamente!
+            if (statusNorm === 'FINALIZADO') {
                 await pool.query(
-                    'INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, $2, NOW())',
-                    [idAtendimentoInt, eventText]
+                    `UPDATE acessos_externos_atendimento 
+                     SET status = 'FINALIZADO', finalizado_em = NOW(), motivo_finalizacao = 'FINALIZADO_PELO_MOTORISTA' 
+                     WHERE id_atendimento = $1 AND status = 'ATIVO'`,
+                    [idAtendimentoInt]
                 );
-            }
-            
-            // Se finalizado, remove da tabela de posicoes para tirar do mapa ativo e insere evento final FIM no historico GPS
-            if (status_atendimento === 'FINALIZADO') {
                 await pool.query(
                     `INSERT INTO gps_historico_atendimento 
                      (id_atendimento, latitude, longitude, velocidade, data_hora, precisao, status, tipo_evento, fonte_localizacao)
                      VALUES ($1, $2, $3, 0, NOW(), 10, 'FINALIZADO', 'FIM', 'GPS')`,
-                    [idAtendimentoInt, lat, lng]
+                    [idAtendimentoInt, latitude, longitude]
                 );
-                await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
+                await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motNome]);
+                await registrarEventoSeguranca('UPDATE_GPS', 'rotas_importadas', idAtendimentoInt, motNome, req.ip, req.headers['user-agent'], 'SUCESSO', 'ATENDIMENTO_FINALIZADO_TOKEN_REVOGADO');
+
+                return res.json({
+                    ok: true,
+                    erro: 'ATENDIMENTO_FINALIZADO',
+                    mensagem: 'O atendimento foi finalizado e o compartilhamento de localização foi encerrado.'
+                });
             }
         }
 
+        console.log('[TRACK]', {
+            atendimento: idAtendimentoInt,
+            token_prefix: tokenPrefix,
+            speed: Math.round(velocidade),
+            status: status_atendimento || currentStatusRota
+        });
+
         res.json({ ok: true, message: 'Localização atualizada com sucesso.' });
     } catch (err) {
-        console.error('Erro ao salvar geolocalização:', err);
+        console.error('Erro ao salvar geolocalização:', err.message);
         res.status(500).json({ error: 'Erro ao processar localização.' });
     }
 });
@@ -1144,6 +1430,10 @@ app.post('/api/gps/desconectar', async (req, res) => {
                 `UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1`,
                 [id_rota]
             );
+            await pool.query(
+                `UPDATE acessos_externos_atendimento SET status = 'FINALIZADO', finalizado_em = NOW(), motivo_finalizacao = 'DESCONECTADO_MANUAL' WHERE id_atendimento = $1 AND status = 'ATIVO'`,
+                [id_rota]
+            );
         } else if (motorista) {
             await pool.query('DELETE FROM posicoes_motoristas WHERE motorista_nome = $1', [motorista]);
         }
@@ -1167,21 +1457,106 @@ app.post('/api/robot/run', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
     try {
-        const { atendimento, placa, motorista } = req.body;
+        const { atendimento, placa, motorista, supervisor_email, empresa_cooperativa } = req.body;
         const usuario = req.headers['x-user-matricula'] || 'Operador Equipe de Transportes';
 
+        const idAtendimento = parseInt(atendimento, 10);
+        if (isNaN(idAtendimento)) {
+            return res.status(400).json({ error: 'ID do atendimento inválido.' });
+        }
+
+        // Verifica se o atendimento existe
+        const rRes = await pool.query('SELECT id, motorista_nome, placa_veiculo, status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimento]);
+        if (rRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Atendimento não encontrado.' });
+        }
+
+        const rota = rRes.rows[0];
+
+        // Se a rota já estiver finalizada, rejeita nova geração de token
+        if (['FINALIZADO', 'ENCERRADO', 'CANCELADO'].includes((rota.status_atendimento || '').toUpperCase())) {
+            return res.status(400).json({ error: 'Não é possível solicitar posicionamento para um atendimento já finalizado.' });
+        }
+
+        // Revoga tokens antigos ativos para o mesmo atendimento
+        await pool.query(
+            `UPDATE acessos_externos_atendimento SET status = 'REVOGADO', revogado_em = NOW() WHERE id_atendimento = $1 AND status = 'ATIVO'`,
+            [idAtendimento]
+        );
+
+        // Gerar novo token opaco de alta entropia
+        const pureToken = generateOpaqueToken();
+        const tokenHash = hashToken(pureToken);
+        const tokenPrefix = pureToken.substring(0, 8);
+
+        // Validade de 24 horas para o link
+        const expiraEm = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await pool.query(
+            `INSERT INTO acessos_externos_atendimento 
+             (id_atendimento, token_hash, token_prefix, escopo, status, criado_em, expira_em, criado_por, supervisor_destinatario, empresa_cooperativa, ip_criacao, user_agent_criacao)
+             VALUES ($1, $2, $3, 'POSICIONAMENTO_MOTORISTA', 'ATIVO', NOW(), $4, $5, $6, $7, $8, $9)`,
+            [idAtendimento, tokenHash, tokenPrefix, expiraEm, usuario, supervisor_email || null, empresa_cooperativa || null, req.ip, req.headers['user-agent']]
+        );
+
+        // Grava auditoria operacional
         await pool.query(
             `INSERT INTO auditoria_operacional (usuario, atendimento, placa, motorista, data_hora, evento)
              VALUES ($1, $2, $3, $4, NOW(), 'SOLICITACAO_POSICAO_GPS')`,
-            [usuario, parseInt(atendimento, 10) || null, placa || null, motorista || null]
+            [usuario, idAtendimento, placa || rota.placa_veiculo || null, motorista || rota.motorista_nome || null]
         );
 
-        res.json({ ok: true, message: 'Solicitação registrada na auditoria operacional.' });
+        await registrarEventoSeguranca('SOLICITAR_POSICAO', 'rotas_importadas', idAtendimento, usuario, req.ip, req.headers['user-agent'], 'SUCESSO', 'TOKEN_GERADO', { token_prefix: tokenPrefix, supervisor: supervisor_email || 'NAO_CADASTRADO' });
+
+        const host = req.get('host');
+        const protocol = req.protocol || 'https';
+        const link = `${protocol}://${host}/motorista.html?token=${pureToken}`;
+
+        let emailEnviado = false;
+        let emailMensagem = 'Supervisor não cadastrado. Copie o link abaixo e envie ao supervisor responsável pela operação.';
+
+        // Disparo SMTP se e-mail do supervisor estiver presente e SMTP configurado
+        if (supervisor_email && process.env.SMTP_HOST && process.env.SMTP_USER) {
+            try {
+                const transporter = nodemailer.createTransport({
+                    host: process.env.SMTP_HOST,
+                    port: Number(process.env.SMTP_PORT) || 587,
+                    secure: process.env.SMTP_SECURE === 'true',
+                    auth: {
+                        user: process.env.SMTP_USER,
+                        pass: process.env.SMTP_PASS
+                    }
+                });
+
+                await transporter.sendMail({
+                    from: `"Agente RIT — Transportes" <${process.env.SMTP_USER}>`,
+                    to: supervisor_email,
+                    subject: `[Agente RIT] Solicitação de Posicionamento — Atendimento #${idAtendimento}`,
+                    text: `Prezado Supervisor,\n\nSolicitamos a ativação do compartilhamento de posicionamento GPS para o atendimento #${idAtendimento} (Veículo: ${placa || rota.placa_veiculo || 'N/D'}).\n\nLink seguro de acesso: ${link}\n\nNota: Este link é válido por 24 horas e será automaticamente expirado assim que a corrida for finalizada.\n\nAtenciosamente,\nEquipe de Transportes Globo`,
+                    html: `<p>Prezado Supervisor,</p><p>Solicitamos a ativação do compartilhamento de posicionamento GPS para o atendimento <strong>#${idAtendimento}</strong> (Veículo: <strong>${placa || rota.placa_veiculo || 'N/D'}</strong>).</p><p><a href="${link}" style="display:inline-block;padding:10px 20px;background:#00D1FF;color:#000;text-decoration:none;border-radius:5px;font-weight:bold;">Acessar Portal do Motorista</a></p><p><small>Link seguro: ${link}</small></p><p><em>Nota: Este link é válido por 24 horas e expira automaticamente após a finalização do atendimento.</em></p>`
+                });
+                emailEnviado = true;
+                emailMensagem = `Solicitação enviada por e-mail com sucesso ao supervisor (${supervisor_email}).`;
+            } catch (mailErr) {
+                console.warn('⚠️ [SMTP SUPERVISOR] Falha ao enviar e-mail:', mailErr.message);
+                emailMensagem = `Link gerado com sucesso, mas o e-mail não pôde ser entregue automaticamente ao supervisor.`;
+            }
+        }
+
+        res.json({
+            ok: true,
+            atendimento: idAtendimento,
+            token_prefix: tokenPrefix,
+            link,
+            email_enviado: emailEnviado,
+            message: emailMensagem
+        });
     } catch (err) {
-        console.error('Erro ao salvar auditoria operacional:', err);
-        res.status(500).json({ error: 'Erro ao registrar auditoria.' });
+        console.error('Erro ao solicitar posição:', err.message);
+        res.status(500).json({ error: 'Erro interno ao processar solicitação.' });
     }
 });
 

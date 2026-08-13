@@ -589,4 +589,4 @@ function setupAuthRoutes(app) {
     });
 }
 
-module.exports = { setupAuthRoutes, loadBaseColaboradores };
+module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken };

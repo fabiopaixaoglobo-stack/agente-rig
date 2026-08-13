@@ -149,6 +149,88 @@ async function initDB() {
                 evento TEXT DEFAULT 'SOLICITACAO_POSICAO_GPS'
             );
         `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS acessos_externos_atendimento (
+                id SERIAL PRIMARY KEY,
+                id_atendimento INT NOT NULL REFERENCES rotas_importadas(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL UNIQUE,
+                token_prefix TEXT,
+                escopo TEXT NOT NULL DEFAULT 'POSICIONAMENTO_MOTORISTA',
+                status TEXT NOT NULL DEFAULT 'ATIVO',
+                criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                expira_em TIMESTAMPTZ NOT NULL,
+                usado_em TIMESTAMPTZ,
+                revogado_em TIMESTAMPTZ,
+                finalizado_em TIMESTAMPTZ,
+                motivo_finalizacao TEXT,
+                criado_por TEXT,
+                supervisor_destinatario TEXT,
+                empresa_cooperativa TEXT,
+                ip_criacao TEXT,
+                user_agent_criacao TEXT,
+                CONSTRAINT chk_acesso_status CHECK (status IN ('ATIVO','EXPIRADO','REVOGADO','USADO','FINALIZADO'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_acessos_token_hash ON acessos_externos_atendimento(token_hash);
+            CREATE INDEX IF NOT EXISTS idx_acessos_id_atendimento ON acessos_externos_atendimento(id_atendimento);
+            CREATE INDEX IF NOT EXISTS idx_acessos_expira_em ON acessos_externos_atendimento(expira_em);
+            CREATE INDEX IF NOT EXISTS idx_acessos_status ON acessos_externos_atendimento(status);
+            CREATE INDEX IF NOT EXISTS idx_acessos_atendimento_status ON acessos_externos_atendimento(id_atendimento, status);
+        `);
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS eventos_seguranca (
+                id SERIAL PRIMARY KEY,
+                tipo_evento TEXT NOT NULL,
+                entidade TEXT,
+                entidade_id TEXT,
+                usuario TEXT,
+                ip_origem TEXT,
+                user_agent TEXT,
+                resultado TEXT NOT NULL,
+                motivo TEXT,
+                data_hora TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                metadados JSONB
+            );
+            CREATE INDEX IF NOT EXISTS idx_eventos_seg_tipo_data ON eventos_seguranca(tipo_evento, data_hora);
+        `);
+
+        // Adiciona Foreign Keys e Constraints na tabela gps_historico_atendimento se não existirem
+        try {
+            await client.query(`
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_gps_atendimento') THEN
+                        ALTER TABLE gps_historico_atendimento 
+                        ADD CONSTRAINT fk_gps_atendimento FOREIGN KEY (id_atendimento) REFERENCES rotas_importadas(id) ON DELETE CASCADE;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_gps_latitude') THEN
+                        ALTER TABLE gps_historico_atendimento 
+                        ADD CONSTRAINT chk_gps_latitude CHECK (latitude BETWEEN -90 AND 90);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_gps_longitude') THEN
+                        ALTER TABLE gps_historico_atendimento 
+                        ADD CONSTRAINT chk_gps_longitude CHECK (longitude BETWEEN -180 AND 180);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_gps_velocidade') THEN
+                        ALTER TABLE gps_historico_atendimento 
+                        ADD CONSTRAINT chk_gps_velocidade CHECK (velocidade IS NULL OR (velocidade >= 0 AND velocidade <= 200));
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_gps_precisao') THEN
+                        ALTER TABLE gps_historico_atendimento 
+                        ADD CONSTRAINT chk_gps_precisao CHECK (precisao IS NULL OR (precisao >= 0 AND precisao <= 1000));
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_historico_atendimento') THEN
+                        ALTER TABLE historico_atendimentos 
+                        ADD CONSTRAINT fk_historico_atendimento FOREIGN KEY (id_atendimento) REFERENCES rotas_importadas(id) ON DELETE CASCADE;
+                    END IF;
+                END $$;
+            `);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_rotas_status_atendimento ON rotas_importadas(status_atendimento);`);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_auditoria_operacional_data_hora ON auditoria_operacional(data_hora);`);
+        } catch (constErr) {
+            console.warn('⚠️ [HARDENING SCHEMA] Constraints ou FKs parciais:', constErr.message);
+        }
+
         console.log('✅ Banco de dados PostgreSQL inicializado com sucesso.');
 
         // Correção de dados históricos corrompidos (horários gigantes oriundos do erro do Excel)
@@ -218,12 +300,37 @@ async function initDB() {
             console.warn('⚠️ [MIGRAÇÃO DADOS] Falha ao corrigir horários corrompidos históricos:', migErr.message);
         }
         
-        // Limpeza de posições GPS obsoletas (Retenção de 12 meses)
+        // Limpeza e expurgo automático de retenção (GPS, Recuperação de Senha, Expiração de Tokens)
         try {
+            // 1. Purga de posições GPS obsoletas (Retenção de 12 meses)
             const deleteRes = await client.query("DELETE FROM gps_historico_atendimento WHERE data_hora < NOW() - INTERVAL '12 months'");
             console.log(`🧹 [RETENÇÃO GPS] Limpeza efetuada: ${deleteRes.rowCount} registros com mais de 12 meses removidos.`);
+
+            // 2. Atualização de tokens expirados
+            const expTokensRes = await client.query("UPDATE acessos_externos_atendimento SET status = 'EXPIRADO' WHERE expira_em < NOW() AND status = 'ATIVO'");
+            if (expTokensRes.rowCount > 0) {
+                console.log(`🧹 [RETENÇÃO TOKENS] Atualizados ${expTokensRes.rowCount} tokens para status EXPIRADO.`);
+            }
+
+            // 3. Purga de solicitações de recuperação de senha antigas (padrão: 90 dias ou RECUPERACAO_RETENCAO_DIAS)
+            const diasRetencaoSenha = parseInt(process.env.RECUPERACAO_RETENCAO_DIAS, 10) || 90;
+            const purgeSenhaRes = await client.query("DELETE FROM recuperacao_senha WHERE solicitado_em < NOW() - ($1 || ' days')::INTERVAL", [diasRetencaoSenha]);
+            console.log(`🧹 [RETENÇÃO SENHAS] Limpeza efetuada: ${purgeSenhaRes.rowCount} registros com mais de ${diasRetencaoSenha} dias removidos.`);
+
+            // 4. Atualização de tokens expirados por inatividade (padrão: 30 minutos sem uso ou LINK_INATIVIDADE_MINUTOS)
+            const minInatividade = parseInt(process.env.LINK_INATIVIDADE_MINUTOS, 10) || 30;
+            const expInatRes = await client.query(
+                `UPDATE acessos_externos_atendimento 
+                 SET status = 'EXPIRADO', motivo_finalizacao = 'Inatividade superior ao limite configurado' 
+                 WHERE status = 'ATIVO' 
+                   AND COALESCE(usado_em, criado_em) < NOW() - ($1 || ' minutes')::INTERVAL`,
+                [minInatividade]
+            );
+            if (expInatRes.rowCount > 0) {
+                console.log(`🧹 [RETENÇÃO INATIVIDADE] Atualizados ${expInatRes.rowCount} tokens por inatividade (> ${minInatividade} min).`);
+            }
         } catch (gcErr) {
-            console.warn('⚠️ [RETENÇÃO GPS] Falha ao executar rotina de limpeza:', gcErr.message);
+            console.warn('⚠️ [RETENÇÃO DADOS] Falha ao executar rotina de limpeza:', gcErr.message);
         }
     } catch (err) {
         console.error('❌ Erro ao inicializar banco de dados:', err.message);

@@ -320,7 +320,7 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const idRota = urlParams.get('id');
+    const tokenRota = urlParams.get('token');
     
     let trackerActive = false;
     let gpsWatchId = null;
@@ -339,91 +339,57 @@
     const statusBox = document.getElementById('status-box');
     const statusText = document.getElementById('status-text');
 
-    if (!idRota) {
-      alert("ID da rota não especificado na URL.");
+    if (!tokenRota) {
+      exibirMensagemLinkInvalido("Link de acesso não especificado ou incompleto. Entre em contato com o supervisor responsável pela operação.");
     } else {
       carregarDetalhesRota();
     }
 
-    async function carregarDetalhesRota() {
-      const urlNome = urlParams.get('nome');
-      const urlPlaca = urlParams.get('placa');
-      const urlVeiculo = urlParams.get('veiculo');
-      const urlPassageiro = urlParams.get('passageiro');
-      const urlPrograma = urlParams.get('programa');
-      const urlDestino = urlParams.get('destino');
-      const urlSaida = urlParams.get('saida');
-      const urlInicio = urlParams.get('inicio');
-      const urlFim = urlParams.get('fim');
+    function exibirMensagemLinkInvalido(msg) {
+      statusBox.className = "status-panel status-standby";
+      statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+      statusBox.style.border = "1px solid var(--danger)";
+      statusBox.style.color = "#FF8B8B";
+      if (statusText) statusText.textContent = "LINK DE ATENDIMENTO EXPIRADO / INVÁLIDO";
+      
+      btnGps.disabled = true;
+      btnStart.disabled = true;
+      btnPause.disabled = true;
+      btnStop.disabled = true;
 
-      // Check URL parameters first
-      if (urlNome || urlPlaca || urlPassageiro) {
-        rotaData = {
-          motorista_nome: urlNome || 'Motorista Contingência',
-          placa_veiculo: urlPlaca || 'SEM-PLACA',
-          tipo_veiculo: urlVeiculo || 'Veículo Executivo',
-          passageiro: urlPassageiro || 'Passageiro / Produtor',
-          programa: urlPrograma || 'CONTINGÊNCIA',
-          origem: urlSaida || 'Rio de Janeiro',
-          destino: urlDestino || 'Rio de Janeiro',
-          horario: urlInicio || '12:00',
-          horario_termino: urlFim || '18:00'
-        };
-        preencherCamposDOM(rotaData);
-        restaurarEstadoPersistido();
-        return;
+      const containerCard = document.querySelector('.container');
+      if (containerCard) {
+        const errorNotice = document.createElement('div');
+        errorNotice.className = 'card';
+        errorNotice.style.border = '1px solid var(--danger)';
+        errorNotice.style.background = 'rgba(239, 68, 68, 0.1)';
+        errorNotice.style.color = '#fff';
+        errorNotice.style.marginTop = '15px';
+        errorNotice.style.textAlign = 'center';
+        errorNotice.style.fontSize = '14px';
+        errorNotice.style.lineHeight = '1.5';
+        errorNotice.textContent = msg || "Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.";
+        containerCard.appendChild(errorNotice);
       }
+    }
 
-      // Check LocalStorage for manual monitorings
+    async function carregarDetalhesRota() {
       try {
-        const manuals = JSON.parse(localStorage.getItem('rit_manual_monitorings') || '[]');
-        const found = manuals.find(m => String(m.id) === String(idRota));
-        if (found) {
-          rotaData = {
-            motorista_nome: found.motorista,
-            placa_veiculo: found.placa,
-            tipo_veiculo: found.tipoVeiculo || found.veiculo,
-            passageiro: found.passageiro,
-            programa: found.programa,
-            origem: found.origem,
-            destino: found.destino,
-            horario: found.dataHoraInicioRaw,
-            horario_termino: found.dataHoraFimRaw
-          };
-          preencherCamposDOM(rotaData);
-          restaurarEstadoPersistido();
+        const res = await fetch(`/api/motorista/atendimento?token=${encodeURIComponent(tokenRota)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.ok || !data.atendimento) {
+          exibirMensagemLinkInvalido(data.mensagem || "Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.");
           return;
         }
-      } catch(e) {}
 
-      // Fallback: Fetch from server API
-      try {
-        const res = await fetch(`/api/rotas/detalhes/${idRota}`).catch(() => null);
-        if (res && res.ok) {
-          const data = await res.json();
-          if (data.ok && data.rota) {
-            rotaData = data.rota;
-            preencherCamposDOM(rotaData);
-            restaurarEstadoPersistido();
-            return;
-          }
-        }
+        rotaData = data.atendimento;
+        preencherCamposDOM(rotaData);
+        restaurarEstadoPersistido();
       } catch (err) {
-        console.warn("Could not fetch server route details, using fallback display:", err);
+        console.error("Erro ao carregar dados do atendimento:", err);
+        exibirMensagemLinkInvalido("Erro de conexão ao carregar os dados do atendimento. Verifique sua internet.");
       }
-
-      // If all fail, display fallback values without breaking
-      preencherCamposDOM({
-        motorista_nome: 'Motorista RIT',
-        placa_veiculo: 'ABC-1234',
-        tipo_veiculo: 'Van Executiva',
-        passageiro: 'Produção / Eventos',
-        programa: 'RIT',
-        destino: 'Rio de Janeiro',
-        horario: '12:00',
-        horario_termino: '18:00'
-      });
-      restaurarEstadoPersistido();
     }
 
     function preencherCamposDOM(d) {
@@ -439,18 +405,24 @@
       if (elNome) elNome.textContent = d.motorista_nome || 'N/D';
       if (elPlaca) elPlaca.textContent = d.placa_veiculo || 'N/D';
       if (elVeiculo) elVeiculo.textContent = d.tipo_veiculo || 'N/D';
-      if (elPassageiro) elPassageiro.textContent = d.passageiro || d.nome_colaborador || 'N/D';
-      if (elPrograma) elPrograma.innerHTML = `<span class="badge">${d.programa || 'GERAL'}</span>`;
+      if (elPassageiro) elPassageiro.textContent = d.passageiro_resumido || d.passageiro || 'Passageiro / Equipe';
+      if (elPrograma) {
+        elPrograma.textContent = '';
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = d.programa || 'GERAL';
+        elPrograma.appendChild(badge);
+      }
       if (elDestino) elDestino.textContent = d.destino || 'N/D';
       if (elInicio) elInicio.textContent = d.horario || 'N/D';
       if (elTermino) elTermino.textContent = d.horario_termino || 'N/D';
     }
 
     function restaurarEstadoPersistido() {
-      if (!idRota) return;
+      if (!tokenRota) return;
       
-      const gpsAuthorized = localStorage.getItem('gps_authorized_' + idRota) === 'true';
-      const tripActive = localStorage.getItem('trip_active_' + idRota) === 'true';
+      const gpsAuthorized = localStorage.getItem('gps_authorized_' + tokenRota) === 'true';
+      const tripActive = localStorage.getItem('trip_active_' + tokenRota) === 'true';
 
       if (gpsAuthorized) {
         btnStart.disabled = false;
@@ -483,8 +455,8 @@
           btnGps.style.color = "var(--good)";
           btnGps.disabled = true;
 
-          if (idRota) {
-            localStorage.setItem('gps_authorized_' + idRota, 'true');
+          if (tokenRota) {
+            localStorage.setItem('gps_authorized_' + tokenRota, 'true');
           }
         },
         (err) => {
@@ -500,7 +472,7 @@
     });
 
     function iniciarRastreamento() {
-      if (!rotaData) return;
+      if (!rotaData || !tokenRota) return;
 
       trackerActive = true;
       btnStart.style.display = "none";
@@ -511,8 +483,8 @@
       statusBox.className = "status-panel status-active";
       statusBox.innerHTML = '<div class="pulse-dot"></div><span id="status-text">TRANSMITINDO GPS ONLINE</span>';
 
-      if (idRota) {
-        localStorage.setItem('trip_active_' + idRota, 'true');
+      if (tokenRota) {
+        localStorage.setItem('trip_active_' + tokenRota, 'true');
       }
 
       // Play background keeping silent loop
@@ -573,8 +545,8 @@
       statusBox.className = "status-panel status-standby";
       statusBox.innerHTML = '<span id="status-text">TRANSMISSÃO INTERROMPIDA</span>';
 
-      if (idRota) {
-        localStorage.removeItem('trip_active_' + idRota);
+      if (tokenRota) {
+        localStorage.removeItem('trip_active_' + tokenRota);
       }
 
       await enviarPosicao('PAUSADO');
@@ -601,37 +573,77 @@
         statusBox.className = "status-panel status-standby";
         statusBox.innerHTML = '<span id="status-text">ATENDIMENTO FINALIZADO</span>';
 
-        if (idRota) {
-          localStorage.removeItem('trip_active_' + idRota);
-          localStorage.removeItem('gps_authorized_' + idRota);
+        if (tokenRota) {
+          localStorage.removeItem('trip_active_' + tokenRota);
+          localStorage.removeItem('gps_authorized_' + tokenRota);
         }
 
-        await enviarPosicao('FINALIZADO');
-        alert("Corrida finalizada com sucesso. Obrigado!");
+        // Tenta enviar última posição GPS se houver coordenadas ativas
+        if (currentCoords) {
+          try {
+            await enviarPosicao('FINALIZADO');
+          } catch(e) {}
+        }
+
+        // Chama OBRIGATORIAMENTE o endpoint de finalização garantida no servidor
+        try {
+          await fetch('/api/motorista/finalizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: tokenRota })
+          });
+        } catch (err) {
+          console.error("Erro ao chamar endpoint de finalização:", err);
+        }
+
+        exibirMensagemLinkInvalido("O atendimento foi finalizado e este link de compartilhamento foi encerrado.");
+        alert("Corrida finalizada com sucesso. O link de compartilhamento foi encerrado.");
       }
     });
 
     async function enviarPosicao(statusAtendimento, speed = 0) {
-      if (!currentCoords || !rotaData) return;
+      if (!tokenRota) return;
 
       const payload = {
-        motorista: rotaData.motorista_nome,
-        lat: currentCoords.lat,
-        lng: currentCoords.lng,
-        placa: rotaData.placa_veiculo,
-        tipo_veiculo: rotaData.tipo_veiculo,
-        programa: rotaData.programa,
+        token: tokenRota,
+        motorista: rotaData ? rotaData.motorista_nome : undefined,
+        lat: currentCoords ? currentCoords.lat : 0,
+        lng: currentCoords ? currentCoords.lng : 0,
+        placa: rotaData ? rotaData.placa_veiculo : undefined,
+        tipo_veiculo: rotaData ? rotaData.tipo_veiculo : undefined,
+        programa: rotaData ? rotaData.programa : undefined,
         speed: speed,
-        id_rota: rotaData.id,
         status_atendimento: statusAtendimento
       };
 
       try {
-        await fetch('/api/gps/update', {
+        const res = await fetch('/api/gps/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+
+        const data = await res.json();
+        if (data.erro === 'ATENDIMENTO_FINALIZADO' || data.erro === 'LINK_EXPIRADO') {
+          if (gpsWatchId) {
+            navigator.geolocation.clearWatch(gpsWatchId);
+            gpsWatchId = null;
+          }
+          trackerActive = false;
+          statusBox.className = "status-panel status-standby";
+          statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+          statusBox.style.border = "1px solid var(--danger)";
+          if (statusText) statusText.textContent = "ATENDIMENTO FINALIZADO";
+          
+          btnStart.disabled = true;
+          btnPause.disabled = true;
+          btnStop.disabled = true;
+
+          if (tokenRota) {
+            localStorage.removeItem('trip_active_' + tokenRota);
+            localStorage.removeItem('gps_authorized_' + tokenRota);
+          }
+        }
       } catch (err) {
         console.error("Erro ao enviar dados para a API:", err);
       }

@@ -7,11 +7,22 @@ server/cache.json
 dist/
 build/
 *.log
+*.sql
+*.dump
+*.backup
+*.xlsx
+*.xls
+*.csv
+Planilhas de Importação/
+backups/
+dump/
+tmp/
+temp/
 
-# PDFs em Normas/ (limite GitHub 100 MB) — manter só no disco local
+# PDFs em Normas/ — manter só no disco local
 Normas/*.pdf
 *.pptx
 
-# SQLite database files
+# Database files
 *.db
 server/data/
