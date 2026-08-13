@@ -9,6 +9,24 @@ const { pool } = require('./database');
 const JWT_SECRET = process.env.JWT_SECRET || 'agente-rig-super-secret-2026';
 
 // ──────────────────────────────────────────────
+// MIDDLEWARE JWT
+// ──────────────────────────────────────────────
+function verifyToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Token inválido ou expirado.' });
+        req.user = user;
+        next();
+    });
+}
+
+// ──────────────────────────────────────────────
 // SMTP (e-mail de recuperação)
 // ──────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
@@ -405,22 +423,6 @@ function setupAuthRoutes(app) {
             return res.status(500).json({ error: 'Erro interno ao processar recuperação.' });
         }
     });
-    // ── MIDDLEWARE JWT ───────────────────────────
-    function verifyToken(req, res, next) {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-
-        if (!token) {
-            return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
-        }
-
-        jwt.verify(token, JWT_SECRET, (err, user) => {
-            if (err) return res.status(403).json({ error: 'Token inválido ou expirado.' });
-            req.user = user;
-            next();
-        });
-    }
-
     // ── GET /api/audit ───────────────────────────
     app.get('/api/audit', verifyToken, async (req, res) => {
         try {
