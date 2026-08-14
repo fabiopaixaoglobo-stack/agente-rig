@@ -2,48 +2,12 @@ import folium
 import requests
 import polyline
 from datetime import datetime, timedelta
-from geopy.geolocators import Nominatim
-from groq import Groq
 import os # Para gerenciar o arquivo HTML do mapa
 import logging
 import json
 import sys
 
-# --- CONFIGURAÇÃO DE LOGS (JSON) ---
-class JsonFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "time": self.formatTime(record, self.datefmt),
-            "level": record.levelname,
-            "message": record.getMessage()
-        }
-        if hasattr(record, "extra_info"):
-            log_record.update(record.extra_info)
-        return json.dumps(log_record)
-
-logger = logging.getLogger("AgenteRIG")
-logger.setLevel(logging.INFO)
-log_handler = logging.StreamHandler(sys.stdout)
-log_handler.setFormatter(JsonFormatter())
-logger.addHandler(log_handler)
-
 # --- CONFIGURAÇÃO MASTER ---
-# Chave Groq: defina GROQ_API_KEY no ambiente (nunca commite chaves no repositório).
-MINHA_API_KEY_GROQ = os.getenv("GROQ_API_KEY", "").strip()
-
-# Inicializa o cliente Groq e o geolocator Nominatim
-try:
-    client_rig = Groq(api_key=MINHA_API_KEY_GROQ) if MINHA_API_KEY_GROQ else None
-    if client_rig:
-        logger.info("Conectado à API da Groq.", extra={"extra_info": {"servico": "LLM", "status": "success"}})
-        print("\n✅ Conectado à API da Groq.")
-    else:
-        logger.warning("GROQ_API_KEY não definida; briefing por IA ficará desativado.", extra={"extra_info": {"servico": "LLM", "status": "skipped"}})
-        print("\n⚠️ GROQ_API_KEY não definida no ambiente. Exporte a variável para usar a Groq.")
-except Exception as e:
-    logger.error("Falha ao conectar à API da Groq.", extra={"extra_info": {"erro": str(e)}})
-    print(f"\n❌ ERRO: Falha ao conectar à API da Groq. Verifique sua chave. Erro: {e}")
-    client_rig = None # Garante que client_rig seja None se a conexão falhar
 geolocator = Nominatim(user_agent="Agente_RIG_Global_VSC")
 
 # --- MOTOR DE INCIDENTES (REAL-TIME AGGREGATOR) ---
@@ -147,24 +111,12 @@ def run_rig_analysis():
 
         logger.info("Análise de Risco concluída", extra={"extra_info": {"incidentes_detectados": len(impactos)}})
 
-        # 4. Briefing IA (se a conexão Groq estiver OK)
-        txt_ia = "Não foi possível gerar briefing (problema de conexão com a IA)."
-        if client_rig:
-            brief_prompt = f"Relatório Técnico Fábio Paixão. Rota de {km:.1f}km. Modal: {selected_modal_name}. Alertas: {impactos}. Sugira ação imediata (5 linhas)."
-            try:
-                completion = client_rig.chat.completions.create(model="llama-3.1-8b-instant", messages=[{"role":"user","content": brief_prompt}])
-                txt_ia = completion.choices[0].message.content
-            except Exception as e:
-                txt_ia = f"Erro ao gerar briefing da IA: {e}"
-                print(f"❌ Atenção: {txt_ia}")
-
         # 5. Saída no Terminal
         print("\n--- BRIEFING AGENTE RIG ---")
         print(f"Risco na Rota: {'⚠️ DETECTADO' if impactos else '✅ SEGURO'}")
         print(f"Distância Total: {km:.2f} KM")
         print(f"Tempo Estimado: {minutos:.0f} Minutos")
         print(f"Modal Selecionado: {selected_modal_name}")
-        print("\n" + txt_ia)
 
         # 6. Renderização do Mapa para HTML
         map_location = coords[0] if coords else [-22.9068, -43.1729] # Ponto padrão se coords estiver vazio

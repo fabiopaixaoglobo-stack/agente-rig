@@ -1,11 +1,10 @@
 # Agente RIG — Centro de comando RIT
 
-Aplicação web (Express + front-end estático) para monitoramento em mapa, importação de bases em Excel, consulta normativa com IA (Groq) e planejamento de rotas.
+Aplicação web (Express + front-end estático) para monitoramento em mapa, importação de bases em Excel, auditoria e planejamento de rotas.
 
 ## Requisitos
 
 - [Node.js](https://nodejs.org/) **18 ou superior**
-- Chave da API [Groq](https://console.groq.com/) para o chat normativo
 
 ## Configuração
 
@@ -15,7 +14,7 @@ Aplicação web (Express + front-end estático) para monitoramento em mapa, impo
    npm install
    ```
 
-2. Copie `.env.example` para `.env` e preencha `GROQ_API_KEY`.
+2. Configure o arquivo `.env` com a URL do banco PostgreSQL.
 
 3. Inicie o servidor:
 
@@ -29,15 +28,12 @@ Aplicação web (Express + front-end estático) para monitoramento em mapa, impo
 
 | Variável | Descrição |
 |----------|-----------|
-| `GROQ_API_KEY` | Chave Groq (consultor de normas). |
 | `PORT` | Porta HTTP (predefinido: 3000). |
 | `ALLOWED_ORIGINS` | Origens CORS permitidas, separadas por vírgula. Se omitida, o CORS fica permissivo (adequado só a desenvolvimento). |
 
-O script Python opcional `import folium.py` também usa `GROQ_API_KEY` no ambiente — **não coloque chaves em ficheiros versionados**.
-
 ## Estrutura
 
-- `server/` — API Express (`/api/chat`, `/api/normas`, `/api/geocode`, ficheiros estáticos a partir de `public/`).
+- `server/` — API Express (`/api/normas`, `/api/geocode`, ficheiros estáticos a partir de `public/`).
 - `public/` — Interface (módulos em `public/js/`).
 - `server/data/contratos.json` — Trechos de contrato usados como contexto do chat.
 - `public/assets/normas_transporte.json` — Base de normas (resumo na API; texto completo no prompt no servidor).

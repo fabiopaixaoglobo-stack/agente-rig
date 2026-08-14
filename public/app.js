@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarUploadPlanejador();
   inicializarAbas();
   inicializarPlanejador();
-  inicializarChatbot();
   inicializarFiltros();
   carregarNormasResumo();
 });
@@ -192,66 +191,6 @@ function inicializarUploadPlanejador() {
 function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function inicializarChatbot() {
-  const btn = document.getElementById('btn-enviar');
-  const inp = document.getElementById('pergunta');
-  const chat = document.getElementById('chat');
-  if(!btn) return;
-
-  async function enviar() {
-    const txt = inp.value.trim();
-    if(!txt) return;
-    chat.innerHTML += `<div class="msg user">${escHtml(txt)}</div>`;
-    inp.value = "";
-    
-    const botId = "bot-" + Date.now();
-    chat.innerHTML += `<div class="msg bot" id="${botId}"><i>Analisando base normativa (${escHtml(CHAT_CONTEXTO)})...</i></div>`;
-    chat.scrollTop = chat.scrollHeight;
-
-    try {
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: txt, contexto: CHAT_CONTEXTO })
-      });
-      let data;
-      try { data = await resp.json(); } catch (e) { data = {}; }
-      const b = document.getElementById(botId);
-      if (!b) return;
-      if (!resp.ok) {
-        const err = data.error || data.message || ('HTTP ' + resp.status);
-        b.innerHTML = `<b>Consultor RIT:</b><br>${escHtml(err).replace(/\n/g, '<br>')}`;
-      } else if (typeof data.response === 'string') {
-        b.innerHTML = `<b>Consultor RIT:</b><br>${escHtml(data.response).replace(/\n/g, '<br>')}`;
-      } else {
-        b.innerHTML = '<b>Consultor RIT:</b><br>Resposta inesperada do servidor.';
-      }
-      chat.scrollTop = chat.scrollHeight;
-    } catch (err) {
-      const b = document.getElementById(botId);
-      if(b) b.innerHTML = "Erro de conexão com o consultor.";
-    }
-  }
-  btn.addEventListener('click', enviar);
-  inp.addEventListener('keypress', e => { if(e.key==='Enter') enviar(); });
-}
-
-function limparChat() {
-  const chat = document.getElementById('chat');
-  if (chat) {
-    chat.innerHTML = `<div class="msg bot">Histórico limpo. Como posso ajudar com as normas de transporte agora?</div>`;
-    CHAT_CONTEXTO = "geral";
-  }
-}
-
-function setContext(contexto) {
-  CHAT_CONTEXTO = contexto;
-  const chat = document.getElementById('chat');
-  const labels = { 'norma': 'NORMA', 'contrato-cargas': 'CONTRATO CARGAS', 'contrato-pessoas': 'CONTRATO PESSOAS' };
-  chat.innerHTML += `<div class="msg bot"><i>Contexto alterado para: <b>${labels[contexto] || 'GERAL'}</b>. Agora responderei focando neste documento.</i></div>`;
-  chat.scrollTop = chat.scrollHeight;
 }
 
 /* =======================

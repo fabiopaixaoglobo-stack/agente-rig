@@ -5,7 +5,6 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
-const Groq = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -85,20 +84,6 @@ if (process.env.TRUST_PROXY === '1' || process.env.RENDER) {
     app.set('trust proxy', 1);
 }
 
-/** Limita tamanho do prompt de sistema (tokens / custo / latência) */
-const RAG_MAX_NORMAS = 8;
-const RAG_MAX_CHARS_NORMA_TEXTO = 900;
-const RAG_MAX_CHARS_CONTRATOS = 3500;
-
-// CONFIGURAÇÃO GROQ
-let groq = null;
-if (process.env.GROQ_API_KEY) {
-    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    console.log('✅ GROQ_API_KEY configurada — IA online.');
-} else {
-    console.error('⚠️ GROQ_API_KEY não encontrada — chatbot ficará offline. Configure a variável no Render.');
-}
-
 // MIDDLEWARES — CORS: defina ALLOWED_ORIGINS (lista separada por vírgula) em produção
 const allowedOrigins = process.env.ALLOWED_ORIGINS;
 if (allowedOrigins && allowedOrigins.trim()) {
@@ -108,14 +93,6 @@ if (allowedOrigins && allowedOrigins.trim()) {
     app.use(cors());
 }
 app.use(express.json({ limit: '512kb' }));
-
-const chatLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: Number(process.env.CHAT_RATE_LIMIT_MAX) || 24,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Muitas mensagens em pouco tempo. Aguarde um minuto e tente novamente.' },
-});
 
 // ROTAS API (antes do static para não haver ambiguidade com ficheiros em public/)
 app.use('/api', geocodeRouter);
@@ -227,100 +204,6 @@ app.get('/api/normas', (req, res) => {
 // Multer and parser config for Chat RIT
 const multer = require('multer');
 const upload = multer({ limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB limit
-const { parseDocument } = require('./document-parser');
-const activeDocuments = {};
-
-app.post('/api/chat-rit/upload', upload.single('doc'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
-        }
-        const fileToken = req.body.token || 'global';
-        const fileBuffer = req.file.buffer;
-        const mimeType = req.file.mimetype;
-        const fileName = req.file.originalname;
-
-        const extractedText = await parseDocument(fileBuffer, mimeType, fileName);
-        
-        activeDocuments[fileToken] = {
-            fileName,
-            text: extractedText,
-            uploadedAt: new Date().toISOString()
-        };
-
-        console.log(`[Chat RIT] Documento carregado: ${fileName} (${extractedText.length} caracteres)`);
-        
-        res.json({
-            ok: true,
-            fileName,
-            charCount: extractedText.length,
-            message: 'Documento processado com sucesso.'
-        });
-    } catch (err) {
-        console.error('Erro ao processar documento no Chat RIT:', err);
-        res.status(500).json({ error: `Erro ao processar arquivo: ${err.message}` });
-    }
-});
-
-app.post('/api/chat-rit/remover', (req, res) => {
-    const fileToken = req.body.token || 'global';
-    delete activeDocuments[fileToken];
-    res.json({ ok: true });
-});
-
-app.post('/api/chat-rit/pergunta', chatLimiter, async (req, res) => {
-    const { message, token, acao } = req.body;
-    const fileToken = token || 'global';
-
-    const docContext = activeDocuments[fileToken];
-    if (!docContext) {
-        return res.status(400).json({ error: 'Nenhum documento ativo. Por favor, anexe um arquivo antes.' });
-    }
-
-    if (!groq) {
-        return res.json({
-            response: '🤖 IA Offline. Configure a GROQ_API_KEY no servidor.',
-            status: 'offline'
-        });
-    }
-
-    try {
-        let userMessage = message;
-        let systemPrompt = `Você é o "Chat RIT", um robô assistente especializado em analisar documentos e responder a perguntas com base no arquivo anexado.
-Use estritamente as informações contidas no documento abaixo para responder, resumir, explicar ou extrair pontos-chave. Se a resposta não estiver no documento, informe isso de forma honesta.
-
---- CONTEXTO DO DOCUMENTO ---
-Nome do Arquivo: ${docContext.fileName}
-Conteúdo do Documento:
-${docContext.text.slice(0, 150000)}
------------------------------
-`;
-
-        if (acao === 'resumo') {
-            userMessage = 'Faça um resumo executivo estruturado e detalhado das informações mais importantes deste documento.';
-        } else if (acao === 'pontos') {
-            userMessage = 'Identifique e extraia os pontos-chave e informações mais críticas presentes neste documento.';
-        } else if (acao === 'acoes') {
-            userMessage = 'Identifique todos os planos de ação recomendados, obrigações, prazos e responsabilidades indicadas neste documento.';
-        }
-
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
-            ],
-            model: 'llama-3.3-70b-versatile',
-            temperature: 0.2
-        });
-
-        const reply = chatCompletion.choices[0].message.content;
-        res.json({ ok: true, response: reply });
-    } catch (err) {
-        console.error('Erro na resposta do Groq no Chat RIT:', err);
-        res.status(500).json({ error: `Erro de processamento da IA: ${err.message}` });
-    }
-});
-
 // Cache do status do COR-Rio com atualização periódica
 let corCache = {
     estagio: { estagio: "Estágio 1", cor: "#228d46" },
@@ -539,103 +422,6 @@ const handleReverseGeocode = async (req, res) => {
 
 app.get('/api/cor/reverse-geocode', handleReverseGeocode);
 app.get('/reverse-geocode', handleReverseGeocode);
-
-app.post('/api/chat', chatLimiter, async (req, res) => {
-    const { message, contexto } = req.body;
-    if (!message || typeof message !== 'string') {
-        return res.status(400).json({ error: 'Mensagem vazia ou inválida.' });
-    }
-
-    const query = message.toLowerCase().trim();
-
-    // 1. Normas — título contém trecho curto OU palavra-chave na mensagem
-    const queryWords = query.split(/\s+/).filter((w) => w.length > 2);
-    let matches = NORMAS_DATABASE.filter((n) => {
-        const titulo = (n.titulo || '').toLowerCase();
-        if (titulo && (query.includes(titulo) || titulo.includes(query.slice(0, 80)))) return true;
-        if (n.palavras_chave && Array.isArray(n.palavras_chave)) {
-            return n.palavras_chave.some((kw) => {
-                const k = String(kw).toLowerCase();
-                return k && (query.includes(k) || queryWords.some((w) => k.includes(w) || w.includes(k)));
-            });
-        }
-        return false;
-    }).slice(0, RAG_MAX_NORMAS);
-
-    const blocoNormas = matches
-        .map((m) => `[Norma ID ${m.id}] ${truncar(m.texto || m.resumo || '', RAG_MAX_CHARS_NORMA_TEXTO)}`)
-        .join('\n');
-
-    // 2. Contratos
-    let contractInfo = '';
-    if (contexto && CONTRATOS_DATABASE[contexto]) {
-        contractInfo = CONTRATOS_DATABASE[contexto]
-            .map((c) => `[${c.tema}] ${c.texto}`)
-            .join('\n');
-    } else {
-        Object.values(CONTRATOS_DATABASE)
-            .flat()
-            .forEach((c) => {
-                const tema = (c.tema || '').toLowerCase();
-                if (tema && query.includes(tema)) contractInfo += `[${c.tema}] ${c.texto}\n`;
-            });
-    }
-    contractInfo = truncar(contractInfo, RAG_MAX_CHARS_CONTRATOS);
-
-    if (!groq) {
-        console.error('[CHAT] Requisição recebida, mas GROQ_API_KEY ausente.');
-        return res.json({
-            response: '🤖 IA Offline. Configure a GROQ_API_KEY no servidor.',
-            status: 'offline',
-            message: 'GROQ API key not configured'
-        });
-    }
-
-    console.log(`[CHAT] Requisição recebida — normas: ${matches.length}, contratos: ${contractInfo ? 'sim' : 'não'}`);
-
-    try {
-        const systemPrompt = `
-Você é o "Consultor RIT v3.5", especialista em normas e contratos de transporte.
-
-PRIORIDADE DE RESPOSTA (use nesta ordem quando houver conteúdo):
-1. Normas de transportes (trechos recuperados da base interna).
-2. Contratos operacionais (trechos recuperados).
-3. Conhecimento logístico geral da RIT, sem contradizer 1 e 2.
-
-TRECHOS — NORMAS:
-${blocoNormas || '(Nenhum trecho automático; use o título da pergunta e o contexto do utilizador.)'}
-
-TRECHOS — CONTRATOS:
-${contractInfo || '(Nenhum trecho automático de contrato.)'}
-
-REGRAS:
-- Se não encontrar na base, oriente com base nas diretrizes relacionadas e diga que extrapolou.
-- Resposta executiva, tópicos curtos quando fizer sentido.
-- Cite sempre a fonte quando usar trecho: [Norma ID n] ou [Contrato tema].
-- Contexto de documento selecionado pelo utilizador: ${contexto || 'Geral'}.
-`.trim();
-
-        const completion = await groq.chat.completions.create({
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: message.slice(0, 8000) },
-            ],
-            model: 'llama-3.1-8b-instant',
-        });
-
-        const content = completion.choices[0]?.message?.content;
-        res.json({ response: typeof content === 'string' ? content : 'Resposta vazia do modelo.' });
-    } catch (error) {
-        console.error('[CHAT] Erro na comunicação com Groq:', error?.message || error);
-        if (error?.status === 401) {
-            return res.status(500).json({ error: 'GROQ_API_KEY inválida. Verifique a chave configurada no Render.' });
-        }
-        if (error?.status === 429) {
-            return res.status(429).json({ error: 'Limite de requisições da API Groq atingido. Tente novamente em instantes.' });
-        }
-        res.status(500).json({ error: 'Falha na comunicação com o serviço de IA.' });
-    }
-});
 
 // ENDPOINT PARA INFORMES OTT RJ
 app.get('/api/ott', async (req, res) => {
