@@ -90,15 +90,25 @@ function loadBaseColaboradores() {
 
 function findInBase(matricula, email) {
     const base = loadBaseColaboradores();
-    return base.find(c => {
-        let match = true;
-        if (matricula) {
-            match = match && c._matricula && String(c._matricula).trim() === String(matricula).trim();
-        }
-        if (email) {
-            match = match && c._email && String(c._email).trim().toLowerCase() === String(email).trim().toLowerCase();
-        }
-        return match;
+    // Se a base Excel não estiver presente no servidor (ex: ambiente Render sem planilha no Git por LGPD),
+    // valida o acesso diretamente pelo PostgreSQL para não bloquear o login dos usuários cadastrados.
+    if (!base || base.length === 0) {
+        return true;
+    }
+
+    const normMat = (m) => String(m || '').trim().replace(/^0+/, '');
+    const normMail = (e) => String(e || '').trim().toLowerCase();
+
+    const targetMat = normMat(matricula);
+    const targetMail = normMail(email);
+
+    return base.some(c => {
+        const cMat = normMat(c._matricula);
+        const cMail = normMail(c._email);
+
+        if (targetMat && cMat && targetMat === cMat) return true;
+        if (targetMail && cMail && targetMail === cMail) return true;
+        return false;
     });
 }
 
