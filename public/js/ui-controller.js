@@ -2570,7 +2570,7 @@ export class UiController {
             bloqueio_whatsapp_direto: true
         });
 
-        let linkGenerado = idAtendimento ? `${window.location.origin}/motorista.html?id=${idAtendimento}` : 'Nenhum link de posicionamento disponível para este atendimento.';
+        let linkGenerado = 'Gerando link seguro...';
 
         try {
             const res = await fetch('/api/auditoria/solicitar-posicao', {
