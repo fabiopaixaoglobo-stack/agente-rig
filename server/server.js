@@ -487,7 +487,12 @@ app.get('/api/ott', async (req, res) => {
 app.get('/api/motorista/atendimento', async (req, res) => {
     try {
         const rawToken = req.query.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+        
+        console.log(`[DIAGNOSTICO-MOTORISTA] GET /api/motorista/atendimento chamado.`);
+        console.log(`[DIAGNOSTICO-MOTORISTA] Token recebido: "${rawToken || 'NENHUM'}"`);
+
         if (!rawToken) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Token não fornecido.`);
             await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', null, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_NAO_FORNECIDO');
             return res.status(401).json({
                 erro: 'LINK_EXPIRADO',
@@ -497,6 +502,7 @@ app.get('/api/motorista/atendimento', async (req, res) => {
 
         const tokenHash = hashToken(rawToken);
         const tokenPrefix = String(rawToken).substring(0, 8);
+        console.log(`[DIAGNOSTICO-MOTORISTA] Token Prefix: "${tokenPrefix}", Token Hash: "${tokenHash}"`);
 
         const result = await pool.query(
             `SELECT a.*, r.id as rota_id, r.motorista_nome, r.placa_veiculo, r.tipo_veiculo, r.programa,
@@ -507,7 +513,10 @@ app.get('/api/motorista/atendimento', async (req, res) => {
             [tokenHash]
         );
 
+        console.log(`[DIAGNOSTICO-MOTORISTA] Consulta DB por token_hash retornou ${result.rows.length} registros.`);
+
         if (result.rows.length === 0) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Token Hash "${tokenHash}" não localizado no banco (ou rota_importada foi excluída).`);
             await registrarEventoSeguranca('CONSULTA_LINK_EXTERNO', 'acessos_externos_atendimento', null, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', 'TOKEN_INVALIDO', { token_prefix: tokenPrefix });
             return res.status(401).json({
                 erro: 'LINK_EXPIRADO',
@@ -516,10 +525,12 @@ app.get('/api/motorista/atendimento', async (req, res) => {
         }
 
         const acesso = result.rows[0];
+        console.log(`[DIAGNOSTICO-MOTORISTA] Registro encontrado: ID Atendimento=${acesso.id_atendimento}, Status Token=${acesso.status}, Expira Em=${acesso.expira_em}, Status Rota=${acesso.status_atendimento}`);
 
         // 1. Checa status da rota. Se o atendimento estiver FINALIZADO, ENCERRADO ou CANCELADO, invalida imediatamente o token!
         const statusRota = (acesso.status_atendimento || '').toUpperCase();
         if (['FINALIZADO', 'ENCERRADO', 'CANCELADO'].includes(statusRota)) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Atendimento já possui status_atendimento="${statusRota}".`);
             if (acesso.status === 'ATIVO') {
                 await pool.query(
                     `UPDATE acessos_externos_atendimento 
@@ -540,6 +551,8 @@ app.get('/api/motorista/atendimento', async (req, res) => {
         const ultimaInteracao = acesso.usado_em ? new Date(acesso.usado_em) : new Date(acesso.criado_em);
         const limiteInatividade = new Date(Date.now() - minInatividade * 60 * 1000);
 
+        console.log(`[DIAGNOSTICO-MOTORISTA] Validação Token: status="${acesso.status}", expira_em="${acesso.expira_em}", ultimaInteracao="${ultimaInteracao.toISOString()}", limiteInatividade="${limiteInatividade.toISOString()}"`);
+
         if (acesso.status !== 'ATIVO' || new Date(acesso.expira_em) < new Date() || ultimaInteracao < limiteInatividade) {
             let tipoEventoAudit = 'CONSULTA_LINK_EXTERNO';
             let motivoBloqueio = 'TOKEN_EXPIRADO_OU_INATIVO';
@@ -547,6 +560,7 @@ app.get('/api/motorista/atendimento', async (req, res) => {
             if (ultimaInteracao < limiteInatividade && acesso.status === 'ATIVO') {
                 tipoEventoAudit = 'TOKEN_EXPIRADO_POR_INATIVIDADE';
                 motivoBloqueio = 'Inatividade superior ao limite configurado';
+                console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Token inativo por mais de ${minInatividade} minutos.`);
                 await pool.query(
                     `UPDATE acessos_externos_atendimento 
                      SET status = 'EXPIRADO', motivo_finalizacao = 'Inatividade superior ao limite configurado' 
@@ -554,7 +568,10 @@ app.get('/api/motorista/atendimento', async (req, res) => {
                     [acesso.id]
                 );
             } else if (acesso.status === 'ATIVO' && new Date(acesso.expira_em) < new Date()) {
+                console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Token excedeu data de expiração (${acesso.expira_em}).`);
                 await pool.query("UPDATE acessos_externos_atendimento SET status = 'EXPIRADO' WHERE id = $1", [acesso.id]);
+            } else {
+                console.warn(`[DIAGNOSTICO-MOTORISTA] REJEITADO: Token status="${acesso.status}" diferente de ATIVO.`);
             }
 
             await registrarEventoSeguranca(tipoEventoAudit, 'acessos_externos_atendimento', acesso.id_atendimento, 'PUBLICO', req.ip, req.headers['user-agent'], 'BLOQUEADO', motivoBloqueio, { token_prefix: tokenPrefix, status_token: acesso.status, inatividade_minutos: minInatividade });
@@ -570,7 +587,7 @@ app.get('/api/motorista/atendimento', async (req, res) => {
 
         // Retorna payload mínimo sem PII sensível (sem telefone de passageiro, sem e-mail, sem matrícula)
         const nomeMinimizado = minimizarNome(acesso.passageiro || acesso.nome_colaborador);
-        res.json({
+        const payloadRetorno = {
             ok: true,
             atendimento: {
                 id_atendimento: acesso.rota_id,
@@ -587,9 +604,12 @@ app.get('/api/motorista/atendimento', async (req, res) => {
                 passageiro: nomeMinimizado,
                 nome_colaborador: nomeMinimizado
             }
-        });
+        };
+
+        console.log(`[DIAGNOSTICO-MOTORISTA] SUCESSO: Payload entregue para id_atendimento=${acesso.rota_id}, passageiro="${nomeMinimizado}".`);
+        res.json(payloadRetorno);
     } catch (err) {
-        console.error('Erro ao consultar atendimento via token:', err.message);
+        console.error('[DIAGNOSTICO-MOTORISTA] ERRO CRÍTICO no GET /api/motorista/atendimento:', err);
         res.status(500).json({ error: 'Erro interno ao processar requisição.' });
     }
 });
@@ -597,12 +617,16 @@ app.get('/api/motorista/atendimento', async (req, res) => {
 app.post('/api/motorista/finalizar', async (req, res) => {
     try {
         const { token } = req.body;
+        console.log(`[DIAGNOSTICO-MOTORISTA] POST /api/motorista/finalizar chamado. Token: "${token || 'NENHUM'}"`);
+
         if (!token) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] FINALIZAR REJEITADO: Token não fornecido.`);
             return res.status(400).json({ error: 'TOKEN_INVALIDO', mensagem: 'Token de acesso não fornecido.' });
         }
 
         const tokenHash = hashToken(token);
         const tokenPrefix = String(token).substring(0, 8);
+        console.log(`[DIAGNOSTICO-MOTORISTA] Finalizar Prefix: "${tokenPrefix}", Hash: "${tokenHash}"`);
 
         const tokenRes = await pool.query(
             `SELECT a.*, r.id as id_rota, r.motorista_nome as rota_motorista
@@ -613,11 +637,13 @@ app.post('/api/motorista/finalizar', async (req, res) => {
         );
 
         if (tokenRes.rows.length === 0) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] FINALIZAR REJEITADO: Token Hash "${tokenHash}" não localizado.`);
             return res.status(401).json({ erro: 'LINK_EXPIRADO', mensagem: 'Este link não está mais disponível. Entre em contato com o supervisor responsável pela operação.' });
         }
 
         const acesso = tokenRes.rows[0];
         const idAtendimentoInt = acesso.id_rota;
+        console.log(`[DIAGNOSTICO-MOTORISTA] Finalizando Atendimento ID=${idAtendimentoInt}, Rota Motorista="${acesso.rota_motorista}"`);
 
         // 1. Atualiza status da rota para FINALIZADO
         await pool.query("UPDATE rotas_importadas SET status_atendimento = 'FINALIZADO' WHERE id = $1", [idAtendimentoInt]);
@@ -638,15 +664,16 @@ app.post('/api/motorista/finalizar', async (req, res) => {
             "INSERT INTO historico_atendimentos (id_atendimento, evento, data_hora) VALUES ($1, 'Atendimento finalizado pelo motorista', NOW())",
             [idAtendimentoInt]
         );
+
         await registrarEventoSeguranca('UPDATE_GPS', 'rotas_importadas', idAtendimentoInt, acesso.rota_motorista || 'MOTORISTA', req.ip, req.headers['user-agent'], 'SUCESSO', 'ATENDIMENTO_FINALIZADO_TOKEN_REVOGADO', { token_prefix: tokenPrefix });
 
+        console.log(`[DIAGNOSTICO-MOTORISTA] FINALIZADO COM SUCESSO: id_atendimento=${idAtendimentoInt}`);
         return res.json({
             ok: true,
-            erro: 'ATENDIMENTO_FINALIZADO',
-            mensagem: 'O atendimento foi finalizado com sucesso e o compartilhamento de localização foi encerrado.'
+            mensagem: 'Atendimento finalizado com sucesso.'
         });
     } catch (err) {
-        console.error('Erro ao finalizar atendimento via token:', err.message);
+        console.error('[DIAGNOSTICO-MOTORISTA] ERRO CRÍTICO no POST /api/motorista/finalizar:', err);
         res.status(500).json({ error: 'Erro interno ao finalizar atendimento.' });
     }
 });
@@ -1250,20 +1277,28 @@ app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
         const usuario = req.headers['x-user-matricula'] || 'Operador Equipe de Transportes';
 
         const idAtendimento = parseInt(atendimento, 10);
+        console.log(`[DIAGNOSTICO-MOTORISTA] POST /api/auditoria/solicitar-posicao recebido para atendimento="${atendimento}" (parsed=${idAtendimento}).`);
+
         if (isNaN(idAtendimento)) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] GERAR TOKEN REJEITADO: ID Atendimento inválido (${atendimento}).`);
             return res.status(400).json({ error: 'ID do atendimento inválido.' });
         }
 
         // Verifica se o atendimento existe
         const rRes = await pool.query('SELECT id, motorista_nome, placa_veiculo, status_atendimento FROM rotas_importadas WHERE id = $1', [idAtendimento]);
+        console.log(`[DIAGNOSTICO-MOTORISTA] Consulta rotas_importadas por id=${idAtendimento} retornou ${rRes.rows.length} registros.`);
+
         if (rRes.rows.length === 0) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] GERAR TOKEN REJEITADO: id_atendimento ${idAtendimento} não encontrado no banco rotas_importadas.`);
             return res.status(404).json({ error: 'Atendimento não encontrado.' });
         }
 
         const rota = rRes.rows[0];
+        console.log(`[DIAGNOSTICO-MOTORISTA] Rota encontrada: id=${rota.id}, motorista="${rota.motorista_nome}", status_atendimento="${rota.status_atendimento}"`);
 
         // Se a rota já estiver finalizada, rejeita nova geração de token
         if (['FINALIZADO', 'ENCERRADO', 'CANCELADO'].includes((rota.status_atendimento || '').toUpperCase())) {
+            console.warn(`[DIAGNOSTICO-MOTORISTA] GERAR TOKEN REJEITADO: Rota ${idAtendimento} está com status "${rota.status_atendimento}".`);
             return res.status(400).json({ error: 'Não é possível solicitar posicionamento para um atendimento já finalizado.' });
         }
 
@@ -1281,12 +1316,17 @@ app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
         // Validade de 24 horas para o link
         const expiraEm = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        await pool.query(
+        console.log(`[DIAGNOSTICO-MOTORISTA] Token Gerado! PureToken: "${pureToken}", Prefix: "${tokenPrefix}", Hash: "${tokenHash}", ExpiraEm: "${expiraEm.toISOString()}"`);
+
+        const insertRes = await pool.query(
             `INSERT INTO acessos_externos_atendimento 
              (id_atendimento, token_hash, token_prefix, escopo, status, criado_em, expira_em, criado_por, supervisor_destinatario, empresa_cooperativa, ip_criacao, user_agent_criacao)
-             VALUES ($1, $2, $3, 'POSICIONAMENTO_MOTORISTA', 'ATIVO', NOW(), $4, $5, $6, $7, $8, $9)`,
+             VALUES ($1, $2, $3, 'POSICIONAMENTO_MOTORISTA', 'ATIVO', NOW(), $4, $5, $6, $7, $8, $9)
+             RETURNING id`,
             [idAtendimento, tokenHash, tokenPrefix, expiraEm, usuario, supervisor_email || null, empresa_cooperativa || null, req.ip, req.headers['user-agent']]
         );
+
+        console.log(`[DIAGNOSTICO-MOTORISTA] Token gravado no PostgreSQL com Sucesso! acessos_externos_atendimento.id = ${insertRes.rows[0]?.id}`);
 
         // Grava auditoria operacional
         await pool.query(
