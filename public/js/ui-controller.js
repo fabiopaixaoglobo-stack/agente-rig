@@ -1037,11 +1037,25 @@ export class UiController {
         this.activeTrackersInterval = setInterval(fetchActive, 5000);
     }
 
-    abrirEmulador(id) {
+    async abrirEmulador(id, tokenPuro = null) {
         const modal = document.getElementById("modalEmulador");
         const iframe = document.getElementById("iframeEmulador");
         if (modal && iframe) {
-            iframe.src = `/motorista.html?id=${id}`;
+            let finalLink = tokenPuro ? `${window.location.origin}/motorista.html?token=${tokenPuro}` : '';
+            if (!tokenPuro && id) {
+                try {
+                    const res = await fetch('/api/auditoria/solicitar-posicao', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ atendimento: id, acao: 'ABRIR_EMULADOR' })
+                    });
+                    const data = await res.json();
+                    if (data.link) finalLink = data.link;
+                } catch(e) {
+                    console.error("Erro ao solicitar token para o emulador:", e);
+                }
+            }
+            iframe.src = finalLink || `/motorista.html?invalid=1`;
             modal.style.display = "flex";
         }
     }
@@ -2547,7 +2561,7 @@ export class UiController {
         }
     }
 
-    abrirModalSolicitarPosicao(motorista, placa, idAtendimento, empresaCooperativa = 'Conexão Transportes', programa = 'N/D', origem = 'N/D', destino = 'N/D', horarioInicio = 'N/D', horarioFim = 'N/D') {
+    async abrirModalSolicitarPosicao(motorista, placa, idAtendimento, empresaCooperativa = 'Conexão Transportes', programa = 'N/D', origem = 'N/D', destino = 'N/D', horarioInicio = 'N/D', horarioFim = 'N/D') {
         console.log('[SOLICITAR_POSICAO_CLICK]', {
             atendimento: idAtendimento,
             placa,
@@ -2556,19 +2570,27 @@ export class UiController {
             bloqueio_whatsapp_direto: true
         });
 
-        fetch('/api/auditoria/solicitar-posicao', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                atendimento: idAtendimento, 
-                placa, 
-                motorista, 
-                acao: 'SOLICITACAO_POSICAO_MODAL_ABERTO' 
-            })
-        }).catch(err => console.error("Erro ao auditar abertura de modal:", err));
+        let linkGenerado = idAtendimento ? `${window.location.origin}/motorista.html?id=${idAtendimento}` : 'Nenhum link de posicionamento disponível para este atendimento.';
 
-        const link = idAtendimento ? `${window.location.origin}/motorista.html?id=${idAtendimento}` : 'Nenhum link de posicionamento disponível para este atendimento.';
-        
+        try {
+            const res = await fetch('/api/auditoria/solicitar-posicao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    atendimento: idAtendimento, 
+                    placa, 
+                    motorista, 
+                    acao: 'SOLICITACAO_POSICAO_MODAL_ABERTO' 
+                })
+            });
+            const data = await res.json();
+            if (data.link) {
+                linkGenerado = data.link;
+            }
+        } catch(err) {
+            console.error("Erro ao gerar token para solicitação de posição:", err);
+        }
+
         const msg = `Prezados,
 
 Solicitamos apoio para disponibilização da posição online do veículo abaixo.
@@ -2586,14 +2608,14 @@ Horário previsto: ${horarioInicio || 'N/D'} até ${horarioFim || 'N/D'}
 Por gentileza, solicitem ao motorista que disponibilize a posição online para acompanhamento operacional do atendimento.
 
 Link de disponibilização de posição:
-${link}
+${linkGenerado}
 
 Importante: por regra contratual, esta solicitação deve ser feita pela Empresa/Cooperativa responsável, sem contato direto da Equipe de Transportes com o motorista.
 
 Obrigado.`;
 
         document.getElementById('solicitarMsgText').value = msg;
-        document.getElementById('solicitarLinkInput').value = link;
+        document.getElementById('solicitarLinkInput').value = linkGenerado;
 
         const btnCopyLink = document.querySelector('button[onclick*="copiarLinkSolicitacao"]');
         if (btnCopyLink) {

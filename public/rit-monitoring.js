@@ -284,14 +284,34 @@
             this.closeManualModal();
             this.syncData();
 
+            this.syncData();
+
             // WhatsApp link trigger
             let telClean = String(item.telefone).replace(/\D/g, '');
             if (telClean.length === 10 || telClean.length === 11) {
                 telClean = '55' + telClean;
             }
-            const msgText = `Prezado Sr. ${item.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento de contingência no Portal do Motorista - Conexão Transportes RJ / Agente RIT:\n\n• Produto/Programa: ${item.programa}\n• Passageiro: ${item.passageiro}\n• Veículo: ${item.tipoVeiculo} (${item.placa})\n• Saída: ${item.origem}\n• Destino: ${item.destino}\n\nFavor compartilhar sua posição iniciando o rastreamento no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${item.id}\n\nObrigado.`;
-            const waUrl = `https://wa.me/${telClean}?text=${encodeURIComponent(msgText)}`;
-            window.open(waUrl, '_blank');
+            
+            fetch('/api/auditoria/solicitar-posicao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ atendimento: item.id, placa: item.placa, motorista: item.motorista, acao: 'SOLICITAR_POSICAO_WHATSAPP' })
+            }).then(res => res.json()).then(data => {
+                const linkGenerado = data.link || `${window.location.origin}/motorista.html?invalid=1`;
+                const msgText = `Prezado Sr. ${item.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento de contingência no Portal do Motorista - Conexão Transportes RJ / Agente RIT:\n\n• Produto/Programa: ${item.programa}\n• Passageiro: ${item.passageiro}\n• Veículo: ${item.tipoVeiculo} (${item.placa})\n• Saída: ${item.origem}\n• Destino: ${item.destino}\n\nFavor compartilhar sua posição iniciando o rastreamento no link abaixo:\n🔗 ${linkGenerado}\n\nObrigado.`;
+                const waUrl = `https://wa.me/${telClean}?text=${encodeURIComponent(msgText)}`;
+                window.open(waUrl, '_blank');
+            }).catch(() => {
+                showToast("Erro ao gerar link de posicionamento.", "error");
+            });
+        }
+
+        solicitarPosicaoClick(id) {
+            const item = this.data.find(x => String(x.id) === String(id));
+            if (!item) return;
+            if (window.AGENTE_RIG && window.AGENTE_RIG.ui) {
+                window.AGENTE_RIG.ui.abrirModalSolicitarPosicao(item.motorista, item.placa, item.id, 'Conexão Transportes', item.programa, item.origem, item.destino, item.horarioInicio, item.horarioFim);
+            }
         }
 
         clearFilters() {
@@ -485,13 +505,10 @@
 
                 let waBtn = '';
                 if (a.telefone && !isOnline) {
-                    let telClean = String(a.telefone).replace(/\D/g, '');
-                    if (telClean.length === 10 || telClean.length === 11) telClean = '55' + telClean;
-                    const msgText = `Prezado Sr. ${a.motorista},\n\nSolicitamos a ativação do acompanhamento de rota para o atendimento de contingência no Portal do Motorista - Conexão Transportes RJ / Agente RIT:\n\n• Produto/Programa: ${a.programa}\n• Passageiro: ${a.passageiro}\n• Veículo: ${a.tipoVeiculo} (${a.placa})\n• Saída: ${a.origem}\n• Destino: ${a.destino}\n\nFavor compartilhar sua posição iniciando o rastreamento no link abaixo:\n🔗 ${window.location.origin}/motorista.html?id=${a.id}\n\nObrigado.`;
                     waBtn = `
-                        <a href="https://wa.me/${telClean}?text=${encodeURIComponent(msgText)}" target="_blank" class="rit-btn" style="background:#25D366; color:#04111a; text-decoration:none; display:inline-block; font-size:10px; padding:4px 8px; border-radius:4px;">
+                        <button onclick="window.ritMonitoring.solicitarPosicaoClick('${a.id}')" class="rit-btn" style="background:#25D366; color:#04111a; text-decoration:none; display:inline-block; font-size:10px; padding:4px 8px; border-radius:4px; border:none; cursor:pointer;">
                             💬 Solicitar
-                        </a>
+                        </button>
                     `;
                 }
 
