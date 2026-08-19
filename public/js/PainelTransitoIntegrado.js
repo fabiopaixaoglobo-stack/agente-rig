@@ -4,18 +4,18 @@ import { showToast, escapeHtml } from './utils.js';
 export class PainelTransitoIntegrado {
     constructor() {
         this.containerId = 'tab-painel-integrado';
-        this.storageKey = 'rit_cim_cards_selection_v4';
+        this.storageKey = 'rit_cim_cards_selection_v5';
         this.clockInterval = null;
         this.snapshotTimers = {};
         this.activeFullscreenSlot = null;
         this.fullscreenTimer = null;
         
-        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (streams, snapshots e mapas)
+        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (snapshots, streams e mapas)
         this.defaultSlots = {
             card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_MAPA_RIO_01' },
             card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_ZET_UFRJ_01' },
             card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
-            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_CAMERAS_MUNDO_01' },
+            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_ESPLANADA' },
             card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_MAPA_VERCEL_01' },
             card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
         };
@@ -38,7 +38,7 @@ export class PainelTransitoIntegrado {
         this.updateStats();
         this.bindGlobalKeyboardEvents();
         
-        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com suporte a SP CET, Fullscreen e 6 posições.');
+        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com SP CET, Brasília Clima ao Vivo, Fullscreen e 6 posições.');
     }
 
     loadSlotSelection() {
@@ -52,8 +52,10 @@ export class PainelTransitoIntegrado {
                 if (!this.currentSlots.card_3?.sourceId || this.currentSlots.card_3.sourceId.includes('OFICIAL') || this.currentSlots.card_3.sourceId.includes('PAINEL_DIRETO')) {
                     this.currentSlots.card_3.sourceId = 'SP_CET_23';
                 }
+                if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId.includes('DER_DF') || this.currentSlots.card_4.sourceId.includes('DF_AGORA')) {
+                    this.currentSlots.card_4.sourceId = 'BSB_ESPLANADA';
+                }
                 if (this.currentSlots.card_2?.sourceId === 'RJ_CAMERASRJ_COPACABANA') this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
-                if (this.currentSlots.card_4?.sourceId === 'BSB_DER_DF_01' || this.currentSlots.card_4?.sourceId === 'BSB_DF_AGORA_01') this.currentSlots.card_4.sourceId = 'BSB_CAMERAS_MUNDO_01';
                 if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
                 if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
                 
@@ -373,9 +375,10 @@ export class PainelTransitoIntegrado {
             `;
         }
 
-        // CASO 1: CÂMERAS COM SNAPSHOT AO VIVO (CET-SP)
+        // CASO 1: CÂMERAS COM SNAPSHOT AO VIVO (CET-SP & BRASÍLIA)
         if (source.tipoFonte === 'snapshot') {
             const initialUrl = source.proxyUrl || source.directImageUrl;
+            const watermarkText = source.cidade === 'São Paulo' ? 'CET-SP' : (source.cidade === 'Brasília' ? 'Brasília' : source.cidade);
             return `
                 <div class="cim-snapshot-wrapper ${isFullscreen ? 'cim-snapshot-fs' : ''}" id="snap-wrap-${slotKey}">
                     <img 
@@ -389,7 +392,7 @@ export class PainelTransitoIntegrado {
                         <i class="fa-solid fa-circle"></i> AO VIVO (${escapeHtml(source.cidade)})
                     </div>
                     <div class="cim-snapshot-caption">${escapeHtml(source.nome)}</div>
-                    <div class="cim-snapshot-watermark">CET-SP</div>
+                    <div class="cim-snapshot-watermark">${escapeHtml(watermarkText)}</div>
                     <div class="cim-snapshot-error" id="snap-error-${slotKey}" style="display:none;">
                         <i class="fa-solid fa-triangle-exclamation" style="font-size:24px; color:#f5a623; margin-bottom:8px;"></i>
                         <p style="margin:0 0 10px 0; font-size:11px; color:#cbd5e1;">Não foi possível reproduzir esta câmera no momento.</p>
@@ -454,7 +457,7 @@ export class PainelTransitoIntegrado {
         }
 
         if (source && source.tipoFonte === 'snapshot' && source.ativa !== false) {
-            const intervalMs = source.refreshInterval || 3000;
+            const intervalMs = source.refreshInterval || (source.regional === 'BSB' ? 30000 : 3000);
             const imgUrl = source.proxyUrl || source.directImageUrl;
 
             this.snapshotTimers[slotKey] = setInterval(() => {
@@ -582,13 +585,14 @@ export class PainelTransitoIntegrado {
         // Timer de refresh para snapshot em tela cheia
         if (this.fullscreenTimer) clearInterval(this.fullscreenTimer);
         if (currentSource && currentSource.tipoFonte === 'snapshot') {
+            const intervalMs = currentSource.refreshInterval || (currentSource.regional === 'BSB' ? 30000 : 3000);
             const imgUrl = currentSource.proxyUrl || currentSource.directImageUrl;
             this.fullscreenTimer = setInterval(() => {
                 const fsImg = document.getElementById(`snap-img-fs-${this.activeFullscreenSlot}`);
                 if (fsImg) {
                     fsImg.src = `${imgUrl}?t=${Date.now()}`;
                 }
-            }, 3000);
+            }, intervalMs);
         }
     }
 

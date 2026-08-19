@@ -503,6 +503,88 @@ app.get('/api/cameras/cetsp/image/:pasta/:img?', (req, res) => {
     });
 });
 
+// =========================================================================
+// PROXY DE CÂMERAS PÚBLICAS BRASÍLIA (CLIMA AO VIVO / BRASIL 21)
+// =========================================================================
+const bsbCameraUrls = {
+    'esplanada': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-esplanada',
+    'parque-da-cidade': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-parque-da-cidade',
+    'mane-garrincha': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-mane-garrincha'
+};
+const bsbImageCache = new Map();
+
+app.get('/api/cameras/brasilia/image/:camId', async (req, res) => {
+    const camId = String(req.params.camId || '').toLowerCase().trim();
+    const targetPageUrl = bsbCameraUrls[camId];
+    if (!targetPageUrl) {
+        return res.status(400).json({ error: 'Câmera de Brasília não encontrada' });
+    }
+
+    const now = Date.now();
+    if (bsbImageCache.has(camId)) {
+        const cached = bsbImageCache.get(camId);
+        if (now - cached.timestamp < 30000) { // 30s cache TTL
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Cache-Control', 'public, max-age=15');
+            return res.send(cached.buffer);
+        }
+    }
+
+    try {
+        const pageHtml = await new Promise((resolve, reject) => {
+            httpsModule.get(targetPageUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+                },
+                timeout: 5000
+            }, (pageRes) => {
+                let data = '';
+                pageRes.on('data', chunk => data += chunk);
+                pageRes.on('end', () => resolve(data));
+            }).on('error', reject);
+        });
+
+        const match = pageHtml.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+        if (!match) throw new Error('Não foi possível extrair metadados da página Clima ao Vivo');
+
+        const pageJson = JSON.parse(match[1]);
+        const desarquivo = pageJson.props?.pageProps?.page?.data?.desarquivo;
+        if (!desarquivo) throw new Error('URL de snapshot não encontrada');
+
+        const imageBuffer = await new Promise((resolve, reject) => {
+            httpsModule.get(desarquivo, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+                },
+                timeout: 5000
+            }, (imgRes) => {
+                if (imgRes.statusCode !== 200) return reject(new Error(`HTTP ${imgRes.statusCode}`));
+                const chunks = [];
+                imgRes.on('data', chunk => chunks.push(chunk));
+                imgRes.on('end', () => resolve(Buffer.concat(chunks)));
+            }).on('error', reject);
+        });
+
+        bsbImageCache.set(camId, { buffer: imageBuffer, timestamp: Date.now() });
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=15');
+        res.send(imageBuffer);
+    } catch (err) {
+        console.warn(`⚠️ [BRASÍLIA PROXY] Falha ao obter imagem da câmera ${camId}:`, err.message);
+        if (bsbImageCache.has(camId)) {
+            const cached = bsbImageCache.get(camId);
+            res.setHeader('Content-Type', 'image/jpeg');
+            return res.send(cached.buffer);
+        }
+        if (!res.headersSent) {
+            res.status(502).json({ error: 'Falha ao buscar snapshot de Brasília' });
+        }
+    }
+});
+
+
 
 
 // ENDPOINT PARA INFORMES OTT RJ
