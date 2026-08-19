@@ -423,6 +423,88 @@ const handleReverseGeocode = async (req, res) => {
 app.get('/api/cor/reverse-geocode', handleReverseGeocode);
 app.get('/reverse-geocode', handleReverseGeocode);
 
+// =========================================================================
+// PROXY DE CÂMERAS PÚBLICAS CET-SP (SÃO PAULO) COM CACHE EM MEMÓRIA
+// =========================================================================
+const httpsModule = require('https');
+const cetImageCache = new Map();
+
+app.get('/api/cameras/cetsp/image/:pasta/:img?', (req, res) => {
+    const pasta = String(req.params.pasta || '').replace(/[^0-9]/g, '');
+    const img = String(req.params.img || '1').replace(/[^0-9]/g, '');
+    if (!pasta) {
+        return res.status(400).json({ error: 'Parâmetro de câmera inválido' });
+    }
+
+    const cacheKey = `${pasta}_${img}`;
+    const now = Date.now();
+    if (cetImageCache.has(cacheKey)) {
+        const cached = cetImageCache.get(cacheKey);
+        if (now - cached.timestamp < 3000) { // 3s cache TTL
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Cache-Control', 'public, max-age=3');
+            return res.send(cached.buffer);
+        }
+    }
+
+    const targetUrl = `https://cameras.cetsp.com.br/Cams/${pasta}/${img || 1}.jpg`;
+    const cetRequest = httpsModule.get(targetUrl, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://cameras.cetsp.com.br/View/Cam.aspx',
+            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+        },
+        rejectUnauthorized: false,
+        timeout: 5000
+    }, (cetRes) => {
+        if (cetRes.statusCode === 200) {
+            const chunks = [];
+            cetRes.on('data', chunk => chunks.push(chunk));
+            cetRes.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                cetImageCache.set(cacheKey, { buffer, timestamp: Date.now() });
+                res.setHeader('Content-Type', 'image/jpeg');
+                res.setHeader('Cache-Control', 'public, max-age=3');
+                res.send(buffer);
+            });
+        } else {
+            if (cetImageCache.has(cacheKey)) {
+                const cached = cetImageCache.get(cacheKey);
+                res.setHeader('Content-Type', 'image/jpeg');
+                res.setHeader('Cache-Control', 'public, max-age=1');
+                return res.send(cached.buffer);
+            }
+            res.status(cetRes.statusCode).json({ error: 'Câmera CET indisponível no momento' });
+        }
+    });
+
+    cetRequest.on('error', (err) => {
+        console.warn(`⚠️ [CET-SP PROXY] Falha ao obter imagem da câmera ${pasta}:`, err.message);
+        if (cetImageCache.has(cacheKey)) {
+            const cached = cetImageCache.get(cacheKey);
+            res.setHeader('Content-Type', 'image/jpeg');
+            return res.send(cached.buffer);
+        }
+        if (!res.headersSent) {
+            res.status(502).json({ error: 'Falha de conexão com CET-SP' });
+        }
+    });
+
+    cetRequest.on('timeout', () => {
+        cetRequest.destroy();
+        if (cetImageCache.has(cacheKey)) {
+            const cached = cetImageCache.get(cacheKey);
+            res.setHeader('Content-Type', 'image/jpeg');
+            return res.send(cached.buffer);
+        }
+        if (!res.headersSent) {
+            res.status(504).json({ error: 'Timeout ao conectar com CET-SP' });
+        }
+    });
+});
+
+
+
 // ENDPOINT PARA INFORMES OTT RJ
 app.get('/api/ott', async (req, res) => {
     const mockAlerts = [

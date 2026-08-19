@@ -4,14 +4,17 @@ import { showToast, escapeHtml } from './utils.js';
 export class PainelTransitoIntegrado {
     constructor() {
         this.containerId = 'tab-painel-integrado';
-        this.storageKey = 'rit_cim_cards_selection_v3';
+        this.storageKey = 'rit_cim_cards_selection_v4';
         this.clockInterval = null;
+        this.snapshotTimers = {};
+        this.activeFullscreenSlot = null;
+        this.fullscreenTimer = null;
         
-        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (streams e mapas ao vivo)
+        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (streams, snapshots e mapas)
         this.defaultSlots = {
             card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_MAPA_RIO_01' },
             card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_ZET_UFRJ_01' },
-            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_PAULISTA_AO_VIVO' },
+            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
             card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_CAMERAS_MUNDO_01' },
             card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_MAPA_VERCEL_01' },
             card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
@@ -33,8 +36,9 @@ export class PainelTransitoIntegrado {
         this.startClock();
         this.renderAllCards();
         this.updateStats();
+        this.bindGlobalKeyboardEvents();
         
-        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com 6 posições visuais.');
+        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com suporte a SP CET, Fullscreen e 6 posições.');
     }
 
     loadSlotSelection() {
@@ -45,8 +49,10 @@ export class PainelTransitoIntegrado {
                 this.currentSlots = { ...this.defaultSlots, ...parsed };
 
                 // Migração de segurança: se tiver os IDs legados antigos de portais ou bloqueados, migra para os visuais
+                if (!this.currentSlots.card_3?.sourceId || this.currentSlots.card_3.sourceId.includes('OFICIAL') || this.currentSlots.card_3.sourceId.includes('PAINEL_DIRETO')) {
+                    this.currentSlots.card_3.sourceId = 'SP_CET_23';
+                }
                 if (this.currentSlots.card_2?.sourceId === 'RJ_CAMERASRJ_COPACABANA') this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
-                if (this.currentSlots.card_3?.sourceId === 'SP_CET_OFICIAL_01' || this.currentSlots.card_3?.sourceId === 'SP_CET_PAINEL_DIRETO') this.currentSlots.card_3.sourceId = 'SP_PAULISTA_AO_VIVO';
                 if (this.currentSlots.card_4?.sourceId === 'BSB_DER_DF_01' || this.currentSlots.card_4?.sourceId === 'BSB_DF_AGORA_01') this.currentSlots.card_4.sourceId = 'BSB_CAMERAS_MUNDO_01';
                 if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
                 if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
@@ -113,6 +119,45 @@ export class PainelTransitoIntegrado {
                     <!-- Cards renderizados via JS -->
                 </main>
             </div>
+
+            <!-- MODAL / OVERLAY DE TELA CHEIA (FULLSCREEN) -->
+            <div id="cim-fullscreen-overlay" class="cim-fullscreen-overlay" style="display: none;">
+                <div class="cim-fs-container">
+                    <header class="cim-fs-header">
+                        <div class="cim-fs-title-box">
+                            <span class="cim-regiao-tag" id="cim-fs-tag">SP</span>
+                            <div class="cim-fs-names">
+                                <h3 id="cim-fs-title">São Paulo - Av. Paulista</h3>
+                                <p id="cim-fs-subtitle">Paulista - Av Brigadeiro Luiz Antônio</p>
+                            </div>
+                            <span class="cim-badge-online" id="cim-fs-badge"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>
+                        </div>
+                        <div class="cim-fs-controls">
+                            <div class="cim-fs-select-wrapper">
+                                <label class="cim-fs-lbl">Trocar Câmera / Ponto:</label>
+                                <select id="cim-fs-select-camera" class="cim-select cim-fs-select"></select>
+                            </div>
+                            <button id="btn-cim-fs-refresh" class="btn-cim-action btn-cim-ghost" title="Atualizar sinal desta câmera">
+                                <i class="fa-solid fa-rotate"></i> Atualizar
+                            </button>
+                            <button id="btn-cim-fs-close" class="btn-cim-action btn-cim-primary" title="Voltar ao Mosaico de 6 Câmeras (ESC)">
+                                <i class="fa-solid fa-compress"></i> Voltar ao Mosaico
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="cim-fs-body" id="cim-fs-body">
+                        <!-- Conteúdo da câmera em Fullscreen -->
+                    </div>
+
+                    <footer class="cim-fs-footer">
+                        <span id="cim-fs-info">📍 Monitoramento em Tempo Real - Central Integrada de Monitoramento Globo (CIM)</span>
+                        <a id="cim-fs-open-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-cim-card-link">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Fonte Oficial
+                        </a>
+                    </footer>
+                </div>
+            </div>
         `;
 
         // Eventos Globais do Painel
@@ -124,6 +169,36 @@ export class PainelTransitoIntegrado {
         const btnResetDefault = tabPane.querySelector('#btn-cim-reset-default');
         btnResetDefault?.addEventListener('click', () => {
             this.resetToDefaults();
+        });
+
+        // Eventos do Fullscreen
+        const btnFsClose = tabPane.querySelector('#btn-cim-fs-close');
+        btnFsClose?.addEventListener('click', () => {
+            this.closeFullscreen();
+        });
+
+        const btnFsRefresh = tabPane.querySelector('#btn-cim-fs-refresh');
+        btnFsRefresh?.addEventListener('click', () => {
+            if (this.activeFullscreenSlot) {
+                this.refreshCard(this.activeFullscreenSlot);
+                this.updateFullscreenBody();
+            }
+        });
+
+        const selFsCamera = tabPane.querySelector('#cim-fs-select-camera');
+        selFsCamera?.addEventListener('change', (e) => {
+            if (this.activeFullscreenSlot) {
+                this.changeCardSource(this.activeFullscreenSlot, e.target.value);
+                this.openFullscreen(this.activeFullscreenSlot);
+            }
+        });
+    }
+
+    bindGlobalKeyboardEvents() {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.activeFullscreenSlot) {
+                this.closeFullscreen();
+            }
         });
     }
 
@@ -184,7 +259,7 @@ export class PainelTransitoIntegrado {
 
         const tagClass = `tag-${slotConfig.regional.toLowerCase()}`;
         const slotLabel = `Câmera ${slotConfig.slotNum}`;
-        const isEmbeddable = currentSource ? (Boolean(currentSource.embedUrl) && currentSource.suportaIframe === true) : false;
+        const isEmbeddable = currentSource ? (currentSource.tipoFonte === 'snapshot' || (Boolean(currentSource.embedUrl) && currentSource.suportaIframe === true)) : false;
         
         const healthBadge = isEmbeddable 
             ? '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>'
@@ -199,6 +274,9 @@ export class PainelTransitoIntegrado {
                 </div>
                 <div class="cim-card-title-right">
                     ${healthBadge}
+                    <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Expandir para Tela Cheia">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
                 </div>
             </div>
 
@@ -218,7 +296,7 @@ export class PainelTransitoIntegrado {
                 </div>
             </div>
 
-            <!-- ÁREA DO PLAYER / MAPA / CARD OPERACIONAL -->
+            <!-- ÁREA DO PLAYER / MAPA / SNAPSHOT / CARD OPERACIONAL -->
             <div class="cim-viewport-container" id="viewport-${slotKey}">
                 ${this.renderViewportContent(currentSource, slotKey)}
             </div>
@@ -242,10 +320,11 @@ export class PainelTransitoIntegrado {
             </div>
         `;
 
-        // Eventos dos Selects do Card
+        // Eventos dos Selects e Botões do Card
         const selBairro = cardEl.querySelector('.select-bairro');
         const selFonte = cardEl.querySelector('.select-fonte');
         const btnRefresh = cardEl.querySelector('.btn-cim-card-refresh');
+        const btnFs = cardEl.querySelector('.btn-cim-card-fullscreen');
 
         selBairro?.addEventListener('change', (e) => {
             const selectedSourceId = e.target.value;
@@ -260,6 +339,13 @@ export class PainelTransitoIntegrado {
         btnRefresh?.addEventListener('click', () => {
             this.refreshCard(slotKey);
         });
+
+        btnFs?.addEventListener('click', () => {
+            this.openFullscreen(slotKey);
+        });
+
+        // Configura timer de atualização automática para câmeras do tipo snapshot
+        this.setupSnapshotTimer(slotKey, currentSource);
     }
 
     generateBairroOptions(sourcesList, currentSource) {
@@ -272,12 +358,12 @@ export class PainelTransitoIntegrado {
     generateFonteOptions(sourcesList, currentSource) {
         return sourcesList.map(src => {
             const selected = (currentSource && currentSource.id === src.id) ? 'selected' : '';
-            const tipoLabel = src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal');
+            const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Ao Vivo' : (src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal'));
             return `<option value="${src.id}" ${selected}>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
         }).join('');
     }
 
-    renderViewportContent(source, slotKey) {
+    renderViewportContent(source, slotKey, isFullscreen = false) {
         if (!source) {
             return `
                 <div class="cim-viewport-empty">
@@ -287,12 +373,40 @@ export class PainelTransitoIntegrado {
             `;
         }
 
-        // REGRA PRINCIPAL: SE POSSUI EMBED URL E SUPORTA IFRAME (STREAM OU MAPA), SEMPRE TENTA EXIBIÇÃO INTEGRADA NO PAINEL
+        // CASO 1: CÂMERAS COM SNAPSHOT AO VIVO (CET-SP)
+        if (source.tipoFonte === 'snapshot') {
+            const initialUrl = source.proxyUrl || source.directImageUrl;
+            return `
+                <div class="cim-snapshot-wrapper ${isFullscreen ? 'cim-snapshot-fs' : ''}" id="snap-wrap-${slotKey}">
+                    <img 
+                        id="snap-img-${slotKey}" 
+                        src="${initialUrl}?t=${Date.now()}" 
+                        alt="${escapeHtml(source.nome)}"
+                        class="cim-snapshot-img"
+                        onerror="window.handleCimImageError && window.handleCimImageError('${slotKey}', '${escapeHtml(source.id)}')"
+                    />
+                    <div class="cim-snapshot-live-indicator">
+                        <i class="fa-solid fa-circle"></i> AO VIVO (${escapeHtml(source.cidade)})
+                    </div>
+                    <div class="cim-snapshot-caption">${escapeHtml(source.nome)}</div>
+                    <div class="cim-snapshot-watermark">CET-SP</div>
+                    <div class="cim-snapshot-error" id="snap-error-${slotKey}" style="display:none;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size:24px; color:#f5a623; margin-bottom:8px;"></i>
+                        <p style="margin:0 0 10px 0; font-size:11px; color:#cbd5e1;">Não foi possível reproduzir esta câmera no momento.</p>
+                        <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-open-portal" style="padding:6px 12px; font-size:9px;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Fonte
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // CASO 2: MAPAS E STREAMS INCORPORÁVEIS VIA IFRAME
         const canEmbed = Boolean(source.embedUrl) && source.suportaIframe === true;
         if (canEmbed) {
             const cleanEmbedUrl = normalizeEmbedUrl(source.embedUrl);
             return `
-                <div class="cim-iframe-wrapper">
+                <div class="cim-iframe-wrapper ${isFullscreen ? 'cim-iframe-fs' : ''}">
                     <iframe 
                         id="iframe-${slotKey}"
                         src="${cleanEmbedUrl}" 
@@ -307,7 +421,7 @@ export class PainelTransitoIntegrado {
             `;
         }
 
-        // FALLBACK: QUANDO A FONTE É EXCLUSIVAMENTE UM PORTAL OU NÃO SUPORTA IFRAME
+        // CASO 3: FALLBACK QUANDO É EXCLUSIVAMENTE PORTAL EXTERNO
         return this.renderOperationalCard(source, slotKey);
     }
 
@@ -331,6 +445,25 @@ export class PainelTransitoIntegrado {
                 </div>
             </div>
         `;
+    }
+
+    setupSnapshotTimer(slotKey, source) {
+        if (this.snapshotTimers[slotKey]) {
+            clearInterval(this.snapshotTimers[slotKey]);
+            delete this.snapshotTimers[slotKey];
+        }
+
+        if (source && source.tipoFonte === 'snapshot' && source.ativa !== false) {
+            const intervalMs = source.refreshInterval || 3000;
+            const imgUrl = source.proxyUrl || source.directImageUrl;
+
+            this.snapshotTimers[slotKey] = setInterval(() => {
+                const snapImg = document.getElementById(`snap-img-${slotKey}`);
+                if (snapImg) {
+                    snapImg.src = `${imgUrl}?t=${Date.now()}`;
+                }
+            }, intervalMs);
+        }
     }
 
     changeCardSource(slotKey, newSourceId) {
@@ -365,6 +498,7 @@ export class PainelTransitoIntegrado {
             `;
             setTimeout(() => {
                 viewport.innerHTML = this.renderViewportContent(currentSource, slotKey);
+                this.setupSnapshotTimer(slotKey, currentSource);
             }, 300);
         }
     }
@@ -386,6 +520,99 @@ export class PainelTransitoIntegrado {
         this.currentSlots = JSON.parse(JSON.stringify(this.defaultSlots));
         this.saveSlotSelection();
         this.renderAllCards();
-        showToast("Layout do Painel Integrado restaurado para as transmissões ao vivo da CIM.", "info");
+        showToast("Layout do Painel Integrado restaurado para os padrões oficiais da CIM.", "info");
+    }
+
+    // =========================================================================
+    // MODO TELA CHEIA (FULLSCREEN)
+    // =========================================================================
+    openFullscreen(slotKey) {
+        const overlay = document.getElementById('cim-fullscreen-overlay');
+        const slotConfig = this.currentSlots[slotKey];
+        if (!overlay || !slotConfig) return;
+
+        this.activeFullscreenSlot = slotKey;
+        const regionalData = trafficCameraSources[slotConfig.regional];
+        const sourcesList = regionalData?.sources || [];
+        const currentSource = sourcesList.find(s => s.id === slotConfig.sourceId) || sourcesList[0];
+
+        // Atualiza cabeçalho do Fullscreen
+        const tagEl = document.getElementById('cim-fs-tag');
+        const titleEl = document.getElementById('cim-fs-title');
+        const subTitleEl = document.getElementById('cim-fs-subtitle');
+        const selectEl = document.getElementById('cim-fs-select-camera');
+        const openLinkEl = document.getElementById('cim-fs-open-link');
+        const infoEl = document.getElementById('cim-fs-info');
+
+        if (tagEl) {
+            tagEl.className = `cim-regiao-tag tag-${slotConfig.regional.toLowerCase()}`;
+            tagEl.textContent = slotConfig.regional;
+        }
+        if (titleEl) titleEl.textContent = `${regionalData.label} - ${currentSource?.bairro || 'Câmera'}`;
+        if (subTitleEl) subTitleEl.textContent = currentSource?.nome || '';
+        if (openLinkEl && currentSource) openLinkEl.href = currentSource.url;
+        if (infoEl && currentSource) infoEl.innerHTML = `📍 <strong>${escapeHtml(currentSource.bairro)}</strong> (${escapeHtml(currentSource.referencia)}) | Atualização Contínua`;
+
+        // Popula seletor de câmeras do Fullscreen
+        if (selectEl) {
+            selectEl.innerHTML = sourcesList.map(src => {
+                const sel = (src.id === currentSource?.id) ? 'selected' : '';
+                return `<option value="${src.id}" ${sel}>${src.tipoFonte === 'snapshot' ? '📷' : '🎥'} ${src.nome}</option>`;
+            }).join('');
+        }
+
+        // Renderiza o corpo
+        this.updateFullscreenBody();
+
+        // Exibe o overlay
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    updateFullscreenBody() {
+        const bodyEl = document.getElementById('cim-fs-body');
+        if (!bodyEl || !this.activeFullscreenSlot) return;
+
+        const slotConfig = this.currentSlots[this.activeFullscreenSlot];
+        const regionalData = trafficCameraSources[slotConfig.regional];
+        const currentSource = regionalData?.sources?.find(s => s.id === slotConfig.sourceId);
+
+        bodyEl.innerHTML = this.renderViewportContent(currentSource, `fs-${this.activeFullscreenSlot}`, true);
+
+        // Timer de refresh para snapshot em tela cheia
+        if (this.fullscreenTimer) clearInterval(this.fullscreenTimer);
+        if (currentSource && currentSource.tipoFonte === 'snapshot') {
+            const imgUrl = currentSource.proxyUrl || currentSource.directImageUrl;
+            this.fullscreenTimer = setInterval(() => {
+                const fsImg = document.getElementById(`snap-img-fs-${this.activeFullscreenSlot}`);
+                if (fsImg) {
+                    fsImg.src = `${imgUrl}?t=${Date.now()}`;
+                }
+            }, 3000);
+        }
+    }
+
+    closeFullscreen() {
+        const overlay = document.getElementById('cim-fullscreen-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        document.body.style.overflow = '';
+        if (this.fullscreenTimer) {
+            clearInterval(this.fullscreenTimer);
+            this.fullscreenTimer = null;
+        }
+        this.activeFullscreenSlot = null;
     }
 }
+
+// Handler global para erro de carregamento de snapshot
+window.handleCimImageError = function(slotKey, sourceId) {
+    console.warn(`[CIM] Falha ao carregar imagem para slot ${slotKey} (${sourceId})`);
+    const snapImg = document.getElementById(`snap-img-${slotKey}`);
+    const snapErr = document.getElementById(`snap-error-${slotKey}`);
+    if (snapImg && snapErr) {
+        snapImg.style.display = 'none';
+        snapErr.style.display = 'flex';
+    }
+};

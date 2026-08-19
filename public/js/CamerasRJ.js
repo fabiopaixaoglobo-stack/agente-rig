@@ -169,6 +169,31 @@ export class CamerasRJ {
                 this.infoText.innerHTML = `<strong>Ao vivo:</strong> ${escapeHtml(src.nome)} (${escapeHtml(src.bairro)})`;
             }
 
+            if (this.snapshotInterval) {
+                clearInterval(this.snapshotInterval);
+                this.snapshotInterval = null;
+            }
+
+            if (src.tipoFonte === 'snapshot') {
+                const imgUrl = src.proxyUrl || src.directImageUrl;
+                this.frameContainer.innerHTML = `
+                    <div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden;">
+                        <img id="cam-rj-snapshot" src="${imgUrl}?t=${Date.now()}" alt="${escapeHtml(src.nome)}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+                        <div style="position:absolute; top:12px; left:12px; background:rgba(16,185,129,0.2); border:1px solid #10b981; color:#10b981; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:flex; align-items:center; gap:5px;">
+                            <i class="fa-solid fa-circle"></i> AO VIVO (CET-SP)
+                        </div>
+                        <div style="position:absolute; bottom:12px; right:15px; background:rgba(0,0,0,0.7); color:#00d1ff; font-size:11px; font-weight:900; padding:2px 8px; border-radius:4px; border:1px solid rgba(0,209,255,0.3);">CET-SP</div>
+                    </div>
+                `;
+                this.snapshotInterval = setInterval(() => {
+                    const snapImg = document.getElementById('cam-rj-snapshot');
+                    if (snapImg) {
+                        snapImg.src = `${imgUrl}?t=${Date.now()}`;
+                    }
+                }, 3000);
+                return;
+            }
+
             const cleanEmbedUrl = normalizeEmbedUrl(src.embedUrl);
             if (src.suportaIframe && cleanEmbedUrl) {
                 this.frameContainer.innerHTML = `
