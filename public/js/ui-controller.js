@@ -417,9 +417,9 @@ export class UiController {
                             </div>
                             <p style="font-size: 12px; color: #94a3b8; margin-top: 12px;">A funcionalidade será restabelecida após a conclusão das validações necessárias.</p>
                         </div>
-                        <button id="btn-ir-transportes" class="btn btn-privacy-redirect">
-                            <i class="fa-solid fa-arrow-right"></i> IR PARA MONITORAMENTO + TRANSPORTES
-                        </button>
+                        <a id="btn-ir-transportes" href="https://globo.wiselog360.com/#/login" target="_blank" rel="noopener noreferrer" class="btn btn-privacy-redirect" style="text-decoration: none;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> IR PARA MONITORAMENTO + TRANSPORTES
+                        </a>
                     </div>
                 `;
                 tabPane.appendChild(noticeContainer);
@@ -427,7 +427,7 @@ export class UiController {
                 const btnRedirecionar = noticeContainer.querySelector('#btn-ir-transportes');
                 if (btnRedirecionar) {
                     btnRedirecionar.addEventListener('click', () => {
-                        this.redirecionarParaModuloTransportes();
+                        console.info("[MONITORAMENTO] Redirecionando para portal +Transportes Globo (Wiselog360)");
                     });
                 }
             }
@@ -435,17 +435,7 @@ export class UiController {
     }
 
     redirecionarParaModuloTransportes() {
-        const tabPlanejador = document.querySelector('.tabBtn[data-tab="tab-planejador"]');
-        const tabTransito = document.querySelector('.tabBtn[data-tab="tab-transito"]');
-        if (tabPlanejador) {
-            tabPlanejador.click();
-            showToast("Redirecionado para o módulo de Transportes disponível.", "info");
-        } else if (tabTransito) {
-            tabTransito.click();
-            showToast("Redirecionado para o módulo de Transportes disponível.", "info");
-        } else {
-            showToast("Utilize os módulos operacionais de Transportes disponíveis no menu.", "info");
-        }
+        window.open('https://globo.wiselog360.com/#/login', '_blank', 'noopener,noreferrer');
     }
 
     async carregarBaseExistente() {
