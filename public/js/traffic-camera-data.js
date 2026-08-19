@@ -1,7 +1,7 @@
 /**
  * Catálogo Corporativo de Fontes de Câmeras e Portais de Trânsito - Agente RIT / CIM
  * Suporte às 5 Regionais Globo: RJ, SP, BSB, REC, BH
- * Priorização de fontes visuais integradas (stream e mapa) com fallback resiliente
+ * Priorização de fontes visuais integradas (stream e mapa) com fallback operacional
  */
 export const trafficCameraSources = {
     RJ: {
@@ -26,22 +26,6 @@ export const trafficCameraSources = {
                 observacao: "Painel georreferenciado com todas as câmeras públicas do Rio (Redundância principal)"
             },
             {
-                id: "RJ_CAMERASRJ_COPACABANA",
-                regional: "RJ",
-                cidade: "Rio de Janeiro",
-                bairro: "Copacabana",
-                referencia: "Av. Atlântica - Posto 4",
-                nome: "CamerasRJ - Copacabana / Orla",
-                tipoFonte: "stream",
-                url: "https://www.camerasrj.com.br/camera/1301/",
-                embedUrl: "https://www.camerasrj.com.br/camera/1301/",
-                suportaIframe: true,
-                healthStatus: "online",
-                lastValidation: new Date().toISOString(),
-                prioridade: 2,
-                observacao: "Orla de Copacabana"
-            },
-            {
                 id: "RJ_ZET_UFRJ_01",
                 regional: "RJ",
                 cidade: "Rio de Janeiro",
@@ -54,8 +38,24 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 3,
+                prioridade: 2,
                 observacao: "Câmeras experimentais e sensores de fluxo viário UFRJ"
+            },
+            {
+                id: "RJ_CAMERASRJ_COPACABANA",
+                regional: "RJ",
+                cidade: "Rio de Janeiro",
+                bairro: "Copacabana",
+                referencia: "Av. Atlântica - Posto 4",
+                nome: "CamerasRJ - Copacabana / Orla",
+                tipoFonte: "stream",
+                url: "https://www.camerasrj.com.br/camera/1301/",
+                embedUrl: "https://www.camerasrj.com.br/camera/1301/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 3,
+                observacao: "Orla de Copacabana"
             },
             {
                 id: "RJ_CAMERASRJ_CENTRO",
@@ -113,6 +113,22 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
+                id: "SP_PAULISTA_AO_VIVO",
+                regional: "SP",
+                cidade: "São Paulo",
+                bairro: "Bela Vista / Cerqueira César",
+                referencia: "Av. Paulista - Câmera ao Vivo",
+                nome: "São Paulo ao Vivo - Av. Paulista",
+                tipoFonte: "stream",
+                url: "https://camerasdomundo.com/brasil/sao-paulo/avenida-paulista/",
+                embedUrl: "https://camerasdomundo.com/brasil/sao-paulo/avenida-paulista/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 1,
+                observacao: "Transmissão ao vivo 24h da Av. Paulista (Stream público direto)"
+            },
+            {
                 id: "SP_CET_PAINEL_DIRETO",
                 regional: "SP",
                 cidade: "São Paulo",
@@ -125,8 +141,8 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 1,
-                observacao: "Fonte visual prioritária para exibição integrada de câmeras em São Paulo"
+                prioridade: 2,
+                observacao: "Painel de câmeras CET São Paulo"
             },
             {
                 id: "SP_CET_OFICIAL_01",
@@ -141,24 +157,8 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
-                observacao: "Monitoramento oficial das principais vias da CET-SP"
-            },
-            {
-                id: "SP_PAULISTA_01",
-                regional: "SP",
-                cidade: "São Paulo",
-                bairro: "Bela Vista / Cerqueira César",
-                referencia: "Av. Paulista x Rua da Consolação",
-                nome: "CET-SP - Eixo Av. Paulista",
-                tipoFonte: "portal",
-                url: "https://www.cetsp.com.br/consultas/cameras-cet.aspx",
-                embedUrl: "https://www.cetsp.com.br/consultas/cameras-cet.aspx",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Eixo Financeiro e Operacional Paulista"
+                observacao: "Monitoramento oficial das principais vias da CET-SP"
             },
             {
                 id: "SP_MARGINAL_TIETE_01",
@@ -213,7 +213,7 @@ export const trafficCameraSources = {
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
-                observacao: "Fonte visual prioritária para Brasília com transmissão ao vivo"
+                observacao: "Transmissão ao vivo 24h de Brasília e Esplanada dos Ministérios"
             },
             {
                 id: "BSB_DF_AGORA_01",
@@ -271,6 +271,22 @@ export const trafficCameraSources = {
                 observacao: "Mapa visual integrado com posições de câmeras em Recife"
             },
             {
+                id: "REC_AEROPORTO_01",
+                regional: "REC",
+                cidade: "Recife",
+                bairro: "Imbiribeira / Aeroporto",
+                referencia: "Aeroporto Internacional Gilberto Freyre",
+                nome: "Recife ao Vivo - Câmeras do Mundo",
+                tipoFonte: "stream",
+                url: "https://camerasdomundo.com/brasil/recife/aeroporto-internacional-do-recife/",
+                embedUrl: "https://camerasdomundo.com/brasil/recife/aeroporto-internacional-do-recife/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 2,
+                observacao: "Transmissão ao vivo de Recife e acessos viários do Aeroporto"
+            },
+            {
                 id: "REC_SERTTEL_01",
                 regional: "REC",
                 cidade: "Recife",
@@ -283,7 +299,7 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
+                prioridade: 3,
                 observacao: "Câmeras semafóricas e monitoramento viário Serttel"
             },
             {
@@ -299,7 +315,7 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 3,
+                prioridade: 4,
                 observacao: "Autarquia de Trânsito e Transporte Urbano do Recife"
             }
         ]

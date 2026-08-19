@@ -4,14 +4,14 @@ import { showToast, escapeHtml } from './utils.js';
 export class PainelTransitoIntegrado {
     constructor() {
         this.containerId = 'tab-painel-integrado';
-        this.storageKey = 'rit_cim_cards_selection_v2';
+        this.storageKey = 'rit_cim_cards_selection_v3';
         this.clockInterval = null;
         
-        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias
+        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (streams e mapas ao vivo)
         this.defaultSlots = {
             card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_MAPA_RIO_01' },
-            card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_CAMERASRJ_COPACABANA' },
-            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_PAINEL_DIRETO' },
+            card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_ZET_UFRJ_01' },
+            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_PAULISTA_AO_VIVO' },
             card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_CAMERAS_MUNDO_01' },
             card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_MAPA_VERCEL_01' },
             card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
@@ -44,11 +44,12 @@ export class PainelTransitoIntegrado {
                 const parsed = JSON.parse(saved);
                 this.currentSlots = { ...this.defaultSlots, ...parsed };
 
-                // Migração de segurança: se tiver os IDs legados antigos de portais, migra para os visuais
-                if (this.currentSlots.card_3?.sourceId === 'SP_CET_OFICIAL_01') this.currentSlots.card_3.sourceId = 'SP_CET_PAINEL_DIRETO';
-                if (this.currentSlots.card_4?.sourceId === 'BSB_DER_DF_01') this.currentSlots.card_4.sourceId = 'BSB_CAMERAS_MUNDO_01';
-                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
-                if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
+                // Migração de segurança: se tiver os IDs legados antigos de portais ou bloqueados, migra para os visuais
+                if (this.currentSlots.card_2?.sourceId === 'RJ_CAMERASRJ_COPACABANA') this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
+                if (this.currentSlots.card_3?.sourceId === 'SP_CET_OFICIAL_01' || this.currentSlots.card_3?.sourceId === 'SP_CET_PAINEL_DIRETO') this.currentSlots.card_3.sourceId = 'SP_PAULISTA_AO_VIVO';
+                if (this.currentSlots.card_4?.sourceId === 'BSB_DER_DF_01' || this.currentSlots.card_4?.sourceId === 'BSB_DF_AGORA_01') this.currentSlots.card_4.sourceId = 'BSB_CAMERAS_MUNDO_01';
+                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
+                if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
                 
                 return;
             }
@@ -385,6 +386,6 @@ export class PainelTransitoIntegrado {
         this.currentSlots = JSON.parse(JSON.stringify(this.defaultSlots));
         this.saveSlotSelection();
         this.renderAllCards();
-        showToast("Layout do Painel Integrado restaurado para as fontes visuais prioritárias da CIM.", "info");
+        showToast("Layout do Painel Integrado restaurado para as transmissões ao vivo da CIM.", "info");
     }
 }
