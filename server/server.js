@@ -584,8 +584,21 @@ app.get('/api/cameras/brasilia/image/:camId', async (req, res) => {
     }
 });
 
-
-
+// =========================================================================
+// POC EXPERIMENTAL (FLAGGED) DE SNAPSHOT/TRANSCODING DO RIO DE JANEIRO
+// =========================================================================
+app.get('/api/cameras/rj/snapshot-poc/:id', (req, res) => {
+    if (process.env.ENABLE_RJ_SNAPSHOT_POC !== 'true') {
+        return res.status(403).json({
+            error: 'POC experimental de snapshot do Rio desativada por padrão em produção via flag (ENABLE_RJ_SNAPSHOT_POC)'
+        });
+    }
+    const id = req.params.id;
+    console.info(`[CamerasRJ] [POC EXPERIMENTAL] Requisição de snapshot para ID ${id}`);
+    res.status(501).json({
+        message: 'Endpoint POC reservado para ambiente de testes com ffmpeg/go2rtc.'
+    });
+});
 
 // ENDPOINT PARA INFORMES OTT RJ
 app.get('/api/ott', async (req, res) => {

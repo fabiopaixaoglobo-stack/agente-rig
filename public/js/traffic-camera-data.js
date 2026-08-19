@@ -3,6 +3,40 @@
  * Suporte às 5 Regionais Globo: RJ, SP, BSB, REC, BH
  * Priorização de fontes visuais integradas (stream, snapshot e mapa) com fallback operacional
  */
+
+/**
+ * Função de detecção de suporte a codecs de vídeo WebRTC no navegador
+ */
+export function detectVideoCodecCapabilities() {
+    const result = {
+        hasRTCRtpReceiver: false,
+        supportsH265: false,
+        codecs: []
+    };
+
+    try {
+        if (
+            typeof RTCRtpReceiver !== 'undefined' &&
+            typeof RTCRtpReceiver.getCapabilities === 'function'
+        ) {
+            result.hasRTCRtpReceiver = true;
+            const capabilities = RTCRtpReceiver.getCapabilities('video');
+            result.codecs = (capabilities?.codecs || []).map(codec => codec.mimeType || '');
+
+            result.supportsH265 = result.codecs.some(mime =>
+                /h265|hevc/i.test(mime)
+            );
+        }
+    } catch (error) {
+        console.warn('[CamerasRJ] Falha ao detectar codecs WebRTC:', error);
+    }
+
+    return result;
+}
+
+// Log inicial não invasivo no console
+console.info('[CamerasRJ] Codec detection:', detectVideoCodecCapabilities());
+
 export const trafficCameraSources = {
     RJ: {
         label: "Rio de Janeiro",
@@ -52,10 +86,15 @@ export const trafficCameraSources = {
                 url: "https://www.camerasrj.com.br/camera/1301/",
                 embedUrl: "https://www.camerasrj.com.br/camera/1301/",
                 suportaIframe: true,
+                sourceProvider: "CamerasRJ",
+                requiresCodec: "H265",
+                protocol: "WebRTC/WHEP",
+                compatibilityNote: "Pode exigir navegador com suporte H.265/HEVC via hardware.",
+                fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Orla de Copacabana"
+                observacao: "Orla de Copacabana (Requer suporte a H.265/HEVC no browser)"
             },
             {
                 id: "RJ_CAMERASRJ_CENTRO",
@@ -68,10 +107,15 @@ export const trafficCameraSources = {
                 url: "https://www.camerasrj.com.br/",
                 embedUrl: "https://www.camerasrj.com.br/",
                 suportaIframe: true,
+                sourceProvider: "CamerasRJ",
+                requiresCodec: "H265",
+                protocol: "WebRTC/WHEP",
+                compatibilityNote: "Pode exigir navegador com suporte H.265/HEVC via hardware.",
+                fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 4,
-                observacao: "Transmissão pública CamerasRJ"
+                observacao: "Transmissão pública CamerasRJ (Requer suporte a H.265/HEVC no browser)"
             },
             {
                 id: "RJ_CAMERASRJ_BARRA",
@@ -84,10 +128,15 @@ export const trafficCameraSources = {
                 url: "https://www.camerasrj.com.br/camera/1010/",
                 embedUrl: "https://www.camerasrj.com.br/camera/1010/",
                 suportaIframe: true,
+                sourceProvider: "CamerasRJ",
+                requiresCodec: "H265",
+                protocol: "WebRTC/WHEP",
+                compatibilityNote: "Pode exigir navegador com suporte H.265/HEVC via hardware.",
+                fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 5,
-                observacao: "Corredor Transoeste / Barra da Tijuca"
+                observacao: "Corredor Transoeste / Barra da Tijuca (Requer suporte a H.265/HEVC no browser)"
             },
             {
                 id: "RJ_CETRIO_01",

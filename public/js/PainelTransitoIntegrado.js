@@ -1,4 +1,4 @@
-import { trafficCameraSources, getCatalogStats, normalizeEmbedUrl } from './traffic-camera-data.js?v=4.0.0';
+import { trafficCameraSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.0.0';
 import { showToast, escapeHtml } from './utils.js';
 
 export class PainelTransitoIntegrado {
@@ -9,6 +9,7 @@ export class PainelTransitoIntegrado {
         this.snapshotTimers = {};
         this.activeFullscreenSlot = null;
         this.fullscreenTimer = null;
+        this.codecCapabilities = detectVideoCodecCapabilities();
         
         // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (snapshots, streams e mapas)
         this.defaultSlots = {
@@ -38,7 +39,7 @@ export class PainelTransitoIntegrado {
         this.updateStats();
         this.bindGlobalKeyboardEvents();
         
-        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com SP CET, Brasília Clima ao Vivo, Fullscreen e 6 posições.');
+        console.info('[CIM] Painel Integrado inicializado. Codec detection:', this.codecCapabilities);
     }
 
     loadSlotSelection() {
@@ -55,7 +56,6 @@ export class PainelTransitoIntegrado {
                 if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId.includes('DER_DF') || this.currentSlots.card_4.sourceId.includes('DF_AGORA')) {
                     this.currentSlots.card_4.sourceId = 'BSB_ESPLANADA';
                 }
-                if (this.currentSlots.card_2?.sourceId === 'RJ_CAMERASRJ_COPACABANA') this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
                 if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
                 if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
                 
@@ -263,9 +263,15 @@ export class PainelTransitoIntegrado {
         const slotLabel = `Câmera ${slotConfig.slotNum}`;
         const isEmbeddable = currentSource ? (currentSource.tipoFonte === 'snapshot' || (Boolean(currentSource.embedUrl) && currentSource.suportaIframe === true)) : false;
         
-        const healthBadge = isEmbeddable 
-            ? '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>'
-            : '<span class="cim-badge-external"><i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL EXTERNO</span>';
+        // Badge de compatibilidade HEVC para fontes CamerasRJ quando o browser não anuncia H.265
+        let healthBadge = '';
+        if (currentSource && (currentSource.requiresCodec === 'H265' || currentSource.sourceProvider === 'CamerasRJ') && !this.codecCapabilities.supportsH265) {
+            healthBadge = '<span class="cim-badge-hevc-warning" title="Este navegador não anunciou suporte a H.265/HEVC no WebRTC. Pode exigir aceleração por hardware ou navegador compatível."><i class="fa-solid fa-triangle-exclamation"></i> PODE EXIGIR H.265</span>';
+        } else if (isEmbeddable) {
+            healthBadge = '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>';
+        } else {
+            healthBadge = '<span class="cim-badge-external"><i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL EXTERNO</span>';
+        }
 
         cardEl.innerHTML = `
             <div class="cim-card-header">
@@ -327,6 +333,8 @@ export class PainelTransitoIntegrado {
         const selFonte = cardEl.querySelector('.select-fonte');
         const btnRefresh = cardEl.querySelector('.btn-cim-card-refresh');
         const btnFs = cardEl.querySelector('.btn-cim-card-fullscreen');
+        const btnSwitchFallback = cardEl.querySelector('.btn-cim-switch-fallback');
+        const btnRetrySlot = cardEl.querySelector('.btn-cim-retry-slot');
 
         selBairro?.addEventListener('change', (e) => {
             const selectedSourceId = e.target.value;
@@ -344,6 +352,16 @@ export class PainelTransitoIntegrado {
 
         btnFs?.addEventListener('click', () => {
             this.openFullscreen(slotKey);
+        });
+
+        btnSwitchFallback?.addEventListener('click', (e) => {
+            const fallbackId = e.currentTarget.getAttribute('data-fallback') || 'RJ_MAPA_RIO_01';
+            this.changeCardSource(slotKey, fallbackId);
+            showToast("Alternado para a fonte de redundância do Rio de Janeiro.", "info");
+        });
+
+        btnRetrySlot?.addEventListener('click', () => {
+            this.refreshCard(slotKey);
         });
 
         // Configura timer de atualização automática para câmeras do tipo snapshot
@@ -408,18 +426,41 @@ export class PainelTransitoIntegrado {
         const canEmbed = Boolean(source.embedUrl) && source.suportaIframe === true;
         if (canEmbed) {
             const cleanEmbedUrl = normalizeEmbedUrl(source.embedUrl);
+            const isCamerasRJ = source.requiresCodec === 'H265' || source.sourceProvider === 'CamerasRJ';
+
             return `
-                <div class="cim-iframe-wrapper ${isFullscreen ? 'cim-iframe-fs' : ''}">
-                    <iframe 
-                        id="iframe-${slotKey}"
-                        src="${cleanEmbedUrl}" 
-                        width="100%" 
-                        height="100%" 
-                        style="border:none;" 
-                        loading="lazy"
-                        allow="autoplay; encrypted-media; fullscreen"
-                        sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
-                    ></iframe>
+                <div class="cim-iframe-container ${isFullscreen ? 'cim-iframe-fs' : ''}">
+                    <div class="cim-iframe-wrapper">
+                        <iframe 
+                            id="iframe-${slotKey}"
+                            src="${cleanEmbedUrl}" 
+                            width="100%" 
+                            height="100%" 
+                            style="border:none;" 
+                            loading="lazy"
+                            allow="autoplay; encrypted-media; fullscreen"
+                            sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+                        ></iframe>
+                    </div>
+                    ${isCamerasRJ ? `
+                        <div class="cim-hevc-notice-bar">
+                            <div class="cim-hevc-notice-text">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Esta câmera pode exigir suporte a <strong>H.265/HEVC</strong> no navegador via WebRTC. Caso não abra, utilize a fonte alternativa ou abra o portal oficial.</span>
+                            </div>
+                            <div class="cim-hevc-actions">
+                                <button class="btn-cim-action btn-cim-ghost btn-cim-retry-slot" data-slot="${slotKey}" title="Recarregar esta fonte">
+                                    <i class="fa-solid fa-rotate"></i> Tentar Novamente
+                                </button>
+                                <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-action btn-cim-primary" title="Abrir portal em nova aba">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Fonte Original
+                                </a>
+                                <button class="btn-cim-action btn-cim-accent btn-cim-switch-fallback" data-slot="${slotKey}" data-fallback="RJ_MAPA_RIO_01" title="Alternar para o Mapa Interativo do Rio">
+                                    <i class="fa-solid fa-map"></i> Alternativa RJ (Mapa)
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
