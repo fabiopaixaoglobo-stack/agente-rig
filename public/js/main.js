@@ -1,3 +1,4 @@
+import { CONFIG } from './config.js?v=4.0.0';
 import { MapService } from './map-service.js?v=4.0.0';
 import { DataService } from './data-service.js?v=4.0.0';
 import { UiController } from './ui-controller.js?v=4.0.0';
@@ -10,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT LAYOUT] layout responsivo carregado");
     console.log("🚀 Agente RIG v4.0.0 - Inicializando módulos...");
     try {
-        const mainMap = document.getElementById("map") ? new MapService("map") : null;
+        const mainMap = (CONFIG.FEATURE_MONITORAMENTO && document.getElementById("map")) ? new MapService("map") : null;
         const plannerMap = document.getElementById("mapPlanner") ? new MapService("mapPlanner") : null;
         const transitoMap = document.getElementById("mapTransito") ? new MapService("mapTransito") : null;
         const data = new DataService();

@@ -340,9 +340,14 @@ export class UiController {
             });
         }
         
+        try { this.aplicarModoPrivacidadeMonitoramento(); } catch (e) { console.error("Erro aplicarModoPrivacidadeMonitoramento:", e); }
         try { this.initMapModeToggle(); } catch (e) { console.error("Erro initMapModeToggle:", e); }
-        try { this.iniciarPoolActiveTrackers(); } catch (e) { console.error("Erro iniciarPoolActiveTrackers:", e); }
-        try { this.carregarBaseExistente(); } catch (e) { console.error("Erro carregarBaseExistente:", e); }
+        if (CONFIG.FEATURE_MONITORAMENTO) {
+            try { this.iniciarPoolActiveTrackers(); } catch (e) { console.error("Erro iniciarPoolActiveTrackers:", e); }
+            try { this.carregarBaseExistente(); } catch (e) { console.error("Erro carregarBaseExistente:", e); }
+        } else {
+            console.info("[MONITORAMENTO] Módulo de monitoramento temporariamente indisponível via Feature Flag.");
+        }
         
         // Delegação de evento para o botão "Ver no Mapa" na lista de atendimentos
         document.addEventListener('click', (e) => {
@@ -357,7 +362,99 @@ export class UiController {
         window.uiController = this;
     }
 
+    aplicarModoPrivacidadeMonitoramento() {
+        const tabPane = document.getElementById('tab-monitoramento');
+        const tabBtn = document.querySelector('.tabBtn[data-tab="tab-monitoramento"]');
+        const uploadBtn = document.getElementById('btn-upload');
+
+        if (CONFIG.FEATURE_MONITORAMENTO) {
+            if (tabBtn) {
+                tabBtn.innerHTML = 'Monitoramento';
+                tabBtn.title = 'Módulo de Monitoramento Operacional';
+            }
+            if (uploadBtn) {
+                uploadBtn.style.display = '';
+            }
+            if (tabPane) {
+                const sidebar = tabPane.querySelector('.sidebar');
+                const mapArea = tabPane.querySelector('.mapArea');
+                if (sidebar) sidebar.style.display = '';
+                if (mapArea) mapArea.style.display = '';
+                const existingNotice = document.getElementById('privacy-monitoramento-container');
+                if (existingNotice) existingNotice.remove();
+            }
+            return;
+        }
+
+        // Modo Desativado via Feature Flag
+        if (tabBtn) {
+            tabBtn.innerHTML = 'Monitoramento 🔒';
+            tabBtn.title = 'Funcionalidade temporariamente suspensa';
+        }
+        if (uploadBtn) {
+            uploadBtn.style.display = 'none';
+        }
+        if (tabPane) {
+            const sidebar = tabPane.querySelector('.sidebar');
+            const mapArea = tabPane.querySelector('.mapArea');
+            if (sidebar) sidebar.style.display = 'none';
+            if (mapArea) mapArea.style.display = 'none';
+
+            let noticeContainer = document.getElementById('privacy-monitoramento-container');
+            if (!noticeContainer) {
+                noticeContainer = document.createElement('div');
+                noticeContainer.id = 'privacy-monitoramento-container';
+                noticeContainer.className = 'privacy-notice-container';
+                noticeContainer.innerHTML = `
+                    <div class="privacy-card">
+                        <div class="privacy-icon-box">⚠️</div>
+                        <div class="privacy-title">Monitoramento Temporariamente Indisponível</div>
+                        <div class="privacy-body">
+                            <p>As funcionalidades de Monitoramento encontram-se temporariamente suspensas para adequações técnicas.</p>
+                            <div class="privacy-highlight-box">
+                                Para acompanhamento dos Atendimentos, recomendamos o módulo:<br>
+                                <strong style="color: #00d1ff; font-size: 14px; display: inline-block; margin-top: 5px;">✅ Monitoramento + Transportes</strong>
+                            </div>
+                            <p style="font-size: 12px; color: #94a3b8; margin-top: 12px;">A funcionalidade será restabelecida após a conclusão das validações necessárias.</p>
+                        </div>
+                        <button id="btn-ir-transportes" class="btn btn-privacy-redirect">
+                            <i class="fa-solid fa-arrow-right"></i> IR PARA MONITORAMENTO + TRANSPORTES
+                        </button>
+                    </div>
+                `;
+                tabPane.appendChild(noticeContainer);
+
+                const btnRedirecionar = noticeContainer.querySelector('#btn-ir-transportes');
+                if (btnRedirecionar) {
+                    btnRedirecionar.addEventListener('click', () => {
+                        this.redirecionarParaModuloTransportes();
+                    });
+                }
+            }
+        }
+    }
+
+    redirecionarParaModuloTransportes() {
+        const tabPlanejador = document.querySelector('.tabBtn[data-tab="tab-planejador"]');
+        const tabTransito = document.querySelector('.tabBtn[data-tab="tab-transito"]');
+        if (tabPlanejador) {
+            tabPlanejador.click();
+            showToast("Redirecionado para o módulo de Transportes disponível.", "info");
+        } else if (tabTransito) {
+            tabTransito.click();
+            showToast("Redirecionado para o módulo de Transportes disponível.", "info");
+        } else {
+            showToast("Utilize os módulos operacionais de Transportes disponíveis no menu.", "info");
+        }
+    }
+
     async carregarBaseExistente() {
+        if (!CONFIG.FEATURE_MONITORAMENTO) {
+            console.info("[MONITORAMENTO] Carregamento de base de monitoramento suspenso temporariamente.");
+            this.dataService.baseAtendimentos = [];
+            return;
+        }
+
         const regional = (document.getElementById('seletor-regiao')?.value || 'RJ');
         console.log('[LOAD] Regional selecionada:', regional);
         console.log('[LOAD] Buscando mapa ativo');
@@ -491,7 +588,12 @@ export class UiController {
     }
 
     abrirManualModal() {
-        document.getElementById('rit-modal-manual').style.display = 'flex';
+        if (!CONFIG.FEATURE_MONITORAMENTO) {
+            showToast("Criação de novos monitoramentos temporariamente suspensa.", "warning");
+            return;
+        }
+        const modal = document.getElementById('rit-modal-manual');
+        if (modal) modal.style.display = 'flex';
     }
 
     fecharManualModal() {
@@ -654,13 +756,31 @@ export class UiController {
                     void target.offsetHeight;
                 }
                 
-
+                if (targetId === 'tab-monitoramento' && !CONFIG.FEATURE_MONITORAMENTO) {
+                    console.info("[MONITORAMENTO] Acesso à aba Monitoramento bloqueado temporariamente.");
+                    this.aplicarModoPrivacidadeMonitoramento();
+                }
                 
-                this.mapService.invalidateSize();
+                if (this.mapService) this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
                 if (this.transitoMap) this.transitoMap.invalidateSize();
             });
         });
+
+        // Suporte a acesso direto por URL/hash (?tab=monitoramento ou #monitoramento)
+        try {
+            const hash = (window.location.hash || '').replace('#', '').trim();
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab') || (hash.startsWith('tab-') ? hash : (hash ? `tab-${hash}` : null));
+            if (tabParam) {
+                const targetBtn = document.querySelector(`.tabBtn[data-tab="${tabParam}"]`);
+                if (targetBtn) {
+                    targetBtn.click();
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao processar rota de aba inicial:", e);
+        }
     }
 
     initFilters() {
@@ -863,7 +983,9 @@ export class UiController {
         });
 
         btnCentralizar?.addEventListener("click", () => {
-            this.mapService.setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
+            if (this.mapService) {
+                this.mapService.setView(CONFIG.DEFAULT_CENTER, CONFIG.DEFAULT_ZOOM);
+            }
         });
     }
 
@@ -979,6 +1101,15 @@ export class UiController {
     }
 
     iniciarPoolActiveTrackers() {
+        if (!CONFIG.FEATURE_MONITORAMENTO) {
+            console.info("[MONITORAMENTO] Polling de rastreamento de monitoramento suspenso temporariamente.");
+            if (this.activeTrackersInterval) {
+                clearInterval(this.activeTrackersInterval);
+                this.activeTrackersInterval = null;
+            }
+            return;
+        }
+
         const fetchActive = () => {
             fetch('/api/gps/active-trackers')
                 .then(r => r.json())
@@ -1114,6 +1245,16 @@ export class UiController {
     initUpload() {
         const input = document.getElementById("upload-mapa");
         const btn = document.getElementById("btn-upload");
+        if (!CONFIG.FEATURE_MONITORAMENTO) {
+            if (btn) {
+                btn.style.display = 'none';
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    showToast("Importação de base de monitoramento suspensa temporariamente.", "warning");
+                };
+            }
+            return;
+        }
         btn?.addEventListener("click", () => input.click());
         input?.addEventListener("change", async (e) => {
             const file = e.target.files[0];
@@ -1207,6 +1348,9 @@ export class UiController {
     }
 
     focarMarcadorNoMapa(markerId) {
+        if (!CONFIG.FEATURE_MONITORAMENTO || !this.mapService) {
+            return;
+        }
         console.log('[VER NO MAPA] Atendimento:', markerId);
         const marker = this.mapService.markersMap.get(markerId);
         console.log('[VER NO MAPA] Marker:', marker);
@@ -1265,6 +1409,9 @@ export class UiController {
     }
 
     plotarAtendimentos(lista) {
+        if (!CONFIG.FEATURE_MONITORAMENTO || !this.mapService) {
+            return;
+        }
         if (!Array.isArray(lista)) lista = [];
         lista = lista.filter(Boolean);
 
@@ -1650,6 +1797,9 @@ export class UiController {
 
     startGpsTracking() {
         this.stopGpsTracking();
+        if (!CONFIG.FEATURE_MONITORAMENTO) {
+            return;
+        }
         
         const fetchAndRenderActiveDrivers = () => {
             fetch('/api/gps/active-trackers')

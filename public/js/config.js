@@ -1,4 +1,6 @@
 export const CONFIG = {
+    // Feature Flag de Monitoramento (true: ativo, false: temporariamente suspenso)
+    FEATURE_MONITORAMENTO: false,
     DEFAULT_CENTER: [-22.9068, -43.1729],
     DEFAULT_ZOOM: 11,
     MAP_TILE_LAYER: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",

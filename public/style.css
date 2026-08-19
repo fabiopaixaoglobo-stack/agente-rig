@@ -850,4 +850,124 @@ body {
   text-transform: uppercase;
 }
 
+/* ==========================================================================
+   TELA INFORMATIVA DE PRIVACIDADE (SUSPENSÃO TEMPORÁRIA DE MONITORAMENTO)
+   ========================================================================== */
+.privacy-notice-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  padding: 30px;
+  box-sizing: border-box;
+  background: radial-gradient(circle at center, rgba(14, 18, 32, 0.98) 0%, rgba(3, 5, 10, 1) 100%);
+  z-index: 10;
+  position: relative;
+}
+
+.privacy-card {
+  max-width: 580px;
+  width: 100%;
+  background: rgba(10, 15, 28, 0.95);
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  border-radius: 14px;
+  padding: 36px 32px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 166, 35, 0.15);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInPrivacy 0.3s ease-out;
+}
+
+@keyframes fadeInPrivacy {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.privacy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f5a623 0%, #00d1ff 100%);
+}
+
+.privacy-icon-box {
+  font-size: 48px;
+  margin-bottom: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(245, 166, 35, 0.45));
+}
+
+.privacy-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #f5a623;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.privacy-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.privacy-body p {
+  margin: 0 0 12px 0;
+}
+
+.privacy-body p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-highlight-box {
+  background: rgba(0, 209, 255, 0.06);
+  border: 1px solid rgba(0, 209, 255, 0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #f8fafc;
+}
+
+.btn-privacy-redirect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #00d1ff 0%, #008fb3 100%);
+  color: #000;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 13px 26px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 209, 255, 0.3);
+}
+
+.btn-privacy-redirect:hover {
+  background: linear-gradient(135deg, #33dcff 0%, #00a4cc 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 209, 255, 0.5);
+}
+
+.btn-privacy-redirect:active {
+  transform: translateY(0);
+}
+
+
 
