@@ -304,12 +304,14 @@ function obterPeriodo(horario) {
 }
 
 export class UiController {
-    constructor(mapService, plannerService, transitoMap, dataService, corRioService = null) {
+    constructor(mapService, plannerService, transitoMap, dataService, corRioService = null, camerasService = null, painelCimService = null) {
         this.mapService = mapService;
         this.plannerService = plannerService;
         this.transitoMap = transitoMap;
         this.dataService = dataService;
         this.corRioService = corRioService;
+        this.camerasService = camerasService;
+        this.painelCimService = painelCimService;
         this.eventoAtualUrl = '';
         this.tarifasConfig = {
             tarifaBase: 3.50,
@@ -1726,6 +1728,15 @@ export class UiController {
                     sidebarPill.textContent = config.estagio;
                     sidebarPill.style.background = config.cor;
                     sidebarPill.style.color = config.estagio === 'ATENÇÃO' ? '#000' : '#fff';
+                }
+            }
+
+            // Atualiza dinamicamente a aba de câmeras para a regional selecionada
+            if (this.camerasService && typeof this.camerasService.setRegional === 'function') {
+                try {
+                    this.camerasService.setRegional(reg);
+                } catch (camErr) {
+                    console.warn("[RIT] Erro ao sincronizar aba de câmeras com a regional:", camErr);
                 }
             }
 

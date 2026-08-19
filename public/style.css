@@ -970,5 +970,557 @@ body {
   transform: translateY(0);
 }
 
+/* ==========================================================================
+   PAINEL INTEGRADO DE MONITORAMENTO DE TRÂNSITO (CIM) - 6 CÂMERAS SIMULTÂNEAS
+   ========================================================================== */
+#tab-painel-integrado.active {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020617;
+}
+
+.cim-panel-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%);
+  box-sizing: border-box;
+}
+
+/* CABEÇALHO CIM */
+.cim-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: rgba(10, 15, 30, 0.9);
+  border-bottom: 1px solid rgba(0, 209, 255, 0.15);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cim-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cim-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cim-live-pill {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #10b981;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  animation: pulseLive 2s infinite ease-in-out;
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.cim-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cim-subtitle {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.cim-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cim-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-width: 60px;
+}
+
+.cim-metric-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.cim-metric-lbl {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cim-clock-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 209, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-width: 95px;
+}
+
+.cim-clock-label {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cim-clock-time {
+  font-size: 13px;
+  font-weight: 900;
+  color: #00d1ff;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+.cim-clock-sync {
+  font-size: 7px;
+  color: #64748b;
+}
+
+.cim-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cim-action {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-cim-primary {
+  background: linear-gradient(135deg, #00d1ff 0%, #008fb3 100%);
+  color: #000;
+  border: none;
+}
+.btn-cim-primary:hover {
+  background: linear-gradient(135deg, #33dcff 0%, #00a4cc 100%);
+  box-shadow: 0 0 12px rgba(0, 209, 255, 0.4);
+}
+
+.btn-cim-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+.btn-cim-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* GRID RESPONSIVO DE CÂMERAS */
+.cim-camera-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1380px) {
+  .cim-camera-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cim-camera-grid {
+    grid-template-columns: 1fr;
+  }
+  .cim-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* CARD DE CÂMERA CIM */
+.cim-card {
+  background: rgba(10, 16, 30, 0.85);
+  border: 1px solid rgba(30, 41, 59, 0.9);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cim-card:hover {
+  border-color: rgba(0, 209, 255, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 209, 255, 0.1);
+}
+
+/* CARD HEADER */
+.cim-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cim-card-title-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cim-regiao-tag {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag-rj  { background: rgba(0, 209, 255, 0.2); color: #00d1ff; border: 1px solid #00d1ff; }
+.tag-sp  { background: rgba(245, 166, 35, 0.2); color: #f5a623; border: 1px solid #f5a623; }
+.tag-bsb { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+.tag-rec { background: rgba(236, 72, 153, 0.2); color: #ec4899; border: 1px solid #ec4899; }
+.tag-bh  { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; border: 1px solid #8b5cf6; }
+
+.cim-city-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-transform: uppercase;
+}
+
+.cim-slot-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cim-badge-online {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cim-badge-external {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* SELETORES INDEPENDENTES */
+.cim-card-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(8, 12, 22, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cim-selector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cim-sel-lbl {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cim-select {
+  width: 100%;
+  height: 25px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.cim-select:focus {
+  border-color: #00d1ff;
+  box-shadow: 0 0 6px rgba(0, 209, 255, 0.3);
+}
+
+/* VIEWPORT / ÁREA DE VÍDEO */
+.cim-viewport-container {
+  width: 100%;
+  height: 230px;
+  min-height: 230px;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cim-iframe-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.cim-iframe-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
+
+.cim-viewport-empty,
+.cim-viewport-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cim-viewport-loading {
+  color: #00d1ff;
+}
+
+.cim-viewport-loading i {
+  font-size: 24px;
+}
+
+/* CARD OPERACIONAL INTELIGENTE (PORTAIS EXTERNOS / X-FRAME BLOCKED) */
+.cim-operational-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 14px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(3, 7, 18, 1) 100%);
+}
+
+.cim-op-icon-box {
+  font-size: 26px;
+  color: #f5a623;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 8px rgba(245, 166, 35, 0.4));
+}
+
+.cim-op-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 4px;
+  max-width: 90%;
+  line-height: 1.2;
+}
+
+.cim-op-desc {
+  font-size: 9.5px;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  max-width: 85%;
+}
+
+.cim-op-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.cim-op-badge {
+  font-size: 8px;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.cim-op-via {
+  font-size: 8.5px;
+  color: #cbd5e1;
+}
+
+.btn-cim-open-portal {
+  background: linear-gradient(135deg, #f5a623 0%, #d97706 100%);
+  color: #000;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(245, 166, 35, 0.3);
+}
+
+.btn-cim-open-portal:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(245, 166, 35, 0.5);
+}
+
+.cim-op-notice {
+  font-size: 7.5px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+/* RODAPÉ DO CARD */
+.cim-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.cim-footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cim-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-cim-card-link {
+  color: #00d1ff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-cim-card-link:hover {
+  text-decoration: underline;
+  color: #33dcff;
+}
+
+.btn-cim-card-refresh {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  transition: all 0.2s;
+}
+
+.btn-cim-card-refresh:hover {
+  background: rgba(0, 209, 255, 0.2);
+  color: #00d1ff;
+  border-color: #00d1ff;
+}
+
+
 
 

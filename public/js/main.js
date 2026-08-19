@@ -4,6 +4,7 @@ import { DataService } from './data-service.js?v=4.0.0';
 import { UiController } from './ui-controller.js?v=4.0.0';
 import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.0.0';
 import { CamerasRJ } from './CamerasRJ.js?v=4.0.0';
+import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.0.0';
 import { CorRio } from './CorRio.js?v=4.0.0';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -22,8 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnWhatsapp = document.getElementById("btn-open-whatsapp");
         const whatsapp = btnWhatsapp ? new MonitoramentoGrupos("btn-open-whatsapp") : null;
         
-        const ui = new UiController(mainMap, plannerMap, transitoMap, data, corRio);
         const camerasRJ = new CamerasRJ();
+        const painelCim = new PainelTransitoIntegrado();
+        const ui = new UiController(mainMap, plannerMap, transitoMap, data, corRio, camerasRJ, painelCim);
+        
+        window.camerasRJ = camerasRJ;
+        window.painelCim = painelCim;
 
         // Monitoramento da Saúde do Banco de Dados para Administrador
         const checkDbHealth = async () => {

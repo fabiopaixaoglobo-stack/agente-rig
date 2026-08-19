@@ -45,6 +45,7 @@
     <button class="tabBtn active" data-tab="tab-monitoramento">Monitoramento</button>
     <button class="tabBtn" data-tab="tab-planejador">Simulador de Transporte por App</button>
     <button class="tabBtn" data-tab="tab-transito">Trânsito Real</button>
+    <button class="tabBtn" data-tab="tab-painel-integrado" id="tab-btn-painel-integrado" title="Painel Integrado de Monitoramento de Trânsito">Painel Trânsito Integrado</button>
     <button class="tabBtn" data-tab="tab-cameras" id="tab-btn-cameras">Câmeras RJ</button>
     <button class="tabBtn" data-tab="tab-radar" id="tab-btn-radar">Radar Meteorológico RJ</button>
   </nav>
@@ -231,6 +232,11 @@
     </section>
 
 
+
+    <!-- PAINEL INTEGRADO DE MONITORAMENTO DE TRÂNSITO (CIM) -->
+    <section id="tab-painel-integrado" class="tabPane">
+      <!-- O conteúdo é inicializado e renderizado dinamicamente pelo PainelTransitoIntegrado.js -->
+    </section>
 
     <!-- CÂMERAS RJ -->
     <section id="tab-cameras" class="tabPane">
