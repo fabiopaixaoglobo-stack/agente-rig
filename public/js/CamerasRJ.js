@@ -1,4 +1,4 @@
-import { trafficCameraSources } from './traffic-camera-data.js?v=4.0.0';
+import { trafficCameraSources, normalizeEmbedUrl } from './traffic-camera-data.js?v=4.0.0';
 import { escapeHtml } from './utils.js';
 
 export class CamerasRJ {
@@ -169,10 +169,11 @@ export class CamerasRJ {
                 this.infoText.innerHTML = `<strong>Ao vivo:</strong> ${escapeHtml(src.nome)} (${escapeHtml(src.bairro)})`;
             }
 
-            if (src.suportaIframe && src.embedUrl) {
+            const cleanEmbedUrl = normalizeEmbedUrl(src.embedUrl);
+            if (src.suportaIframe && cleanEmbedUrl) {
                 this.frameContainer.innerHTML = `
                     <iframe 
-                        src="${src.embedUrl}" 
+                        src="${cleanEmbedUrl}" 
                         width="100%" 
                         height="100%" 
                         style="border:none;" 

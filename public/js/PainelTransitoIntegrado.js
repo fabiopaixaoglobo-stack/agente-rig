@@ -1,20 +1,20 @@
-import { trafficCameraSources, getCatalogStats } from './traffic-camera-data.js?v=4.0.0';
+import { trafficCameraSources, getCatalogStats, normalizeEmbedUrl } from './traffic-camera-data.js?v=4.0.0';
 import { showToast, escapeHtml } from './utils.js';
 
 export class PainelTransitoIntegrado {
     constructor() {
         this.containerId = 'tab-painel-integrado';
-        this.storageKey = 'rit_cim_cards_selection';
+        this.storageKey = 'rit_cim_cards_selection_v2';
         this.clockInterval = null;
         
-        // Definição dos 6 slots padrão
+        // Definição dos 6 slots padrão com fontes visuais integradas prioritárias
         this.defaultSlots = {
             card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_MAPA_RIO_01' },
             card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_CAMERASRJ_COPACABANA' },
-            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_OFICIAL_01' },
-            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_DER_DF_01' },
-            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_CTTU_01' },
-            card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_MINEIRINHO_01' }
+            card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_PAINEL_DIRETO' },
+            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_CAMERAS_MUNDO_01' },
+            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_MAPA_VERCEL_01' },
+            card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
         };
 
         this.currentSlots = {};
@@ -34,7 +34,7 @@ export class PainelTransitoIntegrado {
         this.renderAllCards();
         this.updateStats();
         
-        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com 6 posições.');
+        console.info('[CIM] Painel Integrado de Monitoramento de Trânsito inicializado com 6 posições visuais.');
     }
 
     loadSlotSelection() {
@@ -43,6 +43,13 @@ export class PainelTransitoIntegrado {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this.currentSlots = { ...this.defaultSlots, ...parsed };
+
+                // Migração de segurança: se tiver os IDs legados antigos de portais, migra para os visuais
+                if (this.currentSlots.card_3?.sourceId === 'SP_CET_OFICIAL_01') this.currentSlots.card_3.sourceId = 'SP_CET_PAINEL_DIRETO';
+                if (this.currentSlots.card_4?.sourceId === 'BSB_DER_DF_01') this.currentSlots.card_4.sourceId = 'BSB_CAMERAS_MUNDO_01';
+                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
+                if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
+                
                 return;
             }
         } catch (e) {
@@ -69,7 +76,7 @@ export class PainelTransitoIntegrado {
                             <span class="cim-live-pill"><i class="fa-solid fa-satellite-dish"></i> CIM AO VIVO</span>
                             <h2 class="cim-title">Painel Integrado de Monitoramento de Trânsito</h2>
                         </div>
-                        <p class="cim-subtitle">Pesquisa por bairro, via ou referência com 6 posições simultâneas (Rio de Janeiro, São Paulo, Brasília, Recife e Belo Horizonte)</p>
+                        <p class="cim-subtitle">Monitoramento simultâneo em tempo real das 5 Regionais Globo (Rio de Janeiro, São Paulo, Brasília, Recife e Belo Horizonte)</p>
                     </div>
                     <div class="cim-header-right">
                         <div class="cim-metric-item" title="6 posições de monitoramento simultâneas">
@@ -139,7 +146,7 @@ export class PainelTransitoIntegrado {
         const elTotal = document.getElementById('cim-total-fontes');
         if (elTotal) {
             elTotal.querySelector('.cim-metric-val').textContent = stats.totalSources;
-            elTotal.title = `${stats.totalSources} fontes (${stats.onlineCount} diretas/mapas, ${stats.externalCount} portais externos)`;
+            elTotal.title = `${stats.totalSources} fontes (${stats.onlineCount} integradas/visuais, ${stats.externalCount} portais externos)`;
         }
     }
 
@@ -176,10 +183,11 @@ export class PainelTransitoIntegrado {
 
         const tagClass = `tag-${slotConfig.regional.toLowerCase()}`;
         const slotLabel = `Câmera ${slotConfig.slotNum}`;
-        const healthStatus = currentSource ? (currentSource.healthStatus || 'online') : 'offline';
-        const healthBadge = healthStatus === 'online' 
-            ? '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL AO VIVO</span>'
-            : '<span class="cim-badge-external"><i class="fa-solid fa-arrow-up-right-from-square"></i> FONTE EXTERNA</span>';
+        const isEmbeddable = currentSource ? (Boolean(currentSource.embedUrl) && currentSource.suportaIframe === true) : false;
+        
+        const healthBadge = isEmbeddable 
+            ? '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>'
+            : '<span class="cim-badge-external"><i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL EXTERNO</span>';
 
         cardEl.innerHTML = `
             <div class="cim-card-header">
@@ -278,13 +286,15 @@ export class PainelTransitoIntegrado {
             `;
         }
 
-        // TIPO: STREAM OU MAPA COM SUPORTE A IFRAME
-        if (source.suportaIframe && source.embedUrl) {
+        // REGRA PRINCIPAL: SE POSSUI EMBED URL E SUPORTA IFRAME (STREAM OU MAPA), SEMPRE TENTA EXIBIÇÃO INTEGRADA NO PAINEL
+        const canEmbed = Boolean(source.embedUrl) && source.suportaIframe === true;
+        if (canEmbed) {
+            const cleanEmbedUrl = normalizeEmbedUrl(source.embedUrl);
             return `
                 <div class="cim-iframe-wrapper">
                     <iframe 
                         id="iframe-${slotKey}"
-                        src="${source.embedUrl}" 
+                        src="${cleanEmbedUrl}" 
                         width="100%" 
                         height="100%" 
                         style="border:none;" 
@@ -296,7 +306,11 @@ export class PainelTransitoIntegrado {
             `;
         }
 
-        // TIPO: PORTAL OU FONTE EXTERNA COM X-FRAME-OPTIONS (CARD OPERACIONAL INTELIGENTE)
+        // FALLBACK: QUANDO A FONTE É EXCLUSIVAMENTE UM PORTAL OU NÃO SUPORTA IFRAME
+        return this.renderOperationalCard(source, slotKey);
+    }
+
+    renderOperationalCard(source, slotKey) {
         return `
             <div class="cim-operational-card">
                 <div class="cim-op-icon-box">
@@ -371,6 +385,6 @@ export class PainelTransitoIntegrado {
         this.currentSlots = JSON.parse(JSON.stringify(this.defaultSlots));
         this.saveSlotSelection();
         this.renderAllCards();
-        showToast("Layout do Painel Integrado restaurado para o padrão CIM.", "info");
+        showToast("Layout do Painel Integrado restaurado para as fontes visuais prioritárias da CIM.", "info");
     }
 }

@@ -1,6 +1,7 @@
 /**
  * Catálogo Corporativo de Fontes de Câmeras e Portais de Trânsito - Agente RIT / CIM
  * Suporte às 5 Regionais Globo: RJ, SP, BSB, REC, BH
+ * Priorização de fontes visuais integradas (stream e mapa) com fallback resiliente
  */
 export const trafficCameraSources = {
     RJ: {
@@ -25,6 +26,22 @@ export const trafficCameraSources = {
                 observacao: "Painel georreferenciado com todas as câmeras públicas do Rio (Redundância principal)"
             },
             {
+                id: "RJ_CAMERASRJ_COPACABANA",
+                regional: "RJ",
+                cidade: "Rio de Janeiro",
+                bairro: "Copacabana",
+                referencia: "Av. Atlântica - Posto 4",
+                nome: "CamerasRJ - Copacabana / Orla",
+                tipoFonte: "stream",
+                url: "https://www.camerasrj.com.br/camera/1301/",
+                embedUrl: "https://www.camerasrj.com.br/camera/1301/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 2,
+                observacao: "Orla de Copacabana"
+            },
+            {
                 id: "RJ_ZET_UFRJ_01",
                 regional: "RJ",
                 cidade: "Rio de Janeiro",
@@ -37,24 +54,8 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
-                observacao: "Câmeras experimentais e sensores de fluxo viário UFRJ"
-            },
-            {
-                id: "RJ_CETRIO_01",
-                regional: "RJ",
-                cidade: "Rio de Janeiro",
-                bairro: "Vias Expressas (L. Vermelha / Av. Brasil)",
-                referencia: "CET-Rio / Prefeitura",
-                nome: "CET-Rio - Centro de Operações",
-                tipoFonte: "portal",
-                url: "https://cetrio.prefeitura.rio/",
-                embedUrl: "https://cetrio.prefeitura.rio/",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Portal oficial de operações viárias e condições de trânsito"
+                observacao: "Câmeras experimentais e sensores de fluxo viário UFRJ"
             },
             {
                 id: "RJ_CAMERASRJ_CENTRO",
@@ -73,22 +74,6 @@ export const trafficCameraSources = {
                 observacao: "Transmissão pública CamerasRJ"
             },
             {
-                id: "RJ_CAMERASRJ_COPACABANA",
-                regional: "RJ",
-                cidade: "Rio de Janeiro",
-                bairro: "Copacabana",
-                referencia: "Av. Atlântica - Posto 4",
-                nome: "CamerasRJ - Copacabana / Orla",
-                tipoFonte: "stream",
-                url: "https://www.camerasrj.com.br/camera/1301/",
-                embedUrl: "https://www.camerasrj.com.br/camera/1301/",
-                suportaIframe: true,
-                healthStatus: "online",
-                lastValidation: new Date().toISOString(),
-                prioridade: 5,
-                observacao: "Orla de Copacabana"
-            },
-            {
                 id: "RJ_CAMERASRJ_BARRA",
                 regional: "RJ",
                 cidade: "Rio de Janeiro",
@@ -101,8 +86,24 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 6,
+                prioridade: 5,
                 observacao: "Corredor Transoeste / Barra da Tijuca"
+            },
+            {
+                id: "RJ_CETRIO_01",
+                regional: "RJ",
+                cidade: "Rio de Janeiro",
+                bairro: "Vias Expressas (L. Vermelha / Av. Brasil)",
+                referencia: "CET-Rio / Prefeitura",
+                nome: "CET-Rio - Centro de Operações",
+                tipoFonte: "portal",
+                url: "https://cetrio.prefeitura.rio/",
+                embedUrl: "https://cetrio.prefeitura.rio/",
+                suportaIframe: false,
+                healthStatus: "externo",
+                lastValidation: new Date().toISOString(),
+                prioridade: 6,
+                observacao: "Portal oficial de operações viárias e condições de trânsito"
             }
         ]
     },
@@ -112,10 +113,26 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "SP_CET_OFICIAL_01",
+                id: "SP_CET_PAINEL_DIRETO",
                 regional: "SP",
                 cidade: "São Paulo",
                 bairro: "Marginais e Eixos Estruturais SP",
+                referencia: "CET-SP - Painel de Câmeras",
+                nome: "CET-SP - Painel Direto de Câmeras",
+                tipoFonte: "mapa",
+                url: "https://cameras.cetsp.com.br/",
+                embedUrl: "https://cameras.cetsp.com.br/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 1,
+                observacao: "Fonte visual prioritária para exibição integrada de câmeras em São Paulo"
+            },
+            {
+                id: "SP_CET_OFICIAL_01",
+                regional: "SP",
+                cidade: "São Paulo",
+                bairro: "Marginais e Corredores CET",
                 referencia: "CET-SP Oficial",
                 nome: "CET-SP - Portal Oficial de Câmeras",
                 tipoFonte: "portal",
@@ -124,24 +141,8 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 1,
-                observacao: "Monitoramento oficial das principais vias da CET-SP"
-            },
-            {
-                id: "SP_CET_PAINEL_DIRETO",
-                regional: "SP",
-                cidade: "São Paulo",
-                bairro: "Centro / Zonas Leste, Oeste, Norte e Sul",
-                referencia: "Painel Direto CET-SP",
-                nome: "Painel Direto CET-SP (Câmeras)",
-                tipoFonte: "portal",
-                url: "http://cameras.cetsp.com.br/",
-                embedUrl: "http://cameras.cetsp.com.br/",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
                 prioridade: 2,
-                observacao: "Consulta direta de câmeras CET São Paulo"
+                observacao: "Monitoramento oficial das principais vias da CET-SP"
             },
             {
                 id: "SP_PAULISTA_01",
@@ -199,20 +200,20 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "BSB_DER_DF_01",
+                id: "BSB_CAMERAS_MUNDO_01",
                 regional: "BSB",
                 cidade: "Brasília",
-                bairro: "Rodovias Distritais / EPTG / EPNB / DF-001",
-                referencia: "DER-DF Monitoramento",
-                nome: "DER-DF - Relação de Câmeras de Monitoramento",
-                tipoFonte: "portal",
-                url: "https://der.df.gov.br/relacao-de-cameras-de-monitoramento/",
-                embedUrl: "https://der.df.gov.br/relacao-de-cameras-de-monitoramento/",
-                suportaIframe: false,
-                healthStatus: "externo",
+                bairro: "Eixo Monumental / Plano Piloto",
+                referencia: "Câmeras do Mundo Brasília",
+                nome: "Brasília ao Vivo - Câmeras do Mundo",
+                tipoFonte: "stream",
+                url: "https://camerasdomundo.com/brasil/brasilia/",
+                embedUrl: "https://camerasdomundo.com/brasil/brasilia/",
+                suportaIframe: true,
+                healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
-                observacao: "Monitoramento oficial das rodovias do Distrito Federal"
+                observacao: "Fonte visual prioritária para Brasília com transmissão ao vivo"
             },
             {
                 id: "BSB_DF_AGORA_01",
@@ -231,20 +232,20 @@ export const trafficCameraSources = {
                 observacao: "Transmissões e mapas de trânsito em tempo real DF"
             },
             {
-                id: "BSB_CAMERAS_MUNDO_01",
+                id: "BSB_DER_DF_01",
                 regional: "BSB",
                 cidade: "Brasília",
-                bairro: "Esplanada dos Ministérios / Centro",
-                referencia: "Câmeras do Mundo Brasília",
-                nome: "Câmeras do Mundo - Brasília Panorâmica",
-                tipoFonte: "stream",
-                url: "https://camerasdomundo.com/brasil/brasilia/",
-                embedUrl: "https://camerasdomundo.com/brasil/brasilia/",
-                suportaIframe: true,
-                healthStatus: "online",
+                bairro: "Rodovias Distritais / EPTG / EPNB / DF-001",
+                referencia: "DER-DF Monitoramento",
+                nome: "DER-DF - Relação de Câmeras",
+                tipoFonte: "portal",
+                url: "https://der.df.gov.br/relacao-de-cameras-de-monitoramento/",
+                embedUrl: "https://der.df.gov.br/relacao-de-cameras-de-monitoramento/",
+                suportaIframe: false,
+                healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Transmissão panorâmica ao vivo de Brasília e Esplanada"
+                observacao: "Monitoramento oficial das rodovias do Distrito Federal"
             }
         ]
     },
@@ -254,20 +255,20 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "REC_CTTU_01",
+                id: "REC_MAPA_VERCEL_01",
                 regional: "REC",
                 cidade: "Recife",
-                bairro: "Boa Viagem / Derby / Agamenon / Centro",
-                referencia: "CTTU Recife Oficial",
-                nome: "CTTU Recife - Câmeras de Trânsito",
-                tipoFonte: "portal",
-                url: "https://cttu.recife.pe.gov.br/cameras-da-cttu",
-                embedUrl: "https://cttu.recife.pe.gov.br/cameras-da-cttu",
-                suportaIframe: false,
-                healthStatus: "externo",
+                bairro: "Rede Integrada Recife",
+                referencia: "Mapa CTTU PE",
+                nome: "Mapa de Câmeras Recife (CTTU PE)",
+                tipoFonte: "mapa",
+                url: "https://cttupe-cameras.vercel.app/",
+                embedUrl: "https://cttupe-cameras.vercel.app/",
+                suportaIframe: true,
+                healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
-                observacao: "Autarquia de Trânsito e Transporte Urbano do Recife"
+                observacao: "Mapa visual integrado com posições de câmeras em Recife"
             },
             {
                 id: "REC_SERTTEL_01",
@@ -286,20 +287,20 @@ export const trafficCameraSources = {
                 observacao: "Câmeras semafóricas e monitoramento viário Serttel"
             },
             {
-                id: "REC_MAPA_VERCEL_01",
+                id: "REC_CTTU_01",
                 regional: "REC",
                 cidade: "Recife",
-                bairro: "Rede Integrada Recife",
-                referencia: "CTTU PE Câmeras",
-                nome: "Mapa de Câmeras Recife (CTTU PE)",
-                tipoFonte: "mapa",
-                url: "https://cttupe-cameras.vercel.app/",
-                embedUrl: "https://cttupe-cameras.vercel.app/",
-                suportaIframe: true,
-                healthStatus: "online",
+                bairro: "Boa Viagem / Derby / Agamenon / Centro",
+                referencia: "CTTU Recife Oficial",
+                nome: "CTTU Recife - Câmeras de Trânsito",
+                tipoFonte: "portal",
+                url: "https://cttu.recife.pe.gov.br/cameras-da-cttu",
+                embedUrl: "https://cttu.recife.pe.gov.br/cameras-da-cttu",
+                suportaIframe: false,
+                healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Mapa interativo com posições de câmeras em Recife"
+                observacao: "Autarquia de Trânsito e Transporte Urbano do Recife"
             }
         ]
     },
@@ -308,6 +309,22 @@ export const trafficCameraSources = {
         cidade: "Belo Horizonte",
         slots: 1,
         sources: [
+            {
+                id: "BH_REALDATA_01",
+                regional: "BH",
+                cidade: "Belo Horizonte",
+                bairro: "Barreiro / Floresta / Contagem",
+                referencia: "RealData Telecom",
+                nome: "RealData Telecom - Câmeras ao Vivo",
+                tipoFonte: "stream",
+                url: "https://realdata.com.br/cameras-ao-vivo/",
+                embedUrl: "https://realdata.com.br/cameras-ao-vivo/",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 1,
+                observacao: "Fonte visual prioritária com câmeras online em BH e região"
+            },
             {
                 id: "BH_MINEIRINHO_01",
                 regional: "BH",
@@ -321,7 +338,7 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 1,
+                prioridade: 2,
                 observacao: "Câmeras ao vivo de trânsito em Belo Horizonte e RMBH"
             },
             {
@@ -337,28 +354,24 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
-                observacao: "Monitoramento de avenidas e acessos da Grande BH"
-            },
-            {
-                id: "BH_REALDATA_01",
-                regional: "BH",
-                cidade: "Belo Horizonte",
-                bairro: "Barreiro / Floresta / Contagem",
-                referencia: "RealData Telecom",
-                nome: "RealData Telecom - Câmeras ao Vivo",
-                tipoFonte: "stream",
-                url: "https://realdata.com.br/cameras-ao-vivo/",
-                embedUrl: "https://realdata.com.br/cameras-ao-vivo/",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
                 prioridade: 3,
-                observacao: "Transmissões ao vivo em BH e Contagem"
+                observacao: "Monitoramento de avenidas e acessos da Grande BH"
             }
         ]
     }
 };
+
+/**
+ * Normaliza URLs para garantir HTTPS e evitar Mixed Content
+ */
+export function normalizeEmbedUrl(url) {
+    if (!url) return '';
+    let cleanUrl = String(url).trim();
+    if (cleanUrl.startsWith('http://cameras.cetsp.com.br')) {
+        cleanUrl = cleanUrl.replace('http://', 'https://');
+    }
+    return cleanUrl;
+}
 
 /**
  * Função utilitária para contagem de métricas do catálogo CIM
