@@ -150,6 +150,9 @@ body {
 /* AJUSTE TRANSITO REAL */
 #tab-transito.active { display: flex; flex-direction: row; height: 100%; width: 100%; }
 
+/* AJUSTE RADAR METEOROLÓGICO */
+#tab-radar.active { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
+
 /* AJUSTE REDE (CORREÇÃO 2) */
 #tab-rede.active { display: flex; flex-direction: column; width: 100%; }
 #tab-rede .mapArea { width: 100%; flex: 1; margin: 0 auto; display: block; position: relative; }
