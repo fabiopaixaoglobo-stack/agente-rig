@@ -22,10 +22,11 @@ export class PainelTransitoIntegrado {
         };
 
         this.currentSlots = {};
+        this.camerasData = {};
         this.init();
     }
 
-    init() {
+    async init() {
         const tabPane = document.getElementById(this.containerId);
         if (!tabPane) {
             console.warn('[CIM] Container #tab-painel-integrado não encontrado no DOM.');
@@ -38,8 +39,21 @@ export class PainelTransitoIntegrado {
         this.renderAllCards();
         this.updateStats();
         this.bindGlobalKeyboardEvents();
+        await this.loadCamerasData();
         
         console.info('[CIM] Painel Integrado inicializado. Codec detection:', this.codecCapabilities);
+    }
+
+    async loadCamerasData() {
+        try {
+            const response = await fetch('/data/cameras.json');
+            if (response.ok) {
+                this.camerasData = await response.json();
+                this.renderAllCards();
+            }
+        } catch (e) {
+            console.warn('[CIM] Não foi possível carregar /data/cameras.json:', e);
+        }
     }
 
     loadSlotSelection() {
@@ -308,20 +322,73 @@ export class PainelTransitoIntegrado {
         });
     }
 
+    findCameraInfo(sourceIdOrCamId) {
+        if (!sourceIdOrCamId || !this.camerasData) return null;
+        const cleanId = String(sourceIdOrCamId).replace('CAM_', '').replace('SRC_', '');
+        
+        for (const bairro of Object.keys(this.camerasData)) {
+            const list = this.camerasData[bairro] || [];
+            const found = list.find(c => String(c.id) === cleanId);
+            if (found) {
+                return { ...found, bairro };
+            }
+        }
+        return null;
+    }
+
+    resolveSourceObject(slotConfig) {
+        if (!slotConfig) return null;
+        const sourceId = slotConfig.sourceId || '';
+        const regionalData = trafficCameraSources[slotConfig.regional];
+        const catalogSources = regionalData?.sources || [];
+
+        // 1. Caso seja fonte estruturada do catálogo (ex: RJ_MAPA_RIO_01, SRC_RJ_MAPA_RIO_01, SP_CET_23)
+        const cleanSrcId = sourceId.replace('SRC_', '');
+        const catalogMatch = catalogSources.find(s => s.id === cleanSrcId || s.id === sourceId);
+        if (catalogMatch) {
+            return catalogMatch;
+        }
+
+        // 2. Caso seja câmera individual do Rio (CAM_1301 ou 1301)
+        const cleanCamId = sourceId.replace('CAM_', '');
+        if (cleanCamId && (sourceId.startsWith('CAM_') || !isNaN(cleanCamId))) {
+            const camInfo = this.findCameraInfo(cleanCamId);
+            const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
+            const bairroName = slotConfig.selectedBairro || camInfo?.bairro || 'Rio de Janeiro';
+            const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
+
+            return {
+                id: `CAM_${cleanCamId}`,
+                regional: 'RJ',
+                cidade: 'Rio de Janeiro',
+                bairro: bairroName,
+                referencia: caption,
+                nome: caption,
+                tipoFonte: 'stream',
+                url: url,
+                embedUrl: url,
+                suportaIframe: true,
+                sourceProvider: 'CamerasRJ',
+                requiresCodec: 'H265',
+                protocol: 'WebRTC/WHEP',
+                compatibilityNote: 'Transmissão ao vivo via WebRTC do portal CamerasRJ.',
+                healthStatus: 'online',
+                lastValidation: new Date().toISOString(),
+                prioridade: 1,
+                observacao: `Câmera ao vivo em ${bairroName}: ${caption}`
+            };
+        }
+
+        // 3. Fallback: primeira fonte do catálogo da regional
+        return catalogSources[0] || null;
+    }
+
     renderSingleCard(slotKey, cardEl) {
         const slotConfig = this.currentSlots[slotKey] || this.defaultSlots[slotKey];
         const regionalData = trafficCameraSources[slotConfig.regional];
         if (!regionalData) return;
 
-        const sourcesList = regionalData.sources || [];
-        let currentSource = sourcesList.find(s => s.id === slotConfig.sourceId);
-        
-        // Failover: se não encontrar a fonte salva, seleciona a primeira disponível da regional
-        if (!currentSource && sourcesList.length > 0) {
-            currentSource = sourcesList[0];
-            slotConfig.sourceId = currentSource.id;
-            this.saveSlotSelection();
-        }
+        const currentSource = this.resolveSourceObject(slotConfig);
 
         const tagClass = `tag-${slotConfig.regional.toLowerCase()}`;
         const slotLabel = `Câmera ${slotConfig.slotNum}`;
@@ -352,18 +419,18 @@ export class PainelTransitoIntegrado {
                 </div>
             </div>
 
-            <!-- SELETORES INDEPENDENTES POR CARD -->
+            <!-- SELETORES UNIFICADOS MODELO CÂMERAS RJ -->
             <div class="cim-card-selectors">
                 <div class="cim-selector-field">
                     <label class="cim-sel-lbl">Bairro / Região / Via:</label>
                     <select class="cim-select select-bairro" data-slot="${slotKey}">
-                        ${this.generateBairroOptions(sourcesList, currentSource)}
+                        ${this.generateBairroOptions(slotConfig, currentSource)}
                     </select>
                 </div>
                 <div class="cim-selector-field">
                     <label class="cim-sel-lbl">Fonte / Câmera:</label>
                     <select class="cim-select select-fonte" data-slot="${slotKey}">
-                        ${this.generateFonteOptions(sourcesList, currentSource)}
+                        ${this.generateFonteOptions(slotConfig, currentSource)}
                     </select>
                 </div>
             </div>
@@ -402,13 +469,35 @@ export class PainelTransitoIntegrado {
         const btnDiagTrigger = cardEl.querySelector('.btn-cim-diag-trigger');
 
         selBairro?.addEventListener('change', (e) => {
-            const selectedSourceId = e.target.value;
-            this.changeCardSource(slotKey, selectedSourceId);
+            const selectedVal = e.target.value;
+            slotConfig.selectedBairro = selectedVal;
+
+            if (selectedVal.startsWith('SRC_')) {
+                slotConfig.sourceId = selectedVal.replace('SRC_', '');
+            } else {
+                // Seleciona a primeira câmera do bairro selecionado
+                const camerasList = (this.camerasData && this.camerasData[selectedVal]) || [];
+                if (camerasList.length > 0) {
+                    slotConfig.sourceId = `CAM_${camerasList[0].id}`;
+                }
+            }
+
+            this.saveSlotSelection();
+            this.renderSingleCard(slotKey, cardEl);
         });
 
         selFonte?.addEventListener('change', (e) => {
-            const selectedSourceId = e.target.value;
-            this.changeCardSource(slotKey, selectedSourceId);
+            const selectedVal = e.target.value;
+            if (selectedVal) {
+                if (selectedVal.startsWith('SRC_')) {
+                    slotConfig.sourceId = selectedVal.replace('SRC_', '');
+                    slotConfig.selectedBairro = selectedVal;
+                } else {
+                    slotConfig.sourceId = selectedVal;
+                }
+                this.saveSlotSelection();
+                this.renderSingleCard(slotKey, cardEl);
+            }
         });
 
         btnRefresh?.addEventListener('click', () => {
@@ -421,7 +510,10 @@ export class PainelTransitoIntegrado {
 
         btnSwitchFallback?.addEventListener('click', (e) => {
             const fallbackId = e.currentTarget.getAttribute('data-fallback') || 'RJ_MAPA_RIO_01';
-            this.changeCardSource(slotKey, fallbackId);
+            slotConfig.selectedBairro = `SRC_${fallbackId}`;
+            slotConfig.sourceId = fallbackId;
+            this.saveSlotSelection();
+            this.renderSingleCard(slotKey, cardEl);
             showToast("Alternado para a fonte de redundância do Rio de Janeiro.", "info");
         });
 
@@ -437,18 +529,75 @@ export class PainelTransitoIntegrado {
         this.setupSnapshotTimer(slotKey, currentSource);
     }
 
-    generateBairroOptions(sourcesList, currentSource) {
-        return sourcesList.map(src => {
-            const selected = (currentSource && currentSource.id === src.id) ? 'selected' : '';
-            return `<option value="${src.id}" ${selected}>${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia)}</option>`;
-        }).join('');
+    generateBairroOptions(slotConfig, currentSource) {
+        const regional = slotConfig.regional;
+        const regionalData = trafficCameraSources[regional];
+        const sourcesList = regionalData?.sources || [];
+
+        if (regional === 'RJ') {
+            let html = '<option value="">Selecione o Bairro / Via...</option>';
+            
+            // Grupo Destaques
+            html += '<optgroup label="⭐ DESTAQUES & PORTAIS OFICIAIS (RJ)">';
+            sourcesList.forEach(src => {
+                const val = `SRC_${src.id}`;
+                const isSelected = (slotConfig.selectedBairro === val || (currentSource && currentSource.id === src.id && (!slotConfig.selectedBairro || slotConfig.selectedBairro.startsWith('SRC_')))) ? 'selected' : '';
+                html += `<option value="${val}" ${isSelected}>[PORTAL] ${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia)}</option>`;
+            });
+            html += '</optgroup>';
+
+            // Grupo Bairros
+            const bairrosRJ = Object.keys(this.camerasData || {}).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            if (bairrosRJ.length > 0) {
+                html += '<optgroup label="BAIRROS DO RIO DE JANEIRO">';
+                bairrosRJ.forEach(bairro => {
+                    const isSelected = (slotConfig.selectedBairro === bairro || (currentSource && currentSource.bairro === bairro && !slotConfig.selectedBairro?.startsWith('SRC_'))) ? 'selected' : '';
+                    html += `<option value="${escapeHtml(bairro)}" ${isSelected}>${escapeHtml(bairro)}</option>`;
+                });
+                html += '</optgroup>';
+            }
+
+            return html;
+        } else {
+            // Regionais: SP, BH, BSB, REC
+            return sourcesList.map(src => {
+                const val = `SRC_${src.id}`;
+                const isSelected = (currentSource && currentSource.id === src.id) ? 'selected' : '';
+                return `<option value="${val}" ${isSelected}>${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia)}</option>`;
+            }).join('');
+        }
     }
 
-    generateFonteOptions(sourcesList, currentSource) {
-        return sourcesList.map(src => {
-            const selected = (currentSource && currentSource.id === src.id) ? 'selected' : '';
-            const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Ao Vivo' : (src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal'));
-            return `<option value="${src.id}" ${selected}>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
+    generateFonteOptions(slotConfig, currentSource) {
+        const regional = slotConfig.regional;
+        const regionalData = trafficCameraSources[regional];
+        const sourcesList = regionalData?.sources || [];
+        const selectedBairro = slotConfig.selectedBairro || (currentSource ? (currentSource.id?.startsWith('SRC_') ? `SRC_${currentSource.id}` : (currentSource.bairro && currentSource.bairro !== 'Rio de Janeiro' ? currentSource.bairro : `SRC_${currentSource.id}`)) : `SRC_${sourcesList[0]?.id}`);
+
+        // Se for um item de catálogo (SRC_...)
+        if (!selectedBairro || selectedBairro.startsWith('SRC_')) {
+            const srcId = selectedBairro ? selectedBairro.replace('SRC_', '') : sourcesList[0]?.id;
+            const src = sourcesList.find(s => s.id === srcId) || currentSource || sourcesList[0];
+
+            if (src) {
+                const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Ao Vivo' : (src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal'));
+                return `<option value="SRC_${src.id}" selected>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
+            }
+            return '<option value="">Selecione a Câmera / Fonte...</option>';
+        }
+
+        // Se for um Bairro do Rio (camerasData)
+        const camerasList = (this.camerasData && this.camerasData[selectedBairro]) || [];
+        const sortedCameras = [...camerasList].sort((a, b) => (a.caption || '').localeCompare(b.caption || '', 'pt-BR'));
+
+        if (sortedCameras.length === 0) {
+            return `<option value="">Nenhuma câmera disponível em ${escapeHtml(selectedBairro)}</option>`;
+        }
+
+        return sortedCameras.map(cam => {
+            const val = `CAM_${cam.id}`;
+            const isSelected = (slotConfig.sourceId === val || slotConfig.sourceId === String(cam.id) || (currentSource && (currentSource.id === val || currentSource.id === `CAM_${cam.id}`))) ? 'selected' : '';
+            return `<option value="${val}" ${isSelected}>🎥 ${escapeHtml(cam.caption || 'Câmera ' + cam.id)}</option>`;
         }).join('');
     }
 
@@ -602,8 +751,7 @@ export class PainelTransitoIntegrado {
 
         const viewport = cardEl.querySelector(`#viewport-${slotKey}`);
         const slotConfig = this.currentSlots[slotKey];
-        const regionalData = trafficCameraSources[slotConfig.regional];
-        const currentSource = regionalData?.sources?.find(s => s.id === slotConfig.sourceId);
+        const currentSource = this.resolveSourceObject(slotConfig);
 
         if (viewport && currentSource) {
             viewport.innerHTML = `
@@ -649,8 +797,7 @@ export class PainelTransitoIntegrado {
 
         this.activeFullscreenSlot = slotKey;
         const regionalData = trafficCameraSources[slotConfig.regional];
-        const sourcesList = regionalData?.sources || [];
-        const currentSource = sourcesList.find(s => s.id === slotConfig.sourceId) || sourcesList[0];
+        const currentSource = this.resolveSourceObject(slotConfig);
 
         // Atualiza cabeçalho do Fullscreen
         const tagEl = document.getElementById('cim-fs-tag');
@@ -664,17 +811,14 @@ export class PainelTransitoIntegrado {
             tagEl.className = `cim-regiao-tag tag-${slotConfig.regional.toLowerCase()}`;
             tagEl.textContent = slotConfig.regional;
         }
-        if (titleEl) titleEl.textContent = `${regionalData.label} - ${currentSource?.bairro || 'Câmera'}`;
+        if (titleEl) titleEl.textContent = `${regionalData?.label || slotConfig.regional} - ${currentSource?.bairro || 'Câmera'}`;
         if (subTitleEl) subTitleEl.textContent = currentSource?.nome || '';
         if (openLinkEl && currentSource) openLinkEl.href = currentSource.url;
         if (infoEl && currentSource) infoEl.innerHTML = `📍 <strong>${escapeHtml(currentSource.bairro)}</strong> (${escapeHtml(currentSource.referencia)}) | Atualização Contínua`;
 
         // Popula seletor de câmeras do Fullscreen
         if (selectEl) {
-            selectEl.innerHTML = sourcesList.map(src => {
-                const sel = (src.id === currentSource?.id) ? 'selected' : '';
-                return `<option value="${src.id}" ${sel}>${src.tipoFonte === 'snapshot' ? '📷' : '🎥'} ${src.nome}</option>`;
-            }).join('');
+            selectEl.innerHTML = this.generateFonteOptions(slotConfig, currentSource);
         }
 
         // Renderiza o corpo
@@ -690,8 +834,7 @@ export class PainelTransitoIntegrado {
         if (!bodyEl || !this.activeFullscreenSlot) return;
 
         const slotConfig = this.currentSlots[this.activeFullscreenSlot];
-        const regionalData = trafficCameraSources[slotConfig.regional];
-        const currentSource = regionalData?.sources?.find(s => s.id === slotConfig.sourceId);
+        const currentSource = this.resolveSourceObject(slotConfig);
 
         bodyEl.innerHTML = this.renderViewportContent(currentSource, `fs-${this.activeFullscreenSlot}`, true);
 
