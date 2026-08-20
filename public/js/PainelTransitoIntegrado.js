@@ -644,7 +644,6 @@ export class PainelTransitoIntegrado {
         const canEmbed = Boolean(source.embedUrl) && source.suportaIframe === true;
         if (canEmbed) {
             const cleanEmbedUrl = normalizeEmbedUrl(source.embedUrl);
-            const isCamerasRJ = source.requiresCodec === 'H265' || source.sourceProvider === 'CamerasRJ';
 
             return `
                 <div class="cim-iframe-container ${isFullscreen ? 'cim-iframe-fs' : ''}">
@@ -654,34 +653,12 @@ export class PainelTransitoIntegrado {
                             src="${cleanEmbedUrl}" 
                             width="100%" 
                             height="100%" 
-                            style="border:none;" 
+                            style="border:none; width:100%; height:100%; background:#000;" 
                             loading="lazy"
                             allow="autoplay; encrypted-media; fullscreen"
                             sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
                         ></iframe>
                     </div>
-                    ${isCamerasRJ ? `
-                        <div class="cim-hevc-notice-bar">
-                            <div class="cim-hevc-notice-text">
-                                <i class="fa-solid fa-circle-info"></i>
-                                <span>Esta câmera exige suporte a <strong>H.265/HEVC (WebRTC WHEP)</strong>. Em caso de erro "codecs not supported by client", abra o diagnóstico ou alterne para a fonte alternativa.</span>
-                            </div>
-                            <div class="cim-hevc-actions">
-                                <button class="btn-cim-action btn-cim-ghost btn-cim-retry-slot" data-slot="${slotKey}" title="Recarregar esta fonte">
-                                    <i class="fa-solid fa-rotate"></i> Tentar Novamente
-                                </button>
-                                <button class="btn-cim-action btn-cim-accent btn-cim-diag-trigger" data-slot="${slotKey}" title="Executar teste automático de compatibilidade no navegador">
-                                    <i class="fa-solid fa-stethoscope"></i> Diagnóstico Navegador
-                                </button>
-                                <button class="btn-cim-action btn-cim-primary btn-cim-switch-fallback" data-slot="${slotKey}" data-fallback="RJ_MAPA_RIO_01" title="Alternar para o Mapa Interativo do Rio">
-                                    <i class="fa-solid fa-map"></i> Alternativa RJ (Mapa)
-                                </button>
-                                <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-action btn-cim-ghost" title="Abrir portal em nova aba">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Fonte Original
-                                </a>
-                            </div>
-                        </div>
-                    ` : ''}
                 </div>
             `;
         }
