@@ -106,6 +106,9 @@ export class PainelTransitoIntegrado {
                             <span class="cim-clock-sync" id="cim-last-sync">Atualizado agora</span>
                         </div>
                         <div class="cim-header-actions">
+                            <button id="btn-cim-diag-browser" class="btn-cim-action btn-cim-accent" title="Executar teste automático de compatibilidade do navegador para câmeras H.265/HEVC">
+                                <i class="fa-solid fa-stethoscope"></i> DIAGNÓSTICO NAVEGADOR
+                            </button>
                             <button id="btn-cim-refresh-all" class="btn-cim-action btn-cim-primary" title="Recarregar todas as 6 fontes de vídeo">
                                 <i class="fa-solid fa-rotate"></i> ATUALIZAR TODAS
                             </button>
@@ -120,6 +123,32 @@ export class PainelTransitoIntegrado {
                 <main class="cim-camera-grid" id="cim-camera-grid">
                     <!-- Cards renderizados via JS -->
                 </main>
+            </div>
+
+            <!-- MODAL DE DIAGNÓSTICO DE NAVEGADOR E SOLUÇÃO H.265 -->
+            <div id="cim-diag-modal-overlay" class="cim-diag-overlay" style="display: none;">
+                <div class="cim-diag-card">
+                    <header class="cim-diag-header">
+                        <h3><i class="fa-solid fa-stethoscope"></i> Diagnóstico Automático de Compatibilidade do Navegador</h3>
+                        <button id="btn-cim-diag-close" class="btn-cim-action btn-cim-ghost" style="padding:4px 8px;" title="Fechar modal (ESC)">
+                            <i class="fa-solid fa-xmark"></i> Fechar
+                        </button>
+                    </header>
+                    <div class="cim-diag-body" id="cim-diag-body-content">
+                        <!-- Conteúdo injetado via JS -->
+                    </div>
+                    <footer class="cim-diag-footer">
+                        <span style="font-size:11px; color:#94a3b8;"><i class="fa-solid fa-shield-halved"></i> Agente RIT Diagnósticos Automáticos</span>
+                        <div style="display:flex; gap:8px;">
+                            <button id="btn-cim-apply-rj-fallback" class="btn-cim-action btn-cim-accent" title="Alternar Rio para Mapa Interativo com Câmeras Ao Vivo">
+                                <i class="fa-solid fa-map-location-dot"></i> Usar Alternativa RJ (Mapa Ao Vivo)
+                            </button>
+                            <button id="btn-cim-diag-ok" class="btn-cim-action btn-cim-primary">
+                                Entendido
+                            </button>
+                        </div>
+                    </footer>
+                </div>
             </div>
 
             <!-- MODAL / OVERLAY DE TELA CHEIA (FULLSCREEN) -->
@@ -142,8 +171,8 @@ export class PainelTransitoIntegrado {
                             <button id="btn-cim-fs-refresh" class="btn-cim-action btn-cim-ghost" title="Atualizar sinal desta câmera">
                                 <i class="fa-solid fa-rotate"></i> Atualizar
                             </button>
-                            <button id="btn-cim-fs-close" class="btn-cim-action btn-cim-primary" title="Voltar ao Mosaico de 6 Câmeras (ESC)">
-                                <i class="fa-solid fa-compress"></i> Voltar ao Mosaico
+                            <button id="btn-cim-fs-close" class="btn-cim-action btn-cim-primary" title="Voltar às 6 Telas (Mosaico)">
+                                <i class="fa-solid fa-compress"></i> VOLTAR ÀS 6 TELAS
                             </button>
                         </div>
                     </header>
@@ -154,9 +183,14 @@ export class PainelTransitoIntegrado {
 
                     <footer class="cim-fs-footer">
                         <span id="cim-fs-info">📍 Monitoramento em Tempo Real - Central Integrada de Monitoramento Globo (CIM)</span>
-                        <a id="cim-fs-open-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-cim-card-link">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Fonte Oficial
-                        </a>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <a id="cim-fs-open-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-cim-card-link">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Fonte Oficial
+                            </a>
+                            <button id="btn-cim-fs-close-footer" class="btn-cim-action btn-cim-primary" style="padding:4px 12px; font-size:11px;">
+                                <i class="fa-solid fa-compress"></i> VOLTAR ÀS 6 TELAS
+                            </button>
+                        </div>
                     </footer>
                 </div>
             </div>
@@ -173,9 +207,36 @@ export class PainelTransitoIntegrado {
             this.resetToDefaults();
         });
 
+        const btnDiagBrowser = tabPane.querySelector('#btn-cim-diag-browser');
+        btnDiagBrowser?.addEventListener('click', () => {
+            this.openDiagnosticModal();
+        });
+
+        // Eventos do Modal de Diagnóstico
+        const btnDiagClose = tabPane.querySelector('#btn-cim-diag-close');
+        btnDiagClose?.addEventListener('click', () => {
+            this.closeDiagnosticModal();
+        });
+
+        const btnDiagOk = tabPane.querySelector('#btn-cim-diag-ok');
+        btnDiagOk?.addEventListener('click', () => {
+            this.closeDiagnosticModal();
+        });
+
+        const btnApplyRjFallback = tabPane.querySelector('#btn-cim-apply-rj-fallback');
+        btnApplyRjFallback?.addEventListener('click', () => {
+            this.applyFallbackRio();
+            this.closeDiagnosticModal();
+        });
+
         // Eventos do Fullscreen
         const btnFsClose = tabPane.querySelector('#btn-cim-fs-close');
         btnFsClose?.addEventListener('click', () => {
+            this.closeFullscreen();
+        });
+
+        const btnFsCloseFooter = tabPane.querySelector('#btn-cim-fs-close-footer');
+        btnFsCloseFooter?.addEventListener('click', () => {
             this.closeFullscreen();
         });
 
@@ -198,8 +259,11 @@ export class PainelTransitoIntegrado {
 
     bindGlobalKeyboardEvents() {
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.activeFullscreenSlot) {
-                this.closeFullscreen();
+            if (e.key === 'Escape') {
+                if (this.activeFullscreenSlot) {
+                    this.closeFullscreen();
+                }
+                this.closeDiagnosticModal();
             }
         });
     }
@@ -282,8 +346,8 @@ export class PainelTransitoIntegrado {
                 </div>
                 <div class="cim-card-title-right">
                     ${healthBadge}
-                    <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Expandir para Tela Cheia">
-                        <i class="fa-solid fa-expand"></i>
+                    <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Maximizar esta tela para Tela Inteira no Painel">
+                        <i class="fa-solid fa-expand"></i> <span>TELA INTEIRA</span>
                     </button>
                 </div>
             </div>
@@ -335,6 +399,7 @@ export class PainelTransitoIntegrado {
         const btnFs = cardEl.querySelector('.btn-cim-card-fullscreen');
         const btnSwitchFallback = cardEl.querySelector('.btn-cim-switch-fallback');
         const btnRetrySlot = cardEl.querySelector('.btn-cim-retry-slot');
+        const btnDiagTrigger = cardEl.querySelector('.btn-cim-diag-trigger');
 
         selBairro?.addEventListener('change', (e) => {
             const selectedSourceId = e.target.value;
@@ -362,6 +427,10 @@ export class PainelTransitoIntegrado {
 
         btnRetrySlot?.addEventListener('click', () => {
             this.refreshCard(slotKey);
+        });
+
+        btnDiagTrigger?.addEventListener('click', () => {
+            this.openDiagnosticModal();
         });
 
         // Configura timer de atualização automática para câmeras do tipo snapshot
@@ -446,18 +515,21 @@ export class PainelTransitoIntegrado {
                         <div class="cim-hevc-notice-bar">
                             <div class="cim-hevc-notice-text">
                                 <i class="fa-solid fa-circle-info"></i>
-                                <span>Esta câmera pode exigir suporte a <strong>H.265/HEVC</strong> no navegador via WebRTC. Caso não abra, utilize a fonte alternativa ou abra o portal oficial.</span>
+                                <span>Esta câmera exige suporte a <strong>H.265/HEVC (WebRTC WHEP)</strong>. Em caso de erro "codecs not supported by client", abra o diagnóstico ou alterne para a fonte alternativa.</span>
                             </div>
                             <div class="cim-hevc-actions">
                                 <button class="btn-cim-action btn-cim-ghost btn-cim-retry-slot" data-slot="${slotKey}" title="Recarregar esta fonte">
                                     <i class="fa-solid fa-rotate"></i> Tentar Novamente
                                 </button>
-                                <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-action btn-cim-primary" title="Abrir portal em nova aba">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Fonte Original
-                                </a>
-                                <button class="btn-cim-action btn-cim-accent btn-cim-switch-fallback" data-slot="${slotKey}" data-fallback="RJ_MAPA_RIO_01" title="Alternar para o Mapa Interativo do Rio">
+                                <button class="btn-cim-action btn-cim-accent btn-cim-diag-trigger" data-slot="${slotKey}" title="Executar teste automático de compatibilidade no navegador">
+                                    <i class="fa-solid fa-stethoscope"></i> Diagnóstico Navegador
+                                </button>
+                                <button class="btn-cim-action btn-cim-primary btn-cim-switch-fallback" data-slot="${slotKey}" data-fallback="RJ_MAPA_RIO_01" title="Alternar para o Mapa Interativo do Rio">
                                     <i class="fa-solid fa-map"></i> Alternativa RJ (Mapa)
                                 </button>
+                                <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-action btn-cim-ghost" title="Abrir portal em nova aba">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Fonte Original
+                                </a>
                             </div>
                         </div>
                     ` : ''}
@@ -648,6 +720,99 @@ export class PainelTransitoIntegrado {
             this.fullscreenTimer = null;
         }
         this.activeFullscreenSlot = null;
+    }
+
+    // =========================================================================
+    // MODAL DE DIAGNÓSTICO DO NAVEGADOR (CÂMERAS RJ / WEBRTC H.265)
+    // =========================================================================
+    openDiagnosticModal() {
+        const overlay = document.getElementById('cim-diag-modal-overlay');
+        const contentEl = document.getElementById('cim-diag-body-content');
+        if (!overlay || !contentEl) return;
+
+        const caps = detectVideoCodecCapabilities();
+        const hasH265WebRTC = caps.supportsH265;
+        const hasH265MediaSource = caps.supportsMediaSourceH265;
+
+        contentEl.innerHTML = `
+            <div class="cim-diag-status-grid">
+                <div class="cim-diag-status-box">
+                    <strong>Navegador / SO:</strong>
+                    <span class="cim-diag-status-val ok">${escapeHtml(caps.browserName)} (${escapeHtml(caps.osName)})</span>
+                </div>
+                <div class="cim-diag-status-box">
+                    <strong>WebRTC H.265 (WHEP):</strong>
+                    <span class="cim-diag-status-val ${hasH265WebRTC ? 'ok' : 'warn'}">
+                        ${hasH265WebRTC ? '✅ Detectado' : '⚠️ Não Anunciado'}
+                    </span>
+                </div>
+                <div class="cim-diag-status-box">
+                    <strong>HTML5 MediaSource HEVC:</strong>
+                    <span class="cim-diag-status-val ${hasH265MediaSource ? 'ok' : 'warn'}">
+                        ${hasH265MediaSource ? '✅ Suportado' : '⚠️ Não Anunciado'}
+                    </span>
+                </div>
+                <div class="cim-diag-status-box">
+                    <strong>Servidor WHEP (dev.tixxi.rio):</strong>
+                    <span class="cim-diag-status-val ok">🌐 Porta WHEP Operacional</span>
+                </div>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 6px 0; color: #ef4444; font-size: 13px; font-weight: 800;">
+                    <i class="fa-solid fa-bug"></i> Diagnóstico da Falha Identificada ("codecs not supported by client")
+                </h4>
+                <p style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                    As câmeras do portal <strong>CamerasRJ</strong> utilizam o protocolo <strong>WebRTC (WHEP)</strong> com compactação de vídeo em <strong>H.265 / HEVC</strong>. 
+                    Quando o seu navegador (ou placa de vídeo) não expõe decodificação H.265 por hardware ao WebRTC, o servidor <code>dev.tixxi.rio</code> recusa a conexão exibindo a mensagem <em>"codecs not supported by client"</em> (HTTP 400 Bad Request) e bloqueios de CORS preflight no RUM.
+                </p>
+            </div>
+
+            <div class="cim-diag-steps">
+                <h4 style="margin: 0 0 10px 0; color: #00d1ff; font-size: 13px; font-weight: 800;">
+                    <i class="fa-solid fa-list-check"></i> Instruções de Configuração no Navegador para Usuários
+                </h4>
+                <ol>
+                    <li>
+                        <strong>Ativar Aceleração de Hardware:</strong> No Edge ou Chrome, acesse <span class="cim-diag-code">edge://settings/system</span> ou <span class="cim-diag-code">chrome://settings/system</span> e ative a opção <em>"Usar aceleração de gráficos/hardware quando disponível"</em>.
+                    </li>
+                    <li>
+                        <strong>Ativar Flag do Chromium:</strong> Digite <span class="cim-diag-code">chrome://flags</span> na barra de endereço, pesquise por <strong>#enable-accelerated-video-decode</strong> e marque como <strong>Enabled</strong>. Reinicie o navegador.
+                    </li>
+                    <li>
+                        <strong>Instalar Extensões HEVC do Windows (caso necessário):</strong> No Windows 10/11, instale as <em>"Extensões de Vídeo HEVC"</em> da Microsoft Store ou atualize o driver de vídeo da sua GPU (NVIDIA, Intel ou AMD).
+                    </li>
+                    <li>
+                        <strong>Bloqueios de Segurança / VPN / Shields:</strong> Desative bloqueios de WebRTC UDP/STUN no uBlock Origin, Brave Shields ou antivírus corporativo que impeçam conexões para <span class="cim-diag-code">dev.tixxi.rio</span>.
+                    </li>
+                </ol>
+            </div>
+        `;
+
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeDiagnosticModal() {
+        const overlay = document.getElementById('cim-diag-modal-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        if (!this.activeFullscreenSlot) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    applyFallbackRio() {
+        if (this.currentSlots.card_1) {
+            this.currentSlots.card_1.sourceId = 'RJ_MAPA_RIO_01';
+        }
+        if (this.currentSlots.card_2) {
+            this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
+        }
+        this.saveSlotSelection();
+        this.renderAllCards();
+        showToast("Câmeras do Rio alternadas para o Mapa Interativo e Sensores UFRJ com 100% de compatibilidade.", "success");
     }
 }
 

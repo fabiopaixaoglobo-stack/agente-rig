@@ -8,10 +8,33 @@
  * Função de detecção de suporte a codecs de vídeo WebRTC no navegador
  */
 export function detectVideoCodecCapabilities() {
+    const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+    const isEdge = /Edg\//i.test(ua);
+    const isChrome = /Chrome\//i.test(ua) && !isEdge;
+    const isFirefox = /Firefox\//i.test(ua);
+    const isSafari = /Safari\//i.test(ua) && !/Chrome/i.test(ua);
+
+    let browserName = 'Navegador Padrão';
+    if (isEdge) browserName = 'Microsoft Edge';
+    else if (isChrome) browserName = 'Google Chrome';
+    else if (isFirefox) browserName = 'Mozilla Firefox';
+    else if (isSafari) browserName = 'Apple Safari';
+
+    const isWindows = /Windows/i.test(ua);
+    const isMac = /Macintosh|Mac OS X/i.test(ua);
+
+    let osName = 'Sistema Operacional';
+    if (isWindows) osName = 'Windows';
+    else if (isMac) osName = 'macOS';
+
     const result = {
         hasRTCRtpReceiver: false,
         supportsH265: false,
-        codecs: []
+        supportsMediaSourceH265: false,
+        codecs: [],
+        browserName,
+        osName,
+        status: 'UNKNOWN'
     };
 
     try {
@@ -31,11 +54,32 @@ export function detectVideoCodecCapabilities() {
         console.warn('[CamerasRJ] Falha ao detectar codecs WebRTC:', error);
     }
 
+    try {
+        if (typeof window !== 'undefined' && window.MediaSource && typeof window.MediaSource.isTypeSupported === 'function') {
+            const testTypes = [
+                'video/mp4; codecs="hvc1.1.6.L93.B0"',
+                'video/mp4; codecs="hev1.1.6.L93.B0"',
+                'video/mp4; codecs="hevc"'
+            ];
+            result.supportsMediaSourceH265 = testTypes.some(type => window.MediaSource.isTypeSupported(type));
+        }
+    } catch (e) {
+        // Optional MediaSource check
+    }
+
+    if (result.supportsH265) {
+        result.status = 'FULL_SUPPORT';
+    } else if (result.supportsMediaSourceH265) {
+        result.status = 'MEDIA_SOURCE_ONLY';
+    } else {
+        result.status = 'NO_HEVC_WEBRTC';
+    }
+
     return result;
 }
 
 // Log inicial não invasivo no console
-console.info('[CamerasRJ] Codec detection:', detectVideoCodecCapabilities());
+console.info('[CamerasRJ] Extended Codec detection:', detectVideoCodecCapabilities());
 
 export const trafficCameraSources = {
     RJ: {

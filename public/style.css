@@ -1522,26 +1522,29 @@ body {
 }
 
 .btn-cim-card-fullscreen {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #cbd5e1;
-  width: 22px;
-  height: 22px;
+  background: rgba(0, 209, 255, 0.12);
+  border: 1px solid rgba(0, 209, 255, 0.4);
+  color: #00d1ff;
+  height: 24px;
+  padding: 0 8px;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 9.5px;
-  margin-left: 4px;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 6px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-cim-card-fullscreen:hover {
-  background: rgba(0, 209, 255, 0.25);
-  color: #00d1ff;
+  background: rgba(0, 209, 255, 0.3);
+  color: #ffffff;
   border-color: #00d1ff;
-  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0, 209, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================
@@ -1835,6 +1838,143 @@ body {
 .btn-cim-accent:hover {
   background: rgba(16, 185, 129, 0.35);
   color: #6ee7b7;
+}
+
+/* ==========================================================================
+   MODAL DE DIAGNÓSTICO DO NAVEGADOR (H.265 / WEBRTC)
+   ========================================================================== */
+.cim-diag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100000;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  animation: fadeInFs 0.25s ease-out;
+}
+
+.cim-diag-card {
+  background: #0b1329;
+  border: 1px solid rgba(0, 209, 255, 0.3);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 209, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.cim-diag-header {
+  padding: 16px 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(0, 209, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cim-diag-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #00d1ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+}
+
+.cim-diag-body {
+  padding: 20px;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.cim-diag-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cim-diag-status-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.cim-diag-status-box strong {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cim-diag-status-val {
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.cim-diag-status-val.ok {
+  color: #10b981;
+}
+
+.cim-diag-status-val.warn {
+  color: #f5a623;
+}
+
+.cim-diag-status-val.err {
+  color: #ef4444;
+}
+
+.cim-diag-steps {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(0, 209, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 15px;
+}
+
+.cim-diag-steps ol {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+}
+
+.cim-diag-steps li {
+  margin-bottom: 10px;
+}
+
+.cim-diag-code {
+  background: #020617;
+  color: #00d1ff;
+  font-family: monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid rgba(0, 209, 255, 0.3);
+}
+
+.cim-diag-footer {
+  padding: 14px 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 
