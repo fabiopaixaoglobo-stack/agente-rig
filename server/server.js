@@ -600,61 +600,180 @@ app.get('/api/cameras/rj/snapshot-poc/:id', (req, res) => {
     });
 });
 
-// ENDPOINT PARA INFORMES OTT RJ
+// HELPER: Obter data e limites do dia em America/Sao_Paulo (Horário Oficial de Brasília)
+function getHojeSaoPaulo() {
+    const formatter = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    const parts = formatter.formatToParts(new Date());
+    const day = parts.find(p => p.type === 'day').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const year = parts.find(p => p.type === 'year').value;
+    return {
+        day,
+        month,
+        year, // "2026"
+        yearShort: year.slice(-2), // "26"
+        dateFull: `${day}/${month}/${year}`, // "25/08/2026"
+        dateShort: `${day}/${month}/${year.slice(-2)}`, // "25/08/26"
+        inicioDia: '00:00:00',
+        fimDia: '23:59:59',
+        timezone: 'America/Sao_Paulo'
+    };
+}
+
+// HELPER: Parser robusto para datas retornadas pelo OTT
+function parseOttDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    const trimmed = dateStr.trim();
+    
+    // Match formato brasileiro: DD/MM/YY ou DD/MM/YYYY com ou sem HH:mm(:ss)
+    const brMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (brMatch) {
+        let [, d, m, y, h, min, s] = brMatch;
+        const day = d.padStart(2, '0');
+        const month = m.padStart(2, '0');
+        let year = y;
+        if (year.length === 2) {
+            year = '20' + year;
+        }
+        const hour = (h || '00').padStart(2, '0');
+        const minute = (min || '00').padStart(2, '0');
+        const second = (s || '00').padStart(2, '0');
+        
+        return {
+            day,
+            month,
+            year,
+            dateFormatted: `${day}/${month}/${year}`,
+            dateFormattedShort: `${day}/${month}/${year.slice(-2)}`,
+            horaFormatted: `${hour}:${minute}`,
+            horaFull: `${hour}:${minute}:${second}`
+        };
+    }
+
+    // Match formato ISO: YYYY-MM-DD
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+    if (isoMatch) {
+        let [, y, m, d, h, min, s] = isoMatch;
+        const day = d.padStart(2, '0');
+        const month = m.padStart(2, '0');
+        const year = y;
+        const hour = (h || '00').padStart(2, '0');
+        const minute = (min || '00').padStart(2, '0');
+        const second = (s || '00').padStart(2, '0');
+        return {
+            day,
+            month,
+            year,
+            dateFormatted: `${day}/${month}/${year}`,
+            dateFormattedShort: `${day}/${month}/${year.slice(-2)}`,
+            horaFormatted: `${hour}:${minute}`,
+            horaFull: `${hour}:${minute}:${second}`
+        };
+    }
+
+    return null;
+}
+
+// ENDPOINT PARA INFORMES OTT (FILTRO POR DATA ATUAL - AMERICA/SAO_PAULO)
 app.get('/api/ott', async (req, res) => {
-    const mockAlerts = [
-        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "15:05", bairro: "Caju", municipio: "Rio de Janeiro", lat: -22.8850, lon: -43.2183 },
-        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "14:12", bairro: "Bonsucesso", municipio: "Rio de Janeiro", lat: -22.8677, lon: -43.2541 },
-        { tipo: "Tiroteio", data: "24/06/26", hora: "12:29", bairro: "Gardênia Azul", municipio: "Rio de Janeiro", lat: -22.9644, lon: -43.3592 },
-        { tipo: "Tiroteio", data: "24/06/26", hora: "10:15", bairro: "Complexo da Maré", municipio: "Rio de Janeiro", lat: -22.8480, lon: -43.2420 },
-        { tipo: "Operação Policial", data: "24/06/26", hora: "08:30", bairro: "Jacarezinho", municipio: "Rio de Janeiro", lat: -22.8894, lon: -43.2561 },
-        { tipo: "Disparos ouvidos", data: "24/06/26", hora: "06:45", bairro: "Rocinha", municipio: "Rio de Janeiro", lat: -22.9882, lon: -43.2482 }
-    ];
+    const estadoAlvo = (req.query.state || req.query.uf || 'RJ').toUpperCase();
+    const hoje = getHojeSaoPaulo();
+    
+    console.log(`[OTT-REQUEST] Consultando API OTT | Estado: ${estadoAlvo} | Data Alvo: ${hoje.dateFull} (${hoje.inicioDia} às ${hoje.fimDia}) | Timezone: ${hoje.timezone}`);
 
     let data = null;
     try {
         const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
         const response = await fetch(ottUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://ondetemtiroteio.com/website/ott/index.html',
+                'Accept': 'application/json, text/plain, */*'
             }
         });
-        data = await response.json();
+
+        if (response.ok) {
+            data = await response.json();
+            const totalBr = Array.isArray(data.items) ? data.items.length : 0;
+            console.log(`[OTT-RESPONSE] Status HTTP: ${response.status} | Total recebido (Brasil 24h): ${totalBr}`);
+        } else {
+            console.warn(`[OTT-RESPONSE] Resposta HTTP inesperada da API OTT: ${response.status} ${response.statusText}`);
+        }
     } catch (fetchErr) {
-        console.warn('⚠️ Falha ao buscar dados do OTT real, usando mockAlerts:', fetchErr.message);
+        console.warn(`[OTT-RESPONSE] Falha na comunicação com a API OTT:`, fetchErr.message);
     }
 
     try {
         const parsedAlerts = [];
-        if (data && Array.isArray(data.items)) {
-            // Filtramos alertas do estado do RJ
-            const rjItems = data.items.filter(item => item.state === 'RJ');
-            for (const item of rjItems) {
-                let dataStr = "";
-                let horaStr = "";
-                if (item.date && item.date.includes(' ')) {
-                    const parts = item.date.split(' ');
-                    dataStr = parts[0];
-                    horaStr = parts[1];
-                } else {
-                    dataStr = item.date || "";
-                    horaStr = "";
-                }
+        let totalEstado24h = 0;
+        let descartadosOutrasDatas = 0;
 
-                parsedAlerts.push({
-                    tipo: item.type || "Ocorrência",
-                    data: dataStr,
-                    hora: horaStr,
-                    bairro: item.neighborhood || "Desconhecido",
-                    municipio: item.city || "Rio de Janeiro",
-                    lat: item.lat ? parseFloat(item.lat) : -22.9068,
-                    lon: item.lng ? parseFloat(item.lng) : -43.1729
-                });
+        if (data && Array.isArray(data.items)) {
+            // Filtramos alertas do estado desejado (padrão RJ)
+            const estadoItems = (estadoAlvo === 'TODOS' || estadoAlvo === 'ALL')
+                ? data.items
+                : data.items.filter(item => (item.state || '').toUpperCase() === estadoAlvo);
+
+            totalEstado24h = estadoItems.length;
+            console.log(`[OTT-PARSE] Total no estado ${estadoAlvo} (feed 24h): ${totalEstado24h}`);
+
+            for (const item of estadoItems) {
+                const parsedDate = parseOttDate(item.date);
+                
+                // Validação de Data Atual no Timezone America/Sao_Paulo (00:00:00 a 23:59:59)
+                const isHoje = parsedDate && 
+                               parsedDate.day === hoje.day && 
+                               parsedDate.month === hoje.month && 
+                               parsedDate.year === hoje.year;
+
+                if (isHoje) {
+                    parsedAlerts.push({
+                        tipo: item.type || "Ocorrência",
+                        data: parsedDate.dateFormattedShort, // "DD/MM/YY"
+                        dataFull: parsedDate.dateFormatted,   // "DD/MM/YYYY"
+                        hora: parsedDate.horaFormatted,       // "HH:mm"
+                        bairro: item.neighborhood || "Desconhecido",
+                        municipio: item.city || "Rio de Janeiro",
+                        estado: item.state || estadoAlvo,
+                        lat: item.lat ? parseFloat(item.lat) : -22.9068,
+                        lon: item.lng ? parseFloat(item.lng) : -43.1729,
+                        endereco: item.address || ""
+                    });
+                } else {
+                    descartadosOutrasDatas++;
+                }
             }
+
+            console.log(`[OTT-FILTRO-DATA] Alertas de HOJE (${hoje.dateFull}): ${parsedAlerts.length} | Descartados (outras datas): ${descartadosOutrasDatas}`);
+        } else {
+            console.warn(`[OTT-PARSE] Nenhum dado de items recebido da fonte OTT.`);
         }
 
-        const finalAlerts = parsedAlerts.length > 0 ? parsedAlerts : mockAlerts;
-        res.json({ ok: true, alerts: finalAlerts });
+        // Validação de completude e divergência
+        if (totalEstado24h !== (parsedAlerts.length + descartadosOutrasDatas)) {
+            const diferenca = totalEstado24h - (parsedAlerts.length + descartadosOutrasDatas);
+            console.warn(`[OTT-DIVERGENCIA] Divergência na contagem! OTT retornou: ${totalEstado24h} | Processados: ${parsedAlerts.length + descartadosOutrasDatas} | Diferença: ${diferenca}`);
+        }
+
+        res.json({
+            ok: true,
+            alerts: parsedAlerts,
+            stats: {
+                total_ott_br_24h: data?.items ? data.items.length : 0,
+                total_estado_24h: totalEstado24h,
+                total_filtrado_hoje: parsedAlerts.length,
+                descartados_outras_datas: descartadosOutrasDatas,
+                data_referencia: hoje.dateFull,
+                timezone: hoje.timezone,
+                inicio_dia: hoje.inicioDia,
+                fim_dia: hoje.fimDia
+            }
+        });
     } catch (err) {
         console.error('Erro ao processar informes OTT:', err);
         res.status(500).json({ error: 'Erro ao processar dados do OTT.' });

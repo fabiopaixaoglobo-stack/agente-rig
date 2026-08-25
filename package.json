@@ -5,6 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "serve": "node server/server.js",
     "build": "npm install",
     "docs:security:update": "node scripts/update-security-architecture.js",
     "docs:security:check": "node scripts/update-security-architecture.js --check",

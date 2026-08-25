@@ -2577,13 +2577,19 @@ export class UiController {
             let iconText = '🔫';
 
             if (reg === 'RJ') {
-                showToast("Carregando informes OTT das últimas 24h...", "info");
+                console.log("[OTT-REQUEST] Solicitando informes da data atual para RJ via /api/ott...");
+                showToast("Carregando informes OTT de hoje...", "info");
                 const res = await fetch('/api/ott');
                 const data = await res.json();
-                if (!data.ok || !data.alerts) {
-                    throw new Error("Erro na resposta da API.");
+                console.log("[OTT-RESPONSE] Resposta recebida de /api/ott:", data);
+                if (!data.ok || !Array.isArray(data.alerts)) {
+                    throw new Error("Erro na resposta da API OTT.");
                 }
                 alerts = data.alerts;
+                console.log(`[OTT-PARSE] Total de informes recebidos para hoje: ${alerts.length}`);
+                if (data.stats) {
+                    console.log(`[OTT-FILTRO-DATA] Estatísticas do dia ${data.stats.data_referencia} (${data.stats.timezone}): Hoje: ${data.stats.total_filtrado_hoje} | Descartados 24h: ${data.stats.descartados_outras_datas}`);
+                }
             } else {
                 showToast(`Simulando ocorrências de segurança para ${reg}...`, "info");
                 label = reg === 'SP' ? 'CGE/SP' : reg === 'BH' ? 'Defesa Civil' : reg === 'REC' ? 'APAC' : 'DETRAN';
@@ -2623,13 +2629,17 @@ export class UiController {
 
             if (listEl) {
                 if (alerts.length === 0) {
-                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência registrada nas últimas 24h.</div>';
-                    showToast("Nenhum informe encontrado.", "info");
+                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência registrada na data de hoje.</div>';
+                    console.log("[OTT-RENDER] Nenhum informe encontrado para renderizar no dia corrente.");
+                    showToast("Nenhum informe encontrado hoje.", "info");
                     return;
                 }
 
+                console.log(`[OTT-RENDER] Renderizando ${alerts.length} alertas no painel e plotando no mapa...`);
                 listEl.innerHTML = '';
+                let renderedCount = 0;
                 alerts.forEach(alert => {
+                    renderedCount++;
                     const item = document.createElement('div');
                     item.style.padding = '8px 0';
                     item.style.borderBottom = '1px solid #222';
@@ -2662,11 +2672,16 @@ export class UiController {
                     }
                 });
 
-                showToast(`Informes ${label} atualizados!`, "success");
+                if (renderedCount !== alerts.length) {
+                    console.warn(`[OTT-DIVERGENCIA] Divergência no render: recebidos=${alerts.length}, renderizados=${renderedCount}`);
+                }
+
+                showToast(`Informes ${label} atualizados (${alerts.length} hoje)!`, "success");
             }
         } catch (err) {
-            console.error(err);
+            console.error('[OTT-RESPONSE] Erro ao carregar informes OTT:', err);
             if (listEl) {
+                listEl.innerHTML = '<div style="color:#f43f5e; text-align:center; padding:10px 0;">Erro ao atualizar informes OTT.</div>';
             }
             showToast("Erro ao processar informes OTT.", "error");
         }
