@@ -109,9 +109,6 @@ export class CamerasRJ {
                         <h2 class="cam-rj-header-title">Câmeras Rio de Janeiro (Layout 2x2)</h2>
                     </div>
                     <div class="cam-rj-header-right">
-                        <button id="btn-cam-preset-tatico" class="btn-cim-action btn-cim-accent" title="Ativar Preset Tático CIM (Curicica, Barra, Centro, Copacabana)">
-                            <i class="fa-solid fa-crosshairs"></i> <span>PRESET TÁTICO</span>
-                        </button>
                         <button id="btn-cam-refresh-all" class="btn-cim-action btn-cim-primary" title="Recarregar todas as 4 câmeras">
                             <i class="fa-solid fa-arrows-rotate"></i> <span>RECARREGAR</span>
                         </button>
@@ -529,15 +526,8 @@ export class CamerasRJ {
         if (bodyEl) bodyEl.innerHTML = '';
     }
 
-    // 8. EVENTOS GLOBAIS E PRESETS
+    // 8. EVENTOS GLOBAIS
     bindGlobalEvents() {
-        document.getElementById('btn-cam-preset-tatico')?.addEventListener('click', () => {
-            this.currentSlots = JSON.parse(JSON.stringify(this.defaultSlots));
-            this.saveSlotSelection();
-            this.renderAllQuadrants();
-            showToast("Preset Tático CIM ativado: Curicica, Barra, Centro e Copacabana!", "success");
-        });
-
         document.getElementById('btn-cam-refresh-all')?.addEventListener('click', () => {
             this.renderAllQuadrants();
             showToast("Todas as 4 câmeras foram recarregadas.", "info");
