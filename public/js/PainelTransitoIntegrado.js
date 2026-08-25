@@ -17,7 +17,7 @@ export class PainelTransitoIntegrado {
             card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_ZET_UFRJ_01' },
             card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
             card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_ESPLANADA' },
-            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_MAPA_VERCEL_01' },
+            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_AEROPORTO_01' },
             card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
         };
 
@@ -45,10 +45,22 @@ export class PainelTransitoIntegrado {
     }
 
     async loadCamerasData() {
+        const now = Date.now();
         try {
+            const cachedData = sessionStorage.getItem('rit_cameras_rj_data_cache');
+            const cachedTime = parseInt(sessionStorage.getItem('rit_cameras_rj_data_time') || '0', 10);
+
+            if (cachedData && (now - cachedTime < 120000)) {
+                this.camerasData = JSON.parse(cachedData);
+                this.renderAllCards();
+                return;
+            }
+
             const response = await fetch('/data/cameras.json');
             if (response.ok) {
                 this.camerasData = await response.json();
+                sessionStorage.setItem('rit_cameras_rj_data_cache', JSON.stringify(this.camerasData));
+                sessionStorage.setItem('rit_cameras_rj_data_time', String(now));
                 this.renderAllCards();
             }
         } catch (e) {
@@ -70,7 +82,9 @@ export class PainelTransitoIntegrado {
                 if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId.includes('DER_DF') || this.currentSlots.card_4.sourceId.includes('DF_AGORA')) {
                     this.currentSlots.card_4.sourceId = 'BSB_ESPLANADA';
                 }
-                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01') this.currentSlots.card_5.sourceId = 'REC_MAPA_VERCEL_01';
+                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01' || this.currentSlots.card_5?.sourceId === 'REC_MAPA_VERCEL_01') {
+                    this.currentSlots.card_5.sourceId = 'REC_AEROPORTO_01';
+                }
                 if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
                 
                 return;

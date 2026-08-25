@@ -88,6 +88,26 @@ export const trafficCameraSources = {
         slots: 2,
         sources: [
             {
+                id: "RJ_CURICICA_BANDEIRANTES",
+                regional: "RJ",
+                cidade: "Rio de Janeiro",
+                bairro: "Curicica",
+                referencia: "Estr. dos Bandeirantes x Estr. da Curicica (Estúdios Globo)",
+                nome: "CamerasRJ - Curicica / Estúdios Globo",
+                tipoFonte: "stream",
+                url: "https://www.camerasrj.com.br/camera/1014/",
+                embedUrl: "https://www.camerasrj.com.br/camera/1014/",
+                suportaIframe: true,
+                sourceProvider: "CamerasRJ",
+                requiresCodec: "H265",
+                protocol: "WebRTC/WHEP",
+                fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01"],
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 1,
+                observacao: "Acesso aos Estúdios Globo e ligação Jacarepaguá / Vargens"
+            },
+            {
                 id: "RJ_MAPA_RIO_01",
                 regional: "RJ",
                 cidade: "Rio de Janeiro",
@@ -100,7 +120,7 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 1,
+                prioridade: 2,
                 observacao: "Painel georreferenciado com todas as câmeras públicas do Rio (Redundância principal)"
             },
             {
@@ -116,7 +136,7 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
+                prioridade: 3,
                 observacao: "Câmeras experimentais e sensores de fluxo viário UFRJ"
             },
             {
@@ -137,7 +157,7 @@ export const trafficCameraSources = {
                 fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 3,
+                prioridade: 4,
                 observacao: "Orla de Copacabana (Requer suporte a H.265/HEVC no browser)"
             },
             {
@@ -158,7 +178,7 @@ export const trafficCameraSources = {
                 fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 4,
+                prioridade: 5,
                 observacao: "Transmissão pública CamerasRJ (Requer suporte a H.265/HEVC no browser)"
             },
             {
@@ -179,7 +199,7 @@ export const trafficCameraSources = {
                 fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01", "RJ_CETRIO_01"],
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 5,
+                prioridade: 6,
                 observacao: "Corredor Transoeste / Barra da Tijuca (Requer suporte a H.265/HEVC no browser)"
             },
             {
@@ -195,7 +215,7 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 6,
+                prioridade: 7,
                 observacao: "Portal oficial de operações viárias e condições de trânsito"
             }
         ]
@@ -532,22 +552,6 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "REC_MAPA_VERCEL_01",
-                regional: "REC",
-                cidade: "Recife",
-                bairro: "Rede Integrada Recife",
-                referencia: "Mapa CTTU PE",
-                nome: "Mapa de Câmeras Recife (CTTU PE)",
-                tipoFonte: "mapa",
-                url: "https://cttupe-cameras.vercel.app/",
-                embedUrl: "https://cttupe-cameras.vercel.app/",
-                suportaIframe: true,
-                healthStatus: "online",
-                lastValidation: new Date().toISOString(),
-                prioridade: 1,
-                observacao: "Mapa visual integrado com posições de câmeras em Recife"
-            },
-            {
                 id: "REC_AEROPORTO_01",
                 regional: "REC",
                 cidade: "Recife",
@@ -560,7 +564,7 @@ export const trafficCameraSources = {
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
+                prioridade: 1,
                 observacao: "Transmissão ao vivo de Recife e acessos viários do Aeroporto"
             },
             {
@@ -576,8 +580,24 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 3,
+                prioridade: 2,
                 observacao: "Câmeras semafóricas e monitoramento viário Serttel"
+            },
+            {
+                id: "REC_MAPA_VERCEL_01",
+                regional: "REC",
+                cidade: "Recife",
+                bairro: "Rede Integrada Recife",
+                referencia: "Mapa CTTU PE",
+                nome: "Mapa de Câmeras Recife (CTTU PE)",
+                tipoFonte: "mapa",
+                url: "https://cttupe-cameras.vercel.app/",
+                embedUrl: "https://cttupe-cameras.vercel.app/",
+                suportaIframe: false,
+                healthStatus: "externo",
+                lastValidation: new Date().toISOString(),
+                prioridade: 3,
+                observacao: "Mapa visual de câmeras em Recife (Acesso via portal externo)"
             },
             {
                 id: "REC_CTTU_01",
