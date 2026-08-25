@@ -1307,20 +1307,204 @@ body {
   gap: 4px;
 }
 
-/* GRID 2X2 PARA PAINEL CÂMERAS RJ */
+/* PAINEL COMPACTO 100% FIT CÂMERAS RJ (ZERO SCROLL 2X2) */
+#tab-cameras.tabPane {
+  height: calc(100vh - 84px);
+  max-height: calc(100vh - 84px);
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  display: none;
+}
+
+#tab-cameras.tabPane.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.cam-rj-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%);
+  box-sizing: border-box;
+}
+
+/* HEADER ULTRA-COMPACTO */
+.cam-rj-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  padding: 0 12px;
+  background: rgba(10, 15, 30, 0.95);
+  border-bottom: 1px solid rgba(0, 209, 255, 0.2);
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+.cam-rj-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cam-rj-header-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cam-rj-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* GRID 2X2 QUE OCUPA 100% DA ALTURA DISPONÍVEL SEM SCROLL */
 .cam-rj-grid-2x2 {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  padding: 16px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
   box-sizing: border-box;
   flex: 1;
+  height: calc(100% - 38px);
+  max-height: calc(100% - 38px);
+  overflow: hidden;
 }
 
 @media (max-width: 900px) {
   .cam-rj-grid-2x2 {
     grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 280px);
+    overflow-y: auto;
   }
+  #tab-cameras.tabPane {
+    overflow-y: auto;
+  }
+}
+
+/* CARD DE CADA QUADRANTE */
+.cam-rj-card {
+  background: rgba(10, 16, 30, 0.95);
+  border: 1px solid rgba(30, 41, 59, 0.9);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.cam-rj-card:hover {
+  border-color: rgba(0, 209, 255, 0.5);
+}
+
+/* HEADER DO CARD */
+.cam-rj-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 25px;
+  min-height: 25px;
+  max-height: 25px;
+  padding: 0 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* BARRA DE SELETORES COMPACTA (INLINE EM 1 LINHA) */
+.cam-rj-selectors-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0 6px;
+  background: rgba(8, 12, 22, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.cam-rj-select-compact {
+  height: 20px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-size: 9.5px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.cam-rj-select-compact:focus {
+  border-color: #00d1ff;
+}
+
+/* VIEWPORT QUE PREENCHE 100% DO ESPAÇO DISPONÍVEL */
+.cam-rj-viewport {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cam-rj-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: #000;
+  transform: scale(1.18);
+  transform-origin: center 45%;
+}
+
+/* OVERLAY TRANSLÚCIDO NO RODAPÉ DO VÍDEO */
+.cam-rj-overlay-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.cam-rj-overlay-bar a,
+.cam-rj-overlay-bar button {
+  pointer-events: auto;
 }
 
 /* SELETORES INDEPENDENTES */

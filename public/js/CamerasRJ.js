@@ -90,43 +90,30 @@ export class CamerasRJ {
         }
     }
 
-    // 3. ESTRUTURA DO PAINEL COM CABEÇALHO, PRESETS E GRID 2X2
+    // 3. ESTRUTURA DO PAINEL COM CABEÇALHO COMPACTO E GRID 2X2
     renderStructure(tabPane) {
         tabPane.innerHTML = `
-            <div class="cim-panel-container">
-                <!-- CABEÇALHO OPERACIONAL CÂMERAS RJ -->
-                <header class="cim-panel-header">
-                    <div class="cim-header-left">
-                        <div class="cim-title-box">
-                            <span class="cim-live-pill"><i class="fa-solid fa-video"></i> 4 CÂMERAS AO VIVO</span>
-                            <h2 class="cim-title">Câmeras Rio de Janeiro - Painel Visual 2x2</h2>
-                        </div>
-                        <p class="cim-subtitle">Monitoramento simultâneo de 4 câmeras da cidade com detecção de timeout (8s), retry automático (5s) e contingência</p>
+            <div class="cam-rj-container">
+                <!-- CABEÇALHO COMPACTO (ZERO SCROLL) -->
+                <header class="cam-rj-header">
+                    <div class="cam-rj-header-left">
+                        <span class="cim-live-pill"><i class="fa-solid fa-video"></i> 4 CÂMERAS AO VIVO</span>
+                        <h2 class="cam-rj-header-title">Câmeras Rio de Janeiro (Layout 2x2)</h2>
                     </div>
-                    <div class="cim-header-right">
-                        <div class="cim-metric-item" title="4 posições de monitoramento simultâneas">
-                            <span class="cim-metric-val">4</span>
-                            <span class="cim-metric-lbl">TELA 2X2</span>
-                        </div>
-                        <div class="cim-metric-item" title="Mais de 1.500 câmeras catalogadas no Rio">
-                            <span class="cim-metric-val">1.500+</span>
-                            <span class="cim-metric-lbl">PONTOS RJ</span>
-                        </div>
-                        <div class="cim-header-actions">
-                            <button id="btn-cam-preset-tatico" class="btn-cim-action btn-cim-accent" title="Ativar Preset Tático CIM (Curicica, Barra, Centro, Copacabana)">
-                                <i class="fa-solid fa-crosshairs"></i> <span>PRESET TÁTICO</span>
-                            </button>
-                            <button id="btn-cam-refresh-all" class="btn-cim-action btn-cim-primary" title="Recarregar todas as 4 câmeras">
-                                <i class="fa-solid fa-arrows-rotate"></i> <span>RECARREGAR</span>
-                            </button>
-                            <button id="btn-cam-reset-default" class="btn-cim-action btn-cim-ghost" title="Restaurar padrão inicial">
-                                <i class="fa-solid fa-rotate-left"></i> <span>PADRÃO</span>
-                            </button>
-                        </div>
+                    <div class="cam-rj-header-right">
+                        <button id="btn-cam-preset-tatico" class="btn-cim-action btn-cim-accent" title="Ativar Preset Tático CIM (Curicica, Barra, Centro, Copacabana)">
+                            <i class="fa-solid fa-crosshairs"></i> <span>PRESET TÁTICO</span>
+                        </button>
+                        <button id="btn-cam-refresh-all" class="btn-cim-action btn-cim-primary" title="Recarregar todas as 4 câmeras">
+                            <i class="fa-solid fa-arrows-rotate"></i> <span>RECARREGAR</span>
+                        </button>
+                        <button id="btn-cam-reset-default" class="btn-cim-action btn-cim-ghost" title="Restaurar padrão inicial">
+                            <i class="fa-solid fa-rotate-left"></i> <span>PADRÃO</span>
+                        </button>
                     </div>
                 </header>
 
-                <!-- GRID 2X2 DE CÂMERAS -->
+                <!-- GRID 2X2 QUE PREENCHE 100% DA TELA PRINCIPAL -->
                 <main class="cam-rj-grid-2x2" id="cam-rj-grid">
                     <!-- Quadrantes inseridos dinamicamente -->
                 </main>
@@ -171,7 +158,7 @@ export class CamerasRJ {
 
         slotKeys.forEach(key => {
             const cardEl = document.createElement('div');
-            cardEl.className = 'cim-card';
+            cardEl.className = 'cam-rj-card';
             cardEl.id = `cam-card-${key}`;
             grid.appendChild(cardEl);
             this.renderSingleQuadrant(key, cardEl);
@@ -244,58 +231,47 @@ export class CamerasRJ {
         const slotLabel = `Posição ${slotConfig.slotNum}`;
 
         cardEl.innerHTML = `
-            <div class="cim-card-header">
-                <div class="cim-card-title-left">
+            <!-- HEADER COMPACTO DO QUADRANTE -->
+            <div class="cam-rj-card-header">
+                <div style="display:flex; align-items:center; gap:6px;">
                     <span class="cim-regiao-tag tag-rj">RJ</span>
-                    <strong class="cim-city-name">RIO DE JANEIRO</strong>
+                    <strong style="font-size:10.5px; color:#fff; text-transform:uppercase;">${escapeHtml(currentSource?.bairro || 'Rio de Janeiro')}</strong>
                     <span class="cim-slot-tag">${slotLabel}</span>
                 </div>
-                <div class="cim-card-title-right">
+                <div style="display:flex; align-items:center; gap:6px;">
                     <span id="badge-${slotKey}" class="cim-badge-loading">
                         <i class="fa-solid fa-spinner fa-spin"></i> CONECTANDO
                     </span>
-                    <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Expandir para Tela Inteira">
+                    <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Expandir para Tela Inteira" style="padding:2px 6px; font-size:9px;">
                         <i class="fa-solid fa-expand"></i> <span>TELA INTEIRA</span>
                     </button>
                 </div>
             </div>
 
-            <!-- SELETORES DE BAIRRO E CÂMERA -->
-            <div class="cim-card-selectors">
-                <div class="cim-selector-field">
-                    <label class="cim-sel-lbl">Bairro / Região:</label>
-                    <select class="cim-select select-bairro" data-slot="${slotKey}">
-                        ${this.generateBairroOptions(slotConfig, currentSource)}
-                    </select>
-                </div>
-                <div class="cim-selector-field">
-                    <label class="cim-sel-lbl">Câmera / Ponto de Monitoramento:</label>
-                    <select class="cim-select select-fonte" data-slot="${slotKey}">
-                        ${this.generateFonteOptions(slotConfig, currentSource)}
-                    </select>
-                </div>
+            <!-- BARRA DE SELETORES COMPACTA INLINE (1 LINHA) -->
+            <div class="cam-rj-selectors-bar">
+                <select class="cam-rj-select-compact select-bairro" data-slot="${slotKey}" style="flex:1;" title="Selecione o Bairro">
+                    ${this.generateBairroOptions(slotConfig, currentSource)}
+                </select>
+                <select class="cam-rj-select-compact select-fonte" data-slot="${slotKey}" style="flex:1.4;" title="Selecione o Ponto de Câmera">
+                    ${this.generateFonteOptions(slotConfig, currentSource)}
+                </select>
             </div>
 
-            <!-- ÁREA DO VÍDEO COM MONITORAMENTO DE TIMEOUT -->
-            <div class="cim-viewport-container" id="viewport-${slotKey}">
+            <!-- VIEWPORT DE VÍDEO (100% PREENCHIDO) -->
+            <div class="cam-rj-viewport" id="viewport-${slotKey}">
                 ${this.renderViewportHtml(slotKey, currentSource)}
-            </div>
-
-            <!-- RODAPÉ DO CARD -->
-            <div class="cim-card-footer">
-                <div class="cim-footer-info">
-                    <span class="cim-info-bairro"><strong>Bairro:</strong> ${escapeHtml(currentSource?.bairro || 'Rio de Janeiro')}</span>
-                    <span class="cim-info-ref"><strong>Ponto:</strong> ${escapeHtml(currentSource?.referencia || currentSource?.nome || 'Ao Vivo')}</span>
-                </div>
-                <div class="cim-footer-actions">
+                
+                <!-- OVERLAY TRANSLÚCIDO NO RODAPÉ -->
+                <div class="cam-rj-overlay-bar">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">
+                        📍 ${escapeHtml(currentSource?.referencia || currentSource?.nome || '')}
+                    </span>
                     ${currentSource?.url ? `
-                        <a href="${currentSource.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-ext" title="Abrir portal de origem em nova aba">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>ABRIR FONTE</span>
+                        <a href="${currentSource.url}" target="_blank" rel="noopener noreferrer" style="color:#00d1ff; text-decoration:none; font-weight:700;">
+                            FONTE ↗
                         </a>
                     ` : ''}
-                    <button class="btn-cim-refresh-slot" data-slot="${slotKey}" title="Recarregar esta câmera">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                    </button>
                 </div>
             </div>
         `;
@@ -305,7 +281,7 @@ export class CamerasRJ {
     }
 
     generateBairroOptions(slotConfig, currentSource) {
-        let html = '<option value="">Selecione o Bairro...</option>';
+        let html = '<option value="">Bairro...</option>';
 
         // 1. Destaques e Portais
         html += '<optgroup label="⭐ DESTAQUES & PORTAIS OFICIAIS">';
@@ -364,9 +340,8 @@ export class CamerasRJ {
         if (currentSource.tipoFonte === 'snapshot') {
             const imgUrl = currentSource.proxyUrl || currentSource.directImageUrl;
             return `
-                <div class="cim-snapshot-wrapper">
-                    <img id="img-cam-${slotKey}" src="${imgUrl}?t=${Date.now()}" alt="${escapeHtml(currentSource.nome)}" class="cim-snapshot-img" />
-                    <div class="cim-snapshot-watermark">AO VIVO</div>
+                <div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#000;">
+                    <img id="img-cam-${slotKey}" src="${imgUrl}?t=${Date.now()}" alt="${escapeHtml(currentSource.nome)}" style="width:100%; height:100%; object-fit:cover;" />
                 </div>
             `;
         }
@@ -377,7 +352,7 @@ export class CamerasRJ {
                 <iframe 
                     id="iframe-cam-${slotKey}"
                     src="${cleanEmbedUrl}" 
-                    class="cim-viewport-iframe"
+                    class="cam-rj-iframe"
                     allowfullscreen 
                     allow="autoplay; encrypted-media">
                 </iframe>
