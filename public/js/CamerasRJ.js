@@ -15,12 +15,12 @@ export class CamerasRJ {
         this.camerasData = {};
         this.isTabActive = false;
 
-        // 4 Quadrantes Padrão (Preset Tático CIM / Operacional)
+        // 4 Quadrantes Padrão (Preset Tático CIM / Operacional com Fontes Validadas)
         this.defaultSlots = {
             quad_1: { slotNum: 1, bairro: 'Curicica', sourceId: 'RJ_CURICICA_BANDEIRANTES', label: 'Curicica / Estúdios Globo' },
-            quad_2: { slotNum: 2, bairro: 'Barra da Tijuca', sourceId: 'RJ_CAMERASRJ_BARRA', label: 'Barra da Tijuca / Alvorada' },
-            quad_3: { slotNum: 3, bairro: 'Centro', sourceId: 'RJ_CAMERASRJ_CENTRO', label: 'Centro / Presidente Vargas' },
-            quad_4: { slotNum: 4, bairro: 'Copacabana', sourceId: 'RJ_CAMERASRJ_COPACABANA', label: 'Copacabana / Orla' }
+            quad_2: { slotNum: 2, bairro: 'Barra da Tijuca', sourceId: 'RJ_CAMERASRJ_BARRA', label: 'Barra da Tijuca / Transoeste' },
+            quad_3: { slotNum: 3, bairro: 'Centro', sourceId: 'RJ_ZET_UFRJ_03', label: 'Centro & Corredores Viários' },
+            quad_4: { slotNum: 4, bairro: 'Ponte Rio-Niterói', sourceId: 'RJ_ZET_UFRJ_02', label: 'Ponte Rio-Niterói / Baía' }
         };
 
         this.currentSlots = {};
@@ -74,6 +74,14 @@ export class CamerasRJ {
             const saved = localStorage.getItem(this.storageKey);
             if (saved) {
                 this.currentSlots = { ...this.defaultSlots, ...JSON.parse(saved) };
+                
+                // Migração de slots antigos bloqueados ou instáveis
+                if (this.currentSlots.quad_3?.sourceId === 'RJ_CAMERASRJ_CENTRO' || !this.currentSlots.quad_3?.sourceId) {
+                    this.currentSlots.quad_3 = { slotNum: 3, bairro: 'Centro', sourceId: 'RJ_ZET_UFRJ_03', label: 'Centro & Corredores Viários' };
+                }
+                if (this.currentSlots.quad_4?.sourceId === 'RJ_CAMERASRJ_COPACABANA' || !this.currentSlots.quad_4?.sourceId) {
+                    this.currentSlots.quad_4 = { slotNum: 4, bairro: 'Ponte Rio-Niterói', sourceId: 'RJ_ZET_UFRJ_02', label: 'Ponte Rio-Niterói / Baía' };
+                }
                 return;
             }
         } catch (e) {
@@ -195,9 +203,8 @@ export class CamerasRJ {
         const cleanCamId = sourceId.replace('CAM_', '');
         if (cleanCamId && (sourceId.startsWith('CAM_') || !isNaN(cleanCamId))) {
             const camInfo = this.findCameraInfo(cleanCamId);
-            const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
-            const bairroName = slotConfig.bairro || camInfo?.bairro || 'Rio de Janeiro';
             const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
+            const embedUrl = `https://player.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
 
             return {
                 id: `CAM_${cleanCamId}`,
@@ -208,12 +215,12 @@ export class CamerasRJ {
                 nome: caption,
                 tipoFonte: 'stream',
                 url: url,
-                embedUrl: url,
+                embedUrl: embedUrl,
                 suportaIframe: true,
                 sourceProvider: 'CamerasRJ',
                 requiresCodec: 'H265',
                 protocol: 'WebRTC/WHEP',
-                fallbackSources: ["RJ_MAPA_RIO_01", "RJ_ZET_UFRJ_01"],
+                fallbackSources: ["RJ_ZET_UFRJ_03", "RJ_ZET_UFRJ_02", "RJ_ZET_UFRJ_01", "RJ_MAPA_RIO_01"],
                 healthStatus: 'online',
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,

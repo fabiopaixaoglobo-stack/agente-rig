@@ -1309,28 +1309,29 @@ body {
 
 /* PAINEL COMPACTO 100% FIT CÂMERAS RJ (ZERO SCROLL 2X2) */
 #tab-cameras.tabPane {
-  height: calc(100vh - 84px);
-  max-height: calc(100vh - 84px);
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
+  height: calc(100vh - 84px) !important;
+  max-height: calc(100vh - 84px) !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
   display: none;
+  box-sizing: border-box !important;
 }
 
 #tab-cameras.tabPane.active {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .cam-rj-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%);
-  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%) !important;
+  box-sizing: border-box !important;
 }
 
 /* HEADER ULTRA-COMPACTO */
