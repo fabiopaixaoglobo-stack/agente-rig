@@ -1481,8 +1481,7 @@ body {
   border: none;
   display: block;
   background: #000;
-  transform: scale(1.18);
-  transform-origin: center 45%;
+  transform: none !important;
 }
 
 /* OVERLAY TRANSLÚCIDO NO RODAPÉ DO VÍDEO */

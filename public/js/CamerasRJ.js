@@ -249,6 +249,11 @@ export class CamerasRJ {
                     <span id="badge-${slotKey}" class="cim-badge-loading">
                         <i class="fa-solid fa-spinner fa-spin"></i> CONECTANDO
                     </span>
+                    ${currentSource?.url ? `
+                        <a href="${currentSource.url}" target="_blank" rel="noopener noreferrer" class="btn-cim-card-fullscreen" style="padding:2px 6px; font-size:9px; text-decoration:none; color:#00d1ff; border:1px solid rgba(0,209,255,0.3);" title="Abrir portal de origem">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>FONTE</span>
+                        </a>
+                    ` : ''}
                     <button class="btn-cim-card-fullscreen" data-slot="${slotKey}" title="Expandir para Tela Inteira" style="padding:2px 6px; font-size:9px;">
                         <i class="fa-solid fa-expand"></i> <span>TELA INTEIRA</span>
                     </button>
@@ -265,21 +270,9 @@ export class CamerasRJ {
                 </select>
             </div>
 
-            <!-- VIEWPORT DE VÍDEO (100% PREENCHIDO) -->
+            <!-- VIEWPORT DE VÍDEO (QUADRO TOTALMENTE ABERTO E LIMPO) -->
             <div class="cam-rj-viewport" id="viewport-${slotKey}">
                 ${this.renderViewportHtml(slotKey, currentSource)}
-                
-                <!-- OVERLAY TRANSLÚCIDO NO RODAPÉ -->
-                <div class="cam-rj-overlay-bar">
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">
-                        📍 ${escapeHtml(currentSource?.referencia || currentSource?.nome || '')}
-                    </span>
-                    ${currentSource?.url ? `
-                        <a href="${currentSource.url}" target="_blank" rel="noopener noreferrer" style="color:#00d1ff; text-decoration:none; font-weight:700;">
-                            FONTE ↗
-                        </a>
-                    ` : ''}
-                </div>
             </div>
         `;
 
