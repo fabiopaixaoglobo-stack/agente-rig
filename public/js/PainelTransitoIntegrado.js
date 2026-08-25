@@ -13,12 +13,12 @@ export class PainelTransitoIntegrado {
         
         // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (snapshots, streams e mapas)
         this.defaultSlots = {
-            card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_MAPA_RIO_01' },
-            card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_ZET_UFRJ_01' },
+            card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_CURICICA_BANDEIRANTES' },
+            card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_CAMERASRJ_BARRA' },
             card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
-            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_ESPLANADA' },
-            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_AEROPORTO_01' },
-            card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_01' }
+            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_DER_DF_01' },
+            card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_ZET_PE_01' },
+            card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_BARREIRO' }
         };
 
         this.currentSlots = {};
@@ -76,16 +76,24 @@ export class PainelTransitoIntegrado {
                 this.currentSlots = { ...this.defaultSlots, ...parsed };
 
                 // Migração de segurança: se tiver os IDs legados antigos de portais ou bloqueados, migra para os visuais
+                if (!this.currentSlots.card_1?.sourceId || this.currentSlots.card_1.sourceId === 'RJ_MAPA_RIO_01') {
+                    this.currentSlots.card_1.sourceId = 'RJ_CURICICA_BANDEIRANTES';
+                }
+                if (!this.currentSlots.card_2?.sourceId || this.currentSlots.card_2.sourceId === 'RJ_ZET_UFRJ_01') {
+                    this.currentSlots.card_2.sourceId = 'RJ_CAMERASRJ_BARRA';
+                }
                 if (!this.currentSlots.card_3?.sourceId || this.currentSlots.card_3.sourceId.includes('OFICIAL') || this.currentSlots.card_3.sourceId.includes('PAINEL_DIRETO')) {
                     this.currentSlots.card_3.sourceId = 'SP_CET_23';
                 }
-                if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId.includes('DER_DF') || this.currentSlots.card_4.sourceId.includes('DF_AGORA')) {
-                    this.currentSlots.card_4.sourceId = 'BSB_ESPLANADA';
+                if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId === 'BSB_ESPLANADA') {
+                    this.currentSlots.card_4.sourceId = 'BSB_DER_DF_01';
                 }
-                if (this.currentSlots.card_5?.sourceId === 'REC_CTTU_01' || this.currentSlots.card_5?.sourceId === 'REC_SERTTEL_01' || this.currentSlots.card_5?.sourceId === 'REC_MAPA_VERCEL_01') {
-                    this.currentSlots.card_5.sourceId = 'REC_AEROPORTO_01';
+                if (!this.currentSlots.card_5?.sourceId || this.currentSlots.card_5.sourceId === 'REC_AEROPORTO_01' || this.currentSlots.card_5.sourceId === 'REC_MAPA_VERCEL_01') {
+                    this.currentSlots.card_5.sourceId = 'REC_ZET_PE_01';
                 }
-                if (this.currentSlots.card_6?.sourceId === 'BH_MINEIRINHO_01' || this.currentSlots.card_6?.sourceId === 'BH_PORTAL_JM_01') this.currentSlots.card_6.sourceId = 'BH_REALDATA_01';
+                if (!this.currentSlots.card_6?.sourceId || this.currentSlots.card_6.sourceId === 'BH_REALDATA_01' || this.currentSlots.card_6.sourceId === 'BH_MINEIRINHO_01') {
+                    this.currentSlots.card_6.sourceId = 'BH_REALDATA_BARREIRO';
+                }
                 
                 return;
             }
@@ -370,6 +378,7 @@ export class PainelTransitoIntegrado {
             const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
             const bairroName = slotConfig.selectedBairro || camInfo?.bairro || 'Rio de Janeiro';
             const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
+            const embedUrl = `https://player.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
 
             return {
                 id: `CAM_${cleanCamId}`,
@@ -380,7 +389,7 @@ export class PainelTransitoIntegrado {
                 nome: caption,
                 tipoFonte: 'stream',
                 url: url,
-                embedUrl: url,
+                embedUrl: embedUrl,
                 suportaIframe: true,
                 sourceProvider: 'CamerasRJ',
                 requiresCodec: 'H265',
@@ -556,7 +565,7 @@ export class PainelTransitoIntegrado {
             sourcesList.forEach(src => {
                 const val = `SRC_${src.id}`;
                 const isSelected = (slotConfig.selectedBairro === val || (currentSource && currentSource.id === src.id && (!slotConfig.selectedBairro || slotConfig.selectedBairro.startsWith('SRC_')))) ? 'selected' : '';
-                html += `<option value="${val}" ${isSelected}>[PORTAL] ${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia)}</option>`;
+                html += `<option value="${val}" ${isSelected}>[PORTAL] ${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia || src.nome)}</option>`;
             });
             html += '</optgroup>';
 
@@ -576,8 +585,8 @@ export class PainelTransitoIntegrado {
             // Regionais: SP, BH, BSB, REC
             return sourcesList.map(src => {
                 const val = `SRC_${src.id}`;
-                const isSelected = (currentSource && currentSource.id === src.id) ? 'selected' : '';
-                return `<option value="${val}" ${isSelected}>${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia)}</option>`;
+                const isSelected = (slotConfig.sourceId === src.id || currentSource?.id === src.id) ? 'selected' : '';
+                return `<option value="${val}" ${isSelected}>${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia || src.nome)}</option>`;
             }).join('');
         }
     }
@@ -586,9 +595,21 @@ export class PainelTransitoIntegrado {
         const regional = slotConfig.regional;
         const regionalData = trafficCameraSources[regional];
         const sourcesList = regionalData?.sources || [];
+
+        // Para Regionais SP, BH, BSB, REC (fontes estruturadas diretas)
+        if (regional !== 'RJ') {
+            return sourcesList.map(src => {
+                const val = `SRC_${src.id}`;
+                const isSelected = (slotConfig.sourceId === src.id || currentSource?.id === src.id) ? 'selected' : '';
+                const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Ao Vivo' : (src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal'));
+                return `<option value="${val}" ${isSelected}>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
+            }).join('');
+        }
+
+        // Para RJ:
         const selectedBairro = slotConfig.selectedBairro || (currentSource ? (currentSource.id?.startsWith('SRC_') ? `SRC_${currentSource.id}` : (currentSource.bairro && currentSource.bairro !== 'Rio de Janeiro' ? currentSource.bairro : `SRC_${currentSource.id}`)) : `SRC_${sourcesList[0]?.id}`);
 
-        // Se for um item de catálogo (SRC_...)
+        // Se for um item de catálogo do RJ (SRC_...)
         if (!selectedBairro || selectedBairro.startsWith('SRC_')) {
             const srcId = selectedBairro ? selectedBairro.replace('SRC_', '') : sourcesList[0]?.id;
             const src = sourcesList.find(s => s.id === srcId) || currentSource || sourcesList[0];
@@ -710,13 +731,14 @@ export class PainelTransitoIntegrado {
         }
 
         if (source && source.tipoFonte === 'snapshot' && source.ativa !== false) {
-            const intervalMs = source.refreshInterval || (source.regional === 'BSB' ? 30000 : 3000);
+            const intervalMs = source.refreshInterval || 3000;
             const imgUrl = source.proxyUrl || source.directImageUrl;
 
             this.snapshotTimers[slotKey] = setInterval(() => {
                 const snapImg = document.getElementById(`snap-img-${slotKey}`);
                 if (snapImg) {
-                    snapImg.src = `${imgUrl}?t=${Date.now()}`;
+                    const sep = imgUrl.includes('?') ? '&' : '?';
+                    snapImg.src = `${imgUrl}${sep}t=${Date.now()}`;
                 }
             }, intervalMs);
         }

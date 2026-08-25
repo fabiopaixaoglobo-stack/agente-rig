@@ -561,20 +561,20 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "REC_AEROPORTO_01",
+                id: "REC_ZET_PE_01",
                 regional: "REC",
                 cidade: "Recife",
-                bairro: "Imbiribeira / Aeroporto",
-                referencia: "Aeroporto Internacional Gilberto Freyre",
-                nome: "Recife ao Vivo - Câmeras do Mundo",
+                bairro: "Agamenon Magalhães / Derby / Boa Viagem",
+                referencia: "UFRJ ZET Pernambuco - Recife",
+                nome: "Recife - Corredores Viários Ao Vivo (ZET PE)",
                 tipoFonte: "stream",
-                url: "https://camerasdomundo.com/brasil/recife/aeroporto-internacional-do-recife/",
-                embedUrl: "https://camerasdomundo.com/brasil/recife/aeroporto-internacional-do-recife/",
+                url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_04.html",
+                embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_04.html",
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
-                observacao: "Transmissão ao vivo de Recife e acessos viários do Aeroporto"
+                observacao: "Transmissão pública integrada de Pernambuco e Recife"
             },
             {
                 id: "REC_SERTTEL_01",
@@ -593,22 +593,6 @@ export const trafficCameraSources = {
                 observacao: "Câmeras semafóricas e monitoramento viário Serttel"
             },
             {
-                id: "REC_MAPA_VERCEL_01",
-                regional: "REC",
-                cidade: "Recife",
-                bairro: "Rede Integrada Recife",
-                referencia: "Mapa CTTU PE",
-                nome: "Mapa de Câmeras Recife (CTTU PE)",
-                tipoFonte: "mapa",
-                url: "https://cttupe-cameras.vercel.app/",
-                embedUrl: "https://cttupe-cameras.vercel.app/",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
-                prioridade: 3,
-                observacao: "Mapa visual de câmeras em Recife (Acesso via portal externo)"
-            },
-            {
                 id: "REC_CTTU_01",
                 regional: "REC",
                 cidade: "Recife",
@@ -621,7 +605,7 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 4,
+                prioridade: 3,
                 observacao: "Autarquia de Trânsito e Transporte Urbano do Recife"
             }
         ]
@@ -632,20 +616,52 @@ export const trafficCameraSources = {
         slots: 1,
         sources: [
             {
-                id: "BH_REALDATA_01",
+                id: "BH_REALDATA_BARREIRO",
                 regional: "BH",
                 cidade: "Belo Horizonte",
-                bairro: "Barreiro / Floresta / Contagem",
-                referencia: "RealData Telecom",
-                nome: "RealData Telecom - Câmeras ao Vivo",
+                bairro: "Barreiro / Praça do Cristo",
+                referencia: "RealData Telecom - Barreiro",
+                nome: "Belo Horizonte - Barreiro Ao Vivo",
                 tipoFonte: "stream",
-                url: "https://realdata.com.br/cameras-ao-vivo/",
-                embedUrl: "https://realdata.com.br/cameras-ao-vivo/",
+                url: "https://monitore.realdata.com.br/#/cembed/5d326b838ea84f3fc93511410e413d252819164665e34d751733ba0c5240baa1a7fd96d5c4cae01d172ed56045ec",
+                embedUrl: "https://monitore.realdata.com.br/#/cembed/5d326b838ea84f3fc93511410e413d252819164665e34d751733ba0c5240baa1a7fd96d5c4cae01d172ed56045ec",
                 suportaIframe: true,
                 healthStatus: "online",
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
-                observacao: "Fonte visual prioritária com câmeras online em BH e região"
+                observacao: "Câmera ao vivo direta em Belo Horizonte (Barreiro)"
+            },
+            {
+                id: "BH_REALDATA_FLORESTA",
+                regional: "BH",
+                cidade: "Belo Horizonte",
+                bairro: "Floresta / Av. Assis Chateaubriand",
+                referencia: "RealData Telecom - Floresta",
+                nome: "Belo Horizonte - Floresta Ao Vivo",
+                tipoFonte: "stream",
+                url: "https://monitore.realdata.com.br/#/cembed/51bc7e1b8d896e44d85891765a2360bda5837e46bfe0abdff3b2baddf1dbf6cb622b66e1a9108c2430a363b3c72b",
+                embedUrl: "https://monitore.realdata.com.br/#/cembed/51bc7e1b8d896e44d85891765a2360bda5837e46bfe0abdff3b2baddf1dbf6cb622b66e1a9108c2430a363b3c72b",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 2,
+                observacao: "Câmera ao vivo direta em Belo Horizonte (Floresta)"
+            },
+            {
+                id: "BH_REALDATA_CONTAGEM",
+                regional: "BH",
+                cidade: "Belo Horizonte",
+                bairro: "Contagem / Eldorado / RMBH",
+                referencia: "RealData Telecom - Contagem",
+                nome: "Contagem / RMBH - Eldorado Ao Vivo",
+                tipoFonte: "stream",
+                url: "https://monitore.realdata.com.br/#/cembed/7b1678311bca1da1a60848849d740e16c1e6413ad356985e8b6598b166cfee2ff9add6d51a5ae2bb1c8c7f4e02f4",
+                embedUrl: "https://monitore.realdata.com.br/#/cembed/7b1678311bca1da1a60848849d740e16c1e6413ad356985e8b6598b166cfee2ff9add6d51a5ae2bb1c8c7f4e02f4",
+                suportaIframe: true,
+                healthStatus: "online",
+                lastValidation: new Date().toISOString(),
+                prioridade: 3,
+                observacao: "Câmera ao vivo direta em Contagem e Grande BH"
             },
             {
                 id: "BH_MINEIRINHO_01",
@@ -660,24 +676,8 @@ export const trafficCameraSources = {
                 suportaIframe: false,
                 healthStatus: "externo",
                 lastValidation: new Date().toISOString(),
-                prioridade: 2,
+                prioridade: 4,
                 observacao: "Câmeras ao vivo de trânsito em Belo Horizonte e RMBH"
-            },
-            {
-                id: "BH_PORTAL_JM_01",
-                regional: "BH",
-                cidade: "Belo Horizonte",
-                bairro: "Cristiano Machado / Linha Verde / MG-010",
-                referencia: "Portal JM Belo Horizonte",
-                nome: "Portal JM - Trânsito ao Vivo BH",
-                tipoFonte: "portal",
-                url: "https://portaljm.wixsite.com/jornal-mineirinho/transito-ao-vivo-belo-horizonte-jm",
-                embedUrl: "https://portaljm.wixsite.com/jornal-mineirinho/transito-ao-vivo-belo-horizonte-jm",
-                suportaIframe: false,
-                healthStatus: "externo",
-                lastValidation: new Date().toISOString(),
-                prioridade: 3,
-                observacao: "Monitoramento de avenidas e acessos da Grande BH"
             }
         ]
     }
