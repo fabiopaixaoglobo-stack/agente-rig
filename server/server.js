@@ -12,6 +12,8 @@ const { router: geocodeRouter } = require('./geocode');
 const { setupAuthRoutes, verifyToken } = require('./auth');
 const { pool, initDB } = require('./database');
 const { getRobotStatus, triggerDiagnostics } = require('./robot');
+const { getFogoCruzadoOccurrences, getFogoCruzadoToken, categorizarOcorrenciaFogo } = require('./fogocruzado');
+const { analisarRiscoRota, haversineDistanceMeters } = require('./risk-engine');
 
 function generateOpaqueToken() {
     return crypto.randomBytes(32).toString('hex');
@@ -777,6 +779,226 @@ app.get('/api/ott', async (req, res) => {
     } catch (err) {
         console.error('Erro ao processar informes OTT:', err);
         res.status(500).json({ error: 'Erro ao processar dados do OTT.' });
+    }
+});
+
+// ENDPOINT PARA OCORRÊNCIAS FOGO CRUZADO V2
+app.get('/api/fogocruzado/occurrences', async (req, res) => {
+    try {
+        const estado = (req.query.state || req.query.uf || 'RJ').toUpperCase();
+        const hoje = getHojeSaoPaulo();
+        const result = await getFogoCruzadoOccurrences({ estado, hoje });
+        res.json({
+            ok: true,
+            occurrences: result.occurrences,
+            source: result.source,
+            stats: {
+                total_fogo_hoje: result.occurrences.length,
+                estado: estado,
+                data_referencia: hoje.dateFull,
+                timezone: hoje.timezone
+            }
+        });
+    } catch (err) {
+        console.error('Erro ao consultar Fogo Cruzado:', err);
+        res.status(500).json({ error: 'Erro ao consultar ocorrências Fogo Cruzado.' });
+    }
+});
+
+// ENDPOINT UNIFICADO DE SEGURANÇA PÚBLICA (OTT + FOGO CRUZADO)
+app.get('/api/seguranca/ocorrencias', async (req, res) => {
+    try {
+        const estado = (req.query.state || req.query.uf || 'RJ').toUpperCase();
+        const source = (req.query.source || 'all').toLowerCase(); // 'all', 'ott', 'fogo'
+        const hoje = getHojeSaoPaulo();
+
+        let ottAlerts = [];
+        let fogoOccurrences = [];
+
+        // 1. Coleta OTT (se solicitado ou all)
+        if (source === 'all' || source === 'ott') {
+            try {
+                const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
+                const response = await fetch(ottUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Referer': 'https://ondetemtiroteio.com/website/ott/index.html',
+                        'Accept': 'application/json, text/plain, */*'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && Array.isArray(data.items)) {
+                        const items = (estado === 'TODOS' || estado === 'ALL')
+                            ? data.items
+                            : data.items.filter(item => (item.state || '').toUpperCase() === estado);
+
+                        for (const item of items) {
+                            const parsedDate = parseOttDate(item.date);
+                            const isHoje = parsedDate &&
+                                           parsedDate.day === hoje.day &&
+                                           parsedDate.month === hoje.month &&
+                                           parsedDate.year === hoje.year;
+
+                            if (isHoje) {
+                                ottAlerts.push({
+                                    id: `ott-${Math.random().toString(36).substring(2, 9)}`,
+                                    tipo: item.type || "Ocorrência OTT",
+                                    subtipo: item.type || "Informe",
+                                    categoria: (item.type || '').toLowerCase().includes('tiroteio') ? 'tiroteio' : 'disparo_ouvido',
+                                    descricao: item.address ? `Informe OTT: ${item.address}` : `${item.type} em ${item.neighborhood || 'via pública'}`,
+                                    data: parsedDate.dateFormattedShort,
+                                    dataFull: parsedDate.dateFormatted,
+                                    hora: parsedDate.horaFormatted,
+                                    bairro: item.neighborhood || "Desconhecido",
+                                    municipio: item.city || "Rio de Janeiro",
+                                    estado: item.state || estado,
+                                    lat: item.lat ? parseFloat(item.lat) : -22.9068,
+                                    lon: item.lng ? parseFloat(item.lng) : -43.1729,
+                                    endereco: item.address || "",
+                                    fonte: "OTT",
+                                    icone: "🔫",
+                                    updatedAt: `${hoje.dateFull} ${parsedDate.horaFormatted}`
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[OTT-RESPONSE] Falha ao coletar OTT para unificação:', e.message);
+            }
+        }
+
+        // 2. Coleta Fogo Cruzado (se solicitado ou all)
+        if (source === 'all' || source === 'fogo') {
+            try {
+                const fogoRes = await getFogoCruzadoOccurrences({ estado, hoje });
+                fogoOccurrences = fogoRes.occurrences || [];
+            } catch (e) {
+                console.warn('[FOGO-RESPONSE] Falha ao coletar Fogo Cruzado para unificação:', e.message);
+            }
+        }
+
+        // 3. Combinação e métricas cruzadas
+        const todas = [...ottAlerts, ...fogoOccurrences];
+
+        // Estatísticas por tipo
+        const porTipo = {};
+        todas.forEach(o => {
+            porTipo[o.tipo] = (porTipo[o.tipo] || 0) + 1;
+        });
+
+        // Estatísticas por cidade
+        const porCidade = {};
+        todas.forEach(o => {
+            porCidade[o.municipio] = (porCidade[o.municipio] || 0) + 1;
+        });
+
+        console.log(`[FOGO-LAYER] Ocorrências unificadas | Total: ${todas.length} (OTT: ${ottAlerts.length}, Fogo Cruzado: ${fogoOccurrences.length})`);
+
+        res.json({
+            ok: true,
+            data: {
+                ott: ottAlerts,
+                fogoCruzado: fogoOccurrences,
+                todas: todas
+            },
+            stats: {
+                total_geral_hoje: todas.length,
+                total_ott_hoje: ottAlerts.length,
+                total_fogo_hoje: fogoOccurrences.length,
+                data_referencia: hoje.dateFull,
+                timezone: hoje.timezone,
+                porTipo,
+                porCidade
+            }
+        });
+    } catch (err) {
+        console.error('Erro no endpoint unificado de segurança:', err);
+        res.status(500).json({ error: 'Erro ao consolidar ocorrências de segurança.' });
+    }
+});
+
+// ENDPOINT DE ANÁLISE GEOESPACIAL DE RISCO DA ROTA
+app.post('/api/seguranca/analisar-rota', async (req, res) => {
+    try {
+        const { routeCoords, bufferMetros = 1000, state = 'RJ', source = 'all' } = req.body;
+
+        if (!Array.isArray(routeCoords) || routeCoords.length < 2) {
+            return res.status(400).json({ error: 'Coordenadas da rota (routeCoords) inválidas ou insuficientes.' });
+        }
+
+        const estado = (state || 'RJ').toUpperCase();
+        const hoje = getHojeSaoPaulo();
+
+        // 1. Coleta ocorrências ativas de segurança pública
+        let occurrences = [];
+
+        // OTT
+        try {
+            const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
+            const ottRes = await fetch(ottUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': 'https://ondetemtiroteio.com/website/ott/index.html',
+                    'Accept': 'application/json, text/plain, */*'
+                }
+            });
+            if (ottRes.ok) {
+                const data = await ottRes.json();
+                if (data && Array.isArray(data.items)) {
+                    const rjItems = (estado === 'TODOS' || estado === 'ALL')
+                        ? data.items
+                        : data.items.filter(item => (item.state || '').toUpperCase() === estado);
+
+                    for (const item of rjItems) {
+                        const parsedDate = parseOttDate(item.date);
+                        if (parsedDate && parsedDate.day === hoje.day && parsedDate.month === hoje.month && parsedDate.year === hoje.year) {
+                            occurrences.push({
+                                id: `ott-${Math.random()}`,
+                                tipo: item.type || "Ocorrência OTT",
+                                bairro: item.neighborhood || "Desconhecido",
+                                municipio: item.city || "Rio de Janeiro",
+                                lat: item.lat ? parseFloat(item.lat) : -22.9068,
+                                lon: item.lng ? parseFloat(item.lng) : -43.1729,
+                                data: parsedDate.dateFormattedShort,
+                                hora: parsedDate.horaFormatted,
+                                fonte: "OTT",
+                                icone: "🔫"
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[ROTA-CHECK] Aviso ao coletar OTT para análise:', e.message);
+        }
+
+        // Fogo Cruzado
+        try {
+            const fogoRes = await getFogoCruzadoOccurrences({ estado, hoje });
+            if (fogoRes && Array.isArray(fogoRes.occurrences)) {
+                occurrences.push(...fogoRes.occurrences);
+            }
+        } catch (e) {
+            console.warn('[ROTA-CHECK] Aviso ao coletar Fogo Cruzado para análise:', e.message);
+        }
+
+        // 2. Executa o motor geoespacial de cálculo de risco
+        console.log(`[FOGO-RISK] Executando cruzamento de rota (${routeCoords.length} pontos) contra ${occurrences.length} ocorrências...`);
+        const resultadoRisco = analisarRiscoRota(routeCoords, occurrences, bufferMetros);
+
+        res.json({
+            ok: true,
+            analise: resultadoRisco,
+            totalOcorrenciasVerificadas: occurrences.length,
+            data_referencia: hoje.dateFull,
+            timezone: hoje.timezone
+        });
+    } catch (err) {
+        console.error('Erro ao analisar rota:', err);
+        res.status(500).json({ error: 'Erro ao processar análise geoespacial de risco.' });
     }
 });
 

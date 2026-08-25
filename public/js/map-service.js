@@ -40,6 +40,14 @@ export class MapService {
 
             // Adiciona a camada padrão (Mapa)
             this.tileLayers.mapa.addTo(this.map);
+
+            // Grupos de Camadas Independentes para Inteligência de Segurança
+            this.layerGroups = {
+                ott: L.layerGroup().addTo(this.map),
+                fogo: L.layerGroup().addTo(this.map),
+                route: L.layerGroup().addTo(this.map),
+                corridor: L.layerGroup().addTo(this.map)
+            };
         } catch (err) {
             console.error(`[MapService] Erro ao inicializar Leaflet no elemento #${elementId}:`, err);
             this.map = null;
@@ -216,6 +224,107 @@ export class MapService {
         // Adiciona a selecionada
         if (this.tileLayers[type]) {
             this.tileLayers[type].addTo(this.map);
+        }
+    }
+
+    setLayerVisibility(name, isVisible) {
+        if (!this.map || !this.layerGroups || !this.layerGroups[name]) return;
+        if (isVisible) {
+            if (!this.map.hasLayer(this.layerGroups[name])) {
+                this.map.addLayer(this.layerGroups[name]);
+            }
+        } else {
+            if (this.map.hasLayer(this.layerGroups[name])) {
+                this.map.removeLayer(this.layerGroups[name]);
+            }
+        }
+    }
+
+    clearLayerGroup(name) {
+        if (this.layerGroups && this.layerGroups[name]) {
+            this.layerGroups[name].clearLayers();
+        }
+    }
+
+    addMarkerToLayer(layerName, lat, lng, popupContent, iconOptions = null) {
+        if (!this.map || !lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+            return null;
+        }
+
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
+
+        let iconObj = null;
+        if (iconOptions) {
+            if (iconOptions.html) {
+                iconObj = L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: iconOptions.html,
+                    iconSize: iconOptions.iconSize || [32, 32],
+                    iconAnchor: iconOptions.iconAnchor || [16, 16]
+                });
+            } else {
+                const color = iconOptions.fillColor || '#EF4444';
+                const size = (iconOptions.scale || 7) * 2;
+                iconObj = L.divIcon({
+                    className: 'leaflet-custom-marker',
+                    html: `<div style="background-color:${color}; width:${size}px; height:${size}px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2]
+                });
+            }
+        }
+
+        const markerOptions = iconObj ? { icon: iconObj } : {};
+        const marker = L.marker([parsedLat, parsedLng], markerOptions);
+
+        if (popupContent) {
+            marker.bindPopup(popupContent, {
+                maxWidth: 320,
+                autoClose: true,
+                closeOnClick: false
+            });
+        }
+
+        const targetGroup = (this.layerGroups && this.layerGroups[layerName]) ? this.layerGroups[layerName] : this.map;
+        marker.addTo(targetGroup);
+        return marker;
+    }
+
+    renderRouteWithRisk(coordsArray, color = '#10b981', weight = 6) {
+        this.clearRouteOverlay();
+        if (!this.map || !coordsArray || coordsArray.length === 0) return;
+
+        const polyline = L.polyline(coordsArray, {
+            color: color,
+            weight: weight,
+            opacity: 0.9,
+            lineJoin: 'round'
+        });
+
+        if (this.layerGroups && this.layerGroups.route) {
+            polyline.addTo(this.layerGroups.route);
+        } else {
+            polyline.addTo(this.map);
+        }
+        this.routeOverlays.push(polyline);
+    }
+
+    renderCorridorBuffer(coordsArray, bufferMetros = 1000, color = '#f97316') {
+        if (!this.map || !coordsArray || coordsArray.length === 0) return;
+        this.clearLayerGroup('corridor');
+
+        // Renderiza corredor translúcido ao redor dos pontos da rota
+        const bufferPoly = L.polyline(coordsArray, {
+            color: color,
+            weight: Math.min(30, Math.max(12, Math.round(bufferMetros / 80))),
+            opacity: 0.18,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+
+        if (this.layerGroups && this.layerGroups.corridor) {
+            bufferPoly.addTo(this.layerGroups.corridor);
         }
     }
 }

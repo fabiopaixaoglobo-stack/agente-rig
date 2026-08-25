@@ -2074,6 +2074,20 @@ export class UiController {
         document.getElementById('btn-mapa-live')?.addEventListener('click', () => this.atualizarMapaLive());
         document.getElementById('btn-abrir-rota-waze')?.addEventListener('click', () => this.abrirRotaExterna());
         document.getElementById('btn-atualizar-ott')?.addEventListener('click', () => this.atualizarInformesOTT());
+
+        document.getElementById('layer-toggle-ott')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('ott', e.target.checked);
+        });
+
+        document.getElementById('layer-toggle-fogo')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('fogo', e.target.checked);
+        });
+
+        document.getElementById('seletor-buffer-risco')?.addEventListener('change', () => {
+            if (this.lastCalculatedRouteCoords) {
+                this.recalcularRiscoRota();
+            }
+        });
     }
 
     limparEndereco(endereco) {
@@ -2470,27 +2484,28 @@ export class UiController {
         const destino = document.getElementById('waze-destino')?.value?.trim() || '';
         const riskPanel = document.getElementById('risk-analysis-panel');
         const riskContent = document.getElementById('risk-content');
+        const bufferMetros = parseInt(document.getElementById('seletor-buffer-risco')?.value || '1000', 10);
 
         if (!origem || !destino) {
             showToast("Informe origem e destino para a análise de risco.", "error");
             return;
         }
 
-        showToast("Calculando rota e coletando dados de risco...", "info");
+        showToast("Calculando rota e avaliando corredor de risco...", "info");
         if (riskPanel) riskPanel.style.display = 'block';
-        if (riskContent) riskContent.innerHTML = 'Analisando ocorrências (Segurança Pública, OTT, Clima)...';
+        if (riskContent) riskContent.innerHTML = '<div style="text-align:center; padding:15px; color:#00d1ff;"><i class="fa-solid fa-spinner fa-spin"></i> Traçando rota OSRM e cruzando inteligência de segurança...</div>';
 
         try {
             const headers = { Accept: 'application/json' };
             const qOrig = `${origem}, Rio de Janeiro, Brasil`;
             const resO = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qOrig)}&limit=1`, { headers });
             const dataOrig = await resO.json();
-            if (!dataOrig.length) throw new Error('Origem não encontrada.');
+            if (!dataOrig.length) throw new Error('Origem não localizada pelo geocodificador.');
 
             const qDest = `${destino}, Rio de Janeiro, Brasil`;
             const resD = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qDest)}&limit=1`, { headers });
             const dataDest = await resD.json();
-            if (!dataDest.length) throw new Error('Destino não encontrado.');
+            if (!dataDest.length) throw new Error('Destino não localizado pelo geocodificador.');
 
             const lat1 = parseFloat(dataOrig[0].lat);
             const lon1 = parseFloat(dataOrig[0].lon);
@@ -2500,59 +2515,130 @@ export class UiController {
             const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
             const resR = await fetch(osrmUrl);
             const routeData = await resR.json();
-            if (!routeData.routes?.length) throw new Error('Rota indisponível.');
+            if (!routeData.routes?.length) throw new Error('Serviço de rotas indisponível.');
 
             const coords = routeData.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
             const distanciaKm = (routeData.routes[0].distance / 1000).toFixed(1);
             const duracaoMin = Math.round(routeData.routes[0].duration / 60);
             const custo = (parseFloat(distanciaKm) * 1.5 + 5).toFixed(2);
 
-            this.transitoMap.clearRouteOverlay();
-            this.transitoMap.addMarker(lat1, lon1, `Origem: ${escapeHtml(origem)}`);
-            this.transitoMap.addMarker(lat2, lon2, `Destino: ${escapeHtml(destino)}`, {
-                html: '<div style="font-size:26px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">⚠️</div>'
+            this.lastCalculatedRouteCoords = coords;
+            this.lastCalculatedRouteInfo = { distanciaKm, duracaoMin, custo, origem, destino, lat1, lon1, lat2, lon2 };
+
+            // 1. Enviar para a inteligência de risco geoespacial
+            console.log(`[ROTA-CHECK] Consultando /api/seguranca/analisar-rota para rota de ${coords.length} pontos | Buffer: ${bufferMetros}m`);
+            const analiseRes = await fetch('/api/seguranca/analisar-rota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    routeCoords: coords,
+                    bufferMetros: bufferMetros,
+                    state: 'RJ'
+                })
             });
 
-            this.transitoMap.addPolyline(coords, '#f43f5e', 6);
-            this.transitoMap.fitBounds([
-                [Math.min(lat1, lat2), Math.min(lon1, lon2)],
-                [Math.max(lat1, lat2), Math.max(lon1, lon2)]
-            ]);
+            const analiseData = await analiseRes.json();
+            const analise = analiseData.analise || {};
 
-            // Simulate risk occurrences along the route
-            const midLat = (lat1 + lat2) / 2;
-            const midLon = (lon1 + lon2) / 2;
-            this.transitoMap.addMarker(midLat + 0.01, midLon + 0.01, 'Alerta OTT: Operação Policial', {
-                html: '<div style="font-size:20px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">🔫</div>'
-            });
-            this.transitoMap.addMarker(midLat - 0.01, midLon - 0.01, 'Defesa Civil: Alagamento', {
-                html: '<div style="font-size:20px; line-height:1; text-align:center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));">⛈️</div>'
-            });
+            console.log(`[RISCO-CALCULADO] Resultado da análise:`, analise);
 
+            // 2. Renderizar no mapa Leaflet
+            if (this.transitoMap) {
+                this.transitoMap.clearRouteOverlay();
+                this.transitoMap.clearLayerGroup('route');
+                this.transitoMap.clearLayerGroup('corridor');
+
+                // Marcador Origem
+                this.transitoMap.addMarkerToLayer('route', lat1, lon1, `<b>📍 Origem:</b> ${escapeHtml(origem)}`, {
+                    html: '<div style="background:#10b981; color:#fff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.5);">A</div>'
+                });
+
+                // Marcador Destino
+                this.transitoMap.addMarkerToLayer('route', lat2, lon2, `<b>🏁 Destino:</b> ${escapeHtml(destino)}`, {
+                    html: '<div style="background:#f43f5e; color:#fff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.5);">B</div>'
+                });
+
+                // Rota colorida por risco
+                this.transitoMap.renderRouteWithRisk(coords, analise.corRisco || '#10b981', 6);
+
+                // Corredor de buffer visual
+                this.transitoMap.renderCorridorBuffer(coords, bufferMetros, analise.corRisco || '#10b981');
+
+                this.transitoMap.fitBounds([
+                    [Math.min(lat1, lat2), Math.min(lon1, lon2)],
+                    [Math.max(lat1, lat2), Math.max(lon1, lon2)]
+                ]);
+            }
+
+            // 3. Renderizar card de inteligência operacional
             if (riskContent) {
+                const badgeColor = analise.corRisco || '#10b981';
+                const iconeRisco = analise.iconeRisco || '🟢';
+                const nivel = analise.nivelRisco || 'BAIXO';
+                const totalNoCorredor = analise.totalNoCorredor || 0;
+                const menorDistancia = analise.menorDistanciaMetros !== undefined ? `${analise.menorDistanciaMetros}m` : 'N/D';
+
+                let ocorrenciasHtml = '';
+                if (analise.ocorrenciasNoCorredor && analise.ocorrenciasNoCorredor.length > 0) {
+                    ocorrenciasHtml = `
+                        <div style="margin-top:8px; border-top:1px solid #333; padding-top:8px;">
+                            <div style="font-size:10px; font-weight:700; color:#00d1ff; text-transform:uppercase; margin-bottom:4px;">
+                                Eventos Críticos no Corredor (${bufferMetros}m):
+                            </div>
+                            <div style="max-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+                                ${analise.ocorrenciasNoCorredor.map(o => `
+                                    <div style="background:rgba(255,255,255,0.03); padding:4px 6px; border-radius:4px; border-left:3px solid ${o.categoria === 'tiroteio' ? '#ef4444' : '#f59e0b'}; font-size:10px;">
+                                        <div style="display:flex; justify-content:space-between;">
+                                            <strong>${escapeHtml(o.icone || '⚠️')} ${escapeHtml(o.tipo)}</strong>
+                                            <span style="color:#00d1ff; font-weight:700;">${o.distanciaMetros}m da rota</span>
+                                        </div>
+                                        <div style="color:#aaa; font-size:9px;">${escapeHtml(o.bairro)} (${escapeHtml(o.municipio)}) • ${escapeHtml(o.hora)} [${escapeHtml(o.fonte)}]</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
                 riskContent.innerHTML = `
-                    <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line);">
-                        <b>Distância:</b> ${escapeHtml(distanciaKm)} km<br>
-                        <b>Tempo estimado:</b> ${duracaoMin} min<br>
-                        <b>Custo médio estimado:</b> R$ ${escapeHtml(custo)}
-                    </div>
-                    <div style="color: var(--accent); margin-bottom: 5px;">🔴 1 Alerta de Segurança (OTT) na rota</div>
-                    <div style="color: var(--bad); margin-bottom: 5px;">⛈️ 1 Alerta de Alagamento via Defesa Civil</div>
-                    <div style="margin-top: 10px;">
-                        Status: <b>ROTA DE ALTO RISCO</b><br>
-                        <span style="font-size:9px; color:var(--muted)">Recomendamos alterar o trajeto ou aguardar normalização.</span>
+                    <div style="background: rgba(10,15,28,0.8); border: 1px solid ${badgeColor}; border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; font-weight:700; color:#fff;">Classificação de Risco:</span>
+                            <span style="background:${badgeColor}; color:#fff; font-weight:900; font-size:11px; padding:2px 8px; border-radius:4px; letter-spacing:0.5px;">
+                                ${iconeRisco} RISCO ${escapeHtml(nivel)}
+                            </span>
+                        </div>
+                        <div style="font-size:11px; line-height:1.4; color:#e2e8f0; margin-bottom:6px;">
+                            ${escapeHtml(analise.recomendacao || '')}
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:10px; background:rgba(0,0,0,0.3); padding:6px; border-radius:4px;">
+                            <div><b>Distância Total:</b> ${escapeHtml(distanciaKm)} km</div>
+                            <div><b>Tempo Estimado:</b> ${duracaoMin} min</div>
+                            <div><b>Eventos no Corredor:</b> <span style="color:${totalNoCorredor > 0 ? '#ef4444' : '#10b981'}; font-weight:700;">${totalNoCorredor}</span></div>
+                            <div><b>Distância Mínima:</b> <span style="color:#00d1ff; font-weight:700;">${menorDistancia}</span></div>
+                        </div>
+                        ${ocorrenciasHtml}
                     </div>
                 `;
             }
+
+            showToast(`Análise de risco concluída: ${analise.nivelRisco || 'OK'}`, "success");
         } catch (err) {
+            console.error('[FOGO-RISK] Erro ao processar rota/risco:', err);
             if (riskContent) riskContent.innerHTML = `<span style="color: var(--bad);">Erro ao processar risco: ${escapeHtml(err.message)}</span>`;
             showToast('Erro ao calcular rota/risco.', 'error');
         }
     }
 
+    async recalcularRiscoRota() {
+        if (this.lastCalculatedRouteCoords) {
+            this.atualizarMapaLive();
+        }
+    }
+
     abrirRotaExterna() {
-        const o = document.getElementById('waze-origem').value;
-        const d = document.getElementById('waze-destino').value;
+        const o = document.getElementById('waze-origem')?.value;
+        const d = document.getElementById('waze-destino')?.value;
         if (o && d) {
             abrirCanalExterno(`https://www.waze.com/ul?q=${encodeURIComponent(d)}&from=${encodeURIComponent(o)}&navigate=yes`);
         } else {
@@ -2560,130 +2646,168 @@ export class UiController {
         }
     }
 
-
-
     async atualizarInformesOTT() {
         const listEl = document.getElementById('ott-reports-list');
+        const statsEl = document.getElementById('ott-reports-stats');
         if (listEl) {
-            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;">Buscando informes do local...</div>';
+            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando fontes de segurança pública...</div>';
         }
 
         const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
+        const showOtt = document.getElementById('layer-toggle-ott')?.checked !== false;
+        const showFogo = document.getElementById('layer-toggle-fogo')?.checked !== false;
 
         try {
-            let alerts = [];
-            let center = [-22.908, -43.200];
-            let label = 'OTT';
-            let iconText = '🔫';
+            let sourceParam = 'all';
+            if (showOtt && !showFogo) sourceParam = 'ott';
+            if (!showOtt && showFogo) sourceParam = 'fogo';
 
-            if (reg === 'RJ') {
-                console.log("[OTT-REQUEST] Solicitando informes da data atual para RJ via /api/ott...");
-                showToast("Carregando informes OTT de hoje...", "info");
-                const res = await fetch('/api/ott');
-                const data = await res.json();
-                console.log("[OTT-RESPONSE] Resposta recebida de /api/ott:", data);
-                if (!data.ok || !Array.isArray(data.alerts)) {
-                    throw new Error("Erro na resposta da API OTT.");
-                }
-                alerts = data.alerts;
-                console.log(`[OTT-PARSE] Total de informes recebidos para hoje: ${alerts.length}`);
-                if (data.stats) {
-                    console.log(`[OTT-FILTRO-DATA] Estatísticas do dia ${data.stats.data_referencia} (${data.stats.timezone}): Hoje: ${data.stats.total_filtrado_hoje} | Descartados 24h: ${data.stats.descartados_outras_datas}`);
-                }
-            } else {
-                showToast(`Simulando ocorrências de segurança para ${reg}...`, "info");
-                label = reg === 'SP' ? 'CGE/SP' : reg === 'BH' ? 'Defesa Civil' : reg === 'REC' ? 'APAC' : 'DETRAN';
-                iconText = reg === 'SP' ? '⛈️' : reg === 'BH' ? '⚠️' : reg === 'REC' ? '🌧️' : '🚨';
-                
-                if (reg === 'SP') {
-                    center = [-23.5505, -46.6333];
-                    alerts = [
-                        { tipo: 'Manifestação na Av. Paulista', data: 'Hoje', hora: '14:00', bairro: 'Bela Vista', municipio: 'São Paulo', lat: -23.5615, lon: -46.6560 },
-                        { tipo: 'Alagamento Marginal Tietê', data: 'Hoje', hora: '15:30', bairro: 'Barra Funda', municipio: 'São Paulo', lat: -23.5180, lon: -46.6250 }
-                    ];
-                } else if (reg === 'BH') {
-                    center = [-19.9191, -43.9378];
-                    alerts = [
-                        { tipo: 'Acidente na Av. Amazonas', data: 'Hoje', hora: '12:15', bairro: 'Prado', municipio: 'Belo Horizonte', lat: -19.9245, lon: -43.9550 },
-                        { tipo: 'Interdição na Av. Afonso Pena', data: 'Hoje', hora: '16:00', bairro: 'Centro', municipio: 'Belo Horizonte', lat: -19.9230, lon: -43.9350 }
-                    ];
-                } else if (reg === 'BSB') {
-                    center = [-15.7942, -47.8822];
-                    alerts = [
-                        { tipo: 'Bloqueio no Eixo Monumental', data: 'Hoje', hora: '11:00', bairro: 'Asa Sul', municipio: 'Brasília', lat: -15.7900, lon: -47.8900 },
-                        { tipo: 'Radar Móvel na Ponte JK', data: 'Hoje', hora: '15:10', bairro: 'Lago Sul', municipio: 'Brasília', lat: -15.8250, lon: -47.8200 }
-                    ];
-                } else if (reg === 'REC') {
-                    center = [-8.0539, -34.8811];
-                    alerts = [
-                        { tipo: 'Alagamento na Av. Agamenon Magalhães', data: 'Hoje', hora: '13:00', bairro: 'Graças', municipio: 'Recife', lat: -8.0510, lon: -34.8920 },
-                        { tipo: 'Manifestação na Av. Sul', data: 'Hoje', hora: '16:45', bairro: 'São José', municipio: 'Recife', lat: -8.0730, lon: -34.8880 }
-                    ];
-                }
+            console.log(`[FOGO-REQUEST] Solicitando ocorrências para ${reg} (Fonte: ${sourceParam})...`);
+            showToast("Atualizando ocorrências de segurança (OTT + Fogo Cruzado)...", "info");
+
+            const res = await fetch(`/api/seguranca/ocorrencias?state=${encodeURIComponent(reg)}&source=${sourceParam}`);
+            const json = await res.json();
+
+            if (!json.ok || !json.data) {
+                throw new Error("Resposta inválida da API de segurança.");
             }
 
+            const ottItems = json.data.ott || [];
+            const fogoItems = json.data.fogoCruzado || [];
+            const allItems = json.data.todas || [];
+
+            console.log(`[FOGO-RESPONSE] Recebidas ${allItems.length} ocorrências no total (OTT: ${ottItems.length}, Fogo Cruzado: ${fogoItems.length})`);
+
+            // 1. Atualizar contadores
+            if (statsEl) {
+                statsEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>📅 <b>${json.stats?.data_referencia || 'Hoje'}</b> (${json.stats?.timezone || 'Brasília'})</span>
+                        <span style="font-weight:700; color:#fff;">Total: ${allItems.length}</span>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:2px; font-size:9px;">
+                        <span style="color:#00d1ff;">🔫 OTT: <b>${ottItems.length}</b></span>
+                        <span style="color:#f43f5e;">🔴 Fogo Cruzado: <b>${fogoItems.length}</b></span>
+                    </div>
+                `;
+            }
+
+            // 2. Plotar no mapa Leaflet nas respectivas camadas
             if (this.transitoMap) {
                 this.transitoMap.clearMarkers();
-                this.transitoMap.setView(center, 12);
+                this.transitoMap.clearLayerGroup('ott');
+                this.transitoMap.clearLayerGroup('fogo');
+
+                // Plotar OTT
+                if (showOtt) {
+                    ottItems.forEach(alert => {
+                        if (alert.lat && alert.lon) {
+                            const popupHtml = `
+                                <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+                                    <strong style="color:#00d1ff; font-size:12px;">🔫 Ocorrência OTT</strong><br>
+                                    <b>Tipo:</b> ${escapeHtml(alert.tipo)}<br>
+                                    <b>Data/Hora:</b> ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}<br>
+                                    <b>Local:</b> ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)} (${escapeHtml(alert.estado)})<br>
+                                    <b>Fonte:</b> OTT (Onde Tem Tiroteio)<br>
+                                    <span style="font-size:9px; color:#888;">Última atualização: ${escapeHtml(alert.updatedAt || alert.data)}</span>
+                                </div>
+                            `;
+
+                            const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="#0c1524" stroke="#00d1ff" stroke-width="2"/>
+                                <text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="900" fill="#ffffff">OTT</text>
+                                <text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#00d1ff">🔫</text>
+                            </svg>`;
+
+                            this.transitoMap.addMarkerToLayer('ott', alert.lat, alert.lon, popupHtml, { html: iconSvg });
+                        }
+                    });
+                }
+
+                // Plotar Fogo Cruzado
+                if (showFogo) {
+                    fogoItems.forEach(fogo => {
+                        if (fogo.lat && fogo.lon) {
+                            const popupHtml = `
+                                <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+                                    <strong style="color:#f43f5e; font-size:12px;">${escapeHtml(fogo.icone || '🔴')} ${escapeHtml(fogo.tipo)}</strong><br>
+                                    <b>Subtipo:</b> ${escapeHtml(fogo.subtipo || 'Confronto')}<br>
+                                    <b>Descrição:</b> ${escapeHtml(fogo.descricao || '')}<br>
+                                    <b>Data/Hora:</b> ${escapeHtml(fogo.data)} às ${escapeHtml(fogo.hora)}<br>
+                                    <b>Local:</b> ${escapeHtml(fogo.bairro)} - ${escapeHtml(fogo.municipio)} (${escapeHtml(fogo.estado)})<br>
+                                    ${fogo.endereco ? `<b>Endereço:</b> ${escapeHtml(fogo.endereco)}<br>` : ''}
+                                    <b>Fonte:</b> Instituto Fogo Cruzado v2<br>
+                                    <span style="font-size:9px; color:#888;">Última atualização: ${escapeHtml(fogo.updatedAt || fogo.data)}</span>
+                                </div>
+                            `;
+
+                            const iconColor = fogo.categoria === 'tiroteio' ? '#ef4444' : fogo.categoria === 'operacao_policial' ? '#f97316' : '#f59e0b';
+                            const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="#180c10" stroke="${iconColor}" stroke-width="2"/>
+                                <text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="7" font-family="sans-serif" font-weight="900" fill="#ffffff">FOGO</text>
+                                <text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="${iconColor}">${fogo.icone || '🔴'}</text>
+                            </svg>`;
+
+                            this.transitoMap.addMarkerToLayer('fogo', fogo.lat, fogo.lon, popupHtml, { html: iconSvg });
+                        }
+                    });
+                }
             }
 
+            // 3. Renderizar lista lateral
             if (listEl) {
-                if (alerts.length === 0) {
-                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência registrada na data de hoje.</div>';
-                    console.log("[OTT-RENDER] Nenhum informe encontrado para renderizar no dia corrente.");
-                    showToast("Nenhum informe encontrado hoje.", "info");
+                if (allItems.length === 0) {
+                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência de segurança registrada hoje.</div>';
+                    showToast("Nenhuma ocorrência registrada hoje.", "info");
                     return;
                 }
 
-                console.log(`[OTT-RENDER] Renderizando ${alerts.length} alertas no painel e plotando no mapa...`);
                 listEl.innerHTML = '';
-                let renderedCount = 0;
-                alerts.forEach(alert => {
-                    renderedCount++;
-                    const item = document.createElement('div');
-                    item.style.padding = '8px 0';
-                    item.style.borderBottom = '1px solid #222';
-                    item.innerHTML = `
-                        <strong style="color:#f43f5e;">⚠️ ${escapeHtml(alert.tipo)}</strong><br>
-                        <span style="font-size:10px; color:#aaa;">🕒 ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}</span><br>
-                        <span>📍 ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)}</span>
-                    `;
-                    listEl.appendChild(item);
+                allItems.forEach(item => {
+                    const el = document.createElement('div');
+                    el.style.padding = '8px 0';
+                    el.style.borderBottom = '1px solid #222';
+                    el.style.cursor = 'pointer';
 
-                    if (this.transitoMap && alert.lat && alert.lon) {
-                        const popupText = `
-                            <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
-                                <strong style="color:#e11d48; font-size:12px;">🔴 Ocorrência ${label}</strong><br>
-                                <b>Tipo:</b> ${escapeHtml(alert.tipo)}<br>
-                                <b>Data/Hora:</b> ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}<br>
-                                <b>Local:</b> ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)}
-                            </div>
-                        `;
-                        
-                        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">` +
-                            `<circle cx="18" cy="18" r="16" fill="#000000" stroke="#f43f5e" stroke-width="2"/>` +
-                            `<text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle" font-size="8" font-family="sans-serif" font-weight="900" fill="#ffffff">${label}</text>` +
-                            `<text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#f43f5e">${iconText}</text>` +
-                            `</svg>`;
-                            
-                        this.transitoMap.addMarker(alert.lat, alert.lon, popupText, {
-                            html: iconSvg
-                        });
-                    }
+                    const isFogo = item.fonte?.includes('Fogo');
+                    const badgeBg = isFogo ? 'rgba(244,63,94,0.15)' : 'rgba(0,209,255,0.15)';
+                    const badgeColor = isFogo ? '#f43f5e' : '#00d1ff';
+
+                    el.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                            <strong style="color:${isFogo ? '#f43f5e' : '#fb7185'}; font-size:11px;">
+                                ${escapeHtml(item.icone || '⚠️')} ${escapeHtml(item.tipo)}
+                            </strong>
+                            <span style="font-size:8px; font-weight:700; background:${badgeBg}; color:${badgeColor}; padding:1px 5px; border-radius:3px;">
+                                ${escapeHtml(item.fonte)}
+                            </span>
+                        </div>
+                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">
+                            🕒 ${escapeHtml(item.data)} às ${escapeHtml(item.hora)}
+                        </div>
+                        <div style="font-size:10px; color:#cbd5e1;">
+                            📍 ${escapeHtml(item.bairro)} - ${escapeHtml(item.municipio)}
+                        </div>
+                        ${item.endereco ? `<div style="font-size:9px; color:#64748b;">${escapeHtml(item.endereco)}</div>` : ''}
+                    `;
+
+                    el.addEventListener('click', () => {
+                        if (this.transitoMap && item.lat && item.lon) {
+                            this.transitoMap.setView([item.lat, item.lon], 15);
+                        }
+                    });
+
+                    listEl.appendChild(el);
                 });
 
-                if (renderedCount !== alerts.length) {
-                    console.warn(`[OTT-DIVERGENCIA] Divergência no render: recebidos=${alerts.length}, renderizados=${renderedCount}`);
-                }
-
-                showToast(`Informes ${label} atualizados (${alerts.length} hoje)!`, "success");
+                showToast(`Segurança Pública atualizada: ${allItems.length} ocorrências hoje!`, "success");
             }
         } catch (err) {
-            console.error('[OTT-RESPONSE] Erro ao carregar informes OTT:', err);
+            console.error('[FOGO-REQUEST] Erro ao carregar ocorrências de segurança:', err);
             if (listEl) {
-                listEl.innerHTML = '<div style="color:#f43f5e; text-align:center; padding:10px 0;">Erro ao atualizar informes OTT.</div>';
+                listEl.innerHTML = '<div style="color:#f43f5e; text-align:center; padding:10px 0;">Erro ao atualizar ocorrências de segurança.</div>';
             }
-            showToast("Erro ao processar informes OTT.", "error");
+            showToast("Erro ao processar ocorrências de segurança.", "error");
         }
     }
 

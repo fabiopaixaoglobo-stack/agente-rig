@@ -202,26 +202,50 @@
           <div class="panelTitle">Trajeto e Análise de Risco</div>
           <div style="margin-bottom: 8px;"><label class="label">Origem</label><input id="waze-origem" class="input" placeholder="Partida..." /></div>
           <div style="margin-bottom: 8px;"><label class="label">Destino</label><input id="waze-destino" class="input" placeholder="Chegada..." /></div>
-          <div style="display: flex; gap: 5px; margin-top: 10px;">
+          <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--muted);">
+            <label class="label" style="margin:0;">Buffer do Corredor:</label>
+            <select id="seletor-buffer-risco" class="input" style="width: auto; padding: 2px 8px; font-size: 11px; height: 26px;">
+              <option value="500">500 metros</option>
+              <option value="1000" selected>1.000 m (Padrão)</option>
+              <option value="2000">2.000 metros</option>
+              <option value="3000">3.000 metros</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 5px; margin-top: 6px;">
             <button type="button" id="btn-mapa-live" class="btn btnPrimary" style="flex:1;">ANALISAR RISCO</button>
             <button type="button" id="btn-abrir-rota-waze" class="btn" style="flex:1;">ABRIR WAZE</button>
           </div>
           <button type="button" id="btn-atualizar-ott" class="btn" style="width: 100%; margin-top: 8px; background-color: #0c1524; color: #00d1ff; border: 1px solid #00d1ff; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            🔄 ATUALIZAR INFORMES OTT
+            🔄 ATUALIZAR INTELIGÊNCIA (OTT + FOGO CRUZADO)
           </button>
         </div>
-        <div class="panel" id="ott-reports-panel" style="margin-top: 10px; display: flex; flex-direction: column; max-height: 250px; overflow-y: auto;">
-          <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; gap: 5px;">
-            <span>🔫</span> Informes OTT (Hoje)
+
+        <div class="panel" id="ott-reports-panel" style="margin-top: 10px; display: flex; flex-direction: column; max-height: 280px; overflow-y: auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
+              <span>🛡️</span> Segurança Pública (Hoje)
+            </div>
+            <div style="display: flex; gap: 6px; font-size: 10px;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 3px; color: #00d1ff;">
+                <input type="checkbox" id="layer-toggle-ott" checked style="cursor: pointer;" /> OTT
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 3px; color: #f43f5e;">
+                <input type="checkbox" id="layer-toggle-fogo" checked style="cursor: pointer;" /> Fogo Cruzado
+              </label>
+            </div>
           </div>
-          <div id="ott-reports-list" style="font-size: 11px; line-height: 1.5; color: #ccc; max-height: 200px; overflow-y: auto;">
+          <div id="ott-reports-stats" style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; padding: 4px 6px; background: rgba(0,209,255,0.05); border-radius: 4px; border: 1px solid rgba(0,209,255,0.1);">
+            Carregando fontes integradas...
+          </div>
+          <div id="ott-reports-list" style="font-size: 11px; line-height: 1.5; color: #ccc; max-height: 180px; overflow-y: auto;">
             <div style="color: #aaa; text-align: center; padding: 10px 0;">Clique em atualizar para buscar dados...</div>
           </div>
         </div>
+
         <div class="panel" id="risk-analysis-panel" style="display:none; flex: 1; overflow-y: auto;">
-          <div class="panelTitle" style="color: var(--bad);">⚠️ Verificação de Risco (Tempo Real)</div>
+          <div class="panelTitle" style="color: var(--bad);">⚠️ Verificação de Risco Geoespacial</div>
           <div id="risk-content" style="font-size: 11px; line-height: 1.5; margin-top: 10px;">
-            <!-- Conteúdo injetado via JS -->
+            <!-- Conteúdo injetado dinamicamente pelo motor de risco -->
           </div>
         </div>
       </aside>
