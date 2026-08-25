@@ -203,6 +203,8 @@ export class CamerasRJ {
         const cleanCamId = sourceId.replace('CAM_', '');
         if (cleanCamId && (sourceId.startsWith('CAM_') || !isNaN(cleanCamId))) {
             const camInfo = this.findCameraInfo(cleanCamId);
+            const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
+            const bairroName = slotConfig.bairro || camInfo?.bairro || 'Rio de Janeiro';
             const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
             const embedUrl = `https://player.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
 
