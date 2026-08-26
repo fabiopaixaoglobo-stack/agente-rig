@@ -82,6 +82,23 @@ export class MapService {
                 }
             });
 
+            // Força o cálculo de tamanho inicial
+            setTimeout(() => {
+                if (this.map) {
+                    this.map.invalidateSize();
+                }
+            }, 150);
+
+            // Observador de Redimensionamento do Container DOM
+            if (typeof ResizeObserver !== 'undefined' && el) {
+                const ro = new ResizeObserver(() => {
+                    if (this.map && el.offsetWidth > 0 && el.offsetHeight > 0) {
+                        this.map.invalidateSize();
+                    }
+                });
+                ro.observe(el);
+            }
+
         } catch (err) {
             console.error(`[MapService] Erro ao inicializar Leaflet no elemento #${elementId}:`, err);
             this.map = null;
@@ -427,7 +444,6 @@ export class MapService {
         } catch (err) {
             console.warn('[MapService] Erro seguro ao renderizar LOD:', err);
         }
-    }
     }
 
     highlightCamera(camId, coords = null) {

@@ -3221,9 +3221,6 @@ export class UiController {
     hoverCamera(cam) {
         // Callback opcional de hover para telemetria CCO
     }
-            showToast("Erro ao processar ocorrências de segurança.", "error");
-        }
-    }
 
     // ==========================================
     // MÓDULO TRACK & AUDITORIA DE ROTA (V3 CCO)

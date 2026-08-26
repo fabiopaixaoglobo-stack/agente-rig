@@ -29,6 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
         
         window.camerasRJ = camerasRJ;
         window.painelCim = painelCim;
+        window.transitoMap = transitoMap;
+        window.mainMap = mainMap;
+        window.plannerMap = plannerMap;
+        window.map = transitoMap?.map || mainMap?.map;
+        window.uiController = ui;
+
+        console.info(`[MapService Debug] mapTransito instanciado:`, !!transitoMap?.map, `Container offset:`, document.getElementById("mapTransito")?.offsetWidth, "x", document.getElementById("mapTransito")?.offsetHeight);
 
         // Monitoramento da Saúde do Banco de Dados para Administrador
         const checkDbHealth = async () => {

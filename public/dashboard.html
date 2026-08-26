@@ -250,7 +250,7 @@
         </div>
       </aside>
 
-      <div style="flex: 1; background: #000; position: relative; display: flex; flex-direction: column;">
+      <section class="mapArea" style="flex: 1; height: 100%; min-height: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; background: #071018;">
         <!-- BARRA SUPERIOR DE CAMADAS INTELIGENTES GIS (SMART LAYERS) -->
         <div class="cicc-layers-bar" id="cicc-smart-layers-bar">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -295,47 +295,45 @@
         </div>
 
         <!-- CANVAS PRINCIPAL DO MAPA LEAFLET -->
-        <div style="flex: 1; position: relative; width: 100%; height: 100%;">
-          <div id="mapTransito" class="map" style="position: absolute; top:0; left:0; right:0; bottom:0;"></div>
+        <div id="mapTransito" class="map" style="flex: 1; width: 100%; height: 100%; min-height: 0; position: relative; z-index: 1;"></div>
 
-          <!-- PAINEL LATERAL DIREITO: MODO COMANDO CCO (TACTICAL DRAWER) -->
-          <div id="cicc-drawer-ocorrencia" class="cicc-drawer">
-            <div class="cicc-drawer-header">
-              <div class="cicc-drawer-title">
-                <i class="fa-solid fa-crosshairs"></i> <span>MODO COMANDO — TÁTICO CCO</span>
-              </div>
-              <button class="cicc-drawer-close" id="btn-fechar-drawer-cicc" title="Recolher painel">&times;</button>
+        <!-- PAINEL LATERAL DIREITO: MODO COMANDO CCO (TACTICAL DRAWER) -->
+        <div id="cicc-drawer-ocorrencia" class="cicc-drawer">
+          <div class="cicc-drawer-header">
+            <div class="cicc-drawer-title">
+              <i class="fa-solid fa-crosshairs"></i> <span>MODO COMANDO — TÁTICO CCO</span>
             </div>
-            <div class="cicc-drawer-body" id="cicc-drawer-body">
-              <!-- Conteúdo injetado dinamicamente -->
-            </div>
+            <button class="cicc-drawer-close" id="btn-fechar-drawer-cicc" title="Recolher painel">&times;</button>
           </div>
-
-          <!-- DOCK DE MONITORAMENTO 2X2 INTEGRADO (LIVE MATRIX) -->
-          <div id="cicc-dock-matrix" class="cicc-dock-matrix">
-            <div class="cicc-dock-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="cim-live-pill" style="font-size: 9px; padding: 2px 6px;"><i class="fa-solid fa-video"></i> 4 CÂMERAS AO VIVO (COR RIO)</span>
-                <span id="cicc-dock-subtitle" style="font-size: 10.5px; font-weight: 700; color: #fff;">Matriz Tática Integrada</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <button id="btn-dock-refresh" class="btn btnSmall" style="background: rgba(255,255,255,0.08); color: #fff; font-size: 9px; padding: 2px 6px;" title="Recarregar sinais">
-                  <i class="fa-solid fa-rotate-right"></i> Recarregar
-                </button>
-                <button id="btn-dock-fullscreen" class="btn btnSmall" style="background: rgba(0,209,255,0.15); color: #00d1ff; border: 1px solid rgba(0,209,255,0.3); font-size: 9px; padding: 2px 6px;" title="Alternar tela cheia">
-                  <i class="fa-solid fa-expand"></i> Tela Inteira
-                </button>
-                <button id="btn-dock-close" class="btn btnSmall" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-size: 9px; padding: 2px 6px;" title="Recolher matriz de vídeo">
-                  <i class="fa-solid fa-xmark"></i> Fechar
-                </button>
-              </div>
-            </div>
-            <div class="cicc-dock-grid" id="cicc-dock-grid">
-              <!-- Quadrantes 1, 2, 3, 4 injetados dinamicamente -->
-            </div>
+          <div class="cicc-drawer-body" id="cicc-drawer-body">
+            <!-- Conteúdo injetado dinamicamente -->
           </div>
         </div>
-      </div>
+
+        <!-- DOCK DE MONITORAMENTO 2X2 INTEGRADO (LIVE MATRIX) -->
+        <div id="cicc-dock-matrix" class="cicc-dock-matrix">
+          <div class="cicc-dock-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="cim-live-pill" style="font-size: 9px; padding: 2px 6px;"><i class="fa-solid fa-video"></i> 4 CÂMERAS AO VIVO (COR RIO)</span>
+              <span id="cicc-dock-subtitle" style="font-size: 10.5px; font-weight: 700; color: #fff;">Matriz Tática Integrada</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button id="btn-dock-refresh" class="btn btnSmall" style="background: rgba(255,255,255,0.08); color: #fff; font-size: 9px; padding: 2px 6px;" title="Recarregar sinais">
+                <i class="fa-solid fa-rotate-right"></i> Recarregar
+              </button>
+              <button id="btn-dock-fullscreen" class="btn btnSmall" style="background: rgba(0,209,255,0.15); color: #00d1ff; border: 1px solid rgba(0,209,255,0.3); font-size: 9px; padding: 2px 6px;" title="Alternar tela cheia">
+                <i class="fa-solid fa-expand"></i> Tela Inteira
+              </button>
+              <button id="btn-dock-close" class="btn btnSmall" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-size: 9px; padding: 2px 6px;" title="Recolher matriz de vídeo">
+                <i class="fa-solid fa-xmark"></i> Fechar
+              </button>
+            </div>
+          </div>
+          <div class="cicc-dock-grid" id="cicc-dock-grid">
+            <!-- Quadrantes 1, 2, 3, 4 injetados dinamicamente -->
+          </div>
+        </div>
+      </section>
     </section>
 
 
