@@ -2757,7 +2757,26 @@ export class UiController {
             }
         });
 
-        // 5. Carregamento inicial automático de inteligência geoespacial
+        // 5. Integração com Player Bridge do streaming (postMessage)
+        window.addEventListener('message', (evt) => {
+            if (evt.data && evt.data.type === 'camerasrj:camera-player') {
+                const { cameraId, state, message } = evt.data;
+                console.info(`[CÂMERA BRIDGE] ID #${cameraId} -> Estado: ${state} | Mensagem: ${message}`);
+                
+                const livePill = document.getElementById('cicc-dock-live-pill');
+                if (state === 'playing') {
+                    if (livePill) {
+                        livePill.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO (SINAL ATIVO)';
+                    }
+                } else if (state === 'error') {
+                    if (livePill) {
+                        livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> ${message || 'SINAL INDISPONÍVEL'}`;
+                    }
+                }
+            }
+        });
+
+        // 6. Carregamento inicial automático de inteligência geoespacial
         try {
             this.atualizarInformesOTT();
         } catch (e) {
@@ -3195,8 +3214,9 @@ export class UiController {
                     id="cicc-single-camera-iframe"
                     src="${streamUrl}" 
                     class="cicc-single-iframe" 
-                    allowfullscreen 
-                    allow="autoplay; encrypted-media">
+                    allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *; camera *; microphone *; display-capture *"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    allowfullscreen>
                 </iframe>
             `;
 
