@@ -2733,7 +2733,10 @@ export class UiController {
         });
 
         document.getElementById('btn-dock-close')?.addEventListener('click', () => {
-            document.getElementById('cicc-dock-matrix')?.classList.remove('open');
+            const dock = document.getElementById('cicc-dock-matrix');
+            const wrap = document.getElementById('cicc-single-player-wrap');
+            if (dock) dock.classList.remove('open');
+            if (wrap) wrap.innerHTML = '';
         });
 
         document.getElementById('btn-dock-fullscreen')?.addEventListener('click', () => {
@@ -2748,9 +2751,9 @@ export class UiController {
         });
 
         document.getElementById('btn-dock-refresh')?.addEventListener('click', () => {
-            if (this.currentCorrelatedCameras && this.currentCorrelatedCameras.length > 0) {
-                this.abrirMonitoramento2x2Integrado(this.currentCorrelatedCameras);
-                showToast("Matriz de vídeo recarregada.", "info");
+            if (this.currentSingleCamera) {
+                this.abrirCameraSelecionada(this.currentSingleCamera);
+                showToast("Sinal da câmera recarregado.", "info");
             }
         });
 
@@ -3091,154 +3094,170 @@ export class UiController {
                 </div>
             </div>
 
-            <!-- ACIONAMENTO RÁPIDO: MONITORAMENTO 2X2 -->
+            <!-- ACIONAMENTO: VISUALIZAR CÂMERA MAIS PRÓXIMA -->
             <div style="margin-top:6px;">
-                <button id="btn-cicc-acionar-2x2" class="btn btnPrimary" style="width:100%; padding:10px; font-size:12px; font-weight:900; letter-spacing:0.5px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 15px rgba(0,209,255,0.4);">
-                    <i class="fa-solid fa-video"></i> ABRIR MONITORAMENTO 2X2
+                <button id="btn-cicc-acionar-cam-proxima" class="btn btnPrimary" style="width:100%; padding:10px; font-size:12px; font-weight:900; letter-spacing:0.5px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 15px rgba(0,209,255,0.4);">
+                    <i class="fa-solid fa-video"></i> VISUALIZAR CÂMERA MAIS PRÓXIMA
                 </button>
             </div>
         `;
 
-        document.getElementById('btn-cicc-acionar-2x2')?.addEventListener('click', () => {
-            this.abrirMonitoramento2x2Integrado(corr.cameras);
+        document.getElementById('btn-cicc-acionar-cam-proxima')?.addEventListener('click', () => {
+            if (corr.cameras && corr.cameras.length > 0) {
+                this.abrirCameraSelecionada(corr.cameras[0].camera);
+            } else {
+                showToast("Nenhuma câmera no raio operacional.", "warning");
+            }
         });
 
         // Abre o drawer lateral
         document.getElementById('cicc-drawer-ocorrencia')?.classList.add('open');
     }
 
-    // ==========================================
-    // DOCK DE MONITORAMENTO 2X2 INTEGRADO
-    // ==========================================
-    abrirMonitoramento2x2Integrado(camerasList) {
+    // =========================================================================
+    // PLAYER ÚNICO DA CÂMERA SELECIONADA (MODO COMANDO CCO)
+    // =========================================================================
+    abrirCameraSelecionada(camera) {
+        if (!camera) {
+            console.warn('[CÂMERA] Nenhuma câmera informada para visualização.');
+            showToast("Nenhuma câmera selecionada.", "warning");
+            return;
+        }
+
+        // 1. Normalizar objeto da câmera
+        const cam = camera.camera || camera;
+        if (!cam.id) {
+            console.warn('[CÂMERA] Objeto de câmera inválido:', camera);
+            showToast("Dados da câmera inválidos.", "error");
+            return;
+        }
+
+        this.currentSingleCamera = cam;
+
+        console.info('[CÂMERA] Selecionada', {
+            id: cam.id,
+            nome: cam.nome,
+            bairro: cam.bairro,
+            status: cam.status
+        });
+
+        // 2. Elementos da Interface
         const dock = document.getElementById('cicc-dock-matrix');
-        const grid = document.getElementById('cicc-dock-grid');
+        const wrap = document.getElementById('cicc-single-player-wrap');
         const subtitle = document.getElementById('cicc-dock-subtitle');
-        if (!dock || !grid) return;
+        const livePill = document.getElementById('cicc-dock-live-pill');
+        const linkOficial = document.getElementById('btn-dock-external-link');
+        if (!dock || !wrap) return;
 
-        const cams = (camerasList || []).map(c => c.camera || c);
-        
-        // Fontes de redundância e canais ao vivo de alta disponibilidade no Rio de Janeiro
-        const verifiedFeeds = [
-            { id: "RJ_ZET_03", nome: "UFRJ ZET - Centro & Corredores", bairro: "Centro", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html" },
-            { id: "RJ_ZET_02", nome: "UFRJ ZET - Ponte Rio-Niterói / Baía", bairro: "Ponte Rio-Niterói", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html" },
-            { id: "RJ_ZET_01", nome: "UFRJ ZET - Linha Vermelha / Fundão", bairro: "Linha Vermelha", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html" },
-            { id: "RJ_GLOBO_1014", nome: "Curicica / Estúdios Globo", bairro: "Curicica", embedUrl: "https://player.camerasrj.com.br/camera/1014/", url: "https://www.camerasrj.com.br/camera/1014/" },
-            { id: "RJ_BARRA_1010", nome: "Barra Alvorada / Transoeste", bairro: "Barra da Tijuca", embedUrl: "https://player.camerasrj.com.br/camera/1010/", url: "https://www.camerasrj.com.br/camera/1010/" },
-            { id: "RJ_MAPA_RIO", nome: "Mapa Geral Câmeras do Rio (COR)", bairro: "Rio de Janeiro", embedUrl: "https://josebritz.github.io/camerasrio/", url: "https://josebritz.github.io/camerasrio/" }
-        ];
+        // 3. Limpeza do player anterior (destruição de timers e iframe anterior)
+        wrap.innerHTML = '<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Conectando à câmera selecionada...</div>';
 
-        // Resolução de cada slot
-        const resolveSlotCamera = (idx) => {
-            if (cams[idx]) {
-                const cam = cams[idx];
-                const rawId = parseInt(cam.id, 10);
-                const hasDirectPlayer = !isNaN(rawId) && rawId < 2000;
-                return {
-                    id: cam.id,
-                    nome: cam.nome || `Câmera #${cam.id}`,
-                    bairro: cam.bairro || 'Rio de Janeiro',
-                    embedUrl: cam.embedUrl || (hasDirectPlayer ? `https://player.camerasrj.com.br/camera/${rawId}/` : verifiedFeeds[idx % verifiedFeeds.length].embedUrl),
-                    url: cam.url || `https://www.camerasrj.com.br/camera/${rawId}/`,
-                    fallbackIdx: idx % verifiedFeeds.length
+        // 4. Atualizar Cabeçalho
+        if (subtitle) {
+            subtitle.innerHTML = `CÂMERA AO VIVO — <span style="color:#00d1ff;">#${escapeHtml(cam.id)}</span> ${escapeHtml(cam.nome)} <span style="font-size:9.5px; font-weight:600; color:#94a3b8; text-transform:none; margin-left:8px;">📍 ${escapeHtml(cam.bairro || 'Rio de Janeiro')}, Rio de Janeiro - RJ</span>`;
+        }
+
+        const isOnline = cam.status === 'online';
+        if (livePill) {
+            livePill.innerHTML = isOnline 
+                ? '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO'
+                : '<i class="fa-solid fa-circle" style="color:#ef4444; font-size:7px;"></i> SINAL INTERMITENTE';
+        }
+
+        // 5. Determinar URL da câmera (pertencente exclusivamente a esta câmera)
+        const rawId = parseInt(cam.id, 10);
+        let streamUrl = cam.embedUrl || null;
+        let officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
+
+        if (!streamUrl && rawId && !isNaN(rawId)) {
+            streamUrl = `https://player.camerasrj.com.br/camera/${rawId}/`;
+        }
+
+        if (linkOficial) {
+            if (officialUrl) {
+                linkOficial.href = officialUrl;
+                linkOficial.style.display = 'inline-flex';
+            } else {
+                linkOficial.style.display = 'none';
+            }
+        }
+
+        // 6. Renderizar Player Único
+        if (streamUrl) {
+            console.info('[CÂMERA] Fonte carregada', {
+                id: cam.id,
+                sourceType: 'stream',
+                streamUrl: streamUrl
+            });
+
+            wrap.innerHTML = `
+                <iframe 
+                    id="cicc-single-camera-iframe"
+                    src="${streamUrl}" 
+                    class="cicc-single-iframe" 
+                    allowfullscreen 
+                    allow="autoplay; encrypted-media">
+                </iframe>
+            `;
+
+            const iframe = document.getElementById('cicc-single-camera-iframe');
+            if (iframe) {
+                iframe.onerror = () => {
+                    console.warn('[CÂMERA] Fonte indisponível', { id: cam.id, reason: 'IFRAME_ERROR' });
+                    this.exibirIndisponibilidadeCamera(cam, wrap);
                 };
             }
-            return {
-                ...verifiedFeeds[idx % verifiedFeeds.length],
-                fallbackIdx: idx % verifiedFeeds.length
-            };
-        };
-
-        const slots = [
-            resolveSlotCamera(0),
-            resolveSlotCamera(1),
-            resolveSlotCamera(2),
-            resolveSlotCamera(3)
-        ];
-
-        if (subtitle) {
-            subtitle.textContent = `Monitoramento Tático CCO — ${slots[0]?.bairro || 'Rio de Janeiro'}`;
+        } else {
+            console.warn('[CÂMERA] Fonte indisponível', { id: cam.id, reason: 'SEM_STREAM_URL' });
+            this.exibirIndisponibilidadeCamera(cam, wrap);
         }
 
-        this.ciccSlotsState = slots;
-
-        grid.innerHTML = slots.map((cam, i) => {
-            const slotNum = i + 1;
-            return `
-                <div class="cicc-dock-slot" id="cicc-slot-wrap-${slotNum}">
-                    <div class="cicc-dock-slot-header">
-                        <div style="display:flex; align-items:center; gap:5px; overflow:hidden; flex:1;">
-                            <span style="color:#00d1ff; font-weight:900;">[Q${slotNum}]</span>
-                            <span id="cicc-label-q${slotNum}" style="color:#fff; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px;">
-                                ${escapeHtml(cam.bairro)}: ${escapeHtml(cam.nome)}
-                            </span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                            <select class="cicc-slot-select" onchange="window.uiController.trocarFonteSlot(${slotNum}, this.value, this.options[this.selectedIndex].text)">
-                                <option value="${cam.embedUrl}" selected>📌 ${escapeHtml(cam.nome).slice(0, 18)}</option>
-                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html">⭐ UFRJ Centro (Ao Vivo)</option>
-                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html">⭐ UFRJ Ponte Rio-Niterói (Ao Vivo)</option>
-                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html">⭐ UFRJ Linha Vermelha (Ao Vivo)</option>
-                                <option value="https://player.camerasrj.com.br/camera/1014/">⭐ Curicica / Estúdios Globo</option>
-                                <option value="https://player.camerasrj.com.br/camera/1010/">⭐ Barra Alvorada / Transoeste</option>
-                                <option value="https://josebritz.github.io/camerasrio/">🌐 Painel Câmeras Rio</option>
-                            </select>
-                            <button onclick="window.uiController.ciclarRedundanciaSlot(${slotNum})" class="cicc-slot-btn" title="Alternar sinal para canal de redundância imediato">
-                                <i class="fa-solid fa-arrows-rotate"></i> REDUNDÂNCIA
-                            </button>
-                            <a id="cicc-link-q${slotNum}" href="${cam.url || cam.embedUrl}" target="_blank" rel="noopener noreferrer" class="cicc-slot-btn" title="Abrir portal de origem em nova aba">
-                                FONTE ↗
-                            </a>
-                        </div>
-                    </div>
-                    <iframe 
-                        id="cicc-iframe-q${slotNum}"
-                        src="${cam.embedUrl}" 
-                        class="cicc-dock-slot-iframe" 
-                        allowfullscreen 
-                        allow="autoplay; encrypted-media">
-                    </iframe>
-                </div>
-            `;
-        }).join('');
-
+        // 7. Exibir Dock
         dock.classList.add('open');
-        showToast("Matriz 2x2 acionada com fontes de alta disponibilidade.", "success");
+        showToast(`Visualizando Câmera #${cam.id} (${cam.bairro})`, "info");
     }
 
-    trocarFonteSlot(slotNum, newUrl, labelText = '') {
-        const iframe = document.getElementById(`cicc-iframe-q${slotNum}`);
-        const label = document.getElementById(`cicc-label-q${slotNum}`);
-        const link = document.getElementById(`cicc-link-q${slotNum}`);
-        if (iframe) {
-            iframe.src = newUrl;
-        }
-        if (label && labelText) {
-            label.textContent = labelText.replace(/^[^\s]+\s/, '');
-        }
-        if (link) {
-            link.href = newUrl;
-        }
-        showToast(`Fonte Q${slotNum} atualizada para canal ao vivo.`, "info");
+    exibirIndisponibilidadeCamera(cam, wrap) {
+        if (!wrap) return;
+        const rawId = parseInt(cam.id, 10);
+        const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
+        wrap.innerHTML = `
+            <div class="cicc-unavailable-card">
+                <div style="font-size: 32px; margin-bottom: 8px;">📹</div>
+                <h3 style="margin: 0 0 6px 0; color: #f87171; font-size: 14px; text-transform: uppercase;">
+                    Sinal ao vivo temporariamente indisponível
+                </h3>
+                <p style="font-size: 11px; color: #cbd5e1; margin: 0 0 8px 0; line-height: 1.4;">
+                    Câmera <b>#${escapeHtml(cam.id)} — ${escapeHtml(cam.nome)}</b><br>
+                    <span style="font-size: 10px; color: #94a3b8;">📍 ${escapeHtml(cam.bairro)}, Rio de Janeiro - RJ (Operadora: ${escapeHtml(cam.operadora || 'COR Rio / CET-Rio')})</span>
+                </p>
+                <p style="font-size: 10px; color: #64748b; margin: 0 0 16px 0;">
+                    O servidor de streaming público de origem não está transmitindo sinal aberto para esta câmera neste instante.
+                </p>
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="window.uiController.abrirCameraSelecionada(window.uiController.currentSingleCamera)" class="btn btnSmall" style="background: rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; font-size: 10px;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
+                    </button>
+                    ${officialUrl ? `
+                        <a href="${officialUrl}" target="_blank" rel="noopener noreferrer" class="btn btnSmall" style="background: #00d1ff; color: #000; font-weight: 800; text-decoration: none; padding: 6px 12px; font-size: 10px;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Fonte Oficial ↗
+                        </a>
+                    ` : ''}
+                    <button onclick="document.getElementById('cicc-dock-matrix')?.classList.remove('open')" class="btn btnSmall" style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 6px 12px; font-size: 10px;">
+                        <i class="fa-solid fa-xmark"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
-    ciclarRedundanciaSlot(slotNum) {
-        const fallbackList = [
-            { name: "UFRJ ZET - Centro & Corredores", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html" },
-            { name: "UFRJ ZET - Ponte Rio-Niterói", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html" },
-            { name: "UFRJ ZET - Linha Vermelha / Fundão", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html" },
-            { name: "Curicica / Estúdios Globo", url: "https://player.camerasrj.com.br/camera/1014/" },
-            { name: "Barra Alvorada / Transoeste", url: "https://player.camerasrj.com.br/camera/1010/" },
-            { name: "Painel Geral Câmeras do Rio", url: "https://josebritz.github.io/camerasrio/" }
-        ];
-
-        this.ciccFallbackCounters = this.ciccFallbackCounters || {};
-        const curr = (this.ciccFallbackCounters[slotNum] || 0) % fallbackList.length;
-        const nextFeed = fallbackList[curr];
-        this.ciccFallbackCounters[slotNum] = curr + 1;
-
-        this.trocarFonteSlot(slotNum, nextFeed.url, `REDUNDÂNCIA: ${nextFeed.name}`);
-        showToast(`[Q${slotNum}] Alternado para: ${nextFeed.name}`, "success");
+    // Wrapper para compatibilidade com chamadas legadas
+    abrirMonitoramento2x2Integrado(camerasList) {
+        if (Array.isArray(camerasList) && camerasList.length > 0) {
+            this.abrirCameraSelecionada(camerasList[0]);
+        } else if (camerasList && typeof camerasList === 'object') {
+            this.abrirCameraSelecionada(camerasList);
+        }
     }
 
     abrirDetalhesCameraCCO(cam) {
@@ -3246,8 +3265,11 @@ export class UiController {
         const drawerBody = document.getElementById('cicc-drawer-body');
         if (!drawerBody) return;
 
+        this.currentSingleCamera = cam;
         const isOnline = cam.status === 'online';
         const color = isOnline ? '#10b981' : '#ef4444';
+        const rawId = parseInt(cam.id, 10);
+        const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : 'https://www.camerasrj.com.br');
 
         drawerBody.innerHTML = `
             <div class="cicc-tactical-card" style="border-left:3px solid #00d1ff;">
@@ -3264,7 +3286,7 @@ export class UiController {
                     📍 <b>${escapeHtml(cam.bairro)}</b>, Rio de Janeiro - RJ
                 </div>
                 <div style="font-size:9.5px; color:#94a3b8; background:rgba(0,0,0,0.3); padding:6px; border-radius:4px;">
-                    🏢 Operadora: <b>${cam.operadora || 'COR Rio'}</b><br>
+                    🏢 Operadora: <b>${cam.operadora || 'COR Rio / CET-Rio'}</b><br>
                     🔭 Campo de Visão: <b>${cam.angulo || 180}° (${cam.angulo >= 360 ? 'PTZ 360' : 'Panorâmica'})</b><br>
                     🧭 Orientação / Azimute: <b>${cam.orientacao || 0}°</b><br>
                     📡 Alcance Visual Estimado: <b>${cam.alcance || 500} metros</b>
@@ -3272,10 +3294,10 @@ export class UiController {
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                <button onclick="window.uiController.abrirMonitoramento2x2Integrado([${JSON.stringify(cam).replace(/"/g, '&quot;')}])" class="btn btnPrimary" style="padding:10px; font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
-                    <i class="fa-solid fa-video"></i> ABRIR AO VIVO (GRID 2X2)
+                <button onclick="window.uiController.abrirCameraSelecionada(${JSON.stringify(cam).replace(/"/g, '&quot;')})" class="btn btnPrimary" style="padding:10px; font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="fa-solid fa-video"></i> ABRIR CÂMERA AO VIVO
                 </button>
-                <a href="${cam.url || 'https://www.camerasrj.com.br'}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="text-align:center; padding:8px; font-size:11px; color:#00d1ff; border-color:#00d1ff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <a href="${officialUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="text-align:center; padding:8px; font-size:11px; color:#00d1ff; border-color:#00d1ff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL OFICIAL DE ORIGEM ↗
                 </a>
             </div>
