@@ -42,17 +42,21 @@
   </header>
 
   <nav class="tabs">
-    <button class="tabBtn active" data-tab="tab-monitoramento">Monitoramento</button>
+    <button class="tabBtn active" data-tab="tab-transito" id="tab-btn-transito">
+      <i class="fa-solid fa-satellite-dish"></i> Central de Câmeras & Ocorrências
+    </button>
+    <button class="tabBtn" data-tab="tab-monitoramento" id="tab-btn-monitoramento">
+      Monitoramento 🔒
+    </button>
     <button class="tabBtn" data-tab="tab-planejador">Simulador de Transporte por App</button>
-    <button class="tabBtn" data-tab="tab-transito">Trânsito Real</button>
     <button class="tabBtn" data-tab="tab-painel-integrado" id="tab-btn-painel-integrado" title="Painel Integrado de Monitoramento de Trânsito">Painel Trânsito Integrado</button>
     <button class="tabBtn" data-tab="tab-cameras" id="tab-btn-cameras">Câmeras RJ</button>
     <button class="tabBtn" data-tab="tab-radar" id="tab-btn-radar">Radar Meteorológico RJ</button>
   </nav>
 
   <main class="main">
-    <!-- MONITORAMENTO -->
-    <section id="tab-monitoramento" class="tabPane active">
+    <!-- MONITORAMENTO (BLOQUEADO / EM CONFORMIDADE) -->
+    <section id="tab-monitoramento" class="tabPane">
       <aside class="sidebar">
         <div class="panel">
           <div class="panelTitle">Status Operacional <div class="pill" id="status-operacional-pill" style="background: var(--good); color: #000; font-weight: 800; font-size: 8px; padding: 1px 4px;">NORMAL</div></div>
@@ -196,7 +200,7 @@
     </section>
 
     <!-- CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO) -->
-    <section id="tab-transito" class="tabPane">
+    <section id="tab-transito" class="tabPane active">
       <aside class="sidebar" style="width: 350px;">
         <div class="panel">
           <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; justify-content: space-between;">

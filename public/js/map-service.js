@@ -189,8 +189,13 @@ export class MapService {
 
     invalidateSize() {
         setTimeout(() => {
-            if (this.map) this.map.invalidateSize();
-        }, 300);
+            if (this.map) {
+                this.map.invalidateSize();
+                if (this.camerasData && this.camerasData.length > 0) {
+                    this._renderCamerasLOD();
+                }
+            }
+        }, 150);
     }
 
     setView(center, zoom) {
@@ -298,108 +303,131 @@ export class MapService {
     }
 
     _renderCamerasLOD() {
-        if (!this.map || !this.layerGroups.cameras) return;
-        this.layerGroups.cameras.clearLayers();
-        this.cameraMarkersMap.clear();
-
-        const zoom = this.map.getZoom();
-
-        // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais
-        if (zoom <= 11) {
-            const regionalMap = new Map();
-            this.bairroClusters.forEach(b => {
-                let reg = 'Zona Norte';
-                if (b.latitude < -22.95 && b.longitude > -43.25) reg = 'Zona Sul';
-                else if (b.longitude < -43.34) reg = 'Zona Oeste / Barra';
-                else if (b.latitude > -22.92 && b.longitude > -43.20) reg = 'Centro';
-
-                if (!regionalMap.has(reg)) {
-                    regionalMap.set(reg, { reg, count: 0, latSum: 0, lonSum: 0, online: 0 });
-                }
-                const r = regionalMap.get(reg);
-                r.count += b.camerasCount;
-                r.online += b.onlineCount;
-                r.latSum += b.latitude * b.camerasCount;
-                r.lonSum += b.longitude * b.camerasCount;
-            });
-
-            regionalMap.forEach(r => {
-                const lat = r.latSum / r.count;
-                const lon = r.lonSum / r.count;
-                const html = `
-                    <div class="lod-cluster-super" title="${r.reg}: ${r.count} câmeras (${r.online} online)">
-                        <div class="lod-cluster-badge">${r.count}</div>
-                        <div class="lod-cluster-label">${r.reg}</div>
-                    </div>
-                `;
-                const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [54, 54], iconAnchor: [27, 27] });
-                const marker = L.marker([lat, lon], { icon }).addTo(this.layerGroups.cameras);
-                marker.on('click', () => this.map.setView([lat, lon], 13));
-            });
+        if (!this.map || !this.layerGroups?.cameras) return;
+        
+        // Verifica se o container do mapa está visível com dimensões válidas
+        const container = this.map.getContainer();
+        if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
+            // Container oculto no momento; adia renderização até a aba ser ativada
             return;
         }
 
-        // 2. ZOOM MÉDIO (12 <= z <= 14): Clusters por Bairro
-        if (zoom <= 14) {
-            this.bairroClusters.forEach(b => {
-                if (b.camerasCount === 0) return;
-                const html = `
-                    <div class="lod-cluster-bairro" title="${b.bairro}: ${b.camerasCount} câmeras (${b.onlineCount} online)">
-                        <div class="lod-cluster-inner">
-                            <span class="lod-icon-cam">📹</span>
-                            <span class="lod-cluster-num">${b.camerasCount}</span>
+        try {
+            this.layerGroups.cameras.clearLayers();
+            this.cameraMarkersMap.clear();
+
+            let zoom = 12;
+            try {
+                zoom = this.map.getZoom();
+            } catch (e) {
+                zoom = 12;
+            }
+
+            // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais
+            if (zoom <= 11) {
+                const regionalMap = new Map();
+                this.bairroClusters.forEach(b => {
+                    let reg = 'Zona Norte';
+                    if (b.latitude < -22.95 && b.longitude > -43.25) reg = 'Zona Sul';
+                    else if (b.longitude < -43.34) reg = 'Zona Oeste / Barra';
+                    else if (b.latitude > -22.92 && b.longitude > -43.20) reg = 'Centro';
+
+                    if (!regionalMap.has(reg)) {
+                        regionalMap.set(reg, { reg, count: 0, latSum: 0, lonSum: 0, online: 0 });
+                    }
+                    const r = regionalMap.get(reg);
+                    r.count += b.camerasCount;
+                    r.online += b.onlineCount;
+                    r.latSum += b.latitude * b.camerasCount;
+                    r.lonSum += b.longitude * b.camerasCount;
+                });
+
+                regionalMap.forEach(r => {
+                    if (r.count === 0) return;
+                    const lat = r.latSum / r.count;
+                    const lon = r.lonSum / r.count;
+                    const html = `
+                        <div class="lod-cluster-super" title="${r.reg}: ${r.count} câmeras (${r.online} online)">
+                            <div class="lod-cluster-badge">${r.count}</div>
+                            <div class="lod-cluster-label">${r.reg}</div>
                         </div>
-                        <div class="lod-cluster-bairro-name">${b.bairro}</div>
+                    `;
+                    const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [54, 54], iconAnchor: [27, 27] });
+                    const marker = L.marker([lat, lon], { icon }).addTo(this.layerGroups.cameras);
+                    marker.on('click', () => this.map.setView([lat, lon], 13));
+                });
+                return;
+            }
+
+            // 2. ZOOM MÉDIO (12 <= z <= 14): Clusters por Bairro
+            if (zoom <= 14) {
+                this.bairroClusters.forEach(b => {
+                    if (b.camerasCount === 0 || isNaN(b.latitude) || isNaN(b.longitude)) return;
+                    const html = `
+                        <div class="lod-cluster-bairro" title="${b.bairro}: ${b.camerasCount} câmeras (${b.onlineCount} online)">
+                            <div class="lod-cluster-inner">
+                                <span class="lod-icon-cam">📹</span>
+                                <span class="lod-cluster-num">${b.camerasCount}</span>
+                            </div>
+                            <div class="lod-cluster-bairro-name">${b.bairro}</div>
+                        </div>
+                    `;
+                    const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [44, 44], iconAnchor: [22, 22] });
+                    const marker = L.marker([b.latitude, b.longitude], { icon }).addTo(this.layerGroups.cameras);
+                    marker.on('click', () => this.map.setView([b.latitude, b.longitude], 16));
+                });
+                return;
+            }
+
+            // 3. ZOOM ALTO (z >= 15): Marcadores Individuais com Orientação e Cone de Visada
+            let bounds = null;
+            try {
+                bounds = this.map.getBounds();
+            } catch (e) {}
+
+            const visibleCameras = bounds ? this.camerasData.filter(c => 
+                c.latitude >= bounds.getSouth() && c.latitude <= bounds.getNorth() &&
+                c.longitude >= bounds.getWest() && c.longitude <= bounds.getEast()
+            ) : this.camerasData.slice(0, 100);
+
+            visibleCameras.forEach(cam => {
+                const isOnline = cam.status === 'online';
+                const isHighlighted = this.currentHighlightedCamId === cam.id;
+                const color = isHighlighted ? '#fbbf24' : (isOnline ? '#00d1ff' : '#64748b');
+                const pulseClass = isHighlighted ? 'camera-pulse-selected' : '';
+
+                const rotationDeg = cam.orientacao || 0;
+                const html = `
+                    <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="${cam.nome} (${cam.bairro}) - ${cam.status.toUpperCase()}">
+                        <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${isHighlighted ? 0.6 : 0.25}; border-color: ${color};"></div>
+                        <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color};">
+                            <i class="fa-solid fa-video"></i>
+                        </div>
+                        <div class="lod-camera-id">${cam.id.slice(-4)}</div>
                     </div>
                 `;
-                const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [44, 44], iconAnchor: [22, 22] });
-                const marker = L.marker([b.latitude, b.longitude], { icon }).addTo(this.layerGroups.cameras);
-                marker.on('click', () => this.map.setView([b.latitude, b.longitude], 16));
-            });
-            return;
-        }
 
-        // 3. ZOOM ALTO (z >= 15): Marcadores Individuais com Orientação e Cone de Visada
-        const bounds = this.map.getBounds();
-        const visibleCameras = this.camerasData.filter(c => 
-            c.latitude >= bounds.getSouth() && c.latitude <= bounds.getNorth() &&
-            c.longitude >= bounds.getWest() && c.longitude <= bounds.getEast()
-        );
+                const icon = L.divIcon({ className: 'lod-cam-icon', html, iconSize: [36, 36], iconAnchor: [18, 18] });
+                const marker = L.marker([cam.latitude, cam.longitude], { icon }).addTo(this.layerGroups.cameras);
 
-        visibleCameras.forEach(cam => {
-            const isOnline = cam.status === 'online';
-            const isHighlighted = this.currentHighlightedCamId === cam.id;
-            const color = isHighlighted ? '#fbbf24' : (isOnline ? '#00d1ff' : '#64748b');
-            const pulseClass = isHighlighted ? 'camera-pulse-selected' : '';
-
-            const rotationDeg = cam.orientacao || 0;
-            const html = `
-                <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="${cam.nome} (${cam.bairro}) - ${cam.status.toUpperCase()}">
-                    <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${isHighlighted ? 0.6 : 0.25}; border-color: ${color};"></div>
-                    <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color};">
-                        <i class="fa-solid fa-video"></i>
+                // Tooltip no hover
+                marker.bindTooltip(`
+                    <div style="font-size:11px; font-weight:700; color:#fff;">
+                        <span style="color:${color};">📹 ${cam.id}</span> - ${cam.nome}<br>
+                        <span style="font-size:9.5px; color:#94a3b8;">${cam.bairro} | Status: <b style="color:${isOnline ? '#10b981' : '#ef4444'}">${cam.status.toUpperCase()}</b></span>
                     </div>
-                    <div class="lod-camera-id">${cam.id.slice(-4)}</div>
-                </div>
-            `;
+                `, { direction: 'top', offset: [0, -12], opacity: 0.95 });
 
-            const icon = L.divIcon({ className: 'lod-cam-icon', html, iconSize: [36, 36], iconAnchor: [18, 18] });
-            const marker = L.marker([cam.latitude, cam.longitude], { icon }).addTo(this.layerGroups.cameras);
+                marker.on('click', () => {
+                    if (this.onCameraClickCallback) this.onCameraClickCallback(cam);
+                });
 
-            // Tooltip no hover
-            marker.bindTooltip(`
-                <div style="font-size:11px; font-weight:700; color:#fff;">
-                    <span style="color:${color};">📹 ${cam.id}</span> - ${cam.nome}<br>
-                    <span style="font-size:9.5px; color:#94a3b8;">${cam.bairro} | Status: <b style="color:${isOnline ? '#10b981' : '#ef4444'}">${cam.status.toUpperCase()}</b></span>
-                </div>
-            `, { direction: 'top', offset: [0, -12], opacity: 0.95 });
-
-            marker.on('click', () => {
-                if (this.onCameraClickCallback) this.onCameraClickCallback(cam);
+                this.cameraMarkersMap.set(cam.id, marker);
             });
-
-            this.cameraMarkersMap.set(cam.id, marker);
-        });
+        } catch (err) {
+            console.warn('[MapService] Erro seguro ao renderizar LOD:', err);
+        }
+    }
     }
 
     highlightCamera(camId, coords = null) {

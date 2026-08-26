@@ -761,7 +761,12 @@ export class UiController {
                 
                 if (this.mapService) this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
-                if (this.transitoMap) this.transitoMap.invalidateSize();
+                if (this.transitoMap) {
+                    this.transitoMap.invalidateSize();
+                    if (this.activeOcorrencias.length === 0) {
+                        this.atualizarInformesOTT();
+                    }
+                }
             });
         });
 
@@ -2748,6 +2753,13 @@ export class UiController {
                 showToast("Matriz de vídeo recarregada.", "info");
             }
         });
+
+        // 5. Carregamento inicial automático de inteligência geoespacial
+        try {
+            this.atualizarInformesOTT();
+        } catch (e) {
+            console.warn('[CentralInteligente] Erro ao sincronizar informes iniciais:', e);
+        }
     }
 
     async atualizarInformesOTT() {
