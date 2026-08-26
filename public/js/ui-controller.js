@@ -3118,45 +3118,82 @@ export class UiController {
 
         const cams = (camerasList || []).map(c => c.camera || c);
         
-        // Completa com câmeras padrão se tiver menos de 4
-        const defaultCams = [
-            { id: "000405", nome: "Abelardo Bueno Frente 3600", bairro: "Barra Olímpica", url: "https://www.camerasrj.com.br/camera/405/", embedUrl: "https://player.camerasrj.com.br/camera/405/" },
-            { id: "000127", nome: "AV. ARMANDO LOMBARDI BARRA POINT", bairro: "Barra da Tijuca", url: "https://www.camerasrj.com.br/camera/127/", embedUrl: "https://player.camerasrj.com.br/camera/127/" },
-            { id: "000064", nome: "AV. AMÉRICAS BRT AFRÂNIO COSTA", bairro: "Barra da Tijuca", url: "https://www.camerasrj.com.br/camera/64/", embedUrl: "https://player.camerasrj.com.br/camera/64/" },
-            { id: "000100", nome: "AV. 31 DE MARÇO X SALVADOR DE SÁ", bairro: "Cidade Nova", url: "https://www.camerasrj.com.br/camera/100/", embedUrl: "https://player.camerasrj.com.br/camera/100/" }
+        // Fontes de redundância e canais ao vivo de alta disponibilidade no Rio de Janeiro
+        const verifiedFeeds = [
+            { id: "RJ_ZET_03", nome: "UFRJ ZET - Centro & Corredores", bairro: "Centro", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html" },
+            { id: "RJ_ZET_02", nome: "UFRJ ZET - Ponte Rio-Niterói / Baía", bairro: "Ponte Rio-Niterói", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html" },
+            { id: "RJ_ZET_01", nome: "UFRJ ZET - Linha Vermelha / Fundão", bairro: "Linha Vermelha", embedUrl: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html" },
+            { id: "RJ_GLOBO_1014", nome: "Curicica / Estúdios Globo", bairro: "Curicica", embedUrl: "https://player.camerasrj.com.br/camera/1014/", url: "https://www.camerasrj.com.br/camera/1014/" },
+            { id: "RJ_BARRA_1010", nome: "Barra Alvorada / Transoeste", bairro: "Barra da Tijuca", embedUrl: "https://player.camerasrj.com.br/camera/1010/", url: "https://www.camerasrj.com.br/camera/1010/" },
+            { id: "RJ_MAPA_RIO", nome: "Mapa Geral Câmeras do Rio (COR)", bairro: "Rio de Janeiro", embedUrl: "https://josebritz.github.io/camerasrio/", url: "https://josebritz.github.io/camerasrio/" }
         ];
 
+        // Resolução de cada slot
+        const resolveSlotCamera = (idx) => {
+            if (cams[idx]) {
+                const cam = cams[idx];
+                const rawId = parseInt(cam.id, 10);
+                const hasDirectPlayer = !isNaN(rawId) && rawId < 2000;
+                return {
+                    id: cam.id,
+                    nome: cam.nome || `Câmera #${cam.id}`,
+                    bairro: cam.bairro || 'Rio de Janeiro',
+                    embedUrl: cam.embedUrl || (hasDirectPlayer ? `https://player.camerasrj.com.br/camera/${rawId}/` : verifiedFeeds[idx % verifiedFeeds.length].embedUrl),
+                    url: cam.url || `https://www.camerasrj.com.br/camera/${rawId}/`,
+                    fallbackIdx: idx % verifiedFeeds.length
+                };
+            }
+            return {
+                ...verifiedFeeds[idx % verifiedFeeds.length],
+                fallbackIdx: idx % verifiedFeeds.length
+            };
+        };
+
         const slots = [
-            cams[0] || defaultCams[0],
-            cams[1] || defaultCams[1],
-            cams[2] || defaultCams[2],
-            cams[3] || defaultCams[3]
+            resolveSlotCamera(0),
+            resolveSlotCamera(1),
+            resolveSlotCamera(2),
+            resolveSlotCamera(3)
         ];
 
         if (subtitle) {
             subtitle.textContent = `Monitoramento Tático CCO — ${slots[0]?.bairro || 'Rio de Janeiro'}`;
         }
 
+        this.ciccSlotsState = slots;
+
         grid.innerHTML = slots.map((cam, i) => {
             const slotNum = i + 1;
-            const embedUrl = cam.embedUrl || `https://player.camerasrj.com.br/camera/${parseInt(cam.id, 10)}/`;
-            const cleanUrl = cam.url || `https://www.camerasrj.com.br/camera/${parseInt(cam.id, 10)}/`;
             return `
-                <div class="cicc-dock-slot">
+                <div class="cicc-dock-slot" id="cicc-slot-wrap-${slotNum}">
                     <div class="cicc-dock-slot-header">
-                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+                        <div style="display:flex; align-items:center; gap:5px; overflow:hidden; flex:1;">
                             <span style="color:#00d1ff; font-weight:900;">[Q${slotNum}]</span>
-                            <span style="color:#fff; text-transform:uppercase;">${escapeHtml(cam.bairro)}:</span>
-                            <span style="color:#cbd5e1;">${escapeHtml(cam.nome)}</span>
+                            <span id="cicc-label-q${slotNum}" style="color:#fff; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px;">
+                                ${escapeHtml(cam.bairro)}: ${escapeHtml(cam.nome)}
+                            </span>
                         </div>
                         <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                            <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:#00d1ff; text-decoration:none; font-size:8px;" title="Abrir portal de origem">
+                            <select class="cicc-slot-select" onchange="window.uiController.trocarFonteSlot(${slotNum}, this.value, this.options[this.selectedIndex].text)">
+                                <option value="${cam.embedUrl}" selected>📌 ${escapeHtml(cam.nome).slice(0, 18)}</option>
+                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html">⭐ UFRJ Centro (Ao Vivo)</option>
+                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html">⭐ UFRJ Ponte Rio-Niterói (Ao Vivo)</option>
+                                <option value="https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html">⭐ UFRJ Linha Vermelha (Ao Vivo)</option>
+                                <option value="https://player.camerasrj.com.br/camera/1014/">⭐ Curicica / Estúdios Globo</option>
+                                <option value="https://player.camerasrj.com.br/camera/1010/">⭐ Barra Alvorada / Transoeste</option>
+                                <option value="https://josebritz.github.io/camerasrio/">🌐 Painel Câmeras Rio</option>
+                            </select>
+                            <button onclick="window.uiController.ciclarRedundanciaSlot(${slotNum})" class="cicc-slot-btn" title="Alternar sinal para canal de redundância imediato">
+                                <i class="fa-solid fa-arrows-rotate"></i> REDUNDÂNCIA
+                            </button>
+                            <a id="cicc-link-q${slotNum}" href="${cam.url || cam.embedUrl}" target="_blank" rel="noopener noreferrer" class="cicc-slot-btn" title="Abrir portal de origem em nova aba">
                                 FONTE ↗
                             </a>
                         </div>
                     </div>
                     <iframe 
-                        src="${embedUrl}" 
+                        id="cicc-iframe-q${slotNum}"
+                        src="${cam.embedUrl}" 
                         class="cicc-dock-slot-iframe" 
                         allowfullscreen 
                         allow="autoplay; encrypted-media">
@@ -3166,7 +3203,42 @@ export class UiController {
         }).join('');
 
         dock.classList.add('open');
-        showToast("Matriz 2x2 acionada com sucesso.", "success");
+        showToast("Matriz 2x2 acionada com fontes de alta disponibilidade.", "success");
+    }
+
+    trocarFonteSlot(slotNum, newUrl, labelText = '') {
+        const iframe = document.getElementById(`cicc-iframe-q${slotNum}`);
+        const label = document.getElementById(`cicc-label-q${slotNum}`);
+        const link = document.getElementById(`cicc-link-q${slotNum}`);
+        if (iframe) {
+            iframe.src = newUrl;
+        }
+        if (label && labelText) {
+            label.textContent = labelText.replace(/^[^\s]+\s/, '');
+        }
+        if (link) {
+            link.href = newUrl;
+        }
+        showToast(`Fonte Q${slotNum} atualizada para canal ao vivo.`, "info");
+    }
+
+    ciclarRedundanciaSlot(slotNum) {
+        const fallbackList = [
+            { name: "UFRJ ZET - Centro & Corredores", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_03.html" },
+            { name: "UFRJ ZET - Ponte Rio-Niterói", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_02.html" },
+            { name: "UFRJ ZET - Linha Vermelha / Fundão", url: "https://www02.smt.ufrj.br/~tvdigital/zet/page_01.html" },
+            { name: "Curicica / Estúdios Globo", url: "https://player.camerasrj.com.br/camera/1014/" },
+            { name: "Barra Alvorada / Transoeste", url: "https://player.camerasrj.com.br/camera/1010/" },
+            { name: "Painel Geral Câmeras do Rio", url: "https://josebritz.github.io/camerasrio/" }
+        ];
+
+        this.ciccFallbackCounters = this.ciccFallbackCounters || {};
+        const curr = (this.ciccFallbackCounters[slotNum] || 0) % fallbackList.length;
+        const nextFeed = fallbackList[curr];
+        this.ciccFallbackCounters[slotNum] = curr + 1;
+
+        this.trocarFonteSlot(slotNum, nextFeed.url, `REDUNDÂNCIA: ${nextFeed.name}`);
+        showToast(`[Q${slotNum}] Alternado para: ${nextFeed.name}`, "success");
     }
 
     abrirDetalhesCameraCCO(cam) {
