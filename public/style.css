@@ -2207,6 +2207,384 @@ body {
   flex-wrap: wrap;
 }
 
+/* =========================================================================
+   CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO / AGENTE RIT)
+   ========================================================================= */
+
+/* 1. CLUSTERS MULTIESCALA (LOD) */
+.lod-icon-wrap {
+  background: transparent;
+  border: none;
+}
+
+.lod-cluster-super {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 209, 255, 0.35) 0%, rgba(10, 25, 48, 0.95) 75%);
+  border: 2px solid #00d1ff;
+  box-shadow: 0 0 15px rgba(0, 209, 255, 0.5), inset 0 0 10px rgba(0, 209, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lod-cluster-super:hover {
+  transform: scale(1.15);
+  border-color: #38bdf8;
+  box-shadow: 0 0 25px rgba(0, 209, 255, 0.8);
+}
+.lod-cluster-super .lod-cluster-badge {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+.lod-cluster-super .lod-cluster-label {
+  font-size: 8px;
+  font-weight: 800;
+  color: #00d1ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.lod-cluster-bairro {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #00d1ff;
+  border-radius: 20px;
+  padding: 3px 8px;
+  box-shadow: 0 0 12px rgba(0, 209, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.lod-cluster-bairro:hover {
+  transform: scale(1.1);
+  border-color: #38bdf8;
+  background: #0c182c;
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.7);
+}
+.lod-cluster-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lod-icon-cam {
+  font-size: 10px;
+}
+.lod-cluster-num {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+}
+.lod-cluster-bairro-name {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 2. MARCADOR DE CÂMERA INDIVIDUAL COM FOV E ORIENTAÇÃO */
+.lod-cam-icon {
+  background: transparent;
+  border: none;
+}
+.lod-camera-pin {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.lod-camera-fov {
+  position: absolute;
+  top: -10px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
+  border-top: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-left: 14px solid transparent;
+  border-bottom: 22px solid rgba(0, 209, 255, 0.2);
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+  transform-origin: center bottom;
+  transition: all 0.3s ease;
+}
+.lod-camera-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #071018;
+  font-size: 9.5px;
+  border: 1.5px solid #ffffff;
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+.lod-camera-pin:hover .lod-camera-dot {
+  transform: scale(1.25);
+}
+.lod-camera-id {
+  position: absolute;
+  bottom: -4px;
+  font-size: 7.5px;
+  font-weight: 900;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 0 3px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 3;
+}
+
+@keyframes camera-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.9);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(251, 191, 36, 0);
+    transform: scale(1.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    transform: scale(1);
+  }
+}
+.camera-pulse-selected .lod-camera-dot {
+  animation: camera-pulse 1.4s infinite ease-in-out;
+  border-color: #fff !important;
+}
+
+/* 3. PAINEL LATERAL DIREITO - MODO COMANDO CCO (TACTICAL DRAWER) */
+.cicc-drawer {
+  position: absolute;
+  top: 0;
+  right: -390px;
+  width: 380px;
+  height: 100%;
+  background: rgba(7, 13, 24, 0.97);
+  border-left: 1px solid rgba(0, 209, 255, 0.3);
+  box-shadow: -6px 0 25px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cicc-drawer.open {
+  right: 0;
+}
+.cicc-drawer-header {
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cicc-drawer-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: #00d1ff;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cicc-drawer-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.cicc-drawer-close:hover {
+  color: #fff;
+}
+.cicc-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 4. CARDS TÁTICOS DO MODO COMANDO */
+.cicc-tactical-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px;
+}
+.cicc-badge-cobertura {
+  font-size: 10.5px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+.cicc-badge-cobertura.alta {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.cicc-badge-cobertura.media {
+  background: rgba(245, 158, 11, 0.18);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.cicc-badge-cobertura.baixa {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.cicc-cam-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-top: 5px;
+  transition: all 0.2s ease;
+}
+.cicc-cam-item:hover {
+  background: rgba(0, 209, 255, 0.08);
+  border-color: rgba(0, 209, 255, 0.3);
+}
+
+/* 5. DOCK DE MONITORAMENTO 2X2 INTEGRADO */
+.cicc-dock-matrix {
+  position: absolute;
+  bottom: 0;
+  left: 360px;
+  right: 0;
+  height: 290px;
+  background: rgba(5, 10, 20, 0.97);
+  border-top: 2px solid #00d1ff;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(14px);
+  z-index: 1040;
+  display: none;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cicc-dock-matrix.open {
+  display: flex;
+}
+.cicc-dock-matrix.fullscreen {
+  left: 0;
+  top: var(--header-h);
+  height: calc(100% - var(--header-h));
+  z-index: 2000;
+}
+.cicc-dock-header {
+  padding: 6px 14px;
+  background: rgba(10, 18, 32, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cicc-dock-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: #000;
+  min-height: 0;
+}
+.cicc-dock-slot {
+  background: #070d18;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cicc-dock-slot-header {
+  height: 22px;
+  background: rgba(10, 15, 28, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cicc-dock-slot-iframe {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
+
+/* SMART LAYERS TOPBAR */
+.cicc-layers-bar {
+  background: rgba(10, 15, 28, 0.95);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+}
+.cicc-layer-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+.cicc-layer-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.cicc-layer-pill input[type="checkbox"] {
+  cursor: pointer;
+}
+
+
 
 
 

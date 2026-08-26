@@ -587,19 +587,143 @@ app.get('/api/cameras/brasilia/image/:camId', async (req, res) => {
 });
 
 // =========================================================================
-// POC EXPERIMENTAL (FLAGGED) DE SNAPSHOT/TRANSCODING DO RIO DE JANEIRO
 // =========================================================================
-app.get('/api/cameras/rj/snapshot-poc/:id', (req, res) => {
-    if (process.env.ENABLE_RJ_SNAPSHOT_POC !== 'true') {
-        return res.status(403).json({
-            error: 'POC experimental de snapshot do Rio desativada por padrão em produção via flag (ENABLE_RJ_SNAPSHOT_POC)'
-        });
+// CENTRAL INTELIGENTE DE CÂMERAS GEORREFERENCIADAS & CORRELAÇÃO ESPACIAL
+// =========================================================================
+let cachedGeoreferencedCameras = null;
+
+function loadGeoreferencedCameras() {
+    if (cachedGeoreferencedCameras) return cachedGeoreferencedCameras;
+    try {
+        const candidates = [
+            path.join(__dirname, 'data', 'cameras_georreferenciadas.json'),
+            path.join(__dirname, '..', 'public', 'data', 'cameras_georreferenciadas.json'),
+            path.join(__dirname, '..', 'data', 'cameras_georreferenciadas.json')
+        ];
+        for (const filePath of candidates) {
+            if (fsSync.existsSync(filePath)) {
+                const data = fsSync.readFileSync(filePath, 'utf8');
+                cachedGeoreferencedCameras = JSON.parse(data);
+                console.info(`[SERVER CAMS] ${cachedGeoreferencedCameras.length} câmeras georreferenciadas carregadas do arquivo: ${filePath}`);
+                return cachedGeoreferencedCameras;
+            }
+        }
+    } catch (e) {
+        console.error('[SERVER CAMS] Erro ao carregar cameras_georreferenciadas.json:', e);
     }
-    const id = req.params.id;
-    console.info(`[CamerasRJ] [POC EXPERIMENTAL] Requisição de snapshot para ID ${id}`);
-    res.status(501).json({
-        message: 'Endpoint POC reservado para ambiente de testes com ffmpeg/go2rtc.'
-    });
+    return [];
+}
+
+// 1. Catálogo Completo com Filtros
+app.get('/api/cameras/georreferenciadas', (req, res) => {
+    try {
+        const cameras = loadGeoreferencedCameras();
+        const { bairro, status, search, limit = 500, offset = 0 } = req.query;
+
+        let filtered = cameras;
+
+        if (bairro) {
+            filtered = filtered.filter(c => (c.bairro || '').toLowerCase() === bairro.toLowerCase());
+        }
+        if (status) {
+            filtered = filtered.filter(c => (c.status || '').toLowerCase() === status.toLowerCase());
+        }
+        if (search) {
+            const term = search.toLowerCase();
+            filtered = filtered.filter(c =>
+                (c.nome || '').toLowerCase().includes(term) ||
+                (c.bairro || '').toLowerCase().includes(term) ||
+                (c.id || '').includes(term)
+            );
+        }
+
+        const total = filtered.length;
+        const onlineCount = filtered.filter(c => c.status === 'online').length;
+        const offlineCount = total - onlineCount;
+
+        const paginated = filtered.slice(parseInt(offset, 10), parseInt(offset, 10) + parseInt(limit, 10));
+
+        res.json({
+            ok: true,
+            total,
+            stats: {
+                total,
+                online: onlineCount,
+                offline: offlineCount
+            },
+            limit: parseInt(limit, 10),
+            offset: parseInt(offset, 10),
+            cameras: paginated
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/georreferenciadas:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao buscar catálogo de câmeras.' });
+    }
+});
+
+// 2. Busca de Câmeras Próximas por Raio
+app.get('/api/cameras/proximas', (req, res) => {
+    try {
+        const { lat, lon, radius = 1000, limit = 5 } = req.query;
+        if (!lat || !lon) {
+            return res.status(400).json({ ok: false, error: 'Parâmetros lat e lon são obrigatórios.' });
+        }
+
+        const targetLat = parseFloat(lat);
+        const targetLon = parseFloat(lon);
+        const radiusMeters = parseFloat(radius);
+        const topLimit = parseInt(limit, 10);
+
+        const cameras = loadGeoreferencedCameras();
+
+        function haversineDist(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        const scored = [];
+        for (const cam of cameras) {
+            const dist = haversineDist(targetLat, targetLon, cam.latitude, cam.longitude);
+            if (dist <= radiusMeters) {
+                scored.push({
+                    camera: cam,
+                    distanciaMetros: Math.round(dist)
+                });
+            }
+        }
+
+        scored.sort((a, b) => a.distanciaMetros - b.distanciaMetros);
+        const results = scored.slice(0, topLimit);
+
+        const onlineNoRaio = results.filter(r => r.camera.status === 'online').length;
+        let nivel = 'BAIXA';
+        if (onlineNoRaio >= 3 || (onlineNoRaio >= 1 && results[0]?.distanciaMetros < 350)) {
+            nivel = 'ALTA';
+        } else if (onlineNoRaio >= 1) {
+            nivel = 'MÉDIA';
+        }
+
+        res.json({
+            ok: true,
+            totalNoRaio: scored.length,
+            coberturaVisual: {
+                nivel,
+                onlineNoRaio,
+                totalNoRaio: scored.length,
+                menorDistancia: results[0]?.distanciaMetros || null
+            },
+            results
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/proximas:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao calcular proximidade de câmeras.' });
+    }
 });
 
 // HELPER: Obter data e limites do dia em America/Sao_Paulo (Horário Oficial de Brasília)

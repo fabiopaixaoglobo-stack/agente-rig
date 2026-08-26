@@ -26,3 +26,4 @@ Normas/*.pdf
 # Database files
 *.db
 server/data/
+!server/data/cameras_georreferenciadas.json

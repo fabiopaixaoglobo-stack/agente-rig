@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { showToast, escapeHtml, formatarHorario } from './utils.js';
 import { parseDataHora } from './data-service.js';
+import { CamerasGeoService } from './cameras-geo-service.js';
 
 function abrirCanalExterno(url) {
     if (
@@ -328,6 +329,11 @@ export class UiController {
         try { this.initModals(); } catch (e) { console.error("Erro initModals:", e); }
         try { this.initPlanner(); } catch (e) { console.error("Erro initPlanner:", e); }
         try { this.initRegionalization(); } catch (e) { console.error("Erro initRegionalization:", e); }
+
+        this.camerasGeoService = new CamerasGeoService();
+        this.activeOcorrencias = [];
+        this.currentCorrelatedCameras = [];
+        try { this.initCentralInteligente(); } catch (e) { console.error("Erro initCentralInteligente:", e); }
         
         this.mapMode = 'TODOS';
         this.gpsIntervalId = null;
@@ -2646,16 +2652,117 @@ export class UiController {
         }
     }
 
+    // =========================================================================
+    // CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO)
+    // =========================================================================
+    async initCentralInteligente() {
+        console.info('[CentralInteligente] Inicializando CCO Agente RIT...');
+
+        // 1. Carregar base de câmeras georreferenciadas
+        try {
+            const cameras = await this.camerasGeoService.loadCameras();
+            const clusters = this.camerasGeoService.getBairroClusters();
+
+            const badgeEl = document.getElementById('cicc-cams-count');
+            if (badgeEl) badgeEl.textContent = cameras.length.toLocaleString('pt-BR');
+
+            if (this.transitoMap) {
+                this.transitoMap.initCamerasLayer(
+                    cameras,
+                    clusters,
+                    (cam) => this.abrirDetalhesCameraCCO(cam),
+                    (cam) => this.hoverCamera(cam)
+                );
+            }
+        } catch (err) {
+            console.error('[CentralInteligente] Erro ao carregar câmeras no mapa:', err);
+        }
+
+        // 2. Ouvintes das Camadas Inteligentes
+        document.getElementById('layer-toggle-cameras')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('cameras', e.target.checked);
+        });
+
+        document.getElementById('layer-toggle-ott')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('ott', e.target.checked);
+        });
+
+        document.getElementById('layer-toggle-fogo')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('fogo', e.target.checked);
+        });
+
+        const toggleHeatmap = document.getElementById('layer-toggle-heatmap');
+        const selHorizonte = document.getElementById('seletor-heatmap-horizonte');
+        toggleHeatmap?.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            this.transitoMap?.setLayerVisibility('heatmap', isChecked);
+            if (selHorizonte) selHorizonte.style.display = isChecked ? 'inline-block' : 'none';
+            if (isChecked && this.activeOcorrencias.length > 0) {
+                this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, selHorizonte?.value || '24h');
+            }
+        });
+
+        selHorizonte?.addEventListener('change', (e) => {
+            if (toggleHeatmap?.checked && this.activeOcorrencias.length > 0) {
+                this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, e.target.value);
+            }
+        });
+
+        document.getElementById('layer-toggle-operacoes-rit')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('operacoesRit', e.target.checked);
+        });
+
+        document.getElementById('layer-toggle-radar')?.addEventListener('change', (e) => {
+            this.transitoMap?.setLayerVisibility('radar', e.target.checked);
+        });
+
+        // 3. Provedor de Mapa (Zero Watermark)
+        document.getElementById('seletor-basemap-cicc')?.addEventListener('change', (e) => {
+            this.transitoMap?.setMapType(e.target.value);
+            showToast(`Mapa alterado para: ${e.target.options[e.target.selectedIndex].text}`, "info");
+        });
+
+        // 4. Painel Lateral Modo Comando & Dock 2x2
+        document.getElementById('btn-fechar-drawer-cicc')?.addEventListener('click', () => {
+            document.getElementById('cicc-drawer-ocorrencia')?.classList.remove('open');
+        });
+
+        document.getElementById('btn-dock-close')?.addEventListener('click', () => {
+            document.getElementById('cicc-dock-matrix')?.classList.remove('open');
+        });
+
+        document.getElementById('btn-dock-fullscreen')?.addEventListener('click', () => {
+            const dock = document.getElementById('cicc-dock-matrix');
+            if (dock) {
+                dock.classList.toggle('fullscreen');
+                const isFs = dock.classList.contains('fullscreen');
+                document.getElementById('btn-dock-fullscreen').innerHTML = isFs
+                    ? '<i class="fa-solid fa-compress"></i> Restaurar'
+                    : '<i class="fa-solid fa-expand"></i> Tela Inteira';
+            }
+        });
+
+        document.getElementById('btn-dock-refresh')?.addEventListener('click', () => {
+            if (this.currentCorrelatedCameras && this.currentCorrelatedCameras.length > 0) {
+                this.abrirMonitoramento2x2Integrado(this.currentCorrelatedCameras);
+                showToast("Matriz de vídeo recarregada.", "info");
+            }
+        });
+    }
+
     async atualizarInformesOTT() {
         const listEl = document.getElementById('ott-reports-list');
         const statsEl = document.getElementById('ott-reports-stats');
+        const totalBadge = document.getElementById('ott-total-badge');
+
         if (listEl) {
-            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando fontes de segurança pública...</div>';
+            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:15px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando e correlacionando inteligência geoespacial...</div>';
         }
 
         const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
         const showOtt = document.getElementById('layer-toggle-ott')?.checked !== false;
         const showFogo = document.getElementById('layer-toggle-fogo')?.checked !== false;
+        const raioBufferMetros = parseInt(document.getElementById('seletor-buffer-risco')?.value || '1000', 10);
 
         try {
             let sourceParam = 'all';
@@ -2663,7 +2770,7 @@ export class UiController {
             if (!showOtt && showFogo) sourceParam = 'fogo';
 
             console.log(`[FOGO-REQUEST] Solicitando ocorrências para ${reg} (Fonte: ${sourceParam})...`);
-            showToast("Atualizando ocorrências de segurança (OTT + Fogo Cruzado)...", "info");
+            showToast("Atualizando inteligência de segurança (OTT + Fogo Cruzado)...", "info");
 
             const res = await fetch(`/api/seguranca/ocorrencias?state=${encodeURIComponent(reg)}&source=${sourceParam}`);
             const json = await res.json();
@@ -2676,23 +2783,27 @@ export class UiController {
             const fogoItems = json.data.fogoCruzado || [];
             const allItems = json.data.todas || [];
 
-            console.log(`[FOGO-RESPONSE] Recebidas ${allItems.length} ocorrências no total (OTT: ${ottItems.length}, Fogo Cruzado: ${fogoItems.length})`);
+            this.activeOcorrencias = allItems;
+            if (totalBadge) totalBadge.textContent = `${allItems.length} ativas`;
 
-            // 1. Atualizar contadores
+            // Certifica que a base de câmeras está carregada para correlação
+            await this.camerasGeoService.loadCameras();
+
+            // 1. Atualizar estatísticas no cabeçalho da lista
             if (statsEl) {
                 statsEl.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span>📅 <b>${json.stats?.data_referencia || 'Hoje'}</b> (${json.stats?.timezone || 'Brasília'})</span>
                         <span style="font-weight:700; color:#fff;">Total: ${allItems.length}</span>
                     </div>
-                    <div style="display:flex; gap:8px; margin-top:2px; font-size:9px;">
+                    <div style="display:flex; gap:8px; margin-top:3px; font-size:9.5px;">
                         <span style="color:#00d1ff;">🔫 OTT: <b>${ottItems.length}</b></span>
                         <span style="color:#f43f5e;">🔴 Fogo Cruzado: <b>${fogoItems.length}</b></span>
                     </div>
                 `;
             }
 
-            // 2. Plotar no mapa Leaflet nas respectivas camadas
+            // 2. Plotar no mapa Leaflet e correlacionar espacialmente
             if (this.transitoMap) {
                 this.transitoMap.clearMarkers();
                 this.transitoMap.clearLayerGroup('ott');
@@ -2702,16 +2813,8 @@ export class UiController {
                 if (showOtt) {
                     ottItems.forEach(alert => {
                         if (alert.lat && alert.lon) {
-                            const popupHtml = `
-                                <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
-                                    <strong style="color:#00d1ff; font-size:12px;">🔫 Ocorrência OTT</strong><br>
-                                    <b>Tipo:</b> ${escapeHtml(alert.tipo)}<br>
-                                    <b>Data/Hora:</b> ${escapeHtml(alert.data)} às ${escapeHtml(alert.hora)}<br>
-                                    <b>Local:</b> ${escapeHtml(alert.bairro)} - ${escapeHtml(alert.municipio)} (${escapeHtml(alert.estado)})<br>
-                                    <b>Fonte:</b> OTT (Onde Tem Tiroteio)<br>
-                                    <span style="font-size:9px; color:#888;">Última atualização: ${escapeHtml(alert.updatedAt || alert.data)}</span>
-                                </div>
-                            `;
+                            const corr = this.camerasGeoService.correlateOccurrence(alert.lat, alert.lon, raioBufferMetros, 5);
+                            alert._correlation = corr;
 
                             const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 36 36">
                                 <circle cx="18" cy="18" r="16" fill="#0c1524" stroke="#00d1ff" stroke-width="2"/>
@@ -2719,7 +2822,14 @@ export class UiController {
                                 <text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#00d1ff">🔫</text>
                             </svg>`;
 
-                            this.transitoMap.addMarkerToLayer('ott', alert.lat, alert.lon, popupHtml, { html: iconSvg });
+                            this.transitoMap.addMarkerToLayer(
+                                'ott',
+                                alert.lat,
+                                alert.lon,
+                                null,
+                                { html: iconSvg },
+                                { click: () => this.abrirModoComandoOcorrencia(alert, corr) }
+                            );
                         }
                     });
                 }
@@ -2728,18 +2838,8 @@ export class UiController {
                 if (showFogo) {
                     fogoItems.forEach(fogo => {
                         if (fogo.lat && fogo.lon) {
-                            const popupHtml = `
-                                <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
-                                    <strong style="color:#f43f5e; font-size:12px;">${escapeHtml(fogo.icone || '🔴')} ${escapeHtml(fogo.tipo)}</strong><br>
-                                    <b>Subtipo:</b> ${escapeHtml(fogo.subtipo || 'Confronto')}<br>
-                                    <b>Descrição:</b> ${escapeHtml(fogo.descricao || '')}<br>
-                                    <b>Data/Hora:</b> ${escapeHtml(fogo.data)} às ${escapeHtml(fogo.hora)}<br>
-                                    <b>Local:</b> ${escapeHtml(fogo.bairro)} - ${escapeHtml(fogo.municipio)} (${escapeHtml(fogo.estado)})<br>
-                                    ${fogo.endereco ? `<b>Endereço:</b> ${escapeHtml(fogo.endereco)}<br>` : ''}
-                                    <b>Fonte:</b> Instituto Fogo Cruzado v2<br>
-                                    <span style="font-size:9px; color:#888;">Última atualização: ${escapeHtml(fogo.updatedAt || fogo.data)}</span>
-                                </div>
-                            `;
+                            const corr = this.camerasGeoService.correlateOccurrence(fogo.lat, fogo.lon, raioBufferMetros, 5);
+                            fogo._correlation = corr;
 
                             const iconColor = fogo.categoria === 'tiroteio' ? '#ef4444' : fogo.categoria === 'operacao_policial' ? '#f97316' : '#f59e0b';
                             const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 36 36">
@@ -2748,30 +2848,52 @@ export class UiController {
                                 <text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" font-size="10" font-family="sans-serif" fill="${iconColor}">${fogo.icone || '🔴'}</text>
                             </svg>`;
 
-                            this.transitoMap.addMarkerToLayer('fogo', fogo.lat, fogo.lon, popupHtml, { html: iconSvg });
+                            this.transitoMap.addMarkerToLayer(
+                                'fogo',
+                                fogo.lat,
+                                fogo.lon,
+                                null,
+                                { html: iconSvg },
+                                { click: () => this.abrirModoComandoOcorrencia(fogo, corr) }
+                            );
                         }
                     });
                 }
+
+                // Renderizar Heatmap se ativo
+                if (document.getElementById('layer-toggle-heatmap')?.checked) {
+                    const horizon = document.getElementById('seletor-heatmap-horizonte')?.value || '24h';
+                    this.transitoMap.renderRiskHeatmap(allItems, horizon);
+                }
             }
 
-            // 3. Renderizar lista lateral
+            // 3. Renderizar lista lateral com Índice de Cobertura Visual
             if (listEl) {
                 if (allItems.length === 0) {
-                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px 0;">Nenhuma ocorrência de segurança registrada hoje.</div>';
+                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:15px 0;">Nenhuma ocorrência registrada hoje no Rio de Janeiro.</div>';
                     showToast("Nenhuma ocorrência registrada hoje.", "info");
                     return;
                 }
 
                 listEl.innerHTML = '';
                 allItems.forEach(item => {
+                    const corr = item._correlation || this.camerasGeoService.correlateOccurrence(item.lat, item.lon, raioBufferMetros, 5);
+                    const cob = corr.cobertura;
+
                     const el = document.createElement('div');
-                    el.style.padding = '8px 0';
-                    el.style.borderBottom = '1px solid #222';
+                    el.style.padding = '8px 6px';
+                    el.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
                     el.style.cursor = 'pointer';
+                    el.style.borderRadius = '4px';
+                    el.style.transition = 'background 0.2s';
+                    el.onmouseenter = () => el.style.background = 'rgba(0,209,255,0.06)';
+                    el.onmouseleave = () => el.style.background = 'transparent';
 
                     const isFogo = item.fonte?.includes('Fogo');
                     const badgeBg = isFogo ? 'rgba(244,63,94,0.15)' : 'rgba(0,209,255,0.15)';
                     const badgeColor = isFogo ? '#f43f5e' : '#00d1ff';
+
+                    const cobClass = cob.nivel === 'ALTA' ? 'alta' : (cob.nivel === 'MÉDIA' ? 'media' : 'baixa');
 
                     el.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
@@ -2782,31 +2904,311 @@ export class UiController {
                                 ${escapeHtml(item.fonte)}
                             </span>
                         </div>
-                        <div style="font-size:10px; color:#aaa; margin-bottom:2px;">
-                            🕒 ${escapeHtml(item.data)} às ${escapeHtml(item.hora)}
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin: 3px 0;">
+                            <span style="font-size:9.5px; color:#cbd5e1;">📍 <b>${escapeHtml(item.bairro)}</b></span>
+                            <span class="cicc-badge-cobertura ${cobClass}" style="font-size:8px; padding:1px 5px;">
+                                ${cob.icone} ${cob.nivel}
+                            </span>
                         </div>
-                        <div style="font-size:10px; color:#cbd5e1;">
-                            📍 ${escapeHtml(item.bairro)} - ${escapeHtml(item.municipio)}
+                        <div style="font-size:9px; color:#888; display:flex; justify-content:space-between;">
+                            <span>🕒 ${escapeHtml(item.data)} às ${escapeHtml(item.hora)}</span>
+                            <span>📹 ${cob.onlineNoRaio} cams online</span>
                         </div>
-                        ${item.endereco ? `<div style="font-size:9px; color:#64748b;">${escapeHtml(item.endereco)}</div>` : ''}
                     `;
 
                     el.addEventListener('click', () => {
-                        if (this.transitoMap && item.lat && item.lon) {
-                            this.transitoMap.setView([item.lat, item.lon], 15);
-                        }
+                        this.abrirModoComandoOcorrencia(item, corr);
                     });
 
                     listEl.appendChild(el);
                 });
 
-                showToast(`Segurança Pública atualizada: ${allItems.length} ocorrências hoje!`, "success");
+                showToast(`Segurança Pública atualizada: ${allItems.length} ocorrências correlacionadas!`, "success");
             }
         } catch (err) {
             console.error('[FOGO-REQUEST] Erro ao carregar ocorrências de segurança:', err);
             if (listEl) {
-                listEl.innerHTML = '<div style="color:#f43f5e; text-align:center; padding:10px 0;">Erro ao atualizar ocorrências de segurança.</div>';
+                listEl.innerHTML = '<div style="color:#f43f5e; text-align:center; padding:15px 0;">Erro ao sincronizar inteligência de segurança.</div>';
             }
+            showToast("Erro ao processar ocorrências de segurança.", "error");
+        }
+    }
+
+    // ==========================================
+    // MODO COMANDO CCO: PAINEL TÁTICO LATERAL
+    // ==========================================
+    abrirModoComandoOcorrencia(item, correlation = null) {
+        if (!item) return;
+
+        const corr = correlation || this.camerasGeoService.correlateOccurrence(item.lat, item.lon, 1000, 5);
+        this.currentCorrelatedCameras = corr.cameras || [];
+
+        // 1. Focar mapa no evento e desenhar buffer de segurança
+        if (this.transitoMap && item.lat && item.lon) {
+            this.transitoMap.setView([item.lat, item.lon], 15);
+            this.transitoMap.clearLayerGroup('corridor');
+
+            // Círculo de buffer ao redor do evento
+            const circle = L.circle([item.lat, item.lon], {
+                radius: 1000,
+                color: corr.cobertura.cor,
+                fillColor: corr.cobertura.cor,
+                fillOpacity: 0.12,
+                weight: 1.5,
+                dashArray: '4, 4'
+            });
+            circle.addTo(this.transitoMap.layerGroups.corridor);
+
+            // Destacar câmera mais próxima
+            if (corr.cameras.length > 0) {
+                this.transitoMap.highlightCamera(corr.cameras[0].camera.id);
+            }
+        }
+
+        // 2. Montar HTML no Modo Comando (Tactical Drawer)
+        const drawerBody = document.getElementById('cicc-drawer-body');
+        if (!drawerBody) return;
+
+        const cob = corr.cobertura;
+        const cobClass = cob.nivel === 'ALTA' ? 'alta' : (cob.nivel === 'MÉDIA' ? 'media' : 'baixa');
+        const ia = corr.diagnosticoIA;
+
+        let camerasHtml = '';
+        if (corr.cameras.length === 0) {
+            camerasHtml = '<div style="font-size:10px; color:#94a3b8; text-align:center; padding:8px;">Nenhuma câmera cadastrada no raio de 1.000m.</div>';
+        } else {
+            camerasHtml = corr.cameras.map((c, idx) => {
+                const cam = c.camera;
+                const isOnline = cam.status === 'online';
+                const statusColor = isOnline ? '#10b981' : '#ef4444';
+                return `
+                    <div class="cicc-cam-item">
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="font-size:9.5px; font-weight:900; color:#00d1ff;">✓ ${cam.id}</span>
+                                <span style="font-size:10.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(cam.nome)}">${escapeHtml(cam.nome)}</span>
+                            </div>
+                            <div style="font-size:9px; color:#94a3b8; margin-top:1px;">
+                                📍 ${escapeHtml(cam.bairro)} | Distância: <b style="color:#f5a623;">${c.distanciaMetros}m</b> | <span style="color:${statusColor}; font-weight:800;">● ${cam.status.toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:4px; margin-left:6px;">
+                            <button onclick="window.uiController.focarCameraNoMapa('${cam.id}', ${cam.latitude}, ${cam.longitude})" class="btn btnSmall" style="font-size:8px; padding:2px 5px; background:rgba(0,209,255,0.15); color:#00d1ff; border:1px solid rgba(0,209,255,0.3);" title="Focar no mapa">
+                                🎯 Focar
+                            </button>
+                            <button onclick="window.uiController.abrirDetalhesCameraCCO(${JSON.stringify(cam).replace(/"/g, '&quot;')})" class="btn btnSmall" style="font-size:8px; padding:2px 5px; background:rgba(255,255,255,0.08); color:#fff;" title="Ver detalhes">
+                                📹 Ver
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        drawerBody.innerHTML = `
+            <!-- CARD DA OCORRÊNCIA -->
+            <div class="cicc-tactical-card" style="border-left: 3px solid ${cob.cor};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:#fff; font-size:13px;">
+                        ${escapeHtml(item.icone || '⚠️')} ${escapeHtml(item.tipo)}
+                    </strong>
+                    <span style="font-size:9px; font-weight:800; background:rgba(0,209,255,0.15); color:#00d1ff; padding:2px 6px; border-radius:3px;">
+                        ${escapeHtml(item.fonte)}
+                    </span>
+                </div>
+                <div style="font-size:11px; color:#cbd5e1; margin-bottom:4px;">
+                    📍 <b>${escapeHtml(item.bairro)}</b> - ${escapeHtml(item.municipio || 'Rio de Janeiro')}
+                </div>
+                ${item.endereco ? `<div style="font-size:9.5px; color:#94a3b8; margin-bottom:4px;">${escapeHtml(item.endereco)}</div>` : ''}
+                <div style="font-size:9.5px; color:#64748b;">
+                    🕒 Registro: <b>${escapeHtml(item.data)} às ${escapeHtml(item.hora)}</b>
+                </div>
+            </div>
+
+            <!-- ÍNDICE DE COBERTURA VISUAL -->
+            <div class="cicc-tactical-card" style="background:rgba(0,0,0,0.4);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Índice de Cobertura Visual:</span>
+                    <span class="cicc-badge-cobertura ${cobClass}">
+                        ${cob.icone} COBERTURA ${cob.nivel}
+                    </span>
+                </div>
+                <div style="font-size:10.5px; line-height:1.4; color:#e2e8f0;">
+                    ${cob.descricao}
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:9.5px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.05); padding-top:4px;">
+                    <span>Câmeras no raio: <b>${cob.totalNoRaio}</b></span>
+                    <span>Câmeras Online: <b style="color:#10b981;">${cob.onlineNoRaio}</b></span>
+                    <span>Mais próxima: <b style="color:#f5a623;">${cob.menorDistancia ? cob.menorDistancia + 'm' : 'N/D'}</b></span>
+                </div>
+            </div>
+
+            <!-- IA OPERACIONAL RIT: IMPACTO EM ROTAS GLOBO -->
+            ${ia ? `
+                <div class="cicc-tactical-card" style="background:rgba(15, 23, 42, 0.9); border:1px solid rgba(0,209,255,0.25);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10.5px; font-weight:900; color:#00d1ff; display:flex; align-items:center; gap:4px;">
+                            🤖 IA OPERACIONAL RIT
+                        </span>
+                        <span style="font-size:8.5px; font-weight:800; background:rgba(245,166,35,0.2); color:#f5a623; padding:1px 5px; border-radius:3px;">
+                            RISCO ${ia.nivelRisco}
+                        </span>
+                    </div>
+                    <div style="font-size:10px; color:#cbd5e1; margin-bottom:4px;">
+                        🎯 <b>Polo Estratégico:</b> ${ia.poloEstrategico} (${ia.distanciaPoloMetros}m)
+                    </div>
+                    <div style="font-size:9.5px; color:#94a3b8; margin-bottom:6px;">
+                        🛣️ <b>Vias Impactadas:</b> ${ia.viasImpactadas.join(', ')}
+                    </div>
+                    <div style="font-size:10px; line-height:1.4; color:#f8fafc; background:rgba(0,0,0,0.35); padding:6px; border-radius:4px; border-left:2px solid #00d1ff;">
+                        💡 <b>Recomendação:</b> ${ia.recomendacaoTatica}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- TOP 5 CÂMERAS PRÓXIMAS -->
+            <div class="cicc-tactical-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:10.5px; font-weight:800; color:#00d1ff; text-transform:uppercase;">
+                        📹 Câmeras de Vigilância (<span style="color:#fff;">${corr.cameras.length}</span>)
+                    </span>
+                    <span style="font-size:9px; color:#64748b;">Raio: 1.000m</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    ${camerasHtml}
+                </div>
+            </div>
+
+            <!-- ACIONAMENTO RÁPIDO: MONITORAMENTO 2X2 -->
+            <div style="margin-top:6px;">
+                <button id="btn-cicc-acionar-2x2" class="btn btnPrimary" style="width:100%; padding:10px; font-size:12px; font-weight:900; letter-spacing:0.5px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 0 15px rgba(0,209,255,0.4);">
+                    <i class="fa-solid fa-video"></i> ABRIR MONITORAMENTO 2X2
+                </button>
+            </div>
+        `;
+
+        document.getElementById('btn-cicc-acionar-2x2')?.addEventListener('click', () => {
+            this.abrirMonitoramento2x2Integrado(corr.cameras);
+        });
+
+        // Abre o drawer lateral
+        document.getElementById('cicc-drawer-ocorrencia')?.classList.add('open');
+    }
+
+    // ==========================================
+    // DOCK DE MONITORAMENTO 2X2 INTEGRADO
+    // ==========================================
+    abrirMonitoramento2x2Integrado(camerasList) {
+        const dock = document.getElementById('cicc-dock-matrix');
+        const grid = document.getElementById('cicc-dock-grid');
+        const subtitle = document.getElementById('cicc-dock-subtitle');
+        if (!dock || !grid) return;
+
+        const cams = (camerasList || []).map(c => c.camera || c);
+        
+        // Completa com câmeras padrão se tiver menos de 4
+        const defaultCams = [
+            { id: "000405", nome: "Abelardo Bueno Frente 3600", bairro: "Barra Olímpica", url: "https://www.camerasrj.com.br/camera/405/", embedUrl: "https://player.camerasrj.com.br/camera/405/" },
+            { id: "000127", nome: "AV. ARMANDO LOMBARDI BARRA POINT", bairro: "Barra da Tijuca", url: "https://www.camerasrj.com.br/camera/127/", embedUrl: "https://player.camerasrj.com.br/camera/127/" },
+            { id: "000064", nome: "AV. AMÉRICAS BRT AFRÂNIO COSTA", bairro: "Barra da Tijuca", url: "https://www.camerasrj.com.br/camera/64/", embedUrl: "https://player.camerasrj.com.br/camera/64/" },
+            { id: "000100", nome: "AV. 31 DE MARÇO X SALVADOR DE SÁ", bairro: "Cidade Nova", url: "https://www.camerasrj.com.br/camera/100/", embedUrl: "https://player.camerasrj.com.br/camera/100/" }
+        ];
+
+        const slots = [
+            cams[0] || defaultCams[0],
+            cams[1] || defaultCams[1],
+            cams[2] || defaultCams[2],
+            cams[3] || defaultCams[3]
+        ];
+
+        if (subtitle) {
+            subtitle.textContent = `Monitoramento Tático CCO — ${slots[0]?.bairro || 'Rio de Janeiro'}`;
+        }
+
+        grid.innerHTML = slots.map((cam, i) => {
+            const slotNum = i + 1;
+            const embedUrl = cam.embedUrl || `https://player.camerasrj.com.br/camera/${parseInt(cam.id, 10)}/`;
+            const cleanUrl = cam.url || `https://www.camerasrj.com.br/camera/${parseInt(cam.id, 10)}/`;
+            return `
+                <div class="cicc-dock-slot">
+                    <div class="cicc-dock-slot-header">
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">
+                            <span style="color:#00d1ff; font-weight:900;">[Q${slotNum}]</span>
+                            <span style="color:#fff; text-transform:uppercase;">${escapeHtml(cam.bairro)}:</span>
+                            <span style="color:#cbd5e1;">${escapeHtml(cam.nome)}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                            <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:#00d1ff; text-decoration:none; font-size:8px;" title="Abrir portal de origem">
+                                FONTE ↗
+                            </a>
+                        </div>
+                    </div>
+                    <iframe 
+                        src="${embedUrl}" 
+                        class="cicc-dock-slot-iframe" 
+                        allowfullscreen 
+                        allow="autoplay; encrypted-media">
+                    </iframe>
+                </div>
+            `;
+        }).join('');
+
+        dock.classList.add('open');
+        showToast("Matriz 2x2 acionada com sucesso.", "success");
+    }
+
+    abrirDetalhesCameraCCO(cam) {
+        if (!cam) return;
+        const drawerBody = document.getElementById('cicc-drawer-body');
+        if (!drawerBody) return;
+
+        const isOnline = cam.status === 'online';
+        const color = isOnline ? '#10b981' : '#ef4444';
+
+        drawerBody.innerHTML = `
+            <div class="cicc-tactical-card" style="border-left:3px solid #00d1ff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:12px; font-weight:900; color:#00d1ff;">📹 CÂMERA #${cam.id}</span>
+                    <span style="font-size:9px; font-weight:800; background:rgba(0,209,255,0.15); color:${color}; padding:2px 6px; border-radius:3px;">
+                        ● ${cam.status.toUpperCase()}
+                    </span>
+                </div>
+                <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">
+                    ${escapeHtml(cam.nome)}
+                </div>
+                <div style="font-size:10px; color:#cbd5e1; margin-bottom:6px;">
+                    📍 <b>${escapeHtml(cam.bairro)}</b>, Rio de Janeiro - RJ
+                </div>
+                <div style="font-size:9.5px; color:#94a3b8; background:rgba(0,0,0,0.3); padding:6px; border-radius:4px;">
+                    🏢 Operadora: <b>${cam.operadora || 'COR Rio'}</b><br>
+                    🔭 Campo de Visão: <b>${cam.angulo || 180}° (${cam.angulo >= 360 ? 'PTZ 360' : 'Panorâmica'})</b><br>
+                    🧭 Orientação / Azimute: <b>${cam.orientacao || 0}°</b><br>
+                    📡 Alcance Visual Estimado: <b>${cam.alcance || 500} metros</b>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <button onclick="window.uiController.abrirMonitoramento2x2Integrado([${JSON.stringify(cam).replace(/"/g, '&quot;')}])" class="btn btnPrimary" style="padding:10px; font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="fa-solid fa-video"></i> ABRIR AO VIVO (GRID 2X2)
+                </button>
+                <a href="${cam.url || 'https://www.camerasrj.com.br'}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="text-align:center; padding:8px; font-size:11px; color:#00d1ff; border-color:#00d1ff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL OFICIAL DE ORIGEM ↗
+                </a>
+            </div>
+        `;
+
+        document.getElementById('cicc-drawer-ocorrencia')?.classList.add('open');
+    }
+
+    focarCameraNoMapa(camId, lat, lon) {
+        if (this.transitoMap && lat && lon) {
+            this.transitoMap.highlightCamera(camId, { lat, lon });
+        }
+    }
+
+    hoverCamera(cam) {
+        // Callback opcional de hover para telemetria CCO
+    }
             showToast("Erro ao processar ocorrências de segurança.", "error");
         }
     }
@@ -3107,7 +3509,8 @@ Obrigado.`;
         // 3. Leaflet Map para o percurso
         if (!this.trackLeafletMap) {
             this.trackLeafletMap = L.map('trackMap', { zoomControl: true }).setView([-22.9068, -43.1729], 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.trackLeafletMap);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri' }).addTo(this.trackLeafletMap);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(this.trackLeafletMap);
         }
 
         // Limpar overlays anteriores
