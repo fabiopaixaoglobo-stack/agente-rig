@@ -332,7 +332,6 @@ export class CamerasGeoService {
     getRegionalClusters() {
         return this.regionalClusters || [];
     }
-    }
 
     correlateOccurrence(targetLat, targetLon, radiusMeters = 1000, topK = 5) {
         if (!targetLat || !targetLon || isNaN(parseFloat(targetLat)) || isNaN(parseFloat(targetLon))) {

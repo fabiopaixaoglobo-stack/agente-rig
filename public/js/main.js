@@ -1,11 +1,11 @@
-import { CONFIG } from './config.js?v=4.1.0';
-import { MapService } from './map-service.js?v=4.1.0';
-import { DataService } from './data-service.js?v=4.1.0';
-import { UiController } from './ui-controller.js?v=4.1.0';
-import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.1.0';
-import { CamerasRJ } from './CamerasRJ.js?v=4.1.0';
-import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.1.0';
-import { CorRio } from './CorRio.js?v=4.1.0';
+import { CONFIG } from './config.js?v=4.1.1';
+import { MapService } from './map-service.js?v=4.1.1';
+import { DataService } from './data-service.js?v=4.1.1';
+import { UiController } from './ui-controller.js?v=4.1.1';
+import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.1.1';
+import { CamerasRJ } from './CamerasRJ.js?v=4.1.1';
+import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.1.1';
+import { CorRio } from './CorRio.js?v=4.1.1';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
