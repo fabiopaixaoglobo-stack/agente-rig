@@ -75,12 +75,19 @@ export class MapService {
                 corridor: L.layerGroup().addTo(this.map)
             };
 
-            // Ouvinte de Zoom para Clusterização Multiescala (LOD)
-            this.map.on('zoomend', () => {
-                if (this.camerasData && this.camerasData.length > 0) {
-                    this._renderCamerasLOD();
-                }
-            });
+            // Ouvintes de Zoom e Movimento (Pan/Drag) com Debounce para Clusterização Multiescala (LOD)
+            this._lodDebounceTimer = null;
+            const triggerLODDebounced = () => {
+                if (this._lodDebounceTimer) clearTimeout(this._lodDebounceTimer);
+                this._lodDebounceTimer = setTimeout(() => {
+                    if (this.camerasData && this.camerasData.length > 0 || (this.bairroClusters && this.bairroClusters.length > 0)) {
+                        this._renderCamerasLOD();
+                    }
+                }, 120);
+            };
+
+            this.map.on('zoomend', triggerLODDebounced);
+            this.map.on('moveend', triggerLODDebounced);
 
             // Força o cálculo de tamanho inicial
             setTimeout(() => {
@@ -330,9 +337,6 @@ export class MapService {
         }
 
         try {
-            this.layerGroups.cameras.clearLayers();
-            this.cameraMarkersMap.clear();
-
             let zoom = 12;
             try {
                 zoom = this.map.getZoom();
@@ -340,8 +344,16 @@ export class MapService {
                 zoom = 12;
             }
 
+            let bounds = null;
+            try {
+                bounds = this.map.getBounds();
+            } catch (e) {}
+
             // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais
             if (zoom <= 11) {
+                this.layerGroups.cameras.clearLayers();
+                this.cameraMarkersMap.clear();
+
                 const regionalMap = new Map();
                 this.bairroClusters.forEach(b => {
                     let reg = 'Zona Norte';
@@ -354,7 +366,7 @@ export class MapService {
                     }
                     const r = regionalMap.get(reg);
                     r.count += b.camerasCount;
-                    r.online += b.onlineCount;
+                    r.online += (b.onlineCount || 0);
                     r.latSum += b.latitude * b.camerasCount;
                     r.lonSum += b.longitude * b.camerasCount;
                 });
@@ -376,12 +388,20 @@ export class MapService {
                 return;
             }
 
-            // 2. ZOOM MÉDIO (12 <= z <= 14): Clusters por Bairro
+            // 2. ZOOM MÉDIO (12 <= z <= 14): Clusters por Bairro no Viewport
             if (zoom <= 14) {
-                this.bairroClusters.forEach(b => {
+                this.layerGroups.cameras.clearLayers();
+                this.cameraMarkersMap.clear();
+
+                const padBounds = bounds ? bounds.pad(0.2) : null;
+                const visibleClusters = padBounds
+                    ? this.bairroClusters.filter(b => padBounds.contains([b.latitude, b.longitude]))
+                    : this.bairroClusters;
+
+                visibleClusters.forEach(b => {
                     if (b.camerasCount === 0 || isNaN(b.latitude) || isNaN(b.longitude)) return;
                     const html = `
-                        <div class="lod-cluster-bairro" title="${b.bairro}: ${b.camerasCount} câmeras (${b.onlineCount} online)">
+                        <div class="lod-cluster-bairro" title="${b.bairro}: ${b.camerasCount} câmeras (${b.onlineCount || 0} online)">
                             <div class="lod-cluster-inner">
                                 <span class="lod-icon-cam">📹</span>
                                 <span class="lod-cluster-num">${b.camerasCount}</span>
@@ -396,31 +416,52 @@ export class MapService {
                 return;
             }
 
-            // 3. ZOOM ALTO (z >= 15): Marcadores Individuais com Orientação e Cone de Visada
-            let bounds = null;
-            try {
-                bounds = this.map.getBounds();
-            } catch (e) {}
+            // 3. ZOOM ALTO (z >= 15): Marcadores Individuais com Virtualização (Máx 150 nós DOM)
+            const padBounds = bounds ? bounds.pad(0.08) : null;
+            const south = padBounds ? padBounds.getSouth() : -23.1;
+            const north = padBounds ? padBounds.getNorth() : -22.7;
+            const west = padBounds ? padBounds.getWest() : -43.8;
+            const east = padBounds ? padBounds.getEast() : -43.1;
 
-            const visibleCameras = bounds ? this.camerasData.filter(c => 
-                c.latitude >= bounds.getSouth() && c.latitude <= bounds.getNorth() &&
-                c.longitude >= bounds.getWest() && c.longitude <= bounds.getEast()
-            ) : this.camerasData.slice(0, 100);
+            const visibleCandidates = [];
+            for (let i = 0; i < this.camerasData.length; i++) {
+                const cam = this.camerasData[i];
+                if (cam.latitude >= south && cam.latitude <= north && cam.longitude >= west && cam.longitude <= east) {
+                    visibleCandidates.push(cam);
+                    if (visibleCandidates.length >= 150) break; // Limite rigoroso de 150 nós DOM
+                }
+            }
 
-            visibleCameras.forEach(cam => {
+            const visibleIds = new Set(visibleCandidates.map(c => c.id));
+
+            // Remove marcadores que saíram do viewport
+            this.cameraMarkersMap.forEach((marker, id) => {
+                if (!visibleIds.has(id)) {
+                    this.layerGroups.cameras.removeLayer(marker);
+                    this.cameraMarkersMap.delete(id);
+                }
+            });
+
+            // Adiciona apenas novos marcadores visíveis
+            visibleCandidates.forEach(cam => {
+                if (this.cameraMarkersMap.has(cam.id)) {
+                    // Já existe no DOM, apenas atualiza highlight se necessário
+                    return;
+                }
+
                 const isOnline = cam.status === 'online';
                 const isHighlighted = this.currentHighlightedCamId === cam.id;
                 const color = isHighlighted ? '#fbbf24' : (isOnline ? '#00d1ff' : '#64748b');
                 const pulseClass = isHighlighted ? 'camera-pulse-selected' : '';
-
                 const rotationDeg = cam.orientacao || 0;
+
                 const html = `
                     <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="${cam.nome} (${cam.bairro}) - ${cam.status.toUpperCase()}">
                         <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${isHighlighted ? 0.6 : 0.25}; border-color: ${color};"></div>
                         <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color};">
                             <i class="fa-solid fa-video"></i>
                         </div>
-                        <div class="lod-camera-id">${cam.id.slice(-4)}</div>
+                        <div class="lod-camera-id">${String(cam.id).slice(-4)}</div>
                     </div>
                 `;
 
@@ -430,7 +471,7 @@ export class MapService {
                 // Tooltip no hover
                 marker.bindTooltip(`
                     <div style="font-size:11px; font-weight:700; color:#fff;">
-                        <span style="color:${color};">📹 ${cam.id}</span> - ${cam.nome}<br>
+                        <span style="color:${color};">📹 #${cam.id}</span> - ${cam.nome}<br>
                         <span style="font-size:9.5px; color:#94a3b8;">${cam.bairro} | Status: <b style="color:${isOnline ? '#10b981' : '#ef4444'}">${cam.status.toUpperCase()}</b></span>
                     </div>
                 `, { direction: 'top', offset: [0, -12], opacity: 0.95 });

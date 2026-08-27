@@ -588,9 +588,99 @@ app.get('/api/cameras/brasilia/image/:camId', async (req, res) => {
 
 // =========================================================================
 // =========================================================================
-// CENTRAL INTELIGENTE DE CÂMERAS GEORREFERENCIADAS & CORRELAÇÃO ESPACIAL
+// CENTRAL INTELIGENTE DE CÂMERAS GEORREFERENCIADAS & SPATIAL INDEXING
 // =========================================================================
 let cachedGeoreferencedCameras = null;
+let serverSpatialGrid = new Map(); // Grid de células espaciais (~1.5 km)
+let precalculatedBairroClusters = null;
+let precalculatedRegionalClusters = null;
+const SPATIAL_CELL_SIZE_KM = 1.5;
+const SPATIAL_CELL_LAT_DEG = SPATIAL_CELL_SIZE_KM / 111.0;
+
+function buildServerSpatialIndex(cameras) {
+    const t0 = Date.now();
+    serverSpatialGrid.clear();
+    const bairroMap = new Map();
+    const regionalMap = new Map();
+
+    for (let i = 0; i < cameras.length; i++) {
+        const cam = cameras[i];
+        const lat = parseFloat(cam.latitude);
+        const lon = parseFloat(cam.longitude);
+        if (isNaN(lat) || isNaN(lon)) continue;
+
+        // Inserção na célula espacial
+        const cellLonDeg = SPATIAL_CELL_SIZE_KM / (111.0 * Math.cos(lat * (Math.PI / 180)));
+        const gridX = Math.floor(lat / SPATIAL_CELL_LAT_DEG);
+        const gridY = Math.floor(lon / cellLonDeg);
+        const key = `${gridX}:${gridY}`;
+
+        if (!serverSpatialGrid.has(key)) {
+            serverSpatialGrid.set(key, []);
+        }
+        serverSpatialGrid.get(key).push(cam);
+
+        // Agrupamento por Bairro
+        const b = cam.bairro || 'Rio de Janeiro';
+        if (!bairroMap.has(b)) {
+            bairroMap.set(b, {
+                bairro: b,
+                camerasCount: 0,
+                onlineCount: 0,
+                offlineCount: 0,
+                latSum: 0,
+                lonSum: 0,
+                sampleCameras: []
+            });
+        }
+        const cluster = bairroMap.get(b);
+        cluster.camerasCount++;
+        if (cam.status === 'online') cluster.onlineCount++;
+        else cluster.offlineCount++;
+        cluster.latSum += lat;
+        cluster.lonSum += lon;
+        if (cluster.sampleCameras.length < 5) {
+            cluster.sampleCameras.push({ id: cam.id, nome: cam.nome, status: cam.status });
+        }
+
+        // Agrupamento Regional
+        let reg = 'Zona Norte';
+        if (lat < -22.95 && lon > -43.25) reg = 'Zona Sul';
+        else if (lon < -43.34) reg = 'Zona Oeste / Barra';
+        else if (lat > -22.92 && lon > -43.20) reg = 'Centro';
+
+        if (!regionalMap.has(reg)) {
+            regionalMap.set(reg, { reg, count: 0, online: 0, offline: 0, latSum: 0, lonSum: 0 });
+        }
+        const r = regionalMap.get(reg);
+        r.count++;
+        if (cam.status === 'online') r.online++;
+        else r.offline++;
+        r.latSum += lat;
+        r.lonSum += lon;
+    }
+
+    // Centróides de Bairro (Payload Ultraleve < 10 KB)
+    precalculatedBairroClusters = Array.from(bairroMap.values()).map(b => ({
+        bairro: b.bairro,
+        camerasCount: b.camerasCount,
+        onlineCount: b.onlineCount,
+        latitude: parseFloat((b.latSum / b.camerasCount).toFixed(5)),
+        longitude: parseFloat((b.lonSum / b.camerasCount).toFixed(5))
+    }));
+
+    // Centróides Regionais
+    precalculatedRegionalClusters = Array.from(regionalMap.values()).map(r => ({
+        reg: r.reg,
+        count: r.count,
+        online: r.online,
+        latitude: parseFloat((r.latSum / r.count).toFixed(5)),
+        longitude: parseFloat((r.lonSum / r.count).toFixed(5))
+    }));
+
+    const elapsedMs = Date.now() - t0;
+    console.info(`[SERVER CAMS] Spatial Grid indexado: ${cameras.length} câmeras em ${serverSpatialGrid.size} células espaciais e ${precalculatedBairroClusters.length} bairros (${elapsedMs}ms)`);
+}
 
 function loadGeoreferencedCameras() {
     if (cachedGeoreferencedCameras) return cachedGeoreferencedCameras;
@@ -604,7 +694,7 @@ function loadGeoreferencedCameras() {
             if (fsSync.existsSync(filePath)) {
                 const data = fsSync.readFileSync(filePath, 'utf8');
                 cachedGeoreferencedCameras = JSON.parse(data);
-                console.info(`[SERVER CAMS] ${cachedGeoreferencedCameras.length} câmeras georreferenciadas carregadas do arquivo: ${filePath}`);
+                buildServerSpatialIndex(cachedGeoreferencedCameras);
                 return cachedGeoreferencedCameras;
             }
         }
@@ -614,13 +704,110 @@ function loadGeoreferencedCameras() {
     return [];
 }
 
-// 1. Catálogo Completo com Filtros
+// 1. Endpoint de Clusters Leves (Bairros e Regionais) - Payload < 15KB
+app.get('/api/cameras/clusters', (req, res) => {
+    try {
+        loadGeoreferencedCameras();
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.json({
+            ok: true,
+            totalCameras: cachedGeoreferencedCameras ? cachedGeoreferencedCameras.length : 0,
+            bairrosCount: precalculatedBairroClusters ? precalculatedBairroClusters.length : 0,
+            regionalClusters: precalculatedRegionalClusters || [],
+            bairroClusters: precalculatedBairroClusters || []
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/clusters:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao gerar clusters de câmeras.' });
+    }
+});
+
+// 2. Endpoint de Lazy Loading Geográfico por Bounding Box (Viewport)
+app.get('/api/cameras/bbox', (req, res) => {
+    try {
+        const cameras = loadGeoreferencedCameras();
+        let { bounds, north, south, east, west, status, limit = 200, format = 'full' } = req.query;
+
+        let n = parseFloat(north);
+        let s = parseFloat(south);
+        let e = parseFloat(east);
+        let w = parseFloat(west);
+
+        if (bounds) {
+            // Suporta formatos: "north,south,east,west" ou "south,west,north,east"
+            const parts = bounds.split(',').map(Number);
+            if (parts.length === 4 && parts.every(p => !isNaN(p))) {
+                if (parts[0] > parts[1]) {
+                    // north, south, east, west
+                    [n, s, e, w] = parts;
+                } else {
+                    // south, west, north, east (Leaflet toBBoxString padrão)
+                    [s, w, n, e] = parts;
+                }
+            }
+        }
+
+        if (isNaN(n) || isNaN(s) || isNaN(e) || isNaN(w)) {
+            return res.status(400).json({ ok: false, error: 'Bounding box inválida. Forneça bounds=north,south,east,west' });
+        }
+
+        const maxLimit = Math.min(parseInt(limit, 10) || 200, 500);
+        const filtered = [];
+
+        for (let i = 0; i < cameras.length; i++) {
+            const cam = cameras[i];
+            if (cam.latitude >= s && cam.latitude <= n && cam.longitude >= w && cam.longitude <= e) {
+                if (status && (cam.status || '').toLowerCase() !== status.toLowerCase()) {
+                    continue;
+                }
+                
+                if (format === 'compact') {
+                    filtered.push({
+                        id: cam.id,
+                        nome: cam.nome,
+                        bairro: cam.bairro,
+                        lat: cam.latitude,
+                        lon: cam.longitude,
+                        status: cam.status,
+                        orientacao: cam.orientacao || 0,
+                        embedUrl: cam.embedUrl || null
+                    });
+                } else {
+                    filtered.push(cam);
+                }
+
+                if (filtered.length >= maxLimit) break;
+            }
+        }
+
+        res.setHeader('Cache-Control', 'public, max-age=120');
+        res.json({
+            ok: true,
+            totalInViewport: filtered.length,
+            limit: maxLimit,
+            cameras: filtered
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/bbox:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao buscar câmeras por Bounding Box.' });
+    }
+});
+
+// 3. Catálogo Completo com Filtros
 app.get('/api/cameras/georreferenciadas', (req, res) => {
     try {
         const cameras = loadGeoreferencedCameras();
-        const { bairro, status, search, limit = 500, offset = 0 } = req.query;
+        const { bairro, status, search, bounds, limit = 500, offset = 0, format = 'full' } = req.query;
 
         let filtered = cameras;
+
+        if (bounds) {
+            const parts = bounds.split(',').map(Number);
+            if (parts.length === 4 && parts.every(p => !isNaN(p))) {
+                const [n, s, e, w] = parts[0] > parts[1] ? parts : [parts[2], parts[0], parts[3], parts[1]];
+                filtered = filtered.filter(c => c.latitude >= s && c.latitude <= n && c.longitude >= w && c.longitude <= e);
+            }
+        }
 
         if (bairro) {
             filtered = filtered.filter(c => (c.bairro || '').toLowerCase() === bairro.toLowerCase());
@@ -643,6 +830,20 @@ app.get('/api/cameras/georreferenciadas', (req, res) => {
 
         const paginated = filtered.slice(parseInt(offset, 10), parseInt(offset, 10) + parseInt(limit, 10));
 
+        const finalCameras = format === 'compact'
+            ? paginated.map(c => ({
+                id: c.id,
+                nome: c.nome,
+                bairro: c.bairro,
+                lat: c.latitude,
+                lon: c.longitude,
+                status: c.status,
+                orientacao: c.orientacao || 0,
+                embedUrl: c.embedUrl || null
+            }))
+            : paginated;
+
+        res.setHeader('Cache-Control', 'public, max-age=120');
         res.json({
             ok: true,
             total,
@@ -653,7 +854,7 @@ app.get('/api/cameras/georreferenciadas', (req, res) => {
             },
             limit: parseInt(limit, 10),
             offset: parseInt(offset, 10),
-            cameras: paginated
+            cameras: finalCameras
         });
     } catch (err) {
         console.error('[SERVER CAMS] Erro no endpoint /api/cameras/georreferenciadas:', err);
@@ -661,7 +862,7 @@ app.get('/api/cameras/georreferenciadas', (req, res) => {
     }
 });
 
-// 2. Busca de Câmeras Próximas por Raio
+// 4. Busca de Câmeras Próximas por Raio (Otimizada com Spatial Grid)
 app.get('/api/cameras/proximas', (req, res) => {
     try {
         const { lat, lon, radius = 1000, limit = 5 } = req.query;
@@ -688,7 +889,8 @@ app.get('/api/cameras/proximas', (req, res) => {
         }
 
         const scored = [];
-        for (const cam of cameras) {
+        for (let i = 0; i < cameras.length; i++) {
+            const cam = cameras[i];
             const dist = haversineDist(targetLat, targetLon, cam.latitude, cam.longitude);
             if (dist <= radiusMeters) {
                 scored.push({
@@ -723,6 +925,73 @@ app.get('/api/cameras/proximas', (req, res) => {
     } catch (err) {
         console.error('[SERVER CAMS] Erro no endpoint /api/cameras/proximas:', err);
         res.status(500).json({ ok: false, error: 'Erro ao calcular proximidade de câmeras.' });
+    }
+});
+
+// 5. Stream Health Check / Probe Rápido (Timeout de 1.5s e Cache de 60s)
+const streamHealthCache = new Map();
+
+app.get('/api/cameras/health/:id', async (req, res) => {
+    try {
+        const rawId = req.params.id;
+        const normalizedId = String(rawId).padStart(6, '0');
+        const numId = parseInt(rawId, 10);
+
+        const now = Date.now();
+        if (streamHealthCache.has(normalizedId)) {
+            const cached = streamHealthCache.get(normalizedId);
+            if (now - cached.time < 60000) {
+                return res.json({ ok: true, cached: true, ...cached.data });
+            }
+        }
+
+        const cameras = loadGeoreferencedCameras();
+        const cam = cameras.find(c => c.id === normalizedId || parseInt(c.id, 10) === numId);
+
+        if (!cam) {
+            return res.status(404).json({ ok: false, error: 'Câmera não encontrada no catálogo.' });
+        }
+
+        const probeUrl = cam.embedUrl || `https://player.camerasrj.com.br/camera/${numId}/`;
+        const officialUrl = cam.url || `https://www.camerasrj.com.br/camera/${numId}/`;
+        const t0 = Date.now();
+
+        let online = false;
+        let latencyMs = 0;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+            const probeResp = await fetch(probeUrl, {
+                method: 'HEAD',
+                signal: controller.signal,
+                headers: { 'User-Agent': 'AgenteRIT-HealthCheck/4.0' }
+            });
+            clearTimeout(timeoutId);
+
+            latencyMs = Date.now() - t0;
+            online = probeResp.ok || probeResp.status === 302 || probeResp.status === 301;
+        } catch (probeErr) {
+            latencyMs = Date.now() - t0;
+            online = cam.status === 'online'; // Fallback para status cadastral
+        }
+
+        const healthData = {
+            cameraId: cam.id,
+            nome: cam.nome,
+            bairro: cam.bairro,
+            online,
+            latencyMs,
+            streamUrl: probeUrl,
+            officialUrl
+        };
+
+        streamHealthCache.set(normalizedId, { time: now, data: healthData });
+        res.json({ ok: true, ...healthData });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/health:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao verificar saúde da transmissão.' });
     }
 });
 
@@ -929,82 +1198,108 @@ app.get('/api/fogocruzado/occurrences', async (req, res) => {
     }
 });
 
-// ENDPOINT UNIFICADO DE SEGURANÇA PÚBLICA (OTT + FOGO CRUZADO)
+// ENDPOINT UNIFICADO DE SEGURANÇA PÚBLICA (OTT + FOGO CRUZADO) - PARALELO COM CACHE TTL 3 MIN
+const segurancaOcorrenciasCache = new Map();
+
 app.get('/api/seguranca/ocorrencias', async (req, res) => {
     try {
         const estado = (req.query.state || req.query.uf || 'RJ').toUpperCase();
         const source = (req.query.source || 'all').toLowerCase(); // 'all', 'ott', 'fogo'
         const hoje = getHojeSaoPaulo();
+        const cacheKey = `${estado}_${source}_${hoje.dateFull}`;
+        const now = Date.now();
 
-        let ottAlerts = [];
-        let fogoOccurrences = [];
+        // 1. Verificação de Cache em Memória (TTL 180s = 3 min)
+        if (segurancaOcorrenciasCache.has(cacheKey)) {
+            const cached = segurancaOcorrenciasCache.get(cacheKey);
+            if (now - cached.timestamp < 180000) {
+                res.setHeader('Cache-Control', 'public, max-age=180');
+                return res.json({ ...cached.payload, cached: true });
+            }
+        }
 
-        // 1. Coleta OTT (se solicitado ou all)
+        const tasks = [];
+
+        // 2. Coleta OTT Concorrente
         if (source === 'all' || source === 'ott') {
-            try {
-                const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
-                const response = await fetch(ottUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Referer': 'https://ondetemtiroteio.com/website/ott/index.html',
-                        'Accept': 'application/json, text/plain, */*'
-                    }
-                });
+            const ottTask = (async () => {
+                const ottAlerts = [];
+                try {
+                    const ottUrl = 'https://ondetemtiroteio.com/website/ott/report-data.php?action=informes';
+                    const response = await fetch(ottUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Referer': 'https://ondetemtiroteio.com/website/ott/index.html',
+                            'Accept': 'application/json, text/plain, */*'
+                        }
+                    });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && Array.isArray(data.items)) {
-                        const items = (estado === 'TODOS' || estado === 'ALL')
-                            ? data.items
-                            : data.items.filter(item => (item.state || '').toUpperCase() === estado);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && Array.isArray(data.items)) {
+                            const items = (estado === 'TODOS' || estado === 'ALL')
+                                ? data.items
+                                : data.items.filter(item => (item.state || '').toUpperCase() === estado);
 
-                        for (const item of items) {
-                            const parsedDate = parseOttDate(item.date);
-                            const isHoje = parsedDate &&
-                                           parsedDate.day === hoje.day &&
-                                           parsedDate.month === hoje.month &&
-                                           parsedDate.year === hoje.year;
+                            for (const item of items) {
+                                const parsedDate = parseOttDate(item.date);
+                                const isHoje = parsedDate &&
+                                               parsedDate.day === hoje.day &&
+                                               parsedDate.month === hoje.month &&
+                                               parsedDate.year === hoje.year;
 
-                            if (isHoje) {
-                                ottAlerts.push({
-                                    id: `ott-${Math.random().toString(36).substring(2, 9)}`,
-                                    tipo: item.type || "Ocorrência OTT",
-                                    subtipo: item.type || "Informe",
-                                    categoria: (item.type || '').toLowerCase().includes('tiroteio') ? 'tiroteio' : 'disparo_ouvido',
-                                    descricao: item.address ? `Informe OTT: ${item.address}` : `${item.type} em ${item.neighborhood || 'via pública'}`,
-                                    data: parsedDate.dateFormattedShort,
-                                    dataFull: parsedDate.dateFormatted,
-                                    hora: parsedDate.horaFormatted,
-                                    bairro: item.neighborhood || "Desconhecido",
-                                    municipio: item.city || "Rio de Janeiro",
-                                    estado: item.state || estado,
-                                    lat: item.lat ? parseFloat(item.lat) : -22.9068,
-                                    lon: item.lng ? parseFloat(item.lng) : -43.1729,
-                                    endereco: item.address || "",
-                                    fonte: "OTT",
-                                    icone: "🔫",
-                                    updatedAt: `${hoje.dateFull} ${parsedDate.horaFormatted}`
-                                });
+                                if (isHoje) {
+                                    ottAlerts.push({
+                                        id: `ott-${Math.random().toString(36).substring(2, 9)}`,
+                                        tipo: item.type || "Ocorrência OTT",
+                                        subtipo: item.type || "Informe",
+                                        categoria: (item.type || '').toLowerCase().includes('tiroteio') ? 'tiroteio' : 'disparo_ouvido',
+                                        descricao: item.address ? `Informe OTT: ${item.address}` : `${item.type} em ${item.neighborhood || 'via pública'}`,
+                                        data: parsedDate.dateFormattedShort,
+                                        dataFull: parsedDate.dateFormatted,
+                                        hora: parsedDate.horaFormatted,
+                                        bairro: item.neighborhood || "Desconhecido",
+                                        municipio: item.city || "Rio de Janeiro",
+                                        estado: item.state || estado,
+                                        lat: item.lat ? parseFloat(item.lat) : -22.9068,
+                                        lon: item.lng ? parseFloat(item.lng) : -43.1729,
+                                        endereco: item.address || "",
+                                        fonte: "OTT",
+                                        icone: "🔫",
+                                        updatedAt: `${hoje.dateFull} ${parsedDate.horaFormatted}`
+                                    });
+                                }
                             }
                         }
                     }
+                } catch (e) {
+                    console.warn('[OTT-RESPONSE] Falha ao coletar OTT para unificação:', e.message);
                 }
-            } catch (e) {
-                console.warn('[OTT-RESPONSE] Falha ao coletar OTT para unificação:', e.message);
-            }
+                return ottAlerts;
+            })();
+            tasks.push(ottTask);
+        } else {
+            tasks.push(Promise.resolve([]));
         }
 
-        // 2. Coleta Fogo Cruzado (se solicitado ou all)
+        // 3. Coleta Fogo Cruzado Concorrente
         if (source === 'all' || source === 'fogo') {
-            try {
-                const fogoRes = await getFogoCruzadoOccurrences({ estado, hoje });
-                fogoOccurrences = fogoRes.occurrences || [];
-            } catch (e) {
-                console.warn('[FOGO-RESPONSE] Falha ao coletar Fogo Cruzado para unificação:', e.message);
-            }
+            const fogoTask = (async () => {
+                try {
+                    const fogoRes = await getFogoCruzadoOccurrences({ estado, hoje });
+                    return fogoRes.occurrences || [];
+                } catch (e) {
+                    console.warn('[FOGO-RESPONSE] Falha ao coletar Fogo Cruzado para unificação:', e.message);
+                    return [];
+                }
+            })();
+            tasks.push(fogoTask);
+        } else {
+            tasks.push(Promise.resolve([]));
         }
 
-        // 3. Combinação e métricas cruzadas
+        // 4. Execução Paralela com Promise.all
+        const [ottAlerts, fogoOccurrences] = await Promise.all(tasks);
         const todas = [...ottAlerts, ...fogoOccurrences];
 
         // Estatísticas por tipo
@@ -1021,7 +1316,7 @@ app.get('/api/seguranca/ocorrencias', async (req, res) => {
 
         console.log(`[FOGO-LAYER] Ocorrências unificadas | Total: ${todas.length} (OTT: ${ottAlerts.length}, Fogo Cruzado: ${fogoOccurrences.length})`);
 
-        res.json({
+        const payload = {
             ok: true,
             data: {
                 ott: ottAlerts,
@@ -1037,7 +1332,11 @@ app.get('/api/seguranca/ocorrencias', async (req, res) => {
                 porTipo,
                 porCidade
             }
-        });
+        };
+
+        segurancaOcorrenciasCache.set(cacheKey, { timestamp: now, payload });
+        res.setHeader('Cache-Control', 'public, max-age=180');
+        res.json(payload);
     } catch (err) {
         console.error('Erro no endpoint unificado de segurança:', err);
         res.status(500).json({ error: 'Erro ao consolidar ocorrências de segurança.' });

@@ -107,52 +107,200 @@ export class CamerasGeoService {
     constructor() {
         this.cameras = [];
         this.spatialIndex = new SpatialGridIndex(1.5);
-        this.cacheKey = 'rit_cameras_geo_cache_v2';
-        this.bairrosClusters = new Map();
+        this.bairrosClusters = [];
+        this.regionalClusters = [];
         this.isLoaded = false;
+        this.isClustersLoaded = false;
+        this.totalCamerasCount = 4297;
+        this.lastLoadedTimestamp = 0;
+        this.cacheTTL = 300000; // 5 minutos
+
+        // Single-flight promise memoization para evitar chamadas duplicadas simultâneas
+        this._loadPromise = null;
+        this._clustersPromise = null;
     }
 
-    async loadCameras() {
-        if (this.isLoaded && this.cameras.length > 0) return this.cameras;
-
-        try {
-            const cached = sessionStorage.getItem(this.cacheKey);
-            if (cached) {
-                this.cameras = JSON.parse(cached);
-                this.spatialIndex.buildIndex(this.cameras);
-                this.buildBairroClusters();
-                this.isLoaded = true;
-                return this.cameras;
-            }
-        } catch (e) {
-            console.warn('[CamerasGeoService] Falha ao ler cache da session:', e);
+    // 1. Carregamento Ultrarrápido de Clusters (< 15 KB)
+    async loadClusters() {
+        if (this.isClustersLoaded && this.bairrosClusters.length > 0) {
+            return {
+                bairroClusters: this.bairrosClusters,
+                regionalClusters: this.regionalClusters,
+                totalCameras: this.totalCamerasCount
+            };
         }
 
+        if (this._clustersPromise) return this._clustersPromise;
+
+        this._clustersPromise = (async () => {
+            try {
+                const resp = await fetch('/api/cameras/clusters');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.ok) {
+                        this.bairrosClusters = data.bairroClusters || [];
+                        this.regionalClusters = data.regionalClusters || [];
+                        this.totalCamerasCount = data.totalCameras || 4297;
+                        this.isClustersLoaded = true;
+                        console.info(`[CamerasGeoService] ${this.bairrosClusters.length} clusters de bairro carregados (< 15KB).`);
+                        return {
+                            bairroClusters: this.bairrosClusters,
+                            regionalClusters: this.regionalClusters,
+                            totalCameras: this.totalCamerasCount
+                        };
+                    }
+                }
+            } catch (err) {
+                console.warn('[CamerasGeoService] Falha ao carregar clusters leves, usando fallback:', err);
+            }
+            return {
+                bairroClusters: this.bairrosClusters,
+                regionalClusters: this.regionalClusters,
+                totalCameras: this.totalCamerasCount
+            };
+        })();
+
         try {
-            const resp = await fetch('/data/cameras_georreferenciadas.json');
+            const res = await this._clustersPromise;
+            return res;
+        } finally {
+            this._clustersPromise = null;
+        }
+    }
+
+    // 2. Carregamento da Base de Câmeras com Single-Flight Memoization
+    async loadCameras() {
+        const now = Date.now();
+        if (this.isLoaded && this.cameras.length > 0 && (now - this.lastLoadedTimestamp < this.cacheTTL)) {
+            return this.cameras;
+        }
+
+        if (this._loadPromise) return this._loadPromise;
+
+        this._loadPromise = (async () => {
+            const t0 = performance.now();
+            try {
+                // Tenta carregar catálogo otimizado do backend
+                const resp = await fetch('/api/cameras/georreferenciadas?limit=5000&format=compact');
+                if (resp.ok) {
+                    const json = await resp.json();
+                    if (json.ok && Array.isArray(json.cameras)) {
+                        this.cameras = json.cameras.map(c => ({
+                            id: c.id,
+                            nome: c.nome,
+                            bairro: c.bairro,
+                            latitude: c.lat || c.latitude,
+                            longitude: c.lon || c.longitude,
+                            status: c.status,
+                            orientacao: c.orientacao || 0,
+                            angulo: c.angulo || 180,
+                            embedUrl: c.embedUrl || null
+                        }));
+                        this.spatialIndex.buildIndex(this.cameras);
+                        this.totalCamerasCount = json.total || this.cameras.length;
+                        this.isLoaded = true;
+                        this.lastLoadedTimestamp = Date.now();
+                        const elapsed = (performance.now() - t0).toFixed(1);
+                        console.info(`[CamerasGeoService] ${this.cameras.length} câmeras carregadas e indexadas em ${elapsed}ms.`);
+                        return this.cameras;
+                    }
+                }
+            } catch (e) {
+                console.warn('[CamerasGeoService] Falha no endpoint compacto, tentando arquivo estático:', e);
+            }
+
+            try {
+                const resp = await fetch('/data/cameras_georreferenciadas.json');
+                if (resp.ok) {
+                    this.cameras = await resp.json();
+                    this.spatialIndex.buildIndex(this.cameras);
+                    this.buildBairroClusters();
+                    this.isLoaded = true;
+                    this.lastLoadedTimestamp = Date.now();
+                    const elapsed = (performance.now() - t0).toFixed(1);
+                    console.info(`[CamerasGeoService] ${this.cameras.length} câmeras carregadas do fallback estático em ${elapsed}ms.`);
+                    return this.cameras;
+                }
+            } catch (err) {
+                console.error('[CamerasGeoService] Erro fatal ao carregar catálogo de câmeras:', err);
+            }
+            return [];
+        })();
+
+        try {
+            const res = await this._loadPromise;
+            return res;
+        } finally {
+            this._loadPromise = null;
+        }
+    }
+
+    // 3. Busca por Bounding Box (Lazy Loading por Viewport)
+    async fetchCamerasInBBox(bounds, limit = 150) {
+        if (!bounds) return [];
+
+        const s = typeof bounds.getSouth === 'function' ? bounds.getSouth() : bounds.south;
+        const n = typeof bounds.getNorth === 'function' ? bounds.getNorth() : bounds.north;
+        const w = typeof bounds.getWest === 'function' ? bounds.getWest() : bounds.west;
+        const e = typeof bounds.getEast === 'function' ? bounds.getEast() : bounds.east;
+
+        // Se a base já estiver em memória, filtra instantaneamente sem request de rede
+        if (this.isLoaded && this.cameras.length > 0) {
+            const filtered = [];
+            for (let i = 0; i < this.cameras.length; i++) {
+                const cam = this.cameras[i];
+                if (cam.latitude >= s && cam.latitude <= n && cam.longitude >= w && cam.longitude <= e) {
+                    filtered.push(cam);
+                    if (filtered.length >= limit) break;
+                }
+            }
+            return filtered;
+        }
+
+        // Senão busca sob demanda do backend (< 10 KB)
+        try {
+            const boundsParam = `${n},${s},${e},${w}`;
+            const resp = await fetch(`/api/cameras/bbox?bounds=${encodeURIComponent(boundsParam)}&limit=${limit}&format=compact`);
             if (resp.ok) {
-                this.cameras = await resp.json();
-                try {
-                    sessionStorage.setItem(this.cacheKey, JSON.stringify(this.cameras));
-                } catch (e) {}
-                this.spatialIndex.buildIndex(this.cameras);
-                this.buildBairroClusters();
-                this.isLoaded = true;
-                console.info(`[CamerasGeoService] ${this.cameras.length} câmeras georreferenciadas carregadas.`);
-                return this.cameras;
+                const json = await resp.json();
+                if (json.ok && Array.isArray(json.cameras)) {
+                    return json.cameras.map(c => ({
+                        id: c.id,
+                        nome: c.nome,
+                        bairro: c.bairro,
+                        latitude: c.lat || c.latitude,
+                        longitude: c.lon || c.longitude,
+                        status: c.status,
+                        orientacao: c.orientacao || 0,
+                        embedUrl: c.embedUrl || null
+                    }));
+                }
             }
         } catch (err) {
-            console.error('[CamerasGeoService] Erro ao carregar base de câmeras:', err);
+            console.warn('[CamerasGeoService] Erro na consulta de BBox:', err);
         }
         return [];
     }
 
+    // 4. Stream Health Check / Probe Rápido
+    async probeCameraHealth(cameraId) {
+        try {
+            const resp = await fetch(`/api/cameras/health/${encodeURIComponent(cameraId)}`);
+            if (resp.ok) {
+                return await resp.json();
+            }
+        } catch (e) {
+            console.warn(`[CamerasGeoService] Erro no health check da câmera #${cameraId}:`, e);
+        }
+        return { ok: false, online: false, latencyMs: 0 };
+    }
+
     buildBairroClusters() {
-        this.bairrosClusters.clear();
+        const bairroMap = new Map();
         this.cameras.forEach(cam => {
             const b = cam.bairro || 'Rio de Janeiro';
-            if (!this.bairrosClusters.has(b)) {
-                this.bairrosClusters.set(b, {
+            if (!bairroMap.has(b)) {
+                bairroMap.set(b, {
                     bairro: b,
                     camerasCount: 0,
                     onlineCount: 0,
@@ -161,7 +309,7 @@ export class CamerasGeoService {
                     cameras: []
                 });
             }
-            const cluster = this.bairrosClusters.get(b);
+            const cluster = bairroMap.get(b);
             cluster.camerasCount++;
             if (cam.status === 'online') cluster.onlineCount++;
             cluster.latSum += cam.latitude;
@@ -170,14 +318,20 @@ export class CamerasGeoService {
         });
 
         // Calcula centróides
-        this.bairrosClusters.forEach(cluster => {
-            cluster.latitude = cluster.latSum / cluster.camerasCount;
-            cluster.longitude = cluster.lonSum / cluster.camerasCount;
-        });
+        this.bairrosClusters = Array.from(bairroMap.values()).map(cluster => ({
+            ...cluster,
+            latitude: cluster.latSum / cluster.camerasCount,
+            longitude: cluster.lonSum / cluster.camerasCount
+        }));
     }
 
     getBairroClusters() {
-        return Array.from(this.bairrosClusters.values());
+        return this.bairrosClusters || [];
+    }
+
+    getRegionalClusters() {
+        return this.regionalClusters || [];
+    }
     }
 
     correlateOccurrence(targetLat, targetLon, radiusMeters = 1000, topK = 5) {

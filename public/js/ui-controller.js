@@ -2661,26 +2661,42 @@ export class UiController {
     // CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO)
     // =========================================================================
     async initCentralInteligente() {
-        console.info('[CentralInteligente] Inicializando CCO Agente RIT...');
+        console.info('[CentralInteligente] Inicializando CCO Agente RIT com paralelismo...');
 
-        // 1. Carregar base de câmeras georreferenciadas
+        // 1. Carregamento Concorrente com Promise.all: Clusters Leves (< 15KB) + Ocorrências de Segurança
         try {
-            const cameras = await this.camerasGeoService.loadCameras();
-            const clusters = this.camerasGeoService.getBairroClusters();
+            const [clustersData] = await Promise.all([
+                this.camerasGeoService.loadClusters(),
+                this.atualizarInformesOTT()
+            ]);
+
+            const clusters = (clustersData && clustersData.bairroClusters) || this.camerasGeoService.getBairroClusters();
+            const totalCount = (clustersData && clustersData.totalCameras) || 4297;
 
             const badgeEl = document.getElementById('cicc-cams-count');
-            if (badgeEl) badgeEl.textContent = cameras.length.toLocaleString('pt-BR');
+            if (badgeEl) badgeEl.textContent = totalCount.toLocaleString('pt-BR');
 
             if (this.transitoMap) {
                 this.transitoMap.initCamerasLayer(
-                    cameras,
+                    [],
                     clusters,
                     (cam) => this.abrirDetalhesCameraCCO(cam),
                     (cam) => this.hoverCamera(cam)
                 );
             }
+
+            // Carrega base completa em background sem bloquear a interface nem a renderização inicial
+            this.camerasGeoService.loadCameras().then(cams => {
+                if (this.transitoMap) {
+                    this.transitoMap.camerasData = cams;
+                    if (this.transitoMap.map && this.transitoMap.map.getZoom() >= 15) {
+                        this.transitoMap._renderCamerasLOD();
+                    }
+                }
+            }).catch(e => console.warn('[CentralInteligente] Background cams load:', e));
+
         } catch (err) {
-            console.error('[CentralInteligente] Erro ao carregar câmeras no mapa:', err);
+            console.error('[CentralInteligente] Erro na inicialização concorrente da Central:', err);
         }
 
         // 2. Ouvintes das Camadas Inteligentes
@@ -2735,6 +2751,7 @@ export class UiController {
         document.getElementById('btn-dock-close')?.addEventListener('click', () => {
             const dock = document.getElementById('cicc-dock-matrix');
             const wrap = document.getElementById('cicc-single-player-wrap');
+            if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
             if (dock) dock.classList.remove('open');
             if (wrap) wrap.innerHTML = '';
         });
@@ -2765,23 +2782,22 @@ export class UiController {
                 
                 const livePill = document.getElementById('cicc-dock-live-pill');
                 if (state === 'playing') {
+                    if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     if (livePill) {
                         livePill.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO (SINAL ATIVO)';
                     }
                 } else if (state === 'error') {
+                    if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     if (livePill) {
-                        livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> ${message || 'SINAL INDISPONÍVEL'}`;
+                        livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> SINAL INDISPONÍVEL`;
+                    }
+                    const wrap = document.getElementById('cicc-single-player-wrap');
+                    if (wrap && this.currentSingleCamera) {
+                        this.exibirIndisponibilidadeCamera(this.currentSingleCamera, wrap);
                     }
                 }
             }
         });
-
-        // 6. Carregamento inicial automático de inteligência geoespacial
-        try {
-            this.atualizarInformesOTT();
-        } catch (e) {
-            console.warn('[CentralInteligente] Erro ao sincronizar informes iniciais:', e);
-        }
     }
 
     async atualizarInformesOTT() {
@@ -2790,7 +2806,7 @@ export class UiController {
         const totalBadge = document.getElementById('ott-total-badge');
 
         if (listEl) {
-            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:15px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando e correlacionando inteligência geoespacial...</div>';
+            listEl.innerHTML = '<div style="color:var(--accent); text-align:center; padding:15px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando inteligência geoespacial...</div>';
         }
 
         const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
@@ -2804,7 +2820,6 @@ export class UiController {
             if (!showOtt && showFogo) sourceParam = 'fogo';
 
             console.log(`[FOGO-REQUEST] Solicitando ocorrências para ${reg} (Fonte: ${sourceParam})...`);
-            showToast("Atualizando inteligência de segurança (OTT + Fogo Cruzado)...", "info");
 
             const res = await fetch(`/api/seguranca/ocorrencias?state=${encodeURIComponent(reg)}&source=${sourceParam}`);
             const json = await res.json();
@@ -2819,9 +2834,6 @@ export class UiController {
 
             this.activeOcorrencias = allItems;
             if (totalBadge) totalBadge.textContent = `${allItems.length} ativas`;
-
-            // Certifica que a base de câmeras está carregada para correlação
-            await this.camerasGeoService.loadCameras();
 
             // 1. Atualizar estatísticas no cabeçalho da lista
             if (statsEl) {
@@ -3134,7 +3146,7 @@ export class UiController {
     }
 
     // =========================================================================
-    // PLAYER ÚNICO DA CÂMERA SELECIONADA (MODO COMANDO CCO)
+    // PLAYER ÚNICO DA CÂMERA SELECIONADA (MODO COMANDO CCO) COM WATCHDOG 3S
     // =========================================================================
     abrirCameraSelecionada(camera) {
         if (!camera) {
@@ -3153,7 +3165,7 @@ export class UiController {
 
         this.currentSingleCamera = cam;
 
-        console.info('[CÂMERA] Selecionada', {
+        console.info('[CÂMERA] Selecionada para Streaming', {
             id: cam.id,
             nome: cam.nome,
             bairro: cam.bairro,
@@ -3168,8 +3180,13 @@ export class UiController {
         const linkOficial = document.getElementById('btn-dock-external-link');
         if (!dock || !wrap) return;
 
-        // 3. Limpeza do player anterior (destruição de timers e iframe anterior)
-        wrap.innerHTML = '<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Conectando à câmera selecionada...</div>';
+        // 3. Limpeza do player anterior e timers ativos
+        if (this._streamWatchdogTimer) {
+            clearTimeout(this._streamWatchdogTimer);
+            this._streamWatchdogTimer = null;
+        }
+
+        wrap.innerHTML = '<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Estabelecendo conexão com o sinal de vídeo (Watchdog 3.0s)...</div>';
 
         // 4. Atualizar Cabeçalho
         if (subtitle) {
@@ -3179,11 +3196,11 @@ export class UiController {
         const isOnline = cam.status === 'online';
         if (livePill) {
             livePill.innerHTML = isOnline 
-                ? '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO'
+                ? '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> CONECTANDO...'
                 : '<i class="fa-solid fa-circle" style="color:#ef4444; font-size:7px;"></i> SINAL INTERMITENTE';
         }
 
-        // 5. Determinar URL da câmera (pertencente exclusivamente a esta câmera)
+        // 5. Determinar URL da câmera
         const rawId = parseInt(cam.id, 10);
         let streamUrl = cam.embedUrl || null;
         let officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
@@ -3201,14 +3218,24 @@ export class UiController {
             }
         }
 
-        // 6. Renderizar Player Único
-        if (streamUrl) {
-            console.info('[CÂMERA] Fonte carregada', {
-                id: cam.id,
-                sourceType: 'stream',
-                streamUrl: streamUrl
-            });
+        // 6. Watchdog Agressivo de Timeout de 3.0 Segundos
+        this._streamWatchdogTimer = setTimeout(() => {
+            console.warn(`[CÂMERA WATCHDOG] Timeout de 3s atingido para a Câmera #${cam.id}. Acionando fallback tático.`);
+            if (livePill) {
+                livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> SINAL INDISPONÍVEL`;
+            }
+            this.exibirIndisponibilidadeCamera(cam, wrap);
+        }, 3000);
 
+        // 7. Probe Rápido de Saúde de Transmissão (em paralelo)
+        this.camerasGeoService.probeCameraHealth(cam.id).then(health => {
+            if (health && !health.online && health.latencyMs > 1400) {
+                console.warn(`[CÂMERA HEALTH] Probe indicou sinal instável/offline para #${cam.id}`);
+            }
+        }).catch(() => {});
+
+        // 8. Renderizar Player Único
+        if (streamUrl) {
             wrap.innerHTML = `
                 <iframe 
                     id="cicc-single-camera-iframe"
@@ -3223,38 +3250,62 @@ export class UiController {
             const iframe = document.getElementById('cicc-single-camera-iframe');
             if (iframe) {
                 iframe.onerror = () => {
-                    console.warn('[CÂMERA] Fonte indisponível', { id: cam.id, reason: 'IFRAME_ERROR' });
+                    if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
+                    console.warn('[CÂMERA] Erro no carregamento do iframe', { id: cam.id });
                     this.exibirIndisponibilidadeCamera(cam, wrap);
                 };
             }
         } else {
+            if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
             console.warn('[CÂMERA] Fonte indisponível', { id: cam.id, reason: 'SEM_STREAM_URL' });
             this.exibirIndisponibilidadeCamera(cam, wrap);
         }
 
-        // 7. Exibir Dock
+        // 9. Exibir Dock
         dock.classList.add('open');
         showToast(`Visualizando Câmera #${cam.id} (${cam.bairro})`, "info");
     }
 
+    findNextOnlineCamera(currentCamId) {
+        if (!Array.isArray(this.currentCorrelatedCameras)) return null;
+        const currentNormalized = String(currentCamId);
+        const candidates = this.currentCorrelatedCameras.filter(c => {
+            const cam = c.camera || c;
+            return String(cam.id) !== currentNormalized && cam.status === 'online';
+        });
+        return candidates.length > 0 ? (candidates[0].camera || candidates[0]) : null;
+    }
+
     exibirIndisponibilidadeCamera(cam, wrap) {
         if (!wrap) return;
+        if (this._streamWatchdogTimer) {
+            clearTimeout(this._streamWatchdogTimer);
+            this._streamWatchdogTimer = null;
+        }
+
         const rawId = parseInt(cam.id, 10);
         const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
+        const nextOnline = this.findNextOnlineCamera(cam.id);
+
         wrap.innerHTML = `
             <div class="cicc-unavailable-card">
-                <div style="font-size: 32px; margin-bottom: 8px;">📹</div>
-                <h3 style="margin: 0 0 6px 0; color: #f87171; font-size: 14px; text-transform: uppercase;">
+                <div style="font-size: 30px; margin-bottom: 6px;">📹</div>
+                <h3 style="margin: 0 0 6px 0; color: #f87171; font-size: 13px; text-transform: uppercase;">
                     Sinal ao vivo temporariamente indisponível
                 </h3>
                 <p style="font-size: 11px; color: #cbd5e1; margin: 0 0 8px 0; line-height: 1.4;">
                     Câmera <b>#${escapeHtml(cam.id)} — ${escapeHtml(cam.nome)}</b><br>
                     <span style="font-size: 10px; color: #94a3b8;">📍 ${escapeHtml(cam.bairro)}, Rio de Janeiro - RJ (Operadora: ${escapeHtml(cam.operadora || 'COR Rio / CET-Rio')})</span>
                 </p>
-                <p style="font-size: 10px; color: #64748b; margin: 0 0 16px 0;">
-                    O servidor de streaming público de origem não está transmitindo sinal aberto para esta câmera neste instante.
+                <p style="font-size: 10px; color: #64748b; margin: 0 0 14px 0;">
+                    A transmissão pública de origem excedeu o tempo limite de conexão (3s) ou está temporariamente fora do ar.
                 </p>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    ${nextOnline ? `
+                        <button onclick="window.uiController.abrirCameraSelecionada(window.uiController.findNextOnlineCamera('${cam.id}'))" class="btn btnSmall" style="background: #10b981; color: #000; font-weight: 800; padding: 6px 12px; font-size: 10.5px; display: flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16,185,129,0.3);">
+                            <i class="fa-solid fa-video"></i> Tentar Próxima Câmera Online (#${escapeHtml(nextOnline.id)})
+                        </button>
+                    ` : ''}
                     <button onclick="window.uiController.abrirCameraSelecionada(window.uiController.currentSingleCamera)" class="btn btnSmall" style="background: rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; font-size: 10px;">
                         <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
                     </button>

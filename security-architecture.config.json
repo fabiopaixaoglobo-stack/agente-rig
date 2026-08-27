@@ -1,0 +1,22 @@
+{
+  "document": "segurança/arquitetura_seguranca_rit.md",
+  "generatedSectionStart": "<!-- SECURITY-AUTO:START -->",
+  "generatedSectionEnd": "<!-- SECURITY-AUTO:END -->",
+  "criticalPatterns": [
+    "server/server.js",
+    "server/auth.js",
+    "server/database.js",
+    "server/importar_rotas.js",
+    "public/motorista.html",
+    "public/js/CorRio.js",
+    "public/js/main.js",
+    "package.json"
+  ],
+  "forbiddenPatterns": [
+    ".env",
+    "*.pem",
+    "*.key",
+    "password",
+    "secret"
+  ]
+}
