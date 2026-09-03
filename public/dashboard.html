@@ -294,6 +294,60 @@
           </div>
         </div>
 
+        <!-- BARRA TÁTICA CCO: ROCK IN RIO & MAPA DE INTEGRIDADE DE CÂMERAS -->
+        <div class="cicc-rir-banner" id="cicc-rir-status-banner" style="background: rgba(7, 16, 24, 0.95); border-bottom: 1px solid rgba(0, 209, 255, 0.2); padding: 5px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #cbd5e1; z-index: 10; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span style="font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 5px;">
+              🎸 <span>CCO ROCK IN RIO</span>
+            </span>
+            <span id="rir-stat-disponibilidade" style="background: rgba(251, 191, 36, 0.15); border: 1px solid #fbbf24; color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-weight: 800;">
+              DISPONIBILIDADE: <b id="rir-health-pct">76.3%</b>
+            </span>
+            <span style="color: #94a3b8;">
+              Corredores Estratégicos: <b id="rir-cameras-count" style="color: #fff;">139 câmeras</b> (<span id="rir-cameras-online" style="color: #10b981;">1 online</span> | <span id="rir-cameras-offline" style="color: #ef4444;">37 offline</span> | <span id="rir-cameras-codec" style="color: #8b5cf6;">97 HEVC</span>)
+            </span>
+            <span style="color: #38bdf8; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 10px;">
+              ⏱️ Tempo Médio: <b id="rir-avg-open-time" style="color: #fff;">2.3 s</b>
+            </span>
+            <!-- Seletor Rápido de Corredor Estratégico (Etapa 8) -->
+            <div style="display: flex; align-items: center; gap: 4px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 10px;">
+              <span style="color: #94a3b8;">Corredor:</span>
+              <select id="seletor-corredor-rir" class="select" style="height: 22px; font-size: 9.5px; padding: 0 4px; background: #0c1824; color: #fbbf24; border: 1px solid rgba(251,191,36,0.3);">
+                <option value="TODOS">Todos os Corredores (139)</option>
+                <option value="Ayrton Senna">Ayrton Senna (35 cams - 71.4%)</option>
+                <option value="Abelardo Bueno">Abelardo Bueno (11 cams - 54.5%)</option>
+                <option value="Salvador Allende">Salvador Allende (12 cams - 58.3%)</option>
+                <option value="TransOlímpica">TransOlímpica (2 cams - 100%)</option>
+                <option value="Linha Amarela">Linha Amarela (7 cams - 57.1%)</option>
+                <option value="Barra Olímpica (Acesso RIR)">Barra Olímpica / Acesso (72 cams - 75%)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- FILTROS OPERACIONAIS DE STATUS NO MAPA (Etapa 7) -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+              <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Mostrar:</span>
+              <label style="font-size: 9.5px; color: #10b981; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                <input type="checkbox" id="filter-status-online" checked /> 🟢 ONLINE
+              </label>
+              <label style="font-size: 9.5px; color: #eab308; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                <input type="checkbox" id="filter-status-lenta" checked /> 🟡 LENTA
+              </label>
+              <label style="font-size: 9.5px; color: #f97316; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                <input type="checkbox" id="filter-status-degradada" checked /> 🟠 DEGRADADA
+              </label>
+              <label style="font-size: 9.5px; color: #ef4444; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+                <input type="checkbox" id="filter-status-offline" checked /> 🔴 OFFLINE
+              </label>
+            </div>
+
+            <button onclick="window.uiController && window.uiController.forcarAuditoriaStreaming()" class="btn btnSmall" style="padding: 2px 8px; font-size: 9.5px; background: rgba(0,209,255,0.15); color: #00d1ff; border: 1px solid #00d1ff; cursor: pointer; border-radius: 3px;" title="Disparar auditoria completa das câmeras">
+              <i class="fa-solid fa-bolt"></i> Re-Auditar CCO
+            </button>
+          </div>
+        </div>
+
         <!-- CANVAS PRINCIPAL DO MAPA LEAFLET -->
         <div id="mapTransito" class="map" style="flex: 1; width: 100%; height: 100%; min-height: 0; position: relative; z-index: 1;"></div>
 

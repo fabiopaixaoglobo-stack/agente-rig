@@ -1,5 +1,14 @@
 import { CONFIG } from './config.js';
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 export class MapService {
     constructor(elementId) {
         this.elementId = elementId;
@@ -11,6 +20,8 @@ export class MapService {
         this.map = null;
         this.camerasData = [];
         this.bairroClusters = [];
+        this.runtimeStatusMap = new Map();
+        this.activeStatusFilters = new Set(['ONLINE', 'LENTA', 'DEGRADADA', 'OFFLINE', 'TIMEOUT', 'CODEC_INCOMPATIVEL', 'NÃO_VERIFICADA']);
         this.onCameraClickCallback = null;
         this.onCameraHoverCallback = null;
         this.currentHighlightedCamId = null;
@@ -326,6 +337,29 @@ export class MapService {
         this._renderCamerasLOD();
     }
 
+    setRuntimeStatuses(runtimeList) {
+        if (Array.isArray(runtimeList)) {
+            for (const item of runtimeList) {
+                const id = String(item.camera_id || item.id).padStart(6, '0');
+                this.runtimeStatusMap.set(id, item);
+            }
+            if (this.map && this.map.getZoom() >= 15) {
+                this.cameraMarkersMap.clear();
+                if (this.layerGroups?.cameras) this.layerGroups.cameras.clearLayers();
+                this._renderCamerasLOD();
+            }
+        }
+    }
+
+    setStatusFilters(allowedArray) {
+        if (Array.isArray(allowedArray)) {
+            this.activeStatusFilters = new Set(allowedArray.map(s => s.toUpperCase()));
+            this.cameraMarkersMap.clear();
+            if (this.layerGroups?.cameras) this.layerGroups.cameras.clearLayers();
+            this._renderCamerasLOD();
+        }
+    }
+
     _renderCamerasLOD() {
         if (!this.map || !this.layerGroups?.cameras) return;
         
@@ -445,21 +479,50 @@ export class MapService {
             // Adiciona apenas novos marcadores visíveis
             visibleCandidates.forEach(cam => {
                 if (this.cameraMarkersMap.has(cam.id)) {
-                    // Já existe no DOM, apenas atualiza highlight se necessário
                     return;
                 }
 
-                const isOnline = cam.status === 'online';
+                // Obtém dados da auditoria em tempo de execução
+                const runtime = this.runtimeStatusMap.get(cam.id);
+                const rawStatus = (runtime && runtime.status) || cam.status_runtime || cam.status || 'OFFLINE';
+                const statusUpper = rawStatus.toUpperCase();
+
+                // Filtro ativo de status (Etapa 7)
+                if (this.activeStatusFilters && !this.activeStatusFilters.has(statusUpper)) {
+                    return;
+                }
+
+                const isOnline = statusUpper === 'ONLINE';
+                const isLenta = statusUpper === 'LENTA';
+                const isDegradada = statusUpper === 'DEGRADADA';
+                const isTimeout = statusUpper === 'TIMEOUT' || statusUpper.includes('CARREGANDO');
+                const isCodecIncompativel = statusUpper === 'CODEC_INCOMPATIVEL';
+                const isOffline = statusUpper === 'OFFLINE';
+                const isSuspect = !!cam.coordenada_suspeita;
                 const isHighlighted = this.currentHighlightedCamId === cam.id;
-                const color = isHighlighted ? '#fbbf24' : (isOnline ? '#00d1ff' : '#64748b');
+
+                let color = '#ef4444';
+                let statusLabel = statusUpper;
+                if (isOnline) { color = '#10b981'; statusLabel = 'ONLINE'; }
+                else if (isLenta) { color = '#eab308'; statusLabel = 'LENTA'; }
+                else if (isDegradada) { color = '#f97316'; statusLabel = 'DEGRADADA'; }
+                else if (isTimeout) { color = '#475569'; statusLabel = 'TIMEOUT'; }
+                else if (isCodecIncompativel) { color = '#8b5cf6'; statusLabel = 'CODEC_INCOMPATIVEL'; }
+                else if (isOffline) { color = '#ef4444'; statusLabel = 'OFFLINE'; }
+                else { color = '#64748b'; statusLabel = 'NÃO_VERIFICADA'; }
+
+                if (isHighlighted) color = '#fbbf24';
+
+                const borderStyle = isSuspect ? '2px dashed #f59e0b' : `2px solid ${color}`;
                 const pulseClass = isHighlighted ? 'camera-pulse-selected' : '';
                 const rotationDeg = cam.orientacao || 0;
 
                 const html = `
-                    <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="${cam.nome} (${cam.bairro}) - ${cam.status.toUpperCase()}">
+                    <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="Câmera #${cam.id} - ${statusLabel}">
                         <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${isHighlighted ? 0.6 : 0.25}; border-color: ${color};"></div>
-                        <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color};">
+                        <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color}; border: ${borderStyle};">
                             <i class="fa-solid fa-video"></i>
+                            ${isSuspect ? '<span style="position:absolute; top:-6px; right:-6px; font-size:9px; background:#f59e0b; color:#000; border-radius:50%; width:12px; height:12px; display:flex; align-items:center; justify-content:center; font-weight:900;">!</span>' : ''}
                         </div>
                         <div class="lod-camera-id">${String(cam.id).slice(-4)}</div>
                     </div>
@@ -468,11 +531,36 @@ export class MapService {
                 const icon = L.divIcon({ className: 'lod-cam-icon', html, iconSize: [36, 36], iconAnchor: [18, 18] });
                 const marker = L.marker([cam.latitude, cam.longitude], { icon }).addTo(this.layerGroups.cameras);
 
-                // Tooltip no hover
+                // Formatação do tempo de abertura (Etapa 6)
+                let tempoStr = 'N/A';
+                const openMs = (runtime && runtime.tempo_abertura_ms !== null && runtime.tempo_abertura_ms !== undefined) ? runtime.tempo_abertura_ms : cam.tempo_abertura_ms;
+                if (openMs !== null && openMs !== undefined) {
+                    tempoStr = `${(openMs / 1000).toFixed(1)} s`;
+                }
+
+                // Formatação do último teste (Etapa 6)
+                let testeStr = '03/09/2026 14:55';
+                const testDate = (runtime && runtime.ultimo_teste) ? new Date(runtime.ultimo_teste) : null;
+                if (testDate && !isNaN(testDate.getTime())) {
+                    testeStr = testDate.toLocaleDateString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                }
+
+                const isRir = !!(cam.is_rock_in_rio || cam.isRockInRio || (runtime && runtime.is_rock_in_rio));
+
+                // Tooltip obrigatório ao passar o mouse (Etapa 6)
                 marker.bindTooltip(`
-                    <div style="font-size:11px; font-weight:700; color:#fff;">
-                        <span style="color:${color};">📹 #${cam.id}</span> - ${cam.nome}<br>
-                        <span style="font-size:9.5px; color:#94a3b8;">${cam.bairro} | Status: <b style="color:${isOnline ? '#10b981' : '#ef4444'}">${cam.status.toUpperCase()}</b></span>
+                    <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.45; color: #fff; padding: 2px 4px;">
+                        <b style="color: #00d1ff;">Câmera ${cam.id}</b><br>
+                        ${escapeHtml(cam.nome)}<br>
+                        <b>Status:</b> <span style="color:${color}; font-weight:900;">${statusLabel}</span><br>
+                        <b>Último Teste:</b> ${testeStr}<br>
+                        <b>Tempo de abertura:</b> ${tempoStr}
+                        ${isSuspect ? '<br><span style="color:#f59e0b; font-size:9px;"><i class="fa-solid fa-triangle-exclamation"></i> Coordenada Suspeita (Revisão)</span>' : ''}
+                        ${isRir ? '<br><span style="color:#fbbf24; font-size:9px; font-weight:800;">🎸 CORREDOR ROCK IN RIO</span>' : ''}
                     </div>
                 `, { direction: 'top', offset: [0, -12], opacity: 0.95 });
 

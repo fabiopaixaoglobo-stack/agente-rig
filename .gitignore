@@ -27,3 +27,6 @@ Normas/*.pdf
 *.db
 server/data/
 !server/data/cameras_georreferenciadas.json
+
+# Scratch temporário
+scratch/

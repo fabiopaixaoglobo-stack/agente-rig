@@ -928,70 +928,143 @@ app.get('/api/cameras/proximas', (req, res) => {
     }
 });
 
-// 5. Stream Health Check / Probe Rápido (Timeout de 1.5s e Cache de 60s)
-const streamHealthCache = new Map();
+// 5. Módulo Integrado de Saúde de Transmissão (Robô de Monitoramento + Cache 45s)
+const {
+    startRobot: startCameraHealthRobot,
+    getRobotDashboardStats,
+    getCameraHealth,
+    runMonitoringCycle: runCameraHealthCycle
+} = require('./camera-health-robot');
 
+// Inicia o robô de câmeras a cada 60s
+startCameraHealthRobot(60000);
+
+// Endpoint de estatísticas de saúde e integridade do CCO (Total, Online, Degradadas, Offline, Latência Média, Saúde %)
+app.get('/api/cameras/health/summary', (req, res) => {
+    try {
+        res.setHeader('Cache-Control', 'public, max-age=15');
+        res.json(getRobotDashboardStats());
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/health/summary:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao obter resumo de saúde das câmeras.' });
+    }
+});
+
+// Endpoint exclusivo do Rock in Rio (Lote 1: 78 câmeras críticas)
+app.get('/api/cameras/health/rockinrio', (req, res) => {
+    try {
+        const stats = getRobotDashboardStats();
+        res.setHeader('Cache-Control', 'public, max-age=15');
+        res.json({
+            ok: true,
+            rockInRio: stats.stats.rockInRio,
+            timestamp: stats.timestamp
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/health/rockinrio:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao obter estatísticas Rock in Rio.' });
+    }
+});
+
+// Endpoint de alertas operacionais ativos (OFFLINE crítica, TIMEOUT, COORDENADA SUSPEITA)
+app.get('/api/cameras/health/alerts', (req, res) => {
+    try {
+        const stats = getRobotDashboardStats();
+        res.json({
+            ok: true,
+            totalAlertas: stats.alertasAtivos.length,
+            alertas: stats.alertasAtivos
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/health/alerts:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao obter alertas de câmeras.' });
+    }
+});
+
+// Endpoint de disparo manual de ciclo de validação
+app.post('/api/cameras/health/run', async (req, res) => {
+    try {
+        runCameraHealthCycle();
+        res.json({ ok: true, message: 'Ciclo de monitoramento de câmeras iniciado.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+// Endpoint individual de verificação com Cache Operacional (30-60s)
 app.get('/api/cameras/health/:id', async (req, res) => {
     try {
         const rawId = req.params.id;
-        const normalizedId = String(rawId).padStart(6, '0');
-        const numId = parseInt(rawId, 10);
-
-        const now = Date.now();
-        if (streamHealthCache.has(normalizedId)) {
-            const cached = streamHealthCache.get(normalizedId);
-            if (now - cached.time < 60000) {
-                return res.json({ ok: true, cached: true, ...cached.data });
-            }
+        const result = await getCameraHealth(rawId);
+        if (!result.ok) {
+            return res.status(404).json(result);
         }
-
-        const cameras = loadGeoreferencedCameras();
-        const cam = cameras.find(c => c.id === normalizedId || parseInt(c.id, 10) === numId);
-
-        if (!cam) {
-            return res.status(404).json({ ok: false, error: 'Câmera não encontrada no catálogo.' });
-        }
-
-        const probeUrl = cam.embedUrl || `https://player.camerasrj.com.br/camera/${numId}/`;
-        const officialUrl = cam.url || `https://www.camerasrj.com.br/camera/${numId}/`;
-        const t0 = Date.now();
-
-        let online = false;
-        let latencyMs = 0;
-
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1500);
-
-            const probeResp = await fetch(probeUrl, {
-                method: 'HEAD',
-                signal: controller.signal,
-                headers: { 'User-Agent': 'AgenteRIT-HealthCheck/4.0' }
-            });
-            clearTimeout(timeoutId);
-
-            latencyMs = Date.now() - t0;
-            online = probeResp.ok || probeResp.status === 302 || probeResp.status === 301;
-        } catch (probeErr) {
-            latencyMs = Date.now() - t0;
-            online = cam.status === 'online'; // Fallback para status cadastral
-        }
-
-        const healthData = {
-            cameraId: cam.id,
-            nome: cam.nome,
-            bairro: cam.bairro,
-            online,
-            latencyMs,
-            streamUrl: probeUrl,
-            officialUrl
-        };
-
-        streamHealthCache.set(normalizedId, { time: now, data: healthData });
-        res.json({ ok: true, ...healthData });
+        res.json(result);
     } catch (err) {
         console.error('[SERVER CAMS] Erro no endpoint /api/cameras/health:', err);
         res.status(500).json({ ok: false, error: 'Erro ao verificar saúde da transmissão.' });
+    }
+});
+
+// =========================================================================
+// AUDITORIA OPERACIONAL REAL DE VÍDEO & CORREDORES ESTRATÉGICOS ROCK IN RIO
+// =========================================================================
+const {
+    getAllRuntimeStatuses,
+    getRuntimeStatusSummary,
+    getRuntimeCorredoresStats
+} = require('./database');
+
+// Endpoint de Runtime Status Auditado (Vídeo Real)
+app.get('/api/cameras/runtime-status', async (req, res) => {
+    try {
+        const { status } = req.query;
+        const [cameras, summary] = await Promise.all([
+            getAllRuntimeStatuses(status),
+            getRuntimeStatusSummary()
+        ]);
+        res.setHeader('Cache-Control', 'public, max-age=10');
+        res.json({
+            ok: true,
+            total: cameras.length,
+            summary,
+            cameras
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/runtime-status:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao obter status de runtime das câmeras.' });
+    }
+});
+
+// Endpoint dos Corredores Estratégicos Rock in Rio
+app.get('/api/cameras/corredores-rir', async (req, res) => {
+    try {
+        const [corredores, summary] = await Promise.all([
+            getRuntimeCorredoresStats(),
+            getRuntimeStatusSummary()
+        ]);
+        res.setHeader('Cache-Control', 'public, max-age=10');
+        res.json({
+            ok: true,
+            timestamp: new Date().toISOString(),
+            summary,
+            corredores
+        });
+    } catch (err) {
+        console.error('[SERVER CAMS] Erro no endpoint /api/cameras/corredores-rir:', err);
+        res.status(500).json({ ok: false, error: 'Erro ao obter estatísticas dos corredores Rock in Rio.' });
+    }
+});
+
+// Endpoint de disparo de auditoria sob demanda
+app.post('/api/cameras/audit/trigger', async (req, res) => {
+    try {
+        const { runAuditPipeline } = require('../scripts/camera-stream-audit');
+        const corridorOnly = req.body && req.body.corridorOnly !== false;
+        runAuditPipeline({ corridorOnly, concurrency: 12 }).catch(e => console.error('[AUDIT BACKGROUND ERROR]:', e));
+        res.json({ ok: true, message: 'Auditoria de streaming iniciada em background.' });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 

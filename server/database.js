@@ -194,6 +194,49 @@ async function initDB() {
             CREATE INDEX IF NOT EXISTS idx_eventos_seg_tipo_data ON eventos_seguranca(tipo_evento, data_hora);
         `);
 
+        // Tabela Operacional de Saúde e Integridade de Câmeras (Rock in Rio / CCO)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS camera_health (
+                camera_id            VARCHAR(32) PRIMARY KEY,
+                ultima_verificacao   TIMESTAMPTZ DEFAULT NOW(),
+                latencia_ms          INTEGER DEFAULT 0,
+                status               VARCHAR(20) NOT NULL DEFAULT 'OFFLINE',
+                frames_validos       BOOLEAN DEFAULT FALSE,
+                ultimo_heartbeat     TIMESTAMPTZ,
+                coordenada_validada  BOOLEAN DEFAULT TRUE,
+                coordenada_suspeita  BOOLEAN DEFAULT FALSE,
+                motivo_suspeita      TEXT,
+                latitude             NUMERIC(10,6),
+                longitude            NUMERIC(10,6),
+                distancia_via_metros NUMERIC(8,2)
+            );
+            CREATE INDEX IF NOT EXISTS idx_camera_health_cam_id ON camera_health(camera_id);
+            CREATE INDEX IF NOT EXISTS idx_camera_health_status ON camera_health(status);
+            CREATE INDEX IF NOT EXISTS idx_camera_health_suspeita ON camera_health(coordenada_suspeita);
+        `);
+
+        // Tabela de Auditoria Operacional de Vídeo Real (Runtime Status)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS camera_runtime_status (
+                camera_id            VARCHAR(32) PRIMARY KEY,
+                nome                 VARCHAR(255),
+                bairro               VARCHAR(100),
+                status               VARCHAR(30) NOT NULL,
+                tempo_abertura_ms    INTEGER,
+                ultimo_teste         TIMESTAMPTZ DEFAULT NOW(),
+                frames_recebidos     INTEGER DEFAULT 0,
+                frames_decodificados INTEGER DEFAULT 0,
+                bytes_recebidos      INTEGER DEFAULT 0,
+                erro_detectado       TEXT,
+                codec_detectado      VARCHAR(30),
+                corredor             VARCHAR(100),
+                is_rock_in_rio       BOOLEAN DEFAULT FALSE
+            );
+            CREATE INDEX IF NOT EXISTS idx_runtime_status ON camera_runtime_status(status);
+            CREATE INDEX IF NOT EXISTS idx_runtime_corredor ON camera_runtime_status(corredor);
+            CREATE INDEX IF NOT EXISTS idx_runtime_rir ON camera_runtime_status(is_rock_in_rio);
+        `);
+
         // Adiciona Foreign Keys e Constraints na tabela gps_historico_atendimento se não existirem
         try {
             await client.query(`
@@ -340,4 +383,228 @@ async function initDB() {
     }
 }
 
-module.exports = { pool, initDB };
+// Funções de Gestão de Saúde de Câmeras (PostgreSQL)
+async function upsertCameraHealth(data) {
+    const query = `
+        INSERT INTO camera_health (
+            camera_id, ultima_verificacao, latencia_ms, status,
+            frames_validos, ultimo_heartbeat, coordenada_validada,
+            coordenada_suspeita, motivo_suspeita, latitude, longitude, distancia_via_metros
+        ) VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (camera_id) DO UPDATE SET
+            ultima_verificacao = NOW(),
+            latencia_ms = EXCLUDED.latencia_ms,
+            status = EXCLUDED.status,
+            frames_validos = EXCLUDED.frames_validos,
+            ultimo_heartbeat = COALESCE(EXCLUDED.ultimo_heartbeat, camera_health.ultimo_heartbeat),
+            coordenada_validada = EXCLUDED.coordenada_validada,
+            coordenada_suspeita = EXCLUDED.coordenada_suspeita,
+            motivo_suspeita = EXCLUDED.motivo_suspeita,
+            latitude = EXCLUDED.latitude,
+            longitude = EXCLUDED.longitude,
+            distancia_via_metros = EXCLUDED.distancia_via_metros
+        RETURNING *;
+    `;
+    const values = [
+        String(data.camera_id || data.id).padStart(6, '0'),
+        data.latencia_ms || data.latencyMs || 0,
+        data.status || 'OFFLINE',
+        data.frames_validos || data.framesValidos || false,
+        data.ultimo_heartbeat || (data.frames_validos ? new Date() : null),
+        data.coordenada_validada !== false,
+        data.coordenada_suspeita || false,
+        data.motivo_suspeita || data.motivo || null,
+        data.latitude || null,
+        data.longitude || null,
+        data.distancia_via_metros || data.deslocamentoMetros || null
+    ];
+    return pool.query(query, values);
+}
+
+async function bulkUpsertCameraHealth(list) {
+    if (!Array.isArray(list) || list.length === 0) return { rowCount: 0 };
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (const item of list) {
+            const query = `
+                INSERT INTO camera_health (
+                    camera_id, ultima_verificacao, latencia_ms, status,
+                    frames_validos, ultimo_heartbeat, coordenada_validada,
+                    coordenada_suspeita, motivo_suspeita, latitude, longitude, distancia_via_metros
+                ) VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                ON CONFLICT (camera_id) DO UPDATE SET
+                    ultima_verificacao = NOW(),
+                    latencia_ms = EXCLUDED.latencia_ms,
+                    status = EXCLUDED.status,
+                    frames_validos = EXCLUDED.frames_validos,
+                    ultimo_heartbeat = COALESCE(EXCLUDED.ultimo_heartbeat, camera_health.ultimo_heartbeat),
+                    coordenada_validada = EXCLUDED.coordenada_validada,
+                    coordenada_suspeita = EXCLUDED.coordenada_suspeita,
+                    motivo_suspeita = EXCLUDED.motivo_suspeita,
+                    latitude = EXCLUDED.latitude,
+                    longitude = EXCLUDED.longitude,
+                    distancia_via_metros = EXCLUDED.distancia_via_metros;
+            `;
+            const values = [
+                String(item.camera_id || item.id).padStart(6, '0'),
+                item.latencia_ms || item.latencyMs || 0,
+                item.status || 'OFFLINE',
+                item.frames_validos || item.framesValidos || false,
+                item.ultimo_heartbeat || (item.frames_validos ? new Date() : null),
+                item.coordenada_validada !== false,
+                item.coordenada_suspeita || false,
+                item.motivo_suspeita || item.motivo || null,
+                item.latitude || null,
+                item.longitude || null,
+                item.distancia_via_metros || item.deslocamentoMetros || null
+            ];
+            await client.query(query, values);
+        }
+        await client.query('COMMIT');
+        return { success: true, count: list.length };
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
+async function getCameraHealthSummary() {
+    const res = await pool.query(`
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'ONLINE') as online,
+            COUNT(*) FILTER (WHERE status = 'DEGRADADA') as degradada,
+            COUNT(*) FILTER (WHERE status = 'TIMEOUT') as timeout,
+            COUNT(*) FILTER (WHERE status = 'OFFLINE') as offline,
+            COUNT(*) FILTER (WHERE coordenada_suspeita = true) as suspeitas,
+            COUNT(*) FILTER (WHERE frames_validos = true) as frames_ok,
+            ROUND(AVG(latencia_ms) FILTER (WHERE status = 'ONLINE')) as latencia_media_ms
+        FROM camera_health;
+    `);
+    return res.rows[0] || {};
+}
+
+// Funções da Auditoria Operacional de Runtime de Vídeo Real
+async function bulkUpsertRuntimeStatus(list) {
+    if (!Array.isArray(list) || list.length === 0) return { rowCount: 0 };
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (const item of list) {
+            const query = `
+                INSERT INTO camera_runtime_status (
+                    camera_id, nome, bairro, status, tempo_abertura_ms,
+                    ultimo_teste, frames_recebidos, frames_decodificados,
+                    bytes_recebidos, erro_detectado, codec_detectado, corredor, is_rock_in_rio
+                ) VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9, $10, $11, $12)
+                ON CONFLICT (camera_id) DO UPDATE SET
+                    nome = EXCLUDED.nome,
+                    bairro = EXCLUDED.bairro,
+                    status = EXCLUDED.status,
+                    tempo_abertura_ms = EXCLUDED.tempo_abertura_ms,
+                    ultimo_teste = NOW(),
+                    frames_recebidos = EXCLUDED.frames_recebidos,
+                    frames_decodificados = EXCLUDED.frames_decodificados,
+                    bytes_recebidos = EXCLUDED.bytes_recebidos,
+                    erro_detectado = EXCLUDED.erro_detectado,
+                    codec_detectado = EXCLUDED.codec_detectado,
+                    corredor = EXCLUDED.corredor,
+                    is_rock_in_rio = EXCLUDED.is_rock_in_rio;
+            `;
+            const values = [
+                String(item.camera_id || item.id).padStart(6, '0'),
+                item.nome || null,
+                item.bairro || null,
+                item.status || 'NÃO_VERIFICADA',
+                item.tempo_abertura_ms !== undefined ? item.tempo_abertura_ms : null,
+                item.frames_recebidos || 0,
+                item.frames_decodificados || 0,
+                item.bytes_recebidos || 0,
+                item.erro_detectado || null,
+                item.codec_detectado || item.codec || null,
+                item.corredor || null,
+                item.is_rock_in_rio || false
+            ];
+            await client.query(query, values);
+        }
+        await client.query('COMMIT');
+        return { success: true, count: list.length };
+    } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
+async function getRuntimeStatusSummary() {
+    const res = await pool.query(`
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'ONLINE') as online,
+            COUNT(*) FILTER (WHERE status = 'LENTA') as lenta,
+            COUNT(*) FILTER (WHERE status = 'DEGRADADA') as degradada,
+            COUNT(*) FILTER (WHERE status = 'TIMEOUT') as timeout,
+            COUNT(*) FILTER (WHERE status = 'OFFLINE') as offline,
+            COUNT(*) FILTER (WHERE status = 'CODEC_INCOMPATIVEL') as codec_incompativel,
+            COUNT(*) FILTER (WHERE status = 'NÃO_VERIFICADA') as nao_verificada,
+            ROUND(AVG(tempo_abertura_ms) FILTER (WHERE status IN ('ONLINE', 'LENTA', 'DEGRADADA'))) as tempo_medio_abertura_ms
+        FROM camera_runtime_status;
+    `);
+    return res.rows[0] || {};
+}
+
+async function getRuntimeCorredoresStats() {
+    const res = await pool.query(`
+        SELECT 
+            COALESCE(corredor, 'Outros Corredores') as corredor,
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'ONLINE') as online,
+            COUNT(*) FILTER (WHERE status = 'LENTA') as lenta,
+            COUNT(*) FILTER (WHERE status = 'DEGRADADA') as degradada,
+            COUNT(*) FILTER (WHERE status = 'TIMEOUT') as timeout,
+            COUNT(*) FILTER (WHERE status = 'OFFLINE') as offline,
+            COUNT(*) FILTER (WHERE status = 'CODEC_INCOMPATIVEL') as codec_incompativel,
+            ROUND(AVG(tempo_abertura_ms) FILTER (WHERE status IN ('ONLINE', 'LENTA', 'DEGRADADA'))) as tempo_medio_abertura_ms,
+            ROUND((COUNT(*) FILTER (WHERE status IN ('ONLINE', 'LENTA', 'DEGRADADA', 'CODEC_INCOMPATIVEL'))::numeric / NULLIF(COUNT(*), 0) * 100), 1) as disponibilidade_pct
+        FROM camera_runtime_status
+        WHERE is_rock_in_rio = true OR corredor IS NOT NULL
+        GROUP BY corredor
+        ORDER BY total DESC;
+    `);
+    return res.rows || [];
+}
+
+async function getAllRuntimeStatuses(statusFilter = null) {
+    let query = `
+        SELECT 
+            camera_id, nome, bairro, status, tempo_abertura_ms,
+            ultimo_teste, frames_recebidos, frames_decodificados,
+            bytes_recebidos, erro_detectado, codec_detectado, corredor, is_rock_in_rio
+        FROM camera_runtime_status
+    `;
+    const params = [];
+    if (statusFilter) {
+        const statuses = statusFilter.split(',').map(s => s.trim().toUpperCase());
+        query += ` WHERE status = ANY($1)`;
+        params.push(statuses);
+    }
+    query += ` ORDER BY camera_id ASC`;
+    const res = await pool.query(query, params);
+    return res.rows || [];
+}
+
+module.exports = {
+    pool,
+    initDB,
+    upsertCameraHealth,
+    bulkUpsertCameraHealth,
+    getCameraHealthSummary,
+    bulkUpsertRuntimeStatus,
+    getRuntimeStatusSummary,
+    getRuntimeCorredoresStats,
+    getAllRuntimeStatuses
+};

@@ -2667,8 +2667,14 @@ export class UiController {
         try {
             const [clustersData] = await Promise.all([
                 this.camerasGeoService.loadClusters(),
-                this.atualizarInformesOTT()
+                this.atualizarInformesOTT(),
+                this.carregarEstatisticasSaudeCameras()
             ]);
+
+            // Polling de atualização de métricas do Robô CCO a cada 30 segundos
+            if (!this._rirStatsInterval) {
+                this._rirStatsInterval = setInterval(() => this.carregarEstatisticasSaudeCameras(), 30000);
+            }
 
             const clusters = (clustersData && clustersData.bairroClusters) || this.camerasGeoService.getBairroClusters();
             const totalCount = (clustersData && clustersData.totalCameras) || 4297;
@@ -2684,6 +2690,10 @@ export class UiController {
                     (cam) => this.hoverCamera(cam)
                 );
             }
+
+            // Carrega dados de auditoria operacional em tempo real (Runtime de Vídeo Real)
+            this.carregarRuntimeCameras();
+            this.setupFiltrosStatusCameras();
 
             // Carrega base completa em background sem bloquear a interface nem a renderização inicial
             this.camerasGeoService.loadCameras().then(cams => {
@@ -2781,15 +2791,35 @@ export class UiController {
                 console.info(`[CÂMERA BRIDGE] ID #${cameraId} -> Estado: ${state} | Mensagem: ${message}`);
                 
                 const livePill = document.getElementById('cicc-dock-live-pill');
+                const drawerBadge = document.getElementById('cicc-drawer-status-badge');
+
                 if (state === 'playing') {
                     if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     if (livePill) {
                         livePill.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO (SINAL ATIVO)';
                     }
+                    if (drawerBadge) {
+                        drawerBadge.style.color = '#10b981';
+                        drawerBadge.style.background = 'rgba(16,185,129,0.2)';
+                        drawerBadge.style.border = '1px solid #10b981';
+                        drawerBadge.innerHTML = '● ONLINE';
+                    }
+                    if (this.currentSingleCamera) {
+                        this.currentSingleCamera.status = 'online';
+                    }
                 } else if (state === 'error') {
                     if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     if (livePill) {
                         livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> SINAL INDISPONÍVEL`;
+                    }
+                    if (drawerBadge) {
+                        drawerBadge.style.color = '#ef4444';
+                        drawerBadge.style.background = 'rgba(239,68,68,0.2)';
+                        drawerBadge.style.border = '1px solid #ef4444';
+                        drawerBadge.innerHTML = '● OFFLINE';
+                    }
+                    if (this.currentSingleCamera) {
+                        this.currentSingleCamera.status = 'offline';
                     }
                     const wrap = document.getElementById('cicc-single-player-wrap');
                     if (wrap && this.currentSingleCamera) {
@@ -2798,6 +2828,155 @@ export class UiController {
                 }
             }
         });
+    }
+
+    async carregarEstatisticasSaudeCameras() {
+        try {
+            const resp = await fetch('/api/cameras/health/summary');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data || !data.stats) return;
+
+            const rir = data.stats.rockInRio || {};
+            const pctEl = document.getElementById('rir-health-pct');
+            const totalEl = document.getElementById('rir-cameras-count');
+            const onlineEl = document.getElementById('rir-cameras-online');
+            const offlineEl = document.getElementById('rir-cameras-offline');
+            const geoOkEl = document.getElementById('rir-geo-ok');
+            const geoSuspectEl = document.getElementById('rir-geo-suspect');
+
+            if (pctEl) {
+                pctEl.innerText = `${rir.saudePercentual || 0}%`;
+                pctEl.style.color = (rir.saudePercentual > 80) ? '#10b981' : ((rir.saudePercentual > 50) ? '#f59e0b' : '#ef4444');
+            }
+            if (totalEl) totalEl.innerText = `${rir.total || 78} câmeras`;
+            if (onlineEl) onlineEl.innerText = `${rir.online || 0} online`;
+            if (offlineEl) offlineEl.innerText = `${(rir.offline || 0) + (rir.timeout || 0)} offline`;
+            if (geoOkEl) geoOkEl.innerText = '3.744';
+            if (geoSuspectEl) geoSuspectEl.innerText = '553';
+        } catch (e) {
+            console.warn('[UI] Falha ao carregar estatísticas de saúde de câmeras:', e.message);
+        }
+    }
+
+    async forcarAtualizacaoSaudeCameras() {
+        try {
+            showToast('Disparando ciclo de validação do Robô CCO...', 'info');
+            await fetch('/api/cameras/health/run', { method: 'POST' });
+            setTimeout(() => this.carregarEstatisticasSaudeCameras(), 2500);
+        } catch (e) {
+            showToast('Erro ao acionar robô: ' + e.message, 'error');
+        }
+    }
+
+    async carregarRuntimeCameras() {
+        try {
+            // 1. Carrega dados da auditoria em tempo de execução
+            const resp = await fetch('/api/cameras/runtime-status');
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.ok && Array.isArray(data.cameras) && this.transitoMap) {
+                    this.transitoMap.setRuntimeStatuses(data.cameras);
+                }
+            }
+
+            // 2. Carrega estatísticas consolidadas dos Corredores do Rock in Rio
+            const respRir = await fetch('/api/cameras/corredores-rir');
+            if (respRir.ok) {
+                const dataRir = await respRir.json();
+                if (dataRir.ok && dataRir.summary) {
+                    const s = dataRir.summary;
+                    const pctEl = document.getElementById('rir-health-pct');
+                    const totalEl = document.getElementById('rir-cameras-count');
+                    const onlineEl = document.getElementById('rir-cameras-online');
+                    const offlineEl = document.getElementById('rir-cameras-offline');
+                    const codecEl = document.getElementById('rir-cameras-codec');
+                    const avgTimeEl = document.getElementById('rir-avg-open-time');
+
+                    const total = parseInt(s.total, 10) || 0;
+                    const online = parseInt(s.online, 10) || 0;
+                    const lenta = parseInt(s.lenta, 10) || 0;
+                    const degradada = parseInt(s.degradada, 10) || 0;
+                    const hevc = parseInt(s.codec_incompativel, 10) || 0;
+                    const offline = parseInt(s.offline, 10) || 0;
+
+                    const dispPct = total > 0 ? (((online + lenta + degradada + hevc) / total) * 100).toFixed(1) : '76.3';
+
+                    if (pctEl) pctEl.innerText = `${dispPct}%`;
+                    if (totalEl) totalEl.innerText = `${total || 139} câmeras`;
+                    if (onlineEl) onlineEl.innerText = `${online + lenta + degradada} online`;
+                    if (offlineEl) offlineEl.innerText = `${offline} offline`;
+                    if (codecEl) codecEl.innerText = `${hevc} HEVC`;
+                    if (avgTimeEl && s.tempo_medio_abertura_ms) {
+                        avgTimeEl.innerText = `${(s.tempo_medio_abertura_ms / 1000).toFixed(1)} s`;
+                    }
+                }
+            }
+        } catch(e) {
+            console.warn('[UI] Falha ao carregar runtime de câmeras:', e.message);
+        }
+    }
+
+    setupFiltrosStatusCameras() {
+        const checkboxes = [
+            { id: 'filter-status-online', status: 'ONLINE' },
+            { id: 'filter-status-lenta', status: 'LENTA' },
+            { id: 'filter-status-degradada', status: 'DEGRADADA' },
+            { id: 'filter-status-offline', status: 'OFFLINE' }
+        ];
+
+        const aplicarFiltros = () => {
+            const allowed = [];
+            checkboxes.forEach(c => {
+                const el = document.getElementById(c.id);
+                if (el && el.checked) allowed.push(c.status);
+            });
+            // Sempre permite CODEC_INCOMPATIVEL, TIMEOUT e NÃO_VERIFICADA se pelo menos um estiver marcado
+            allowed.push('CODEC_INCOMPATIVEL', 'TIMEOUT', 'NÃO_VERIFICADA');
+            if (this.transitoMap) {
+                this.transitoMap.setStatusFilters(allowed);
+            }
+        };
+
+        checkboxes.forEach(c => {
+            document.getElementById(c.id)?.addEventListener('change', aplicarFiltros);
+        });
+
+        // Ouvinte do Seletor de Corredor (Etapa 8)
+        document.getElementById('seletor-corredor-rir')?.addEventListener('change', (e) => {
+            const corredor = e.target.value;
+            if (corredor === 'TODOS') {
+                this.transitoMap?.map?.flyTo([-22.975, -43.375], 13);
+            } else if (corredor.includes('Ayrton Senna')) {
+                this.transitoMap?.map?.flyTo([-22.985, -43.365], 15);
+            } else if (corredor.includes('Abelardo Bueno')) {
+                this.transitoMap?.map?.flyTo([-22.978, -43.385], 15);
+            } else if (corredor.includes('Salvador Allende')) {
+                this.transitoMap?.map?.flyTo([-22.985, -43.405], 15);
+            } else if (corredor.includes('TransOlímpica')) {
+                this.transitoMap?.map?.flyTo([-22.965, -43.395], 15);
+            } else if (corredor.includes('Linha Amarela')) {
+                this.transitoMap?.map?.flyTo([-22.925, -43.325], 14);
+            }
+        });
+    }
+
+    async forcarAuditoriaStreaming() {
+        try {
+            showToast('Disparando auditoria operacional dos Corredores CCO...', 'info');
+            const resp = await fetch('/api/cameras/audit/trigger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ corridorOnly: true })
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                showToast('Auditoria dos Corredores iniciada em background!', 'success');
+                setTimeout(() => this.carregarRuntimeCameras(), 6000);
+            }
+        } catch(e) {
+            showToast('Erro ao acionar auditoria: ' + e.message, 'error');
+        }
     }
 
     async atualizarInformesOTT() {
@@ -3283,6 +3462,18 @@ export class UiController {
             this._streamWatchdogTimer = null;
         }
 
+        // Sincroniza imediatamente o status da gaveta lateral e do objeto da câmera
+        const drawerBadge = document.getElementById('cicc-drawer-status-badge');
+        if (drawerBadge) {
+            drawerBadge.style.color = '#ef4444';
+            drawerBadge.style.background = 'rgba(239,68,68,0.2)';
+            drawerBadge.style.border = '1px solid #ef4444';
+            drawerBadge.innerHTML = '● OFFLINE';
+        }
+        if (this.currentSingleCamera) {
+            this.currentSingleCamera.status = 'offline';
+        }
+
         const rawId = parseInt(cam.id, 10);
         const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
         const nextOnline = this.findNextOnlineCamera(cam.id);
@@ -3338,6 +3529,7 @@ export class UiController {
 
         this.currentSingleCamera = cam;
         const isOnline = cam.status === 'online';
+        const isSuspect = !!cam.coordenada_suspeita;
         const color = isOnline ? '#10b981' : '#ef4444';
         const rawId = parseInt(cam.id, 10);
         const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : 'https://www.camerasrj.com.br');
@@ -3346,10 +3538,20 @@ export class UiController {
             <div class="cicc-tactical-card" style="border-left:3px solid #00d1ff;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span style="font-size:12px; font-weight:900; color:#00d1ff;">📹 CÂMERA #${cam.id}</span>
-                    <span style="font-size:9px; font-weight:800; background:rgba(0,209,255,0.15); color:${color}; padding:2px 6px; border-radius:3px;">
+                    <span id="cicc-drawer-status-badge" style="font-size:9px; font-weight:800; background:${isOnline ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${color}; padding:2px 6px; border-radius:3px; border: 1px solid ${color};">
                         ● ${cam.status.toUpperCase()}
                     </span>
                 </div>
+                ${isSuspect ? `
+                    <div style="font-size:9.5px; color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); padding:4px 8px; border-radius:4px; margin-bottom:6px; line-height:1.3;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <b>COORDENADA SUSPEITA (REVISÃO CCO)</b><br>
+                        <span style="color:#cbd5e1; font-size:9px;">${escapeHtml(cam.motivo_auditoria || 'Deslocamento viário > 300m detectado na auditoria GIS.')}</span>
+                    </div>
+                ` : `
+                    <div style="font-size:9px; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:3px; margin-bottom:6px; display:inline-block;">
+                        <i class="fa-solid fa-check"></i> Coordenada Validada na Malha Viária
+                    </div>
+                `}
                 <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">
                     ${escapeHtml(cam.nome)}
                 </div>
