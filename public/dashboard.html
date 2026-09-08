@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="style.css?v=46" />
+  <link rel="stylesheet" href="style.css?v=50" />
 </head>
 
 <body>
@@ -48,7 +48,7 @@
     <button class="tabBtn" data-tab="tab-monitoramento" id="tab-btn-monitoramento">
       Monitoramento 🔒
     </button>
-    <button class="tabBtn" data-tab="tab-planejador">Simulador de Transporte por App</button>
+    <button class="tabBtn" data-tab="tab-planejador" id="tab-btn-planejador"><i class="fa-solid fa-route"></i> Centro de Roteirização & Custos</button>
     <button class="tabBtn" data-tab="tab-painel-integrado" id="tab-btn-painel-integrado" title="Painel Integrado de Monitoramento de Trânsito">Painel Trânsito Integrado</button>
     <button class="tabBtn" data-tab="tab-cameras" id="tab-btn-cameras">Câmeras RJ</button>
     <button class="tabBtn" data-tab="tab-radar" id="tab-btn-radar">Radar Meteorológico RJ</button>
@@ -132,63 +132,93 @@
       </section>
     </section>
 
-    <!-- PLANEJADOR -->
+    <!-- CENTRO INTELIGENTE DE ROTEIRIZAÇÃO E CUSTOS -->
     <section id="tab-planejador" class="tabPane">
-      <aside class="sidebar" style="width: 320px;">
+      <aside class="sidebar" style="width: 380px; overflow-y: auto;">
         <div class="panel">
-          <div class="panelTitle">Parâmetros de Rota</div>
-          <div style="margin-bottom: 8px;"><label class="label">Origem</label><input id="origem" class="input" placeholder="Ex: Centro, RJ" /></div>
-          <div style="margin-bottom: 8px;"><label class="label">Destino</label><input id="destino" class="input" placeholder="Ex: Barra, RJ" /></div>
-          <div style="margin-bottom: 8px;"><label class="label">Horário de Partida</label><input id="horario" class="input" placeholder="Ex: 08:30" value="12:00" /></div>
-          
-          <div style="margin-bottom: 8px; display: flex; gap: 8px;">
-            <div style="flex: 1;">
-              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px;">Trânsito</label>
+          <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-route"></i> Centro de Roteirização</span>
+            <span class="pill" style="background: rgba(0,209,255,0.15); color: #00d1ff; font-size: 8px; font-weight: 800;">RIT CCO</span>
+          </div>
+
+          <div style="margin-bottom: 8px; position: relative;">
+            <label class="label" style="display:flex; justify-content:space-between;">
+              <span>Origem (Partida)</span>
+              <small style="color:var(--muted); font-size:9px;">Endereço, POI ou CEP</small>
+            </label>
+            <input id="origem" class="input" placeholder="Ex: Estúdios Globo, Portaria 3..." />
+          </div>
+
+          <!-- LISTA DE PARADAS INTERMEDIÁRIAS (WAYPOINTS) -->
+          <div style="margin-bottom: 8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+              <label class="label" style="margin:0;">Paradas Intermediárias</label>
+              <button type="button" id="btn-add-parada" class="btn" style="background: rgba(0, 209, 255, 0.1); border: 1px solid rgba(0, 209, 255, 0.3); color: #00d1ff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-plus"></i> Adicionar Parada
+              </button>
+            </div>
+            <div id="lista-paradas-container" style="display: flex; flex-direction: column;"></div>
+          </div>
+
+          <div style="margin-bottom: 8px; position: relative;">
+            <label class="label" style="display:flex; justify-content:space-between;">
+              <span>Destino (Chegada)</span>
+              <small style="color:var(--muted); font-size:9px;">Endereço, POI ou CEP</small>
+            </label>
+            <input id="destino" class="input" placeholder="Ex: Cidade do Rock, Hotel Windsor..." />
+          </div>
+
+          <div style="margin-bottom: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+            <div>
+              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px;">Horário</label>
+              <input id="horario" class="input" placeholder="08:30" value="12:00" style="height: 26px; font-size: 11px; padding: 0 6px;" />
+            </div>
+            <div>
+              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px;">Trânsito</label>
               <select id="planejador-transito" class="select" style="width: 100%; height: 26px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: var(--text); border-radius: 2px; padding: 0 4px; font-size: 11px;">
-                <option value="não">Não</option>
-                <option value="sim">Sim</option>
+                <option value="não">Livre</option>
+                <option value="sim">Intenso</option>
               </select>
             </div>
-            <div style="flex: 1;">
-              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px;">Chuva</label>
+            <div>
+              <label class="label" style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px;">Clima</label>
               <select id="planejador-chuva" class="select" style="width: 100%; height: 26px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: var(--text); border-radius: 2px; padding: 0 4px; font-size: 11px;">
-                <option value="não">Não</option>
-                <option value="sim">Sim</option>
+                <option value="não">Seco</option>
+                <option value="sim">Chuva</option>
               </select>
             </div>
           </div>
 
-          <button id="btn-rota" class="btn btnPrimary" style="width: 100%;">TRAÇAR ROTA INTELIGENTE</button>
-          <div id="plannerFeedback" class="summaryBox" style="margin-top: 10px; font-size: 10px;">Aguardando dados...</div>
-          <div id="externalLinks" style="display: none; margin-top: 10px;" class="plannerExternalLinks">
-            <a id="link-uber" target="_blank" rel="noopener noreferrer" class="btn" style="flex:1; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #000000; color: #ffffff; border: 1px solid #333; font-weight: bold;">
-              <span style="font-size: 14px; font-family: sans-serif; letter-spacing: -0.5px; border: 1px solid #fff; padding: 1px 4px; line-height: 1; border-radius: 2px;">Uber</span>
-              Consultar Estimativa Real
-            </a>
+          <!-- REGRAS TNO & OPERAÇÃO GLOBO -->
+          <div style="margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px;">
+            <div style="font-size: 10px; font-weight: 800; color: #f5a623; margin-bottom: 6px; text-transform: uppercase;">
+              Regras Operacionais Globo & TNO
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #ccc;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="tno-ida-volta" style="accent-color: var(--accent);" />
+                <span>Ida e Volta (Otimização de Retorno)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="tno-shared-ride" style="accent-color: var(--accent);" />
+                <span>Shared Ride (Rateio por Colaboradores)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="tno-veiculo-fixo" style="accent-color: var(--accent);" />
+                <span>Veículo Fixo / Diária Contratual</span>
+              </label>
+            </div>
+          </div>
+
+          <button id="btn-rota" class="btn btnPrimary" style="width: 100%; font-weight: 800; font-size: 12px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fa-solid fa-route"></i> TRAÇAR ROTA INTELIGENTE & CUSTOS
+          </button>
+
+          <div id="plannerFeedback" class="summaryBox" style="margin-top: 10px; font-size: 10px; padding: 8px;">
+            Preencha os pontos e clique em traçar rota para comparar modais e custos operacionais.
           </div>
         </div>
-        <div class="panel" style="margin-top: 10px;">
-          <div class="panelTitle">Simulação de Corrida por Aplicativo</div>
-          <p style="font-size: 11px; margin-bottom: 5px; color: #aaa;">Tabela de Referência (UberX):</p>
-          <ul id="tarifa-valores" style="font-size: 11px; color: #ccc; padding-left: 16px; margin: 8px 0; line-height: 1.6;">
-            <li>Tarifa Base: R$ <span id="ref-tarifa-base">...</span></li>
-            <li>Custo por KM: R$ <span id="ref-custo-km">...</span></li>
-            <li>Custo por Minuto: R$ <span id="ref-custo-min">...</span></li>
-            <li>Tarifa Mínima: R$ <span id="ref-tarifa-min">...</span></li>
-            <li>Fator Dinâmico: <span id="ref-fator-dinamico">...</span></li>
-            <li>Fator Trânsito: x<span id="ref-fator-transito">...</span></li>
-            <li>Fator Chuva: x<span id="ref-fator-chuva">...</span></li>
-          </ul>
-          <div style="font-size: 11px; margin-top: 8px; border-top: 1px solid #333; padding-top: 8px;">
-            <p style="color: #aaa; margin-bottom: 4px;">Pedágios Cadastrados (RJ):</p>
-            <ul id="ref-pedagios-lista" style="color: #ccc; padding-left: 16px; margin: 0; line-height: 1.6; list-style-type: disc;">
-              <li>Carregando...</li>
-            </ul>
-          </div>
-          <div id="status-referencia" style="font-size: 10px; font-weight: bold; color: var(--accent); margin-top: 5px; display: flex; align-items: center; gap: 4px;">
-             🔄 Verificando referência...
-          </div>
-        </div>
+
         <div class="panel" style="margin-top: 10px;">
           <div class="panelTitle">Processamento em Lote</div>
           <p style="font-size: 11px; margin-bottom: 10px; color: #ccc;">Envie uma planilha com Origem, Destino e Horário da Corrida.</p>
@@ -731,6 +761,6 @@
   </div>
 
   <script src="session-manager.js"></script>
-  <script type="module" src="js/main.js?v=48"></script>
+  <script type="module" src="js/main.js?v=50"></script>
 </body>
 </html>

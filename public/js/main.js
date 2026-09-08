@@ -6,6 +6,7 @@ import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.1.1';
 import { CamerasRJ } from './CamerasRJ.js?v=4.1.1';
 import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.1.1';
 import { CorRio } from './CorRio.js?v=4.1.1';
+import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.2.0';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
@@ -27,6 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const painelCim = new PainelTransitoIntegrado();
         const ui = new UiController(mainMap, plannerMap, transitoMap, data, corRio, camerasRJ, painelCim);
         
+        const centroRoteirizacao = new CentroRoteirizacaoCustos(plannerMap, ui);
+        window.centroRoteirizacao = centroRoteirizacao;
+        ui.centroRoteirizacao = centroRoteirizacao;
+
         window.camerasRJ = camerasRJ;
         window.painelCim = painelCim;
         window.transitoMap = transitoMap;

@@ -2579,6 +2579,60 @@ body {
   cursor: pointer;
 }
 
+/* CENTRO DE ROTEIRIZAÇÃO E CUSTOS - AUTOCOMPLETE & WAYPOINTS */
+.rit-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #0a0f1c;
+  border: 1px solid #00d1ff;
+  border-radius: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 10000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+  margin-top: 2px;
+}
+
+.rit-autocomplete-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.rit-autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.rit-autocomplete-item:hover,
+.rit-autocomplete-item.active {
+  background: rgba(0, 209, 255, 0.15);
+}
+
+.rit-waypoint-row {
+  transition: all 0.2s ease;
+}
+
+.rit-waypoint-row:hover {
+  filter: brightness(1.08);
+}
+
+.rit-stop-badge {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.rit-recommendation-card {
+  animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px rgba(0, 209, 255, 0.1); }
+  100% { box-shadow: 0 0 18px rgba(0, 209, 255, 0.25); }
+}
+
+
 
 
 

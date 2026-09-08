@@ -136,9 +136,74 @@ export class MapService {
 
     clearRouteOverlay() {
         if (this.map && this.routeOverlays) {
-            this.routeOverlays.forEach(o => this.map.removeLayer(o));
+            this.routeOverlays.forEach(o => {
+                try { this.map.removeLayer(o); } catch (_) {}
+            });
             this.routeOverlays = [];
         }
+    }
+
+    addPolyline(coords, color = '#f5a623', weight = 5, options = {}) {
+        if (!this.map || !Array.isArray(coords) || coords.length === 0) return null;
+        try {
+            const polyline = L.polyline(coords, {
+                color: color,
+                weight: weight,
+                opacity: options.opacity || 0.85,
+                dashArray: options.dashArray || null,
+                lineCap: 'round',
+                lineJoin: 'round',
+                ...options
+            }).addTo(this.map);
+            this.routeOverlays.push(polyline);
+            return polyline;
+        } catch (e) {
+            console.warn('[MapService] Erro ao adicionar polyline:', e);
+            return null;
+        }
+    }
+
+    renderWaypointMarkers(waypoints) {
+        if (!this.map || !Array.isArray(waypoints)) return [];
+        const markers = [];
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        waypoints.forEach((wp, idx) => {
+            if (!wp || isNaN(wp.lat) || isNaN(wp.lon)) return;
+            const letter = alphabet[idx] || (idx + 1);
+            let bgColor = '#3b82f6'; // Azul paradas
+            if (idx === 0) bgColor = '#10b981'; // Verde origem
+            else if (idx === waypoints.length - 1) bgColor = '#ef4444'; // Vermelho destino
+
+            const html = `
+                <div style="
+                    background: ${bgColor};
+                    color: #fff;
+                    font-weight: 900;
+                    font-size: 11px;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    border: 2px solid #fff;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    letter-spacing: -0.5px;
+                ">${letter}</div>
+            `;
+
+            const marker = this.addMarker(wp.lat, wp.lon, `<b>${letter}. ${wp.label || wp.endereco || 'Ponto'}</b>`, {
+                html,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            if (marker) {
+                this.routeOverlays.push(marker);
+                markers.push(marker);
+            }
+        });
+        return markers;
     }
 
     updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions = null) {

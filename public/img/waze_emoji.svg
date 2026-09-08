@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Sombra suave inferior -->
+  <ellipse cx="64" cy="116" rx="42" ry="6" fill="#000000" opacity="0.18"/>
+
+  <!-- Rodas pretas -->
+  <!-- Roda esquerda -->
+  <circle cx="42" cy="104" r="15" fill="#1e293b" filter="url(#shadow)"/>
+  <circle cx="42" cy="104" r="5" fill="#64748b"/>
+
+  <!-- Roda direita -->
+  <circle cx="86" cy="104" r="15" fill="#1e293b" filter="url(#shadow)"/>
+  <circle cx="86" cy="104" r="5" fill="#64748b"/>
+
+  <!-- Corpo do Waze Mascote (Fantasma / Carro) -->
+  <path d="M 64,16 
+           C 34,16 18,36 18,66 
+           C 18,84 26,98 42,98 
+           C 48,98 52,94 64,94 
+           C 76,94 80,98 86,98 
+           C 102,98 110,84 110,66 
+           C 110,36 94,16 64,16 Z" 
+        fill="#ffffff" 
+        stroke="#0f172a" 
+        stroke-width="7" 
+        stroke-linejoin="round"
+        filter="url(#shadow)"/>
+
+  <!-- Rabinho do Waze (lateral esquerda traseira) -->
+  <path d="M 23,62 C 10,68 8,78 19,84 C 23,80 24,72 23,62 Z" 
+        fill="#ffffff" 
+        stroke="#0f172a" 
+        stroke-width="6" 
+        stroke-linejoin="round"/>
+
+  <!-- Olhos -->
+  <circle cx="51" cy="52" r="5.5" fill="#0f172a"/>
+  <circle cx="77" cy="52" r="5.5" fill="#0f172a"/>
+
+  <!-- Sorriso -->
+  <path d="M 52,66 C 56,76 72,76 76,66" 
+        fill="none" 
+        stroke="#0f172a" 
+        stroke-width="6" 
+        stroke-linecap="round"/>
+</svg>

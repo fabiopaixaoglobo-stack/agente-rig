@@ -2398,32 +2398,34 @@ export class UiController {
         const map = this.plannerService.map;
         const routeGroup = this.plannerService.routeOverlay;
 
-        if (feedback) feedback.innerHTML = 'Buscando coordenadas…';
+        if (window.centroRoteirizacao) {
+            return this.centroRoteirizacao.calcularRotaCompleta();
+        }
+
+        if (feedback) feedback.innerHTML = 'Buscando coordenadas resilientes…';
 
         try {
             const headers = { Accept: 'application/json' };
             const origemLimpa = this.limparEndereco(origem);
             const destinoLimpa = this.limparEndereco(destino);
 
-            const qOrig = `${origemLimpa}, Rio de Janeiro, Brasil`;
-            const resO = await fetch(`${NOMINATIM}?format=json&q=${encodeURIComponent(qOrig)}&limit=1`, { headers });
+            const resO = await fetch(`/api/geocode/search?q=${encodeURIComponent(origemLimpa)}`);
             const dataOrig = await resO.json();
-            if (!dataOrig.length) throw new Error('Endereço de origem não encontrado.');
+            if (!dataOrig.ok || !dataOrig.resultado) throw new Error('Endereço de origem não encontrado.');
 
             if (feedback) feedback.innerHTML = 'Buscando destino…';
-            const qDest = `${destinoLimpa}, Rio de Janeiro, Brasil`;
-            const resD = await fetch(`${NOMINATIM}?format=json&q=${encodeURIComponent(qDest)}&limit=1`, { headers });
+            const resD = await fetch(`/api/geocode/search?q=${encodeURIComponent(destinoLimpa)}`);
             const dataDest = await resD.json();
-            if (!dataDest.length) throw new Error('Endereço de destino não encontrado.');
+            if (!dataDest.ok || !dataDest.resultado) throw new Error('Endereço de destino não encontrado.');
 
-            const lat1 = parseFloat(dataOrig[0].lat);
-            const lon1 = parseFloat(dataOrig[0].lon);
-            const lat2 = parseFloat(dataDest[0].lat);
-            const lon2 = parseFloat(dataDest[0].lon);
+            const lat1 = parseFloat(dataOrig.resultado.lat);
+            const lon1 = parseFloat(dataOrig.resultado.lon);
+            const lat2 = parseFloat(dataDest.resultado.lat);
+            const lon2 = parseFloat(dataDest.resultado.lon);
 
             if (feedback) feedback.innerHTML = 'Calculando rota (OSRM)…';
 
-            const osrmUrl = `${OSRM_ROUTE}/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
             const resR = await fetch(osrmUrl);
             const routeData = await resR.json();
             if (!routeData.routes?.length) throw new Error('Rota não suportada ou indisponível.');

@@ -19,15 +19,81 @@ const TARIFAS_CONFIG = {
     fatorMadrugada: 1.2,
     fatorTransito: 1.3,
     fatorChuva: 1.2,
+    modais: {
+        uberx: { nome: 'UberX', base: 3.50, km: 1.50, min: 0.30, minima: 6.00, categoria: 'App Individual' },
+        comfort: { nome: 'Uber Comfort', base: 5.00, km: 1.95, min: 0.40, minima: 9.50, categoria: 'App Conforto' },
+        black: { nome: 'Uber Black', base: 9.00, km: 2.80, min: 0.65, minima: 15.00, categoria: 'App Executivo' },
+        pop99: { nome: '99Pop', base: 3.20, km: 1.45, min: 0.28, minima: 5.80, categoria: 'App Econômico' },
+        taxi: { nome: 'Táxi Comum RJ', base: 6.10, kmBandeira1: 3.25, kmBandeira2: 3.90, horaParada: 37.00, categoria: 'Táxi Convencional' },
+        cooperativa: { nome: 'Cooperativa Credenciada', diaria: 280.00, kmIncluso: 80, kmExtra: 3.80, horaEspera: 35.00, categoria: 'Frotista Corporativo' },
+        globo: { nome: 'Transporte Frota Globo', consumoKmL: 10.0, precoLitro: 6.15, depreciacaoKm: 0.45, manutencaoKm: 0.35, diariaMotorista: 120.00, categoria: 'Frota Própria' }
+    },
     pedagios: [
-        { nome: "Transolímpica", valor: 9.95 },
-        { nome: "Ponte Rio-Niterói", valor: 6.60 },
-        { nome: "Linha Amarela", valor: 4.00 }
+        { nome: "Transolímpica", valor: 9.95, lat: -22.9136, lon: -43.3851, raio: 0.005 },
+        { nome: "Ponte Rio-Niterói", valor: 6.60, lat: -22.8636, lon: -43.1676, raio: 0.008 },
+        { nome: "Linha Amarela", valor: 4.00, lat: -22.9072, lon: -43.3089, raio: 0.006 },
+        { nome: "Pedágio Queimados", valor: 15.10, lat: -22.7161, lon: -43.5562, raio: 0.008 }
     ]
 };
 
 router.get('/tarifas', (req, res) => {
     res.json({ ok: true, tarifas: TARIFAS_CONFIG });
+});
+
+// LOG DE AUDITORIA OPERACIONAL DAS SIMULAÇÕES (GOVERNANÇA RIT)
+router.post('/log-simulacao', async (req, res) => {
+    try {
+        const { usuario, origem, destino, waypoints, totalKm, tempoMin, pedagios, modalRecomendado, scoreRecomendado, custoRecomendado } = req.body || {};
+        const logEntry = {
+            data_hora: new Date().toISOString(),
+            usuario: usuario || 'OPERADOR_RIT',
+            origem: origem || '',
+            destino: destino || '',
+            waypoints: waypoints || [],
+            total_km: parseFloat(totalKm) || 0,
+            tempo_min: parseInt(tempoMin, 10) || 0,
+            pedagios: pedagios || [],
+            modal_recomendado: modalRecomendado || '',
+            score_recomendado: scoreRecomendado || 0,
+            custo_recomendado: custoRecomendado || 0
+        };
+
+        try {
+            // Tenta gravar no banco se conectado
+            await pool.query(
+                `INSERT INTO eventos_seguranca (tipo_evento, entidade, entidade_id, usuario, ip_origem, user_agent, resultado, motivo, data_hora, metadados)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)`,
+                [
+                    'SIMULACAO_ROTA',
+                    'CENTRO_ROTEIRIZACAO',
+                    modalRecomendado || 'RIT',
+                    usuario || 'OPERADOR_RIT',
+                    req.ip || null,
+                    req.headers['user-agent'] || null,
+                    'SUCESSO',
+                    `Simulação: ${origem} -> ${destino} (${totalKm} km)`,
+                    JSON.stringify(logEntry)
+                ]
+            );
+        } catch (dbErr) {
+            // Fallback para log em arquivo se DB indisponível
+            const logPath = path.join(__dirname, 'simulacoes_log.json');
+            let logs = [];
+            try {
+                if (fsSync.existsSync(logPath)) {
+                    logs = JSON.parse(await fs.promises.readFile(logPath, 'utf8'));
+                }
+            } catch (_) {}
+            logs.unshift(logEntry);
+            if (logs.length > 500) logs.pop();
+            await fs.promises.writeFile(logPath, JSON.stringify(logs, null, 2), 'utf8');
+        }
+
+        return res.json({ ok: true });
+    } catch (err) {
+        console.warn('⚠️ [AUDITORIA] Falha ao gravar log de simulação:', err.message);
+        return res.json({ ok: true, fallback: true });
+    }
 });
 
 function calcularCustoEstimado(distanciaKm, tempoMinutos, horarioCorrida, transito = false, chuva = false) {
