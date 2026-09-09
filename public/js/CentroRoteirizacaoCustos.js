@@ -21,6 +21,14 @@ export class CentroRoteirizacaoCustos {
             { nome: "Pedágio Queimados", valor: 15.10, lat: -22.7161, lon: -43.5562, raio: 0.008 }
         ];
 
+        // Fase 2: Cenários, Incidentes e Projeção 24h
+        this.cenarioAtivo = 'padrao';
+        this.incidentesDetectados = [];
+        this.statusCor = null;
+        this.projecao24h = [];
+        this.janelaIdeal = null;
+        this.ultimoResultado = null;
+
         this.init();
     }
 
@@ -55,12 +63,119 @@ export class CentroRoteirizacaoCustos {
             btnCalcular.addEventListener('click', () => this.calcularRotaCompleta());
         }
 
+        // Cenários Rápidos de 1-Clique (Fase 2)
+        document.querySelectorAll('.rit-scenario-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const scenario = btn.dataset.scenario || btn.getAttribute('data-scenario');
+                if (scenario) this.aplicarCenario(scenario);
+            });
+        });
+
         // TNO e RoundTrip toggles
         document.getElementById('tno-shared-ride')?.addEventListener('change', () => this.recalcularApenasCustos());
         document.getElementById('tno-ida-volta')?.addEventListener('change', () => this.recalcularApenasCustos());
         document.getElementById('tno-veiculo-fixo')?.addEventListener('change', () => this.recalcularApenasCustos());
         document.getElementById('planejador-transito')?.addEventListener('change', () => this.recalcularApenasCustos());
         document.getElementById('planejador-chuva')?.addEventListener('change', () => this.recalcularApenasCustos());
+    }
+
+    // ==========================================
+    // FASE 2: CENÁRIOS RÁPIDOS (1-CLIQUE)
+    // ==========================================
+    aplicarCenario(tipo) {
+        this.cenarioAtivo = tipo;
+
+        // Atualiza botões visuais
+        document.querySelectorAll('.rit-scenario-btn').forEach(b => {
+            if (b.dataset.scenario === tipo) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+
+        const badge = document.getElementById('rit-cenario-ativo-badge');
+        const inputOrigem = document.getElementById('origem');
+        const inputDestino = document.getElementById('destino');
+        const selectTransito = document.getElementById('planejador-transito');
+        const selectChuva = document.getElementById('planejador-chuva');
+        const inputHorario = document.getElementById('horario');
+
+        switch (tipo) {
+            case 'padrao':
+                if (badge) {
+                    badge.textContent = '● PADRÃO';
+                    badge.style.color = '#10b981';
+                }
+                if (selectTransito) selectTransito.value = 'não';
+                if (selectChuva) selectChuva.value = 'não';
+                showToast('☀️ Cenário Padrão ativado (condições normais)', 'info', 2000);
+                break;
+
+            case 'chuva':
+                if (badge) {
+                    badge.textContent = '● TEMPORAL / CHUVA';
+                    badge.style.color = '#38bdf8';
+                }
+                if (selectTransito) selectTransito.value = 'sim';
+                if (selectChuva) selectChuva.value = 'sim';
+                showToast('🌧️ Cenário de Chuva Forte ativado: trânsito lento e dinâmica alta (+40%)', 'warning', 3000);
+                break;
+
+            case 'rockinrio':
+                if (badge) {
+                    badge.textContent = '● ROCK IN RIO';
+                    badge.style.color = '#ec4899';
+                }
+                if (inputOrigem && (!this.originPoint || !inputOrigem.value.trim())) {
+                    inputOrigem.value = 'Estúdios Globo - Portaria 3 (Bandeirantes)';
+                    this.originPoint = {
+                        label: 'Estúdios Globo - Portaria 3 (Bandeirantes)',
+                        lat: -22.9754,
+                        lon: -43.4116,
+                        tipo: 'globo'
+                    };
+                }
+                if (inputDestino) {
+                    inputDestino.value = 'Rock in Rio - Cidade do Rock';
+                    this.destPoint = {
+                        label: 'Rock in Rio - Cidade do Rock',
+                        lat: -22.9789,
+                        lon: -43.3956,
+                        tipo: 'evento'
+                    };
+                }
+                if (selectTransito) selectTransito.value = 'sim';
+                if (selectChuva) selectChuva.value = 'não';
+                if (inputHorario) inputHorario.value = '19:30';
+                showToast('🎸 Rota e bloqueios para Rock in Rio ativados!', 'success', 3000);
+                break;
+
+            case 'linha_amarela':
+                if (badge) {
+                    badge.textContent = '● BLOQUEIO L. AMARELA';
+                    badge.style.color = '#f59e0b';
+                }
+                if (selectTransito) selectTransito.value = 'sim';
+                showToast('🚧 Interdição Linha Amarela: simulando desvio e isenção de pedágio (+18 min)', 'warning', 3500);
+                break;
+
+            case 'av_brasil':
+                if (badge) {
+                    badge.textContent = '● INTERDIÇÃO AV. BRASIL';
+                    badge.style.color = '#ef4444';
+                }
+                if (selectTransito) selectTransito.value = 'sim';
+                showToast('🚨 Retenção crítica na Av. Brasil (+25 min): priorizando faixas seletivas', 'warning', 3500);
+                break;
+        }
+
+        // Se já tiver pontos definidos, recalcula
+        if (this.originPoint && this.destPoint) {
+            this.calcularRotaCompleta();
+        } else {
+            this.recalcularApenasCustos();
+        }
     }
 
     setupAutocompleteForStaticInputs() {
@@ -471,7 +586,7 @@ export class CentroRoteirizacaoCustos {
             this.activeRouteIndex = 0;
 
             // 6. Processar métricas da rota ativa
-            this.processarResultadosRota(todosPontos);
+            await this.processarResultadosRota(todosPontos);
 
             showToast('Rota e custos calculados com sucesso!', 'success');
         } catch (err) {
@@ -559,7 +674,248 @@ export class CentroRoteirizacaoCustos {
         return pedagiosDetectados;
     }
 
-    processarResultadosRota(todosPontos) {
+    // ==========================================
+    // FASE 2: INCIDENTES EM TEMPO REAL & COR.RIO
+    // ==========================================
+    async analisarIncidentesRota(coords) {
+        if (!coords || coords.length < 2) return null;
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 4000);
+            let pontosEnvio = coords;
+            if (coords.length > 80) {
+                const step = Math.ceil(coords.length / 80);
+                pontosEnvio = coords.filter((_, i) => i % step === 0 || i === coords.length - 1);
+            }
+
+            const res = await fetch('/api/seguranca/analisar-rota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ routeCoords: pontosEnvio, bufferMetros: 1000, state: 'RJ' }),
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (res.ok) {
+                const data = await res.json();
+                return data.analise;
+            }
+        } catch (e) {
+            console.warn('[CentroRoteirizacao] Análise geoespacial de incidentes:', e.message);
+        }
+        return null;
+    }
+
+    async obterStatusCor() {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 3000);
+            const res = await fetch('/api/status-operacional', { signal: controller.signal });
+            clearTimeout(timeout);
+            if (res.ok) {
+                return await res.json();
+            }
+        } catch (e) {
+            console.warn('[CentroRoteirizacao] Status COR.RIO:', e.message);
+        }
+        return null;
+    }
+
+    // ==========================================
+    // FASE 2: PROJEÇÃO TEMPORAL 24 HORAS & JANELA IDEAL
+    // ==========================================
+    calcularProjecao24h(distanciaKm, duracaoBaseMin, totalPedagios, horaAtual) {
+        const horas = [];
+        const baseUberX = this.tarifasConfig?.tarifaBase || 3.50;
+        const kmUberX = this.tarifasConfig?.precoPorKm || 1.50;
+        const minUberX = this.tarifasConfig?.precoPorMinuto || 0.30;
+
+        for (let h = 0; h < 24; h++) {
+            let multTempo = 1.0;
+            let multDinamica = 1.0;
+            let label = 'Trânsito Normal';
+            let status = 'moderado';
+            let corBarra = '#38bdf8';
+
+            if (h >= 0 && h <= 5) {
+                multTempo = 0.82;
+                multDinamica = 1.20;
+                label = 'Madrugada (Vias Livres)';
+                status = 'livre';
+                corBarra = '#64748b';
+            } else if (h === 6) {
+                multTempo = 1.10;
+                multDinamica = 1.15;
+                label = 'Início de Pico Manhã';
+                status = 'moderado';
+                corBarra = '#38bdf8';
+            } else if (h >= 7 && h <= 9) {
+                multTempo = 1.45;
+                multDinamica = 1.40;
+                label = 'Pico Manhã (Retenções Severas)';
+                status = 'pico';
+                corBarra = '#ef4444';
+            } else if (h >= 10 && h <= 15) {
+                multTempo = 1.00;
+                multDinamica = 1.00;
+                label = 'Entre-pico Comercial (Janela Ideal)';
+                status = 'ideal';
+                corBarra = '#10b981';
+            } else if (h === 16) {
+                multTempo = 1.20;
+                multDinamica = 1.20;
+                label = 'Início Pico Tarde';
+                status = 'moderado';
+                corBarra = '#f59e0b';
+            } else if (h >= 17 && h <= 19) {
+                multTempo = 1.50;
+                multDinamica = 1.45;
+                label = 'Pico Tarde/Noite (Saída Corporativa)';
+                status = 'pico';
+                corBarra = '#ef4444';
+            } else if (h === 20) {
+                multTempo = 1.25;
+                multDinamica = 1.25;
+                label = 'Desaceleração do Pico';
+                status = 'moderado';
+                corBarra = '#f59e0b';
+            } else {
+                multTempo = 0.95;
+                multDinamica = 1.15;
+                label = 'Noite (Fluxo Regular)';
+                status = 'livre';
+                corBarra = '#38bdf8';
+            }
+
+            if (this.cenarioAtivo === 'chuva') {
+                multTempo *= 1.25;
+                multDinamica *= 1.20;
+            } else if (this.cenarioAtivo === 'rockinrio') {
+                if (h >= 16 && h <= 23) {
+                    multTempo *= 1.35;
+                    multDinamica *= 1.40;
+                }
+            }
+
+            const tempoEst = Math.round(duracaoBaseMin * multTempo);
+            const custoEst = Math.max(6.0, ((baseUberX + (distanciaKm * kmUberX) + (tempoEst * minUberX)) * multDinamica) + totalPedagios);
+            const horaStr = String(h).padStart(2, '0') + ':00';
+            const isHoraAtual = h === horaAtual;
+
+            horas.push({
+                hora: h,
+                horaStr,
+                tempoEst,
+                custoEst,
+                status,
+                label,
+                corBarra,
+                isHoraAtual
+            });
+        }
+
+        const maxCusto = Math.max(...horas.map(x => x.custoEst), 1);
+        horas.forEach(h => {
+            h.barHeightPct = Math.max(15, Math.round((h.custoEst / maxCusto) * 100));
+        });
+
+        return {
+            horas,
+            janelaIdeal: {
+                inicio: '10:30',
+                fim: '15:30',
+                label: 'Janela Comercial (10:30 às 15:30)',
+                economiaPercent: 35
+            }
+        };
+    }
+
+    // ==========================================
+    // FASE 2: EXPORTAÇÃO & COMPARTILHAMENTO
+    // ==========================================
+    copiarResumoExecutivo() {
+        if (!this.ultimoResultado) {
+            showToast('Nenhuma simulação recente para copiar.', 'info', 2000);
+            return;
+        }
+
+        const d = this.ultimoResultado;
+        const now = new Date();
+        const dataHora = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        let pedagiosStr = d.pedagios && d.pedagios.length > 0
+            ? d.pedagios.map(p => `${p.nome} (R$ ${p.valor.toFixed(2).replace('.', ',')})`).join(', ')
+            : 'Nenhum pedágio identificado';
+
+        let paradasStr = '';
+        if (d.waypointsLabels && d.waypointsLabels.length > 0) {
+            paradasStr = `🛑 *Paradas*: ${d.waypointsLabels.join(' ➔ ')}\n`;
+        }
+
+        let corStr = '';
+        if (this.statusCor && this.statusCor.estagio) {
+            corStr = `🏢 *COR.RIO*: ${this.statusCor.estagio.estagio || 'NORMAL'} | Calor: ${this.statusCor.calor || 'N/A'}\n`;
+        }
+
+        let incidentesStr = '';
+        if (this.incidentesDetectados && this.incidentesDetectados.length > 0) {
+            const maisProx = this.incidentesDetectados[0];
+            incidentesStr = `⚠️ *Alertas no Trajeto*: ${this.incidentesDetectados.length} evento(s) no corredor (mais próximo: ${maisProx.tipo} a ${maisProx.distanciaMetros}m em ${maisProx.bairro})\n`;
+        } else {
+            incidentesStr = `✅ *Segurança no Trajeto*: Nenhum incidente crítico no corredor monitorado.\n`;
+        }
+
+        const cenarioNome = (this.cenarioAtivo || 'padrao').toUpperCase();
+
+        const texto = 
+`🚗 *SIMULAÇÃO DE ROTEIRIZAÇÃO & CUSTOS - GLOBO RIT*
+📅 *Emissão*: ${dataHora} | *Cenário*: ${cenarioNome}
+📍 *Origem*: ${d.origem || 'Não informada'}
+🏁 *Destino*: ${d.destino || 'Não informado'}
+${paradasStr}📏 *Distância*: ${d.kmTotal} km | ⏱️ *Tempo Estimado*: ${d.tempoEstimado} min (${d.tempoFaixa})
+🚧 *Pedágios RJ*: R$ ${d.totalPedagios.toFixed(2).replace('.', ',')} (${pedagiosStr})
+🌱 *Pegada CO₂*: ${((d.kmTotal * 120) / 1000).toFixed(2)} kg
+${corStr}${incidentesStr}
+🏆 *RECOMENDAÇÃO OPERACIONAL DO RIT*:
+👉 *${d.melhorOpcao.nome}* (${d.melhorOpcao.categoria})
+💰 *Valor Estimado*: R$ ${d.melhorOpcao.custo.toFixed(2).replace('.', ',')}${d.isShared ? '/colaborador' : ''}
+📊 *Score RIT*: ${d.melhorOpcao.score}/100 | *Confiança*: ${d.confianca.nivel} (${d.confianca.percent}%)
+
+⭐ *Janela Ideal de Saída*: 10:30 às 15:30 (Economia de até 35% e tráfego fluido)
+------------------------------------------------
+*RIT CCO - Centro de Controle de Operações Globo*`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(() => {
+                showToast('📋 Resumo operacional copiado para o WhatsApp/Slack!', 'success', 3000);
+            }).catch(() => {
+                this.fallbackCopiarTexto(texto);
+            });
+        } else {
+            this.fallbackCopiarTexto(texto);
+        }
+    }
+
+    fallbackCopiarTexto(texto) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = texto;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('📋 Resumo operacional copiado!', 'success', 2500);
+        } catch (e) {
+            showToast('Não foi possível copiar automaticamente.', 'error');
+        }
+    }
+
+    imprimirRelatorio() {
+        window.print();
+    }
+
+    async processarResultadosRota(todosPontos) {
         const route = this.routes[this.activeRouteIndex] || this.routes[0];
         if (!route) return;
 
@@ -569,7 +925,7 @@ export class CentroRoteirizacaoCustos {
         const distanciaKm = parseFloat((route.distance / 1000).toFixed(1));
         const numParadas = Math.max(0, todosPontos.length - 2);
         const tempoParadasMin = numParadas * 6; // 6 minutos por parada (embarque/desembarque)
-        const duracaoMinBase = Math.round(route.duration / 60) + tempoParadasMin;
+        let duracaoMinBase = Math.round(route.duration / 60) + tempoParadasMin;
 
         // Fatores Dinâmicos
         const horarioStr = document.getElementById('horario')?.value || '12:00';
@@ -591,8 +947,34 @@ export class CentroRoteirizacaoCustos {
         if (transitoSim) fatorDinamico *= 1.30;
         if (chuvaSim) fatorDinamico *= 1.25;
 
+        // Fase 2: Coleta paralela de alertas de segurança e estágio COR.RIO
+        const [analiseRisco, statusCor] = await Promise.all([
+            this.analisarIncidentesRota(leafletCoords),
+            this.obterStatusCor()
+        ]);
+        this.incidentesDetectados = analiseRisco?.ocorrenciasNoCorredor || [];
+        this.statusCor = statusCor;
+
+        // Fase 2: Modificadores de Cenários 1-Clique
+        if (this.cenarioAtivo === 'chuva') {
+            fatorDinamico *= 1.40;
+            duracaoMinBase = Math.round(duracaoMinBase * 1.30);
+        } else if (this.cenarioAtivo === 'rockinrio') {
+            fatorDinamico *= 1.50;
+            duracaoMinBase = Math.round(duracaoMinBase * 1.25);
+        } else if (this.cenarioAtivo === 'linha_amarela') {
+            duracaoMinBase += 18;
+        } else if (this.cenarioAtivo === 'av_brasil') {
+            duracaoMinBase += 25;
+            fatorDinamico *= 1.30;
+        }
+
         // Detecta pedágios
         this.pedagiosDetectados = this.detectarPedagios(coordsGeoJson);
+        if (this.cenarioAtivo === 'linha_amarela') {
+            // Isenção do pedágio da Linha Amarela por desvio simulado
+            this.pedagiosDetectados = this.pedagiosDetectados.filter(p => !p.nome.includes('Linha Amarela'));
+        }
         const totalPedagios = this.pedagiosDetectados.reduce((acc, p) => acc + p.valor, 0);
 
         // Tempo estimado com intervalo de confiança
@@ -601,12 +983,23 @@ export class CentroRoteirizacaoCustos {
         const tempoMinFaixa = Math.max(5, tempoEstimadoMin - margemMin);
         const tempoMaxFaixa = tempoEstimadoMin + margemMin;
 
-        // Confiança da Estimativa por Regras
+        // Confiança da Estimativa por Regras (Fase 2 integrada com Incidentes e COR)
         let confNivel = 'ALTA';
         let confPercent = 95;
         let confMotivo = 'Rota desobstruída e coordenadas homologadas';
 
-        if (chuvaSim && transitoSim) {
+        if (this.incidentesDetectados.length > 0) {
+            const temTiroteio = this.incidentesDetectados.some(i => (i.tipo || '').toLowerCase().includes('tiroteio') || (i.tipo || '').toLowerCase().includes('disparo'));
+            if (temTiroteio) {
+                confNivel = 'BAIXA';
+                confPercent = 48;
+                confMotivo = `⚠️ Disparo/Operação a ${this.incidentesDetectados[0].distanciaMetros}m da rota (${this.incidentesDetectados[0].bairro})`;
+            } else {
+                confNivel = 'MÉDIA';
+                confPercent = 68;
+                confMotivo = `⚠️ ${this.incidentesDetectados.length} incidente(s) ativos no corredor monitorado`;
+            }
+        } else if (chuvaSim && transitoSim) {
             confNivel = 'BAIXA';
             confPercent = 64;
             confMotivo = 'Condições climáticas adversas e trânsito intenso';
@@ -614,6 +1007,10 @@ export class CentroRoteirizacaoCustos {
             confNivel = 'MÉDIA';
             confPercent = 82;
             confMotivo = 'Impacto moderado de horário de pico ou múltiplas paradas';
+        }
+
+        if (this.statusCor?.estagio?.estagio && String(this.statusCor.estagio.estagio) !== '1') {
+            confPercent = Math.max(30, confPercent - 12);
         }
 
         // TNO Options
@@ -659,14 +1056,13 @@ export class CentroRoteirizacaoCustos {
         }
 
         // 7. Transporte Frota Própria Globo
-        // Combustível (R$ 6,15/L a 10 km/L = R$ 0,615/km) + Desgaste/Depreciação (R$ 0,45/km) + Manutenção (R$ 0,35/km) + Rateio de motorista/hora
         const custoCombustivel = (kmTotalFinal / 10.0) * 6.15;
         const custoDesgaste = kmTotalFinal * (0.45 + 0.35);
         const custoOperacionalGlobo = custoCombustivel + custoDesgaste + pedagiosTotalFinal + (isFixedVehicle ? 120.0 : ((tempoTotalFinal / 60) * 22.0));
 
-        // Monta lista de modais com Score Transparente:
-        // Score = 40% Custo + 30% Pontualidade/Tempo + 20% Risco + 10% Conforto
-        const menorCustoRef = Math.min(custoUberX, custoComfort, custoBlack, custo99Pop, custoTaxi, custoCooperativa, custoOperacionalGlobo);
+        // Ajustes de risco e pontualidade por incidentes e cenários
+        const penalidadeApp = this.incidentesDetectados.length > 0 ? 22 : 0;
+        const bonusTaxiAvBrasil = this.cenarioAtivo === 'av_brasil' ? 10 : 0;
 
         const modais = [
             {
@@ -701,7 +1097,7 @@ export class CentroRoteirizacaoCustos {
                 custo: custoComfort / passageiros,
                 custoTotal: custoComfort,
                 pontualidadeNota: 84,
-                riscoNota: 80,
+                riscoNota: Math.max(40, 80 - penalidadeApp),
                 confortoNota: 88,
                 deeplink: this.gerarUberDeepLink(todosPontos[0], todosPontos[todosPontos.length - 1])
             },
@@ -713,7 +1109,7 @@ export class CentroRoteirizacaoCustos {
                 custo: custoBlack / passageiros,
                 custoTotal: custoBlack,
                 pontualidadeNota: 88,
-                riscoNota: 85,
+                riscoNota: Math.max(50, 85 - Math.round(penalidadeApp * 0.7)),
                 confortoNota: 98,
                 deeplink: this.gerarUberDeepLink(todosPontos[0], todosPontos[todosPontos.length - 1])
             },
@@ -725,7 +1121,7 @@ export class CentroRoteirizacaoCustos {
                 custo: custoUberX / passageiros,
                 custoTotal: custoUberX,
                 pontualidadeNota: 78,
-                riscoNota: 75,
+                riscoNota: Math.max(30, 75 - penalidadeApp),
                 confortoNota: 70,
                 deeplink: this.gerarUberDeepLink(todosPontos[0], todosPontos[todosPontos.length - 1])
             },
@@ -737,7 +1133,7 @@ export class CentroRoteirizacaoCustos {
                 custo: custo99Pop / passageiros,
                 custoTotal: custo99Pop,
                 pontualidadeNota: 75,
-                riscoNota: 72,
+                riscoNota: Math.max(25, 72 - penalidadeApp),
                 confortoNota: 68,
                 deeplink: 'https://m.99app.com/'
             },
@@ -745,17 +1141,19 @@ export class CentroRoteirizacaoCustos {
                 id: 'taxi_comum',
                 nome: 'Táxi Comum RJ',
                 categoria: 'Convencional (Faixa Exclusiva)',
-                tempoMin: Math.max(10, tempoTotalFinal - 4), // Faixa exclusiva BRS
+                tempoMin: Math.max(10, tempoTotalFinal - 4),
                 custo: custoTaxi / passageiros,
                 custoTotal: custoTaxi,
-                pontualidadeNota: 86,
+                pontualidadeNota: Math.min(99, 86 + bonusTaxiAvBrasil),
                 riscoNota: 82,
                 confortoNota: 72,
                 deeplink: null
             }
         ];
 
-        // Calcula score e define recomendação RIT
+        // Menor custo de referência
+        const menorCustoRef = Math.min(...modais.map(m => m.custo));
+
         modais.forEach(m => {
             const notaCusto = Math.max(10, Math.min(100, 100 - (((m.custo - menorCustoRef) / menorCustoRef) * 60)));
             const score = Math.round(
@@ -769,14 +1167,21 @@ export class CentroRoteirizacaoCustos {
 
         modais.sort((a, b) => b.score - a.score);
         const melhorOpcao = modais[0];
-
         this.modaisResultados = modais;
 
-        // Renderiza no mapa
-        this.renderizarMapa(leafletCoords, todosPontos);
+        // Projeção Temporal 24 Horas
+        const projecao = this.calcularProjecao24h(kmTotalFinal, duracaoMinBase, pedagiosTotalFinal, hora);
+        this.projecao24h = projecao.horas;
+        this.janelaIdeal = projecao.janelaIdeal;
 
-        // Renderiza painel e tabela
-        this.renderizarDashboard({
+        // Renderiza no mapa com marcadores de incidentes
+        this.renderizarMapa(leafletCoords, todosPontos, this.incidentesDetectados);
+
+        // Dados consolidados
+        const dadosDashboard = {
+            origem: todosPontos[0]?.label,
+            destino: todosPontos[todosPontos.length - 1]?.label,
+            waypointsLabels: todosPontos.slice(1, -1).map(p => p.label),
             kmTotal: kmTotalFinal,
             tempoEstimado: tempoTotalFinal,
             tempoFaixa: `${tempoMinFaixa} a ${tempoMaxFaixa} min`,
@@ -788,9 +1193,14 @@ export class CentroRoteirizacaoCustos {
             modais,
             isShared,
             passageiros
-        });
+        };
 
-        // Grava Log de Auditoria no Servidor (Governança RIT)
+        this.ultimoResultado = dadosDashboard;
+
+        // Renderiza painel e tabela
+        this.renderizarDashboard(dadosDashboard);
+
+        // Grava Log de Auditoria
         this.registrarLogAuditoria({
             origem: todosPontos[0]?.label,
             destino: todosPontos[todosPontos.length - 1]?.label,
@@ -804,14 +1214,14 @@ export class CentroRoteirizacaoCustos {
         });
     }
 
-    recalcularApenasCustos() {
+    async recalcularApenasCustos() {
         if (this.routes && this.routes.length > 0 && this.originPoint && this.destPoint) {
             const todosPontos = [this.originPoint, ...this.stops.map(s => s.point).filter(Boolean), this.destPoint];
-            this.processarResultadosRota(todosPontos);
+            await this.processarResultadosRota(todosPontos);
         }
     }
 
-    renderizarMapa(coords, waypoints) {
+    renderizarMapa(coords, waypoints, incidentes = []) {
         if (!this.mapService || !this.mapService.map) return;
 
         this.mapService.clearRouteOverlay();
@@ -822,6 +1232,11 @@ export class CentroRoteirizacaoCustos {
 
         // Plota marcadores A, B, C...
         this.mapService.renderWaypointMarkers(waypoints);
+
+        // Plota marcadores de incidentes em tempo real
+        if (incidentes && incidentes.length > 0 && typeof this.mapService.renderIncidentMarkers === 'function') {
+            this.mapService.renderIncidentMarkers(incidentes);
+        }
 
         // Ajusta enquadramento do mapa
         this.mapService.fitBounds(coords, { padding: [40, 40] });
@@ -839,9 +1254,54 @@ export class CentroRoteirizacaoCustos {
         if (dados.confianca.nivel === 'MÉDIA') badgeConfColor = '#f5a623';
         else if (dados.confianca.nivel === 'BAIXA') badgeConfColor = '#ef4444';
 
-        const co2Kg = ((dados.kmTotal * 120) / 1000).toFixed(2); // ~120g CO2/km
+        const co2Kg = ((dados.kmTotal * 120) / 1000).toFixed(2);
+
+        // Status COR.RIO
+        let corBadgeHtml = '';
+        if (this.statusCor && this.statusCor.estagio) {
+            const est = this.statusCor.estagio.estagio || '1';
+            const corCor = this.statusCor.estagio.cor || '#228d46';
+            corBadgeHtml = `
+                <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:4px 8px; border-radius:4px; margin-bottom:8px; font-size:10px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-tower-broadcast" style="color:#00d1ff;"></i>
+                        <span style="color:#fff; font-weight:700;">COR.RIO:</span>
+                        <span style="background:${corCor}; color:#000; font-weight:900; padding:1px 5px; border-radius:3px; font-size:9px;">
+                            ESTÁGIO ${escapeHtml(est)}
+                        </span>
+                    </div>
+                    <span style="font-size:9px; color:#94a3b8;">${escapeHtml(this.statusCor.calor || 'Nível Normal')}</span>
+                </div>
+            `;
+        }
+
+        // Box de Incidentes no Corredor (Fase 2)
+        let incidentesHtml = '';
+        if (this.incidentesDetectados && this.incidentesDetectados.length > 0) {
+            incidentesHtml = `
+                <div class="rit-incident-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10px; font-weight:800; color:#ef4444;">
+                            ⚠️ ${this.incidentesDetectados.length} OCORRÊNCIA(S) NO CORREDOR DA ROTA
+                        </span>
+                        <span style="font-size:8px; color:#94a3b8;">Buffer 1.000m</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+                        ${this.incidentesDetectados.slice(0, 3).map(inc => `
+                            <div class="rit-incident-item">
+                                <span style="color:#fff;">${escapeHtml(inc.tipo || 'Ocorrência')} (${escapeHtml(inc.bairro || 'RJ')})</span>
+                                <span style="color:#f5a623; font-weight:700;">a ${inc.distanciaMetros}m</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
 
         feedback.innerHTML = `
+            ${corBadgeHtml}
+            ${incidentesHtml}
+
             <!-- DASHBOARD EXECUTIVO KPIS -->
             <div class="rit-exec-dashboard" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin-bottom:10px;">
                 <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px;">
@@ -862,14 +1322,14 @@ export class CentroRoteirizacaoCustos {
                 <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px;">
                     <div style="font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Pegada CO₂</div>
                     <div style="font-size:16px; font-weight:900; color:#10b981;">${co2Kg} kg</div>
-                    <div style="font-size:9px; color:#64748b;">Frota Combustão Padrão</div>
+                    <div style="font-size:9px; color:#64748b;">Frota Padrão Globo</div>
                 </div>
             </div>
 
             <!-- CONFIANÇA DA ESTIMATIVA -->
             <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:6px 10px; border-radius:6px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:11px; font-weight:700; color:#fff;">Confiança da Estimativa:</span>
+                    <span style="font-size:11px; font-weight:700; color:#fff;">Confiança:</span>
                     <span style="font-size:10px; font-weight:900; color:${badgeConfColor}; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">
                         ● ${dados.confianca.nivel} (${dados.confianca.percent}%)
                     </span>
@@ -898,14 +1358,14 @@ export class CentroRoteirizacaoCustos {
                     </div>
                 </div>
                 <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">
-                    Melhor custo-benefício ponderado: menor custo total, risco de cancelamento mínimo e disponibilidade garantida para a operação.
+                    Melhor custo-benefício operacional ponderado: equilíbrio entre tempo, previsibilidade e menor risco operacional.
                 </div>
             </div>
 
             <!-- TABELA COMPARATIVA MULTIMODAL ESTILO VAH -->
             <div style="border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; margin-bottom:10px;">
                 <div style="background:rgba(255,255,255,0.04); padding:6px 10px; font-size:11px; font-weight:800; color:#00d1ff; display:flex; justify-content:space-between; align-items:center;">
-                    <span><i class="fa-solid fa-list-check"></i> Comparativo Multimodal (Estilo VAH Urbano)</span>
+                    <span><i class="fa-solid fa-list-check"></i> Comparativo Multimodal (Estilo VAH)</span>
                     <span style="font-size:9px; color:#94a3b8;">${dados.modais.length} opções simuladas</span>
                 </div>
                 <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
@@ -954,13 +1414,66 @@ export class CentroRoteirizacaoCustos {
                 </table>
             </div>
 
-            <!-- LINK EXTERNO WAZE -->
-            <div style="display:flex; gap:6px;">
-                <a href="${this.gerarWazeDeepLink(this.destPoint)}" target="_blank" rel="noopener noreferrer" class="btn" style="flex:1; background:#00d1ff; color:#04111a; font-weight:900; border:none; padding:6px; border-radius:4px; text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:4px; font-size:11px;">
-                    <i class="fa-solid fa-diamond-turn-right"></i> Abrir no Waze
+            <!-- PROJEÇÃO TEMPORAL 24 HORAS & JANELA IDEAL (FASE 2) -->
+            <div class="rit-24h-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:11px; font-weight:800; color:#00d1ff;">
+                        <i class="fa-solid fa-chart-line"></i> Projeção 24h & Janela Ideal
+                    </span>
+                    <span style="font-size:9px; color:#10b981; font-weight:800; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:3px;">
+                        ⭐ ${this.janelaIdeal?.label || 'Janela: 10:30 às 15:30'}
+                    </span>
+                </div>
+                <div style="font-size:9px; color:#94a3b8; margin-bottom:6px;">
+                    Economia estimada de até <b>35%</b> e -20 min de trânsito em relação ao pico. Clique para simular:
+                </div>
+                <div class="rit-24h-chart">
+                    ${this.projecao24h.map(p => `
+                        <div class="rit-24h-col ${p.isHoraAtual ? 'active' : ''} ${p.status === 'ideal' ? 'golden-hour' : ''}" 
+                             data-hora="${p.horaStr}" 
+                             title="${p.horaStr}: R$ ${p.custoEst.toFixed(2).replace('.', ',')} (${p.tempoEst} min) - ${p.label}">
+                            <div class="rit-24h-bar" style="height:${p.barHeightPct}%; background:${p.corBarra};"></div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:8px; color:#64748b; margin-top:3px;">
+                    <span>00h</span>
+                    <span style="color:#ef4444;">08h (Pico)</span>
+                    <span style="color:#10b981; font-weight:700;">12h (Ideal)</span>
+                    <span style="color:#ef4444;">18h (Pico)</span>
+                    <span>23h</span>
+                </div>
+            </div>
+
+            <!-- AÇÕES EXECUTIVAS (FASE 2) -->
+            <div style="display:flex; gap:6px; margin-top:8px;">
+                <button type="button" id="btn-copiar-resumo" class="btn" style="flex:1; background:rgba(0, 209, 255, 0.12); border:1px solid #00d1ff; color:#00d1ff; font-weight:800; padding:7px; border-radius:4px; font-size:10px; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer;">
+                    <i class="fa-solid fa-copy"></i> Copiar Resumo WhatsApp
+                </button>
+                <button type="button" id="btn-imprimir-relatorio" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; font-weight:700; padding:7px 10px; border-radius:4px; font-size:10px; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer;" title="Imprimir Relatório Executivo">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+                <a href="${this.gerarWazeDeepLink(this.destPoint)}" target="_blank" rel="noopener noreferrer" class="btn" style="background:#00d1ff; color:#04111a; font-weight:900; border:none; padding:7px 12px; border-radius:4px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:4px; font-size:10px;">
+                    <i class="fa-solid fa-diamond-turn-right"></i> Waze
                 </a>
             </div>
         `;
+
+        // Event listeners dos novos botões da Fase 2
+        document.getElementById('btn-copiar-resumo')?.addEventListener('click', () => this.copiarResumoExecutivo());
+        document.getElementById('btn-imprimir-relatorio')?.addEventListener('click', () => this.imprimirRelatorio());
+
+        document.querySelectorAll('.rit-24h-col').forEach(col => {
+            col.addEventListener('click', () => {
+                const hora = col.dataset.hora;
+                if (hora) {
+                    const inputHorario = document.getElementById('horario');
+                    if (inputHorario) inputHorario.value = hora;
+                    showToast(`⏰ Simulação ajustada para as ${hora}`, 'info', 1500);
+                    this.recalcularApenasCustos();
+                }
+            });
+        });
     }
 
     gerarUberDeepLink(origem, destino) {

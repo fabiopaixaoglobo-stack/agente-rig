@@ -2632,6 +2632,133 @@ body {
   100% { box-shadow: 0 0 18px rgba(0, 209, 255, 0.25); }
 }
 
+/* FASE 2: CENÁRIOS RÁPIDOS 1-CLIQUE */
+.rit-scenario-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.rit-scenario-btn:hover {
+  background: rgba(0, 209, 255, 0.1);
+  border-color: rgba(0, 209, 255, 0.4);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.rit-scenario-btn.active {
+  background: rgba(0, 209, 255, 0.2);
+  border-color: #00d1ff;
+  color: #00d1ff;
+  box-shadow: 0 0 8px rgba(0, 209, 255, 0.3);
+}
+
+/* FASE 2: INCIDENTES EM TEMPO REAL */
+.rit-incident-box {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.rit-incident-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 10px;
+}
+
+.rit-incident-item:last-child {
+  border-bottom: none;
+}
+
+/* FASE 2: PROJEÇÃO TEMPORAL 24 HORAS & JANELA IDEAL */
+.rit-24h-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.rit-24h-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 60px;
+  margin-top: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rit-24h-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+
+.rit-24h-col:hover {
+  transform: scaleY(1.08);
+}
+
+.rit-24h-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.2s ease;
+  min-height: 4px;
+}
+
+.rit-24h-col.active .rit-24h-bar {
+  border: 1px solid #fff;
+  box-shadow: 0 0 6px #00d1ff;
+}
+
+.rit-24h-col.golden-hour .rit-24h-bar {
+  background: linear-gradient(180deg, #10b981, #059669) !important;
+}
+
+/* IMPRESSÃO EXECUTIVA */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #tab-planejador, #tab-planejador * {
+    visibility: visible;
+  }
+  #tab-planejador {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .sidebar {
+    width: 100% !important;
+  }
+  .rit-scenario-btn, #btn-rota, .btn {
+    display: none !important;
+  }
+}
+
+
 
 
 

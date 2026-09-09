@@ -206,6 +206,63 @@ export class MapService {
         return markers;
     }
 
+    renderIncidentMarkers(incidents) {
+        if (!this.map || !Array.isArray(incidents)) return [];
+        const markers = [];
+
+        incidents.forEach((inc) => {
+            if (!inc || isNaN(inc.lat) || isNaN(inc.lon)) return;
+            const isTiroteio = (inc.tipo || '').toLowerCase().includes('tiroteio') || (inc.tipo || '').toLowerCase().includes('disparo');
+            const iconChar = isTiroteio ? '🔫' : '⚠️';
+            const bgColor = isTiroteio ? '#ef4444' : '#f59e0b';
+
+            const html = `
+                <div style="
+                    background: ${bgColor};
+                    color: #fff;
+                    font-size: 11px;
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 50%;
+                    border: 2px solid #fff;
+                    box-shadow: 0 0 8px ${bgColor};
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    animation: pulseGlow 1.5s infinite alternate;
+                ">${iconChar}</div>
+            `;
+
+            const distTexto = inc.distanciaMetros ? ` a <b>${inc.distanciaMetros}m</b> do trajeto` : '';
+            const popup = `
+                <div style="font-family: sans-serif; min-width: 160px;">
+                    <div style="font-weight: 800; color: ${bgColor}; font-size: 12px; margin-bottom: 2px;">
+                        ${iconChar} ${inc.tipo || 'Incidente na Rota'}
+                    </div>
+                    <div style="font-size: 11px; color: #334155; margin-bottom: 4px;">
+                        <b>Bairro:</b> ${inc.bairro || 'Rio de Janeiro'}${distTexto}
+                    </div>
+                    ${inc.hora ? `<div style="font-size: 10px; color: #64748b;">Horário: ${inc.hora}</div>` : ''}
+                    <div style="font-size: 9px; color: #94a3b8; margin-top: 4px;">Fonte: ${inc.fonte || 'OTT / CCO'}</div>
+                </div>
+            `;
+
+            const marker = this.addMarker(inc.lat, inc.lon, popup, {
+                html,
+                iconSize: [22, 22],
+                iconAnchor: [11, 11]
+            });
+
+            if (marker) {
+                this.routeOverlays.push(marker);
+                markers.push(marker);
+            }
+        });
+
+        return markers;
+    }
+
     updateOrAddMarker(idKey, lat, lng, popupContent, iconOptions = null) {
         if (!this.map || !lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
             return null;
