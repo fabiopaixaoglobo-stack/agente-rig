@@ -153,7 +153,7 @@ export class CamerasRJ {
         `;
     }
 
-    // 4. RENDERIZAÇÃO DOS 4 QUADRANTES
+    // 4. RENDERIZAÇÃO DOS 4 QUADRANTES COM ESCALONAMENTO (< 3S)
     renderAllQuadrants() {
         const grid = document.getElementById('cam-rj-grid');
         if (!grid) return;
@@ -161,12 +161,22 @@ export class CamerasRJ {
         grid.innerHTML = '';
         const slotKeys = ['quad_1', 'quad_2', 'quad_3', 'quad_4'];
 
-        slotKeys.forEach(key => {
+        slotKeys.forEach((key, idx) => {
             const cardEl = document.createElement('div');
             cardEl.className = 'cam-rj-card';
             cardEl.id = `cam-card-${key}`;
+            cardEl.innerHTML = `
+                <div class="cim-viewport-loading" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#071018;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="color:#00d1ff; font-size:22px; margin-bottom:8px;"></i>
+                    <span style="font-size:11px; color:#94a3b8;">Inicializando Quadrante ${idx + 1}...</span>
+                </div>
+            `;
             grid.appendChild(cardEl);
-            this.renderSingleQuadrant(key, cardEl);
+
+            // Escalonamento de 150ms por quadrante para tempo inicial < 3s sem sobrecarga de conexões
+            setTimeout(() => {
+                this.renderSingleQuadrant(key, cardEl);
+            }, idx * 150);
         });
     }
 
@@ -418,12 +428,17 @@ export class CamerasRJ {
         this.slotRetries[slotKey] = (this.slotRetries[slotKey] || 0) + 1;
         const retries = this.slotRetries[slotKey];
         const badgeEl = document.getElementById(`badge-${slotKey}`);
+        const delays = [5000, 15000, 30000];
+        const delay = delays[retries - 1] || 30000;
 
-        if (retries <= 2) {
-            console.info(`[CAMERA-RETRY] Slot: ${slotKey} | Tentativa ${retries}/2 de reconexão em 5 segundos...`);
+        if (retries <= 3) {
+            console.info(`[CAMERA-RETRY] Slot: ${slotKey} | Tentativa ${retries}/3 de reconexão exponencial em ${delay/1000}s para ${currentSource.nome}...`);
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-loading';
-                badgeEl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> RETRY (${retries}/2)`;
+                badgeEl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> RETRY ${retries}/3 (${delay/1000}s)`;
+            }
+            if (window.diagnosticoFontes) {
+                window.diagnosticoFontes.registrarEvento(`RJ: Reconexão exponencial no quadrante ${this.currentSlots[slotKey]?.slotNum || slotKey} (${retries}/3 em ${delay/1000}s).`);
             }
 
             setTimeout(() => {
@@ -432,13 +447,16 @@ export class CamerasRJ {
                     iframe.src = `${normalizeEmbedUrl(currentSource.embedUrl)}?retry=${Date.now()}`;
                     this.startStreamMonitor(slotKey, currentSource);
                 }
-            }, 5000);
+            }, delay);
         } else {
             // Aciona Fallback Automático
-            console.warn(`[CAMERA-FALLBACK] Slot: ${slotKey} | Esgotadas tentativas para ${currentSource.nome}. Alternando para contingência...`);
+            console.warn(`[CAMERA-FALLBACK] Slot: ${slotKey} | Esgotadas 3 tentativas para ${currentSource.nome}. Alternando para contingência...`);
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-error';
                 badgeEl.innerHTML = '<i class="fa-solid fa-shield"></i> CONTINGÊNCIA';
+            }
+            if (window.diagnosticoFontes) {
+                window.diagnosticoFontes.registrarEvento(`RJ: Fallback acionado no quadrante ${this.currentSlots[slotKey]?.slotNum || slotKey} após 3 tentativas.`);
             }
 
             // Alterna para o Mapa Interativo de Câmeras do Rio ou UFRJ ZET

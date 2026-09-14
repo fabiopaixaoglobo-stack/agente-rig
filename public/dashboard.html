@@ -262,6 +262,50 @@
             <span><i class="fa-solid fa-satellite-dish"></i> Central de Inteligência</span>
             <span class="pill" id="cicc-status-pill" style="background: rgba(0, 209, 255, 0.15); color: #00d1ff; border: 1px solid #00d1ff; font-size: 8px; font-weight: 800;">CCO RIT</span>
           </div>
+          <!-- ENDEREÇO INTELIGENTE COM AUTOCOMPLETE (FASE 2) -->
+          <div class="smart-address-container" style="margin-bottom: 12px; padding: 10px; background: rgba(0, 209, 255, 0.05); border: 1px solid rgba(0, 209, 255, 0.25); border-radius: 6px; position: relative;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <label class="label" style="margin: 0; color: #00d1ff; font-weight: 800; font-size: 11px; display: flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-location-crosshairs"></i> Endereço Inteligente
+              </label>
+              <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">Localizar Câmeras</span>
+            </div>
+            
+            <div style="position: relative;">
+              <input id="smart-address-search-input" class="input" 
+                     placeholder="Buscar Bairro, Endereço, POI, CEP ou Estação..." 
+                     autocomplete="off"
+                     style="width: 100%; border: 1px solid #00d1ff; background: rgba(12, 21, 36, 0.9); color: #fff; font-size: 11px; padding: 7px 28px 7px 8px; border-radius: 4px;" />
+              <button type="button" id="smart-address-search-clear" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; font-size: 14px; display: none; line-height: 1;" title="Limpar busca">&times;</button>
+              <div id="smart-address-autocomplete-dropdown" style="display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: #071018; border: 1px solid #00d1ff; border-radius: 4px; max-height: 220px; overflow-y: auto; z-index: 10000; box-shadow: 0 8px 20px rgba(0,0,0,0.8);"></div>
+            </div>
+
+            <!-- CONFIGURAÇÃO DO RAIO E QUANTIDADE -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px;">
+              <div>
+                <label style="font-size: 9.5px; color: #94a3b8; display: block; margin-bottom: 2px;">Raio de Busca:</label>
+                <select id="smart-radius-select" class="input" style="height: 26px; font-size: 10.5px; padding: 0 6px; width: 100%; background: #0c1524; color: #00d1ff; border: 1px solid rgba(0,209,255,0.3);">
+                  <option value="500">500 metros</option>
+                  <option value="1000" selected>1.000 m (1 km)</option>
+                  <option value="3000">3.000 m (3 km)</option>
+                  <option value="5000">5.000 m (5 km)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 9.5px; color: #94a3b8; display: block; margin-bottom: 2px;">Quantidade:</label>
+                <select id="smart-topk-select" class="input" style="height: 26px; font-size: 10.5px; padding: 0 6px; width: 100%; background: #0c1524; color: #00d1ff; border: 1px solid rgba(0,209,255,0.3);">
+                  <option value="5">Top 5 Câmeras</option>
+                  <option value="10" selected>Top 10 Câmeras</option>
+                  <option value="20">Top 20 Câmeras</option>
+                </select>
+              </div>
+            </div>
+            
+            <button type="button" id="btn-smart-search-cameras" class="btn btnPrimary" style="width: 100%; margin-top: 8px; font-size: 11px; padding: 6px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <i class="fa-solid fa-radar"></i> LOCALIZAR CÂMERAS NO RAIO
+            </button>
+          </div>
+
           <div style="margin-bottom: 8px;"><label class="label">Origem</label><input id="waze-origem" class="input" placeholder="Partida..." /></div>
           <div style="margin-bottom: 8px;"><label class="label">Destino</label><input id="waze-destino" class="input" placeholder="Chegada..." /></div>
           <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--muted);">
@@ -280,6 +324,22 @@
           <button type="button" id="btn-atualizar-ott" class="btn" style="width: 100%; margin-top: 8px; background-color: #0c1524; color: #00d1ff; border: 1px solid #00d1ff; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;">
             🔄 ATUALIZAR INTELIGÊNCIA (OTT + FOGO CRUZADO)
           </button>
+        </div>
+
+        <!-- PAINEL DE CÂMERAS PRÓXIMAS (FASE 2) -->
+        <div class="panel" id="smart-nearest-cameras-panel" style="display: none; margin-top: 10px; flex-direction: column; max-height: 380px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div class="panelTitle" style="color: #00d1ff; display: flex; align-items: center; gap: 6px; font-size: 11.5px; margin: 0;">
+              <i class="fa-solid fa-video"></i> <span id="smart-nearest-title">Câmeras no Raio</span>
+            </div>
+            <span id="smart-nearest-badge" style="font-size: 9px; font-weight: 800; background: rgba(0,209,255,0.15); color: #00d1ff; padding: 1px 6px; border-radius: 4px;">0 encontradas</span>
+          </div>
+          <div id="smart-nearest-subtitle" style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; padding: 4px 6px; background: rgba(0,209,255,0.05); border-radius: 4px; border: 1px solid rgba(0,209,255,0.1);">
+            Selecione uma câmera para abrir no player tático
+          </div>
+          <div id="smart-nearest-cameras-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding-right: 2px;">
+            <!-- Itens de câmeras renderizados dinamicamente -->
+          </div>
         </div>
 
         <div class="panel" id="ott-reports-panel" style="margin-top: 10px; display: flex; flex-direction: column; max-height: 320px; overflow-y: auto;">
@@ -399,6 +459,9 @@
 
             <button onclick="window.uiController && window.uiController.forcarAuditoriaStreaming()" class="btn btnSmall" style="padding: 2px 8px; font-size: 9.5px; background: rgba(0,209,255,0.15); color: #00d1ff; border: 1px solid #00d1ff; cursor: pointer; border-radius: 3px;" title="Disparar auditoria completa das câmeras">
               <i class="fa-solid fa-bolt"></i> Re-Auditar CCO
+            </button>
+            <button id="btn-abrir-diag-fontes" onclick="window.diagnosticoFontes && window.diagnosticoFontes.abrirModal()" class="btn btnSmall" style="padding: 2px 8px; font-size: 9.5px; background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid #10b981; cursor: pointer; border-radius: 3px;" title="Abrir painel de observabilidade e saúde das fontes">
+              <i class="fa-solid fa-chart-line"></i> Diagnóstico de Fontes
             </button>
           </div>
         </div>
@@ -781,6 +844,86 @@
         <button onclick="window.uiController.copiarMensagemSolicitacao(this)" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Mensagem</button>
         <button onclick="window.uiController.copiarLinkSolicitacao(this)" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Copiar Link</button>
         <button onclick="document.getElementById('modalSolicitarPosicao').style.display='none'" class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); padding: 8px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 6px; transition: all 0.2s;">Fechar</button>
+  </div>
+  </div>
+
+  <!-- MODAL DE DIAGNÓSTICO DAS FONTES (OBSERVABILIDADE CCO) -->
+  <div id="modalDiagnosticoFontes" class="rit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 99999; justify-content: center; align-items: center;">
+    <div class="rit-modal-content" style="background: #0a0f1c; border: 1px solid #00d1ff; border-radius: 14px; width: 92%; max-width: 820px; padding: 20px; color: white; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 30px rgba(0, 209, 255, 0.2); max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,209,255,0.2); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-satellite-dish" style="color: #00d1ff; font-size: 16px;"></i>
+          <h3 style="margin: 0; color: #00d1ff; font-size: 14px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px;">
+            Diagnóstico das Fontes & Observabilidade Operacional
+          </h3>
+        </div>
+        <button onclick="document.getElementById('modalDiagnosticoFontes').style.display='none'" style="background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <!-- CARDS DE RESUMO OPERACIONAL -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Taxa Média Sucesso</div>
+          <div id="diag-stat-success-rate" style="font-size: 20px; font-weight: 900; color: #10b981; margin-top: 2px;">94.2%</div>
+        </div>
+        <div style="background: rgba(0, 209, 255, 0.1); border: 1px solid rgba(0, 209, 255, 0.3); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Latência Média</div>
+          <div id="diag-stat-avg-latency" style="font-size: 20px; font-weight: 900; color: #00d1ff; margin-top: 2px;">420 ms</div>
+        </div>
+        <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 10px;">
+          <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Provedores Monitorados</div>
+          <div style="font-size: 20px; font-weight: 900; color: #fbbf24; margin-top: 2px;">5 Fontes</div>
+        </div>
+      </div>
+
+      <!-- TABELA DE STATUS POR PROVEDOR -->
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; margin-bottom: 6px; text-transform: uppercase;">
+          Status Detalhado por Provedor Oficial
+        </div>
+        <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+            <thead>
+              <tr style="background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8;">
+                <th style="padding: 8px;">Provedor</th>
+                <th style="padding: 8px;">Regional</th>
+                <th style="padding: 8px;">Status</th>
+                <th style="padding: 8px;">Latência</th>
+                <th style="padding: 8px;">Sucesso</th>
+                <th style="padding: 8px;">Último Diagnóstico</th>
+              </tr>
+            </thead>
+            <tbody id="diag-providers-tbody">
+              <!-- Renderizado dinamicamente por diagnostico-fontes.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LOG DE EVENTOS OPERACIONAIS RECENTES -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase;">
+            Histórico Operacional de Incidentes & Failover
+          </div>
+          <span style="font-size: 9px; color: #64748b;">Tempo Real</span>
+        </div>
+        <div id="diag-events-log-container" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; height: 130px; overflow-y: auto; padding: 8px; font-family: monospace; font-size: 10px; color: #cbd5e1; line-height: 1.6;">
+          <!-- Linhas de log -->
+        </div>
+      </div>
+
+      <!-- AÇÕES OPERACIONAIS -->
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; flex-wrap: wrap;">
+        <button id="btn-diag-test-all" onclick="window.diagnosticoFontes && window.diagnosticoFontes.testarTodasFontes()" class="btn btnPrimary" style="font-size: 11px; font-weight: 800; padding: 7px 14px; display: flex; align-items: center; gap: 5px;">
+          <i class="fa-solid fa-play"></i> Testar Todas as Fontes
+        </button>
+        <button id="btn-diag-clear-cache" onclick="window.diagnosticoFontes && window.diagnosticoFontes.limparCache()" class="btn" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 11px; padding: 7px 12px; display: flex; align-items: center; gap: 5px;">
+          <i class="fa-solid fa-rotate-right"></i> Recarregar Cache
+        </button>
+        <button onclick="document.getElementById('modalDiagnosticoFontes').style.display='none'" class="btn" style="background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); font-size: 11px; padding: 7px 14px; font-weight: 800; cursor: pointer;">
+          Fechar
+        </button>
       </div>
     </div>
   </div>

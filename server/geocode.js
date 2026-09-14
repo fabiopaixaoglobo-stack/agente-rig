@@ -253,8 +253,238 @@ const GLOBO_POIS = [
         aliases: ['barra olimpica', 'barra olimpica rj', 'regiao olimpica'],
         lat: -22.9810,
         lon: -43.3980,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_marechal_hermes',
+        label: 'Marechal Hermes',
+        endereco: 'Marechal Hermes - Zona Norte, Rio de Janeiro - RJ',
+        aliases: ['marechal hermes', 'marechal'],
+        lat: -22.8622,
+        lon: -43.3712,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_madureira',
+        label: 'Madureira',
+        endereco: 'Madureira - Zona Norte, Rio de Janeiro - RJ',
+        aliases: ['madureira', 'madureira rj'],
+        lat: -22.8732,
+        lon: -43.3394,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_recreio',
+        label: 'Recreio dos Bandeirantes',
+        endereco: 'Recreio dos Bandeirantes - Zona Oeste, Rio de Janeiro - RJ',
+        aliases: ['recreio', 'recreio dos bandeirantes'],
+        lat: -23.0187,
+        lon: -43.4682,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_barra_tijuca',
+        label: 'Barra da Tijuca',
+        endereco: 'Barra da Tijuca - Zona Oeste, Rio de Janeiro - RJ',
+        aliases: ['barra da tijuca', 'barra'],
+        lat: -23.0003,
+        lon: -43.3659,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_copacabana',
+        label: 'Copacabana',
+        endereco: 'Copacabana - Zona Sul, Rio de Janeiro - RJ',
+        aliases: ['copacabana', 'copa'],
+        lat: -22.9698,
+        lon: -43.1868,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_botafogo',
+        label: 'Botafogo',
+        endereco: 'Botafogo - Zona Sul, Rio de Janeiro - RJ',
+        aliases: ['botafogo'],
+        lat: -22.9519,
+        lon: -43.1842,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_centro_rj',
+        label: 'Centro (Rio de Janeiro)',
+        endereco: 'Centro, Rio de Janeiro - RJ',
+        aliases: ['centro', 'centro rj', 'centro do rio'],
+        lat: -22.9068,
+        lon: -43.1729,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_tijuca',
+        label: 'Tijuca',
+        endereco: 'Tijuca - Zona Norte, Rio de Janeiro - RJ',
+        aliases: ['tijuca', 'saens pena'],
+        lat: -22.9248,
+        lon: -43.2343,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'bairro_mare',
+        label: 'Complexo da Maré',
+        endereco: 'Maré - Zona Norte, Rio de Janeiro - RJ',
+        aliases: ['mare', 'complexo da mare', 'mare rj'],
+        lat: -22.8550,
+        lon: -43.2450,
+        tipo: 'bairro',
+        categoria: 'Bairro'
+    },
+    {
+        id: 'terminal_alvorada',
+        label: 'Terminal Alvorada (BRT / Ônibus)',
+        endereco: 'Av. Ayrton Senna - Barra da Tijuca, Rio de Janeiro - RJ',
+        aliases: ['terminal alvorada', 'alvorada', 'brt alvorada', 'estacao alvorada'],
+        lat: -23.0004,
+        lon: -43.3664,
+        tipo: 'terminal',
+        categoria: 'Terminal BRT / Hub'
+    },
+    {
+        id: 'terminal_gentileza',
+        label: 'Terminal Intermodal Gentileza (TIG)',
+        endereco: 'Av. Francisco Bicalho - São Cristóvão, Rio de Janeiro - RJ',
+        aliases: ['terminal gentileza', 'gentileza', 'tig gentileza', 'terminal intermodal gentileza'],
+        lat: -22.8992,
+        lon: -43.2085,
+        tipo: 'terminal',
+        categoria: 'Terminal BRT / VLT'
+    },
+    {
+        id: 'terminal_jardim_oceanico',
+        label: 'Terminal / Metrô Jardim Oceânico',
+        endereco: 'Av. Armando Lombardi - Barra da Tijuca, Rio de Janeiro - RJ',
+        aliases: ['jardim oceanico', 'metro jardim oceanico', 'terminal jardim oceanico', 'brt jardim oceanico'],
+        lat: -23.0075,
+        lon: -43.3108,
+        tipo: 'terminal',
+        categoria: 'Estação Metrô / BRT'
+    },
+    {
+        id: 'terminal_recreio',
+        label: 'Terminal Recreio (BRT Salvador Allende)',
+        endereco: 'Av. das Américas x Av. Salvador Allende - Recreio, Rio de Janeiro - RJ',
+        aliases: ['terminal recreio', 'brt recreio'],
+        lat: -23.0142,
+        lon: -43.4735,
+        tipo: 'terminal',
+        categoria: 'Terminal BRT'
+    },
+    {
+        id: 'estacao_rede_sarah',
+        label: 'Estação BRT Rede Sarah',
+        endereco: 'Av. Embaixador Abelardo Bueno - Barra Olímpica, Rio de Janeiro - RJ',
+        aliases: ['rede sarah', 'rede sarah brt', 'sarah', 'estacao rede sarah'],
+        lat: -22.9733,
+        lon: -43.3850,
+        tipo: 'estacao',
+        categoria: 'Estação BRT'
+    },
+    {
+        id: 'estacao_madureira',
+        label: 'Estação Madureira (SuperVia / BRT)',
+        endereco: 'Praça do Patriarca - Madureira, Rio de Janeiro - RJ',
+        aliases: ['estacao madureira', 'trem madureira', 'madureira supervia', 'brt madureira'],
+        lat: -22.8728,
+        lon: -43.3385,
+        tipo: 'estacao',
+        categoria: 'Estação Trem / BRT'
+    },
+    {
+        id: 'estacao_marechal',
+        label: 'Estação Marechal Hermes (SuperVia)',
+        endereco: 'Rua Xavier Curado - Marechal Hermes, Rio de Janeiro - RJ',
+        aliases: ['estacao marechal hermes', 'trem marechal hermes', 'supervia marechal'],
+        lat: -22.8615,
+        lon: -43.3705,
+        tipo: 'estacao',
+        categoria: 'Estação Trem'
+    },
+    {
+        id: 'estacao_afranio_costa',
+        label: 'Estação BRT Afrânio Costa',
+        endereco: 'Av. das Américas - Barra da Tijuca, Rio de Janeiro - RJ',
+        aliases: ['afranio costa', 'estacao afranio costa', 'brt afranio costa'],
+        lat: -23.0035,
+        lon: -43.3255,
+        tipo: 'estacao',
+        categoria: 'Estação BRT'
+    },
+    {
+        id: 'shop_recreio',
+        label: 'Recreio Shopping',
+        endereco: 'Av. das Américas, 19019 - Recreio dos Bandeirantes, Rio de Janeiro - RJ',
+        aliases: ['recreio shopping', 'shopping recreio'],
+        lat: -23.0205,
+        lon: -43.4835,
         tipo: 'ponto_interesse',
-        categoria: 'Bairro / Região'
+        categoria: 'Shopping / Apoio'
+    },
+    {
+        id: 'evento_engenhao',
+        label: 'Estádio Nilton Santos (Engenhão)',
+        endereco: 'Rua José dos Reis, 425 - Engenho de Dentro, Rio de Janeiro - RJ',
+        aliases: ['engenhao', 'nilton santos', 'estadio nilton santos', 'botafogo estadio'],
+        lat: -22.8932,
+        lon: -43.2925,
+        tipo: 'evento',
+        categoria: 'Estádio / Eventos'
+    },
+    {
+        id: 'via_av_brasil_12500',
+        label: 'Avenida Brasil, 12500 (Penha Circular / Mercado São Sebastião)',
+        endereco: 'Av. Brasil, 12500 - Penha Circular, Rio de Janeiro - RJ',
+        aliases: ['avenida brasil 12500', 'av brasil 12500', 'brasil 12500'],
+        lat: -22.8335,
+        lon: -43.3050,
+        tipo: 'endereco',
+        categoria: 'Via Expressa / Endereço'
+    },
+    {
+        id: 'via_av_americas_5000',
+        label: 'Avenida das Américas, 5000 (New York City Center / Barra)',
+        endereco: 'Av. das Américas, 5000 - Barra da Tijuca, Rio de Janeiro - RJ',
+        aliases: ['av das americas 5000', 'avenida das americas 5000', 'americas 5000'],
+        lat: -23.0008,
+        lon: -43.3645,
+        tipo: 'endereco',
+        categoria: 'Avenida / Endereço'
+    },
+    {
+        id: 'via_abelardo_bueno',
+        label: 'Avenida Embaixador Abelardo Bueno',
+        endereco: 'Av. Embaixador Abelardo Bueno - Barra Olímpica, Rio de Janeiro - RJ',
+        aliases: ['abelardo bueno', 'av abelardo bueno', 'av embaixador abelardo bueno'],
+        lat: -22.9740,
+        lon: -43.3880,
+        tipo: 'endereco',
+        categoria: 'Avenida / Corredor'
+    },
+    {
+        id: 'via_ayrton_senna',
+        label: 'Avenida Ayrton Senna',
+        endereco: 'Av. Ayrton Senna - Barra da Tijuca, Rio de Janeiro - RJ',
+        aliases: ['ayrton senna', 'av ayrton senna'],
+        lat: -22.9860,
+        lon: -43.3650,
+        tipo: 'endereco',
+        categoria: 'Avenida / Corredor'
     }
 ];
 
@@ -271,7 +501,10 @@ function normalizarTexto(str) {
         .trim()
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[.,\-\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 async function lerCache() {
@@ -608,4 +841,4 @@ router.get('/geocode', async (req, res) => {
     }
 });
 
-module.exports = { router, getGeocode, GLOBO_POIS };
+module.exports = { router, getGeocode, GLOBO_POIS, buscarPoisLocais, resolverCep };

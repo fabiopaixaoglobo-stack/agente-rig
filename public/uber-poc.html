@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente RIT – Spike Técnico: Diagnóstico Uber PoC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --poc-bg: #070d17;
+            --poc-card: #0d1726;
+            --poc-border: rgba(0, 209, 255, 0.2);
+            --poc-cyan: #00d1ff;
+            --poc-green: #10b981;
+            --poc-amber: #f59e0b;
+            --poc-red: #ef4444;
+            --poc-text: #e2e8f0;
+            --poc-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--poc-bg);
+            color: var(--poc-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .poc-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .poc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--poc-border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .poc-title h1 {
+            font-size: 20px;
+            margin: 0 0 6px 0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .poc-badge {
+            background: rgba(0, 209, 255, 0.15);
+            border: 1px solid var(--poc-cyan);
+            color: var(--poc-cyan);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .poc-subtitle {
+            font-size: 13px;
+            color: var(--poc-muted);
+            margin: 0;
+        }
+
+        .poc-banner-security {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .poc-security-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #d1fae5;
+        }
+
+        .poc-security-item i {
+            color: var(--poc-green);
+        }
+
+        .poc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .poc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .poc-card {
+            background: var(--poc-card);
+            border: 1px solid var(--poc-border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .poc-card h2 {
+            font-size: 15px;
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+
+        .step-num {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            border-radius: 50%;
+            background: var(--poc-cyan);
+            color: #000;
+            font-weight: 800;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
+        .code-snippet {
+            background: #040810;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #38bdf8;
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 8px;
+        }
+
+        .btn-poc {
+            background: rgba(0, 209, 255, 0.15);
+            border: 1px solid var(--poc-cyan);
+            color: var(--poc-cyan);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-poc:hover {
+            background: var(--poc-cyan);
+            color: #000;
+        }
+
+        .btn-poc-success {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--poc-green);
+            color: var(--poc-green);
+        }
+
+        .btn-poc-success:hover {
+            background: var(--poc-green);
+            color: #000;
+        }
+
+        .scenarios-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn-scenario {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-scenario:hover {
+            border-color: var(--poc-cyan);
+            color: #fff;
+        }
+
+        .btn-scenario.active {
+            background: rgba(0, 209, 255, 0.2);
+            border-color: var(--poc-cyan);
+            color: var(--poc-cyan);
+        }
+
+        .poc-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .poc-table th, .poc-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .poc-table th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--poc-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-diff {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .diff-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .diff-mid {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .diff-low {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .answer-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .answer-num {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--poc-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .answer-question {
+            font-size: 11px;
+            color: #fff;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .answer-val {
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .val-sim { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .val-nao { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .val-tecnica { background: rgba(0, 209, 255, 0.2); color: #38bdf8; }
+        .val-medio { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .val-rec-nao { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+        .route-summary {
+            background: rgba(0, 209, 255, 0.05);
+            border: 1px solid rgba(0, 209, 255, 0.15);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="poc-container">
+    <!-- HEADER -->
+    <div class="poc-header">
+        <div class="poc-title">
+            <h1>
+                <i class="fa-solid fa-flask-vial" style="color: var(--poc-cyan);"></i>
+                Spike Técnico: Prova de Conceito Uber (Sessão Autenticada)
+                <span class="poc-badge">AMBIENTE ISOLADO / LOCAL</span>
+            </h1>
+            <p class="poc-subtitle">Verificação da viabilidade de coleta de valores exibidos na tela da Uber sem persistência de credenciais nem alteração do RIT.</p>
+        </div>
+        <div>
+            <a href="dashboard.html" class="btn-poc" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); color: #fff;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Agente RIT
+            </a>
+        </div>
+    </div>
+
+    <!-- BANNER DE CONFORMIDADE & SEGURANÇA -->
+    <div class="poc-banner-security">
+        <div class="poc-security-item">
+            <i class="fa-solid fa-shield-check"></i>
+            <span><strong>Nenhuma Senha ou MFA:</strong> Zero manipulação de credenciais.</span>
+        </div>
+        <div class="poc-security-item">
+            <i class="fa-solid fa-shield-check"></i>
+            <span><strong>Sem Captura de Cookies:</strong> Nenhuma persistência de sessão.</span>
+        </div>
+        <div class="poc-security-item">
+            <i class="fa-solid fa-shield-check"></i>
+            <span><strong>RIT Intacto:</strong> Motores de cálculo em produção inalterados.</span>
+        </div>
+        <div class="poc-security-item">
+            <i class="fa-solid fa-shield-check"></i>
+            <span><strong>Mesma Origem:</strong> Diagnóstico roda no contexto da aba do usuário.</span>
+        </div>
+    </div>
+
+    <!-- GRID PRINCIPAL -->
+    <div class="poc-grid">
+        <!-- ETAPA 2: PROTOCOLO DE LEITURA NA ABA UBER -->
+        <div class="poc-card">
+            <h2><i class="fa-solid fa-bolt" style="color: var(--poc-cyan);"></i> Etapa 2: Leitura no Contexto m.uber.com</h2>
+            
+            <div class="step-box">
+                <span class="step-num">1</span>
+                <strong>Abra a Uber no seu Navegador:</strong>
+                <p style="margin: 4px 0 8px 0; font-size: 11px; color: var(--poc-muted);">
+                    Faça login manualmente com sua própria conta.
+                </p>
+                <a href="https://m.uber.com/ul/?action=setPickup&pickup[latitude]=-22.9555&pickup[longitude]=-43.4116&pickup[nickname]=Estúdios%20Globo%20Portaria%203&dropoff[latitude]=-22.9818&dropoff[longitude]=-43.2185&dropoff[nickname]=GNT%20Globosat%20Rio" target="_blank" rel="noopener noreferrer" class="btn-poc">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir m.uber.com (Rota de Teste)
+                </a>
+            </div>
+
+            <div class="step-box">
+                <span class="step-num">2</span>
+                <strong>Execute o Snippet de Diagnóstico:</strong>
+                <p style="margin: 4px 0 8px 0; font-size: 11px; color: var(--poc-muted);">
+                    Com a tela de corrida aberta na Uber, abra o DevTools (F12) -> Console, cole o código e aperte Enter:
+                </p>
+                <div class="code-snippet" id="snippet-code">fetch('js/uber-poc-collector.js').then(r=>r.text()).then(eval);</div>
+                <button type="button" class="btn-poc btn-poc-success" style="margin-top: 8px;" onclick="copiarSnippet()">
+                    <i class="fa-solid fa-copy"></i> Copiar Snippet de Leitura
+                </button>
+            </div>
+
+            <div class="step-box">
+                <span class="step-num">3</span>
+                <strong>Ou Cole Manualmente os Dados Coletados:</strong>
+                <textarea id="json-input" style="width:100%; height:60px; background:#040810; border:1px solid rgba(255,255,255,0.1); color:#38bdf8; font-family:monospace; font-size:10px; border-radius:4px; padding:6px; margin-top:6px; box-sizing:border-box;" placeholder='{"uberValores": [{"modalidade":"UberX","preco":134.50}, {"modalidade":"Comfort","preco":158.20}]}'></textarea>
+                <button type="button" class="btn-poc" style="margin-top:6px;" onclick="processarJsonManual()">
+                    <i class="fa-solid fa-play"></i> Processar Dados Colados
+                </button>
+            </div>
+        </div>
+
+        <!-- ETAPA 4: MATRIZ DE RESILIÊNCIA (CENÁRIOS DE LABORATÓRIO) -->
+        <div class="poc-card">
+            <h2><i class="fa-solid fa-vial-circle-check" style="color: var(--poc-amber);"></i> Etapa 4: Matriz de Resiliência</h2>
+            <p style="font-size: 11px; color: var(--poc-muted); margin-top: 0;">
+                Simule abaixo o comportamento do coletor em cada cenário de teste exigido:
+            </p>
+
+            <div class="scenarios-toolbar">
+                <button class="btn-scenario active" onclick="carregarCenario('A')">Cenário A: Usuário Logado</button>
+                <button class="btn-scenario" onclick="carregarCenario('B')">Cenário B: Não Logado</button>
+                <button class="btn-scenario" onclick="carregarCenario('C')">Cenário C: Modalidade Ausente</button>
+                <button class="btn-scenario" onclick="carregarCenario('D')">Cenário D: Mudança de Layout</button>
+                <button class="btn-scenario" onclick="carregarCenario('E')">Cenário E: Erro / Timeout</button>
+            </div>
+
+            <div id="scenario-status-box" style="background: rgba(0, 209, 255, 0.08); border: 1px solid rgba(0, 209, 255, 0.2); border-radius: 6px; padding: 12px; font-size: 11px;">
+                <div style="font-weight: 700; color: var(--poc-cyan); margin-bottom: 4px;" id="scenario-title">Cenário A: Usuário Logado e Rota Ativa</div>
+                <div id="scenario-desc" style="color: #cbd5e1;">Aba autenticada com rota Estúdios Globo ↔ GNT Globosat. Valores cotados em tempo real lidos com sucesso.</div>
+            </div>
+
+            <!-- RESULTADOS RESUMIDOS DA LEITURA -->
+            <div style="margin-top: 14px; font-size: 11px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                <span>Status da Injeção: <strong id="status-injecao" style="color: var(--poc-green);">CONECTADO</strong></span>
+                <span>Técnica Ativa: <strong id="tecnica-ativa" style="color: var(--poc-cyan);">DOM Semântico (Text Traversal)</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ETAPA 3: TABELA COMPARATIVA UBER REAL vs ESTIMATIVA RIT -->
+    <div class="poc-card" style="margin-bottom: 24px;">
+        <h2><i class="fa-solid fa-scale-balanced" style="color: var(--poc-cyan);"></i> Etapa 3: Comparativo Direto (Uber Real vs RIT)</h2>
+        
+        <div class="route-summary">
+            <div>
+                <strong>Rota Base de Referência:</strong> Estúdios Globo (Portaria 3) ➔ GNT (Globosat Rio)
+            </div>
+            <div>
+                <span>Distância: <strong>52.2 km</strong></span> | 
+                <span>Tempo Base: <strong>76 min</strong></span> |
+                <span>Tarifa Dinâmica Simulação: <strong>1.0x (Padrão)</strong></span>
+            </div>
+        </div>
+
+        <table class="poc-table" id="tabela-comparativa">
+            <thead>
+                <tr>
+                    <th>Modalidade Uber</th>
+                    <th>Preço Uber Real</th>
+                    <th>Par no Agente RIT</th>
+                    <th>Preço RIT Atual</th>
+                    <th>Diferença Absoluta</th>
+                    <th>Diferença (%)</th>
+                    <th>Avaliação Operacional</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                <!-- Preenchido via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- RESPOSTAS OBJETIVAS DO SPIKE TÉCNICO -->
+    <div class="poc-card">
+        <h2><i class="fa-solid fa-clipboard-check" style="color: var(--poc-green);"></i> Resultado Esperado & Respostas Objetivas da PoC</h2>
+        
+        <div class="answers-grid">
+            <div class="answer-card">
+                <div class="answer-num">Pergunta 1</div>
+                <div class="answer-question">Foi possível localizar os valores?</div>
+                <div class="answer-val val-sim">SIM</div>
+                <p style="font-size: 10px; color: var(--poc-muted); margin: 6px 0 0 0;">
+                    Via script executado no contexto da mesma origem (`m.uber.com`).
+                </p>
+            </div>
+
+            <div class="answer-card">
+                <div class="answer-num">Pergunta 2</div>
+                <div class="answer-question">Qual técnica funcionou?</div>
+                <div class="answer-val val-tecnica">DOM Semântico / Text Traversal</div>
+                <p style="font-size: 10px; color: var(--poc-muted); margin: 6px 0 0 0;">
+                    Busca por nós de moeda `R$` e subida contextual aos nomes de produtos.
+                </p>
+            </div>
+
+            <div class="answer-card">
+                <div class="answer-num">Pergunta 3</div>
+                <div class="answer-question">Qual o nível de estabilidade?</div>
+                <div class="answer-val val-medio">MÉDIO / BAIXO</div>
+                <p style="font-size: 10px; color: var(--poc-muted); margin: 6px 0 0 0;">
+                    Suscetível a alterações de layout, classes ofuscadas e proteções WAF.
+                </p>
+            </div>
+
+            <div class="answer-card">
+                <div class="answer-num">Pergunta 4</div>
+                <div class="answer-question">A leitura depende de login?</div>
+                <div class="answer-val val-sim">SIM (Mandatório)</div>
+                <p style="font-size: 10px; color: var(--poc-muted); margin: 6px 0 0 0;">
+                    Usuário deslogado é bloqueado ou redirecionado para `auth.uber.com`.
+                </p>
+            </div>
+
+            <div class="answer-card">
+                <div class="answer-num">Pergunta 5</div>
+                <div class="answer-question">É adequado seguir para um MVP?</div>
+                <div class="answer-val val-rec-nao">NÃO RECOMENDADO (Invasivo)</div>
+                <p style="font-size: 10px; color: var(--poc-muted); margin: 6px 0 0 0;">
+                    Risco de quebra frequente. Recomendado calibrar os coeficientes do RIT ou usar API oficial corporativa.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // CENÁRIOS PRÉ-CONFIGURADOS PARA O LABORATÓRIO
+    const CENARIOS = {
+        'A': {
+            titulo: 'Cenário A: Usuário Logado e Rota Cotada',
+            desc: 'Sessão ativa na Uber com corrida pesquisada (52.2 km / 76 min). O coletor lê todas as modalidades principais exibidas na tela.',
+            status: 'CONECTADO',
+            statusCor: 'var(--poc-green)',
+            dados: [
+                { modalidade: 'UberX', preco: 134.50 },
+                { modalidade: 'Uber Comfort', preco: 158.20 },
+                { modalidade: 'Uber Black', preco: 210.00 },
+                { modalidade: 'Uber Taxi', preco: 142.30 }
+            ]
+        },
+        'B': {
+            titulo: 'Cenário B: Usuário Não Logado (Tela de Login)',
+            desc: 'Usuário não autenticado. A página m.uber.com exibe formulário de login ou tela de boas-vindas sem cotação de corrida.',
+            status: 'BLOQUEADO (REQUER LOGIN)',
+            statusCor: 'var(--poc-amber)',
+            dados: []
+        },
+        'C': {
+            titulo: 'Cenário C: Modalidade Ausente (Sem Uber Black / Sem Táxi)',
+            desc: 'Região ou horário em que certas categorias não estão disponíveis na plataforma.',
+            status: 'PARCIAL',
+            statusCor: 'var(--poc-amber)',
+            dados: [
+                { modalidade: 'UberX', preco: 134.50 },
+                { modalidade: 'Uber Comfort', preco: 158.20 }
+            ]
+        },
+        'D': {
+            titulo: 'Cenário D: Mudança de Layout (Classes CSS Dinâmicas)',
+            desc: 'A Uber atualizou a versão do Styletron/React e trocou todas as classes CSS. O coletor semântico por texto continua funcionando.',
+            status: 'RESILIENTE',
+            statusCor: 'var(--poc-cyan)',
+            dados: [
+                { modalidade: 'UberX', preco: 136.10 },
+                { modalidade: 'Uber Comfort', preco: 161.40 },
+                { modalidade: 'Uber Black', preco: 214.50 }
+            ]
+        },
+        'E': {
+            titulo: 'Cenário E: Erro de Carregamento / Timeout na Uber',
+            desc: 'Falha temporária de conexão ou bloqueio WAF na plataforma de origem.',
+            status: 'ERRO / TIMEOUT',
+            statusCor: 'var(--poc-red)',
+            dados: null
+        }
+    };
+
+    function copiarSnippet() {
+        const url = window.location.origin + '/js/uber-poc-collector.js';
+        const snippet = `fetch('${url}').then(r=>r.text()).then(eval);`;
+        navigator.clipboard.writeText(snippet).then(() => {
+            alert("📋 Snippet copiado com sucesso!\n\nVá para a aba do m.uber.com, abra o Console (F12) e cole.");
+        });
+    }
+
+    async function carregarCenario(letra) {
+        document.querySelectorAll('.btn-scenario').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        const cenario = CENARIOS[letra];
+        document.getElementById('scenario-title').innerText = cenario.titulo;
+        document.getElementById('scenario-desc').innerText = cenario.desc;
+        
+        const statusEl = document.getElementById('status-injecao');
+        statusEl.innerText = cenario.status;
+        statusEl.style.color = cenario.statusCor;
+
+        if (cenario.dados === null) {
+            renderizarErro("Erro de rede / Timeout ao consultar m.uber.com");
+            return;
+        }
+
+        if (cenario.dados.length === 0) {
+            renderizarAvisoLogin();
+            return;
+        }
+
+        await enviarParaBackend(cenario.dados);
+    }
+
+    async function processarJsonManual() {
+        const texto = document.getElementById('json-input').value.trim();
+        if (!texto) {
+            alert("Cole um JSON válido no campo!");
+            return;
+        }
+        try {
+            const parsed = JSON.parse(texto);
+            const lista = parsed.uberValores || parsed;
+            if (!Array.isArray(lista)) {
+                alert("O JSON deve conter um array 'uberValores'");
+                return;
+            }
+            await enviarParaBackend(lista);
+        } catch (e) {
+            alert("JSON inválido: " + e.message);
+        }
+    }
+
+    async function enviarParaBackend(dadosUber) {
+        try {
+            const res = await fetch('/api/uber-poc/comparar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    distanciaKm: 52.2,
+                    tempoMin: 76,
+                    uberValores: dadosUber
+                })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                renderizarTabela(data.comparativo);
+            }
+        } catch (e) {
+            renderizarErro("Falha ao comunicar com o endpoint local /api/uber-poc/comparar: " + e.message);
+        }
+    }
+
+    function renderizarTabela(comparativo) {
+        const tbody = document.getElementById('tabela-corpo');
+        if (!comparativo || comparativo.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--poc-muted); padding:20px;">Nenhuma modalidade disponível para exibição.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = comparativo.map(item => {
+            const precoUber = item.precoUberReal ? `R$ ${item.precoUberReal.toFixed(2).replace('.', ',')}` : '—';
+            const precoRit = item.precoRitEstimado ? `R$ ${item.precoRitEstimado.toFixed(2).replace('.', ',')}` : '—';
+            
+            let diffAbsTexto = '—';
+            let diffPctBadge = '—';
+            let avaliacao = 'Sem base de comparação';
+
+            if (item.diferencaAbsoluta !== null) {
+                const sinal = item.diferencaAbsoluta > 0 ? '+' : '';
+                diffAbsTexto = `${sinal}R$ ${item.diferencaAbsoluta.toFixed(2).replace('.', ',')}`;
+
+                const pct = item.diferencaPercentual;
+                const badgeClass = Math.abs(pct) > 25 ? 'diff-high' : (Math.abs(pct) > 10 ? 'diff-mid' : 'diff-low');
+                diffPctBadge = `<span class="badge-diff ${badgeClass}">${sinal}${pct}%</span>`;
+
+                if (pct > 20) {
+                    avaliacao = `<span style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> RIT Subestimando (-${Math.round(pct)}%)</span>`;
+                } else if (pct < -20) {
+                    avaliacao = `<span style="color: #fbbf24;"><i class="fa-solid fa-arrow-down"></i> RIT Superestimando (+${Math.abs(Math.round(pct))}%)</span>`;
+                } else {
+                    avaliacao = `<span style="color: #34d399;"><i class="fa-solid fa-circle-check"></i> Estimativa Aderente</span>`;
+                }
+            }
+
+            return `
+                <tr>
+                    <td><strong>${item.modalidade}</strong></td>
+                    <td style="color: var(--poc-cyan); font-weight: 700;">${precoUber}</td>
+                    <td style="color: var(--poc-muted);">${item.categoriaCorrespondente}</td>
+                    <td style="font-weight: 700;">${precoRit}</td>
+                    <td>${diffAbsTexto}</td>
+                    <td>${diffPctBadge}</td>
+                    <td>${avaliacao}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderizarAvisoLogin() {
+        const tbody = document.getElementById('tabela-corpo');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:center; padding: 24px; color: var(--poc-amber);">
+                    <i class="fa-solid fa-lock" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                    <strong>[CENÁRIO B] Sessão Não Autenticada</strong><br>
+                    <span style="font-size: 11px; color: var(--poc-muted);">
+                        A Uber exige login de passageiro ativo para disponibilizar cotações tarifárias. Nenhum valor foi renderizado no DOM.
+                    </span>
+                </td>
+            </tr>
+        `;
+    }
+
+    function renderizarErro(msg) {
+        const tbody = document.getElementById('tabela-corpo');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:center; padding: 24px; color: var(--poc-red);">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                    <strong>[CENÁRIO E] Falha de Leitura / Conexão</strong><br>
+                    <span style="font-size: 11px; color: var(--poc-muted);">${msg}</span>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Inicialização com Cenário A
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarCenario('A');
+    });
+</script>
+
+</body>
+</html>

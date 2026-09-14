@@ -2400,6 +2400,110 @@ app.post('/api/auditoria/solicitar-posicao', async (req, res) => {
     }
 });
 
+// =======================================================
+// SPIKE TÉCNICO / POC ISOLADA: LEITURA & COMPARAÇÃO UBER
+// Rota estritamente diagnóstica para teste local (sem banco, sem credenciais)
+// =======================================================
+app.options('/api/uber-poc/comparar', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.sendStatus(204);
+});
+
+app.post('/api/uber-poc/comparar', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    try {
+        const { distanciaKm = 52.2, tempoMin = 76, dinamico = 1.0, uberValores = [] } = req.body || {};
+
+        // Fórmulas de referência atuais do RIT para a rota
+        const precoPorKmUberX = 1.50;
+        const precoPorMinUberX = 0.30;
+        const baseUberX = 3.50;
+
+        const ritEstimativas = {
+            'uberx': {
+                nome: 'UberX',
+                valor: parseFloat((Math.max(6.0, (baseUberX + (distanciaKm * precoPorKmUberX) + (tempoMin * precoPorMinUberX)) * dinamico)).toFixed(2))
+            },
+            'comfort': {
+                nome: 'Uber Comfort',
+                valor: parseFloat((Math.max(9.5, (5.00 + (distanciaKm * 1.95) + (tempoMin * 0.40)) * dinamico)).toFixed(2))
+            },
+            'black': {
+                nome: 'Uber Black',
+                valor: parseFloat((Math.max(15.0, (9.00 + (distanciaKm * 2.80) + (tempoMin * 0.65)) * dinamico)).toFixed(2))
+            },
+            'taxi': {
+                nome: 'Táxi Comum RJ',
+                valor: parseFloat((6.10 + (distanciaKm * 3.25) + ((tempoMin / 60) * 15.00)).toFixed(2))
+            }
+        };
+
+        const comparativo = [];
+
+        // Normalização e pareamento das modalidades coletadas
+        uberValores.forEach(item => {
+            if (!item || !item.modalidade) return;
+            const modNome = String(item.modalidade).trim();
+            const modLower = modNome.toLowerCase();
+            const precoReal = parseFloat(item.preco);
+            if (isNaN(precoReal) || precoReal <= 0) return;
+
+            let chaveRit = null;
+            if (modLower.includes('uberx') || modLower === 'x') chaveRit = 'uberx';
+            else if (modLower.includes('comfort')) chaveRit = 'comfort';
+            else if (modLower.includes('black')) chaveRit = 'black';
+            else if (modLower.includes('taxi') || modLower.includes('táxi')) chaveRit = 'taxi';
+
+            const refRit = chaveRit ? ritEstimativas[chaveRit] : null;
+            const valorRit = refRit ? refRit.valor : null;
+
+            let diffAbs = null;
+            let diffPct = null;
+            if (valorRit !== null) {
+                diffAbs = parseFloat((precoReal - valorRit).toFixed(2));
+                diffPct = parseFloat((((precoReal - valorRit) / valorRit) * 100).toFixed(1));
+            }
+
+            comparativo.push({
+                modalidade: modNome,
+                categoriaCorrespondente: refRit ? refRit.nome : 'Sem par direto no RIT',
+                precoUberReal: precoReal,
+                precoRitEstimado: valorRit,
+                diferencaAbsoluta: diffAbs,
+                diferencaPercentual: diffPct,
+                desvioSignificativo: diffPct !== null && Math.abs(diffPct) > 15
+            });
+        });
+
+        res.json({
+            ok: true,
+            timestamp: new Date().toISOString(),
+            rotaReferencia: {
+                distanciaKm,
+                tempoMin,
+                origem: 'Estúdios Globo - Portaria 3',
+                destino: 'GNT - Globosat Rio'
+            },
+            comparativo,
+            resumo: {
+                totalModalidadesColetadas: comparativo.length,
+                desvioMedioPercentual: comparativo.filter(c => c.diferencaPercentual !== null).length > 0
+                    ? parseFloat((comparativo.reduce((acc, c) => acc + (c.diferencaPercentual || 0), 0) / comparativo.filter(c => c.diferencaPercentual !== null).length).toFixed(1))
+                    : null
+            }
+        });
+    } catch (err) {
+        console.error('Erro na rota diagnóstica /api/uber-poc/comparar:', err.message);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+app.get('/uber-poc', (req, res) => {
+    res.sendFile(path.join(publicPath, 'uber-poc.html'));
+});
+
 app.use(express.static(publicPath, {
     setHeaders: (res, path) => {
         if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {

@@ -16,7 +16,7 @@ export class PainelTransitoIntegrado {
             card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_CURICICA_BANDEIRANTES' },
             card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_CAMERASRJ_BARRA' },
             card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
-            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_DER_DF_01' },
+            card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_ESPLANADA' },
             card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_ZET_PE_01' },
             card_6: { regional: 'BH', slotNum: 1, sourceId: 'BH_REALDATA_BARREIRO' }
         };
@@ -85,8 +85,8 @@ export class PainelTransitoIntegrado {
                 if (!this.currentSlots.card_3?.sourceId || this.currentSlots.card_3.sourceId.includes('OFICIAL') || this.currentSlots.card_3.sourceId.includes('PAINEL_DIRETO')) {
                     this.currentSlots.card_3.sourceId = 'SP_CET_23';
                 }
-                if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId === 'BSB_ESPLANADA') {
-                    this.currentSlots.card_4.sourceId = 'BSB_DER_DF_01';
+                if (!this.currentSlots.card_4?.sourceId || this.currentSlots.card_4.sourceId.includes('CAMERAS_MUNDO') || this.currentSlots.card_4.sourceId === 'BSB_DER_DF_01') {
+                    this.currentSlots.card_4.sourceId = 'BSB_ESPLANADA';
                 }
                 if (!this.currentSlots.card_5?.sourceId || this.currentSlots.card_5.sourceId === 'REC_AEROPORTO_01' || this.currentSlots.card_5.sourceId === 'REC_MAPA_VERCEL_01') {
                     this.currentSlots.card_5.sourceId = 'REC_ZET_PE_01';
@@ -733,14 +733,65 @@ export class PainelTransitoIntegrado {
         if (source && source.tipoFonte === 'snapshot' && source.ativa !== false) {
             const intervalMs = source.refreshInterval || 3000;
             const imgUrl = source.proxyUrl || source.directImageUrl;
+            let lastSuccessfulUpdate = Date.now();
 
             this.snapshotTimers[slotKey] = setInterval(() => {
                 const snapImg = document.getElementById(`snap-img-${slotKey}`);
                 if (snapImg) {
                     const sep = imgUrl.includes('?') ? '&' : '?';
-                    snapImg.src = `${imgUrl}${sep}t=${Date.now()}`;
+                    const testImg = new Image();
+                    testImg.onload = () => {
+                        snapImg.src = testImg.src;
+                        lastSuccessfulUpdate = Date.now();
+                    };
+                    testImg.onerror = () => {
+                        if (Date.now() - lastSuccessfulUpdate > 20000) {
+                            console.warn(`[CIM WATCHDOG] Câmera ${source.nome} (${slotKey}) congelada (>20s). Executando reloadStream...`);
+                            if (window.diagnosticoFontes) {
+                                window.diagnosticoFontes.registrarEvento(`${source.regional}: Congelamento em ${source.nome} (>20s). Recarga automática iniciada.`);
+                            }
+                            this.reloadStream(slotKey);
+                        }
+                    };
+                    testImg.src = `${imgUrl}${sep}t=${Date.now()}`;
                 }
             }, intervalMs);
+        }
+    }
+
+    reloadStream(slotKey) {
+        console.info(`[CIM] Recarregando stream do slot ${slotKey}...`);
+        this.refreshCard(slotKey);
+    }
+
+    handleImageFailure(slotKey, sourceId) {
+        if (!this.slotRetries) this.slotRetries = {};
+        const retries = this.slotRetries[slotKey] || 0;
+        const nextRetry = retries + 1;
+        this.slotRetries[slotKey] = nextRetry;
+
+        const delays = [5000, 15000, 30000];
+        const delay = delays[retries] || 30000;
+
+        if (window.diagnosticoFontes) {
+            window.diagnosticoFontes.registrarEvento(`Falha de imagem no slot ${slotKey} (${sourceId}). Tentativa ${nextRetry}/3 em ${delay/1000}s.`);
+        }
+
+        if (nextRetry <= 3) {
+            setTimeout(() => {
+                const snapImg = document.getElementById(`snap-img-${slotKey}`);
+                const snapErr = document.getElementById(`snap-error-${slotKey}`);
+                if (snapImg && snapErr) {
+                    snapImg.style.display = 'block';
+                    snapErr.style.display = 'none';
+                    this.reloadStream(slotKey);
+                }
+            }, delay);
+        } else {
+            console.warn(`[CIM] Esgotadas tentativas para ${sourceId} no slot ${slotKey}.`);
+            if (window.diagnosticoFontes) {
+                window.diagnosticoFontes.registrarEvento(`Esgotadas 3 tentativas para ${sourceId} no slot ${slotKey}. Mantendo alerta visual.`);
+            }
         }
     }
 
@@ -973,12 +1024,17 @@ export class PainelTransitoIntegrado {
 }
 
 // Handler global para erro de carregamento de snapshot
-window.handleCimImageError = function(slotKey, sourceId) {
-    console.warn(`[CIM] Falha ao carregar imagem para slot ${slotKey} (${sourceId})`);
-    const snapImg = document.getElementById(`snap-img-${slotKey}`);
-    const snapErr = document.getElementById(`snap-error-${slotKey}`);
-    if (snapImg && snapErr) {
-        snapImg.style.display = 'none';
-        snapErr.style.display = 'flex';
-    }
-};
+if (typeof window !== 'undefined') {
+    window.handleCimImageError = function(slotKey, sourceId) {
+        console.warn(`[CIM] Falha ao carregar imagem para slot ${slotKey} (${sourceId})`);
+        const snapImg = document.getElementById(`snap-img-${slotKey}`);
+        const snapErr = document.getElementById(`snap-error-${slotKey}`);
+        if (snapImg && snapErr) {
+            snapImg.style.display = 'none';
+            snapErr.style.display = 'flex';
+        }
+        if (window.painelCim && typeof window.painelCim.handleImageFailure === 'function') {
+            window.painelCim.handleImageFailure(slotKey, sourceId);
+        }
+    };
+}

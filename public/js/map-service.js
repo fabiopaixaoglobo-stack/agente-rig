@@ -784,4 +784,40 @@ export class MapService {
             bufferPoly.addTo(this.layerGroups.corridor);
         }
     }
+
+    loadVisibleCameras(customBounds = null) {
+        if (!this.map || !this.camerasData || this.camerasData.length === 0) return [];
+        const bounds = customBounds || (this.map.getBounds ? this.map.getBounds() : null);
+        if (!bounds) return this.camerasData.slice(0, 50);
+
+        const south = bounds.getSouth();
+        const north = bounds.getNorth();
+        const west = bounds.getWest();
+        const east = bounds.getEast();
+
+        const visible = [];
+        for (let i = 0; i < this.camerasData.length; i++) {
+            const cam = this.camerasData[i];
+            const lat = parseFloat(cam.latitude || cam.lat);
+            const lon = parseFloat(cam.longitude || cam.lon);
+            if (lat >= south && lat <= north && lon >= west && lon <= east) {
+                visible.push(cam);
+                if (visible.length >= 200) break;
+            }
+        }
+        return visible;
+    }
+
+    highlightCamera(camId) {
+        this.currentHighlightedCamId = camId;
+        const pinEl = document.getElementById(`cam-pin-${camId}`);
+        if (pinEl) {
+            pinEl.classList.add('camera-pulse-selected');
+            const dot = pinEl.querySelector('.lod-camera-dot');
+            if (dot) {
+                dot.style.background = '#fbbf24';
+                dot.style.boxShadow = '0 0 16px #fbbf24';
+            }
+        }
+    }
 }

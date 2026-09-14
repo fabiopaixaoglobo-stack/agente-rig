@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { showToast, escapeHtml, formatarHorario } from './utils.js';
 import { parseDataHora } from './data-service.js';
 import { CamerasGeoService } from './cameras-geo-service.js';
+import { ritCache } from './indexeddb-cache.js';
 
 function abrirCanalExterno(url) {
     if (
@@ -305,7 +306,7 @@ function obterPeriodo(horario) {
 }
 
 export class UiController {
-    constructor(mapService, plannerService, transitoMap, dataService, corRioService = null, camerasService = null, painelCimService = null) {
+    constructor(mapService, plannerService, transitoMap, dataService, corRioService = null, camerasService = null, painelCimService = null, diagnosticoFontes = null) {
         this.mapService = mapService;
         this.plannerService = plannerService;
         this.transitoMap = transitoMap;
@@ -313,6 +314,7 @@ export class UiController {
         this.corRioService = corRioService;
         this.camerasService = camerasService;
         this.painelCimService = painelCimService;
+        this.diagnosticoFontes = diagnosticoFontes;
         this.eventoAtualUrl = '';
         this.tarifasConfig = {
             tarifaBase: 3.50,
@@ -322,6 +324,10 @@ export class UiController {
             fatorPico: 1.4,
             fatorMadrugada: 1.2
         };
+
+        this._smartSearchCircle = null;
+        this._smartSearchTargetMarker = null;
+        this.lastSelectedSmartTarget = null;
 
         try { this.initTabs(); } catch (e) { console.error("Erro initTabs:", e); }
         try { this.initFilters(); } catch (e) { console.error("Erro initFilters:", e); }
@@ -334,6 +340,7 @@ export class UiController {
         this.activeOcorrencias = [];
         this.currentCorrelatedCameras = [];
         try { this.initCentralInteligente(); } catch (e) { console.error("Erro initCentralInteligente:", e); }
+        try { this.initSmartAddressSearch(); } catch (e) { console.error("Erro initSmartAddressSearch:", e); }
         
         this.mapMode = 'TODOS';
         this.gpsIntervalId = null;
@@ -2660,6 +2667,371 @@ export class UiController {
     }
 
     // =========================================================================
+    // ENDEREÇO INTELIGENTE: AUTOCOMPLETE & BUSCA DE CÂMERAS NO RAIO (FASE 2)
+    // =========================================================================
+    initSmartAddressSearch() {
+        const input = document.getElementById('smart-address-search-input');
+        const clearBtn = document.getElementById('smart-address-search-clear');
+        const dropdown = document.getElementById('smart-address-autocomplete-dropdown');
+        const radiusSel = document.getElementById('smart-radius-select');
+        const topkSel = document.getElementById('smart-topk-select');
+        const searchBtn = document.getElementById('btn-smart-search-cameras');
+        const resultsPanel = document.getElementById('smart-nearest-cameras-panel');
+        const listEl = document.getElementById('smart-nearest-cameras-list');
+        const titleEl = document.getElementById('smart-nearest-title');
+        const badgeEl = document.getElementById('smart-nearest-badge');
+        const subtitleEl = document.getElementById('smart-nearest-subtitle');
+
+        if (!input || !dropdown) return;
+
+        let debounceTimer = null;
+        this.lastSelectedSmartTarget = null;
+
+        const fecharDropdown = () => {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+        };
+
+        const renderSugestoes = (sugestoes) => {
+            if (!sugestoes || sugestoes.length === 0) {
+                dropdown.innerHTML = `
+                    <div style="padding: 10px; font-size: 11px; color: #94a3b8; text-align: center;">
+                        Nenhum local encontrado. Tente bairro, CEP ou avenida.
+                    </div>
+                `;
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            dropdown.innerHTML = sugestoes.map((item, idx) => {
+                let icon = 'fa-location-dot';
+                let tagColor = '#00d1ff';
+                if (item.tipo === 'globo') { icon = 'fa-building'; tagColor = '#f5a623'; }
+                else if (item.tipo === 'evento') { icon = 'fa-ticket'; tagColor = '#ec4899'; }
+                else if (item.tipo === 'terminal' || item.tipo === 'estacao') { icon = 'fa-bus'; tagColor = '#10b981'; }
+                else if (item.tipo === 'bairro') { icon = 'fa-map-pin'; tagColor = '#3b82f6'; }
+
+                const categoriaBadge = item.categoria ? `<span style="font-size: 8.5px; background: rgba(255,255,255,0.08); color: ${tagColor}; padding: 1px 5px; border-radius: 3px; margin-left: 6px; text-transform: uppercase;">${escapeHtml(item.categoria)}</span>` : '';
+
+                return `
+                    <div class="smart-autocomplete-item" data-idx="${idx}" style="padding: 8px 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: flex-start; gap: 8px; transition: background 0.15s;">
+                        <i class="fa-solid ${icon}" style="color: ${tagColor}; margin-top: 3px; font-size: 12px;"></i>
+                        <div style="flex: 1; overflow: hidden;">
+                            <div style="font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <span>${escapeHtml(item.label || item.endereco)}</span>
+                                ${categoriaBadge}
+                            </div>
+                            <div style="font-size: 9.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px;">
+                                ${escapeHtml(item.endereco || '')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            dropdown.style.display = 'block';
+
+            // Hover styling & click binding
+            const itemEls = dropdown.querySelectorAll('.smart-autocomplete-item');
+            itemEls.forEach((el) => {
+                el.addEventListener('mouseenter', () => el.style.background = 'rgba(0, 209, 255, 0.15)');
+                el.addEventListener('mouseleave', () => el.style.background = 'transparent');
+                el.addEventListener('click', () => {
+                    const idx = parseInt(el.getAttribute('data-idx'), 10);
+                    const selectedItem = sugestoes[idx];
+                    if (selectedItem) {
+                        this.lastSelectedSmartTarget = selectedItem;
+                        input.value = selectedItem.label || selectedItem.endereco;
+                        if (clearBtn) clearBtn.style.display = 'block';
+                        fecharDropdown();
+                        this.executarBuscaInteligente(selectedItem);
+                    }
+                });
+            });
+        };
+
+        const buscarSugestoes = async (q) => {
+            const termo = q.trim();
+            if (termo.length < 2) {
+                fecharDropdown();
+                return;
+            }
+
+            // 1. Tenta cache em IndexedDB para resposta instantânea
+            try {
+                const cached = await ritCache.getGeo(termo);
+                if (cached && Array.isArray(cached) && cached.length > 0) {
+                    renderSugestoes(cached);
+                    return;
+                }
+            } catch (e) {}
+
+            // 2. Consulta API de geocode autocomplete
+            try {
+                const res = await fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(termo)}`);
+                const data = await res.json();
+                if (data && data.ok && Array.isArray(data.sugestoes)) {
+                    renderSugestoes(data.sugestoes);
+                    if (data.sugestoes.length > 0) {
+                        ritCache.setGeo(termo, data.sugestoes).catch(() => {});
+                    }
+                }
+            } catch (err) {
+                console.warn('[SmartAddress] Erro ao buscar autocomplete:', err);
+            }
+        };
+
+        input.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                buscarSugestoes(val);
+            }, 250);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                fecharDropdown();
+                if (this.lastSelectedSmartTarget) {
+                    this.executarBuscaInteligente(this.lastSelectedSmartTarget);
+                } else if (input.value.trim().length >= 2) {
+                    fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(input.value.trim())}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.ok && data.sugestoes && data.sugestoes.length > 0) {
+                                this.lastSelectedSmartTarget = data.sugestoes[0];
+                                input.value = data.sugestoes[0].label || data.sugestoes[0].endereco;
+                                this.executarBuscaInteligente(data.sugestoes[0]);
+                            } else {
+                                showToast("Endereço ou local não localizado no Rio de Janeiro.", "warning");
+                            }
+                        })
+                        .catch(() => showToast("Falha na consulta geográfica.", "error"));
+                }
+            } else if (e.key === 'Escape') {
+                fecharDropdown();
+            }
+        });
+
+        clearBtn?.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            fecharDropdown();
+            this.lastSelectedSmartTarget = null;
+            if (this._smartSearchCircle && this.transitoMap?.map) {
+                this.transitoMap.map.removeLayer(this._smartSearchCircle);
+                this._smartSearchCircle = null;
+            }
+            if (this._smartSearchTargetMarker && this.transitoMap?.map) {
+                this.transitoMap.map.removeLayer(this._smartSearchTargetMarker);
+                this._smartSearchTargetMarker = null;
+            }
+            if (resultsPanel) resultsPanel.style.display = 'none';
+        });
+
+        searchBtn?.addEventListener('click', () => {
+            if (this.lastSelectedSmartTarget) {
+                this.executarBuscaInteligente(this.lastSelectedSmartTarget);
+            } else if (input.value.trim().length >= 2) {
+                fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(input.value.trim())}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.ok && data.sugestoes && data.sugestoes.length > 0) {
+                            this.lastSelectedSmartTarget = data.sugestoes[0];
+                            input.value = data.sugestoes[0].label || data.sugestoes[0].endereco;
+                            this.executarBuscaInteligente(data.sugestoes[0]);
+                        } else {
+                            showToast("Endereço ou local não localizado.", "warning");
+                        }
+                    });
+            } else {
+                showToast("Digite um bairro, endereço, CEP ou ponto de referência.", "warning");
+            }
+        });
+
+        radiusSel?.addEventListener('change', () => {
+            if (this.lastSelectedSmartTarget) {
+                this.executarBuscaInteligente(this.lastSelectedSmartTarget);
+            }
+        });
+
+        topkSel?.addEventListener('change', () => {
+            if (this.lastSelectedSmartTarget) {
+                this.executarBuscaInteligente(this.lastSelectedSmartTarget);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.smart-address-container')) {
+                fecharDropdown();
+            }
+        });
+    }
+
+    async executarBuscaInteligente(target) {
+        if (!target) return;
+        const lat = parseFloat(target.lat || target.latitude);
+        const lon = parseFloat(target.lon || target.longitude);
+        if (isNaN(lat) || isNaN(lon)) {
+            showToast("Coordenadas geográficas inválidas para este local.", "error");
+            return;
+        }
+
+        const raioMetros = parseInt(document.getElementById('smart-radius-select')?.value || '1000', 10);
+        const topK = parseInt(document.getElementById('smart-topk-select')?.value || '10', 10);
+
+        const map = this.transitoMap?.map;
+        if (!map) return;
+
+        // 1. Centraliza o mapa com zoom operacional 15
+        map.setView([lat, lon], 15, { animate: true, duration: 0.6 });
+
+        // 2. Remove desenho anterior de círculo e marcador de alvo
+        if (this._smartSearchCircle) {
+            map.removeLayer(this._smartSearchCircle);
+            this._smartSearchCircle = null;
+        }
+        if (this._smartSearchTargetMarker) {
+            map.removeLayer(this._smartSearchTargetMarker);
+            this._smartSearchTargetMarker = null;
+        }
+
+        // Desenha círculo de busca operacional (estilo CCO ciano/neon translúcido)
+        this._smartSearchCircle = L.circle([lat, lon], {
+            radius: raioMetros,
+            color: '#00d1ff',
+            weight: 2,
+            dashArray: '5, 5',
+            fillColor: '#00d1ff',
+            fillOpacity: 0.12
+        }).addTo(map);
+
+        // Marcador visual no centro do alvo
+        const targetHtml = `
+            <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                <div style="width:28px; height:28px; border-radius:50%; background:rgba(0,209,255,0.3); border:2px solid #00d1ff; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 12px #00d1ff;">
+                    <div style="width:8px; height:8px; border-radius:50%; background:#00d1ff;"></div>
+                </div>
+            </div>
+        `;
+        const targetIcon = L.divIcon({ className: 'smart-target-icon', html: targetHtml, iconSize: [28, 28], iconAnchor: [14, 14] });
+        this._smartSearchTargetMarker = L.marker([lat, lon], { icon: targetIcon }).addTo(map);
+        this._smartSearchTargetMarker.bindPopup(`<b>Alvo da Busca:</b><br>${escapeHtml(target.label || target.endereco)}<br><small>Raio: ${(raioMetros/1000).toFixed(1)} km</small>`).openPopup();
+
+        // 3. Busca de câmeras no raio usando SpatialGridIndex com garantia de carga
+        if (!this.camerasGeoService.spatialIndex.items || this.camerasGeoService.spatialIndex.items.length === 0) {
+            let cams = this.camerasGeoService.cameras;
+            if (!cams || cams.length === 0) {
+                cams = await this.camerasGeoService.loadCameras();
+            }
+            if (cams && cams.length > 0) {
+                this.camerasGeoService.spatialIndex.buildIndex(cams);
+            }
+        }
+
+        const nearestRes = this.camerasGeoService.spatialIndex.findNearest(lat, lon, raioMetros, topK);
+        const candidatas = nearestRes.results || [];
+
+        // 4. Exibe lista no painel #smart-nearest-cameras-panel
+        const resultsPanel = document.getElementById('smart-nearest-cameras-panel');
+        const listEl = document.getElementById('smart-nearest-cameras-list');
+        const titleEl = document.getElementById('smart-nearest-title');
+        const badgeEl = document.getElementById('smart-nearest-badge');
+        const subtitleEl = document.getElementById('smart-nearest-subtitle');
+
+        if (resultsPanel) resultsPanel.style.display = 'flex';
+        if (titleEl) titleEl.textContent = `${candidatas.length} Câmeras no Raio de ${(raioMetros/1000).toFixed(1)} km`;
+        if (badgeEl) badgeEl.textContent = `${candidatas.length} de ${topK} máx`;
+        if (subtitleEl) subtitleEl.textContent = `Ponto: ${target.label || target.endereco}`;
+
+        if (listEl) {
+            if (candidatas.length === 0) {
+                listEl.innerHTML = `
+                    <div style="padding:16px; text-align:center; color:#94a3b8; font-size:11px;">
+                        <i class="fa-solid fa-video-slash" style="font-size:20px; color:#64748b; margin-bottom:6px; display:block;"></i>
+                        Nenhuma câmera encontrada no raio de ${(raioMetros/1000).toFixed(1)} km.<br>
+                        Experimente aumentar o raio para 3 km ou 5 km.
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = candidatas.map((item, idx) => {
+                    const cam = item.camera;
+                    const distM = item.distanciaMetros;
+                    const distStr = distM < 1000 ? `${distM} m` : `${(distM / 1000).toFixed(1)} km`;
+
+                    const runtime = this.transitoMap?.runtimeStatusMap?.get(String(cam.id).padStart(6, '0'));
+                    const rawStatus = (runtime && runtime.status) || cam.status_runtime || cam.status || 'ONLINE';
+                    const statusUpper = rawStatus.toUpperCase();
+
+                    let statusBadge = '<span style="color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; font-size:8px; padding:1px 4px; border-radius:3px; font-weight:800;">ONLINE</span>';
+                    if (statusUpper === 'LENTA' || statusUpper === 'DEGRADADA') {
+                        statusBadge = '<span style="color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; font-size:8px; padding:1px 4px; border-radius:3px; font-weight:800;">LENTA</span>';
+                    } else if (statusUpper === 'OFFLINE' || statusUpper === 'TIMEOUT') {
+                        statusBadge = '<span style="color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; font-size:8px; padding:1px 4px; border-radius:3px; font-weight:800;">OFFLINE</span>';
+                    }
+
+                    const provider = cam.sourceProvider || cam.operador || 'COR-RIO';
+                    const camNome = cam.caption || cam.nome || cam.referencia || `Câmera #${cam.id}`;
+                    const bairroStr = cam.bairro || 'Rio de Janeiro';
+
+                    return `
+                        <div class="smart-cam-card-item" data-cam-id="${cam.id}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(0,209,255,0.15); border-radius: 5px; padding: 7px 9px; cursor: pointer; transition: all 0.2s;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                                <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                                    <span style="font-size:10px; font-weight:800; color:#00d1ff;">#${idx + 1}</span>
+                                    <span style="font-size:11px; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(camNome)}">
+                                        ${escapeHtml(camNome)}
+                                    </span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                                    ${statusBadge}
+                                    <span style="font-size:9.5px; color:#cbd5e1; font-weight:700; background:rgba(255,255,255,0.05); padding:1px 5px; border-radius:3px;">
+                                        📍 ${distStr}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:9.5px; color:#94a3b8;">
+                                <span><b>Bairro:</b> ${escapeHtml(bairroStr)}</span>
+                                <span><b>Fonte:</b> ${escapeHtml(provider)} (ID ${cam.id})</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const camEls = listEl.querySelectorAll('.smart-cam-card-item');
+                camEls.forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        el.style.background = 'rgba(0,209,255,0.12)';
+                        el.style.borderColor = '#00d1ff';
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        el.style.background = 'rgba(255,255,255,0.03)';
+                        el.style.borderColor = 'rgba(0,209,255,0.15)';
+                    });
+                    el.addEventListener('click', () => {
+                        const camId = el.getAttribute('data-cam-id');
+                        const itemFound = candidatas.find(c => String(c.camera.id) === String(camId));
+                        if (itemFound) {
+                            const selectedCam = itemFound.camera;
+                            this.transitoMap?.highlightCamera(selectedCam.id);
+                            if (selectedCam.latitude && selectedCam.longitude) {
+                                map.panTo([selectedCam.latitude, selectedCam.longitude]);
+                            }
+                            this.abrirCameraSelecionada(selectedCam);
+                            showToast(`Abrindo Câmera #${selectedCam.id} (${selectedCam.bairro || 'Rio de Janeiro'})`, "info");
+                        }
+                    });
+                });
+            }
+        }
+
+        showToast(`Encontradas ${candidatas.length} câmeras no raio de ${(raioMetros/1000).toFixed(1)} km.`, "success");
+    }
+
+    // =========================================================================
     // CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO)
     // =========================================================================
     async initCentralInteligente() {
@@ -3366,8 +3738,20 @@ export class UiController {
             clearTimeout(this._streamWatchdogTimer);
             this._streamWatchdogTimer = null;
         }
+        if (this._frozenStreamCheckInterval) {
+            clearInterval(this._frozenStreamCheckInterval);
+            this._frozenStreamCheckInterval = null;
+        }
 
-        wrap.innerHTML = '<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Estabelecendo conexão com o sinal de vídeo (Watchdog 3.0s)...</div>';
+        // Determina tempo dinâmico de watchdog conforme protocolo (Ajuste CCO)
+        let watchdogTimeoutMs = 6000; // Padrão WebRTC / WHEP
+        if (cam.tipoFonte === 'snapshot' || cam.protocol === 'snapshot' || (cam.url && cam.url.endsWith('.jpg'))) {
+            watchdogTimeoutMs = 3000; // Snapshots rápidos
+        } else if (cam.tipoFonte === 'portal' || cam.tipoFonte === 'iframe' || (cam.embedUrl && cam.embedUrl.includes('embed'))) {
+            watchdogTimeoutMs = 8000; // Portais e iframes pesados
+        }
+
+        wrap.innerHTML = `<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Estabelecendo conexão de vídeo segura (Watchdog Dinâmico ${watchdogTimeoutMs / 1000}s)...</div>`;
 
         // 4. Atualizar Cabeçalho
         if (subtitle) {
@@ -3399,14 +3783,34 @@ export class UiController {
             }
         }
 
-        // 6. Watchdog Agressivo de Timeout de 3.0 Segundos
+        // 6. Watchdog Dinâmico por Tipo de Stream (Ajuste CCO: 3s / 6s / 8s)
         this._streamWatchdogTimer = setTimeout(() => {
-            console.warn(`[CÂMERA WATCHDOG] Timeout de 3s atingido para a Câmera #${cam.id}. Acionando fallback tático.`);
+            console.warn(`[CÂMERA WATCHDOG] Timeout dinâmico (${watchdogTimeoutMs}ms) atingido para a Câmera #${cam.id}. Acionando failover tático.`);
             if (livePill) {
                 livePill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:7px;"></i> SINAL INDISPONÍVEL`;
             }
-            this.exibirIndisponibilidadeCamera(cam, wrap);
-        }, 3000);
+            this.exibirIndisponibilidadeCamera(cam, wrap, true);
+        }, watchdogTimeoutMs);
+
+        // Monitor de Stream Congelada (>20s sem novo quadro/heartbeat)
+        this._lastStreamHeartbeat = Date.now();
+        this._frozenStreamCheckInterval = setInterval(() => {
+            if (Date.now() - this._lastStreamHeartbeat > 20000) {
+                console.warn(`[STREAM CONGELADA] Câmera #${cam.id} estagnada por > 20s. Atualizando status e acionando reconexão...`);
+                if (livePill) {
+                    livePill.innerHTML = `<i class="fa-solid fa-snowflake" style="color:#f59e0b; font-size:7px;"></i> STREAM CONGELADA (>20s)`;
+                }
+                const drawerBadge = document.getElementById('cicc-drawer-status-badge');
+                if (drawerBadge) {
+                    drawerBadge.style.color = '#f59e0b';
+                    drawerBadge.style.background = 'rgba(245,158,11,0.2)';
+                    drawerBadge.style.border = '1px solid #f59e0b';
+                    drawerBadge.innerHTML = '● STREAM CONGELADA';
+                }
+                // Dispara recarga automática ou failover
+                this.exibirIndisponibilidadeCamera(cam, wrap, false, 'STREAM_CONGELADA');
+            }
+        }, 5000);
 
         // 7. Probe Rápido de Saúde de Transmissão (em paralelo)
         this.camerasGeoService.probeCameraHealth(cam.id).then(health => {
@@ -3433,35 +3837,119 @@ export class UiController {
                 iframe.onerror = () => {
                     if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     console.warn('[CÂMERA] Erro no carregamento do iframe', { id: cam.id });
-                    this.exibirIndisponibilidadeCamera(cam, wrap);
+                    this.exibirIndisponibilidadeCamera(cam, wrap, false, 'ERRO_IFRAME');
                 };
             }
         } else {
             if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
             console.warn('[CÂMERA] Fonte indisponível', { id: cam.id, reason: 'SEM_STREAM_URL' });
-            this.exibirIndisponibilidadeCamera(cam, wrap);
+            this.exibirIndisponibilidadeCamera(cam, wrap, false, 'SEM_STREAM_URL');
         }
 
         // 9. Exibir Dock
         dock.classList.add('open');
-        showToast(`Visualizando Câmera #${cam.id} (${cam.bairro})`, "info");
+        showToast(`Visualizando Câmera #${cam.id} (${cam.bairro}) [Watchdog: ${watchdogTimeoutMs / 1000}s]`, "info");
+    }
+
+    identifyCorridor(cam) {
+        if (!cam) return null;
+        const text = `${cam.nome || ''} ${cam.endereco || ''} ${cam.bairro || ''}`.toLowerCase();
+        const corridors = [
+            { name: 'Ayrton Senna', patterns: ['ayrton senna'] },
+            { name: 'Abelardo Bueno', patterns: ['abelardo bueno'] },
+            { name: 'Salvador Allende', patterns: ['salvador allende'] },
+            { name: 'TransOlímpica', patterns: ['transolimpica', 'transolímpica'] },
+            { name: 'Linha Amarela', patterns: ['linha amarela'] },
+            { name: 'Linha Vermelha', patterns: ['linha vermelha'] },
+            { name: 'Avenida Brasil', patterns: ['avenida brasil', 'av. brasil', 'av brasil'] },
+            { name: 'TransCarioca', patterns: ['transcarioca', 'trans-carioca'] },
+            { name: 'TransOeste', patterns: ['transoeste', 'trans-oeste'] },
+            { name: 'TransBrasil', patterns: ['transbrasil', 'trans-brasil'] }
+        ];
+        for (const c of corridors) {
+            for (const p of c.patterns) {
+                if (text.includes(p)) return c.name;
+            }
+        }
+        if ((cam.bairro || '').toLowerCase().includes('barra olímpica') || (cam.bairro || '').toLowerCase().includes('camorim')) {
+            return 'Barra Olímpica (Acesso RIR)';
+        }
+        return null;
+    }
+
+    // FAILOVER HIERÁRQUICO INTELIGENTE (RECOMENDAÇÃO CCO):
+    // 1. Mesmo Cruzamento/Via -> 2. Mesmo Corredor -> 3. Mesmo Bairro -> 4. Proximidade Raio
+    findHierarchicalAlternativeCamera(currentCam) {
+        if (!currentCam || !this.camerasGeoService?.cameras) return null;
+        const allCams = this.camerasGeoService.cameras;
+        const curId = String(currentCam.id);
+        const curNome = (currentCam.nome || '').toLowerCase();
+        const curBairro = (currentCam.bairro || '').toLowerCase();
+        const curCorredor = this.identifyCorridor(currentCam);
+
+        // Candidatos que não sejam a câmera com falha
+        const poolOnline = allCams.filter(c => String(c.id) !== curId && c.status === 'online');
+        if (poolOnline.length === 0) return null;
+
+        // Nível 1: Mesmo cruzamento / mesma via
+        const viasChave = curNome.split(/ x | e | esquina | próx\.? ao? | frente | em frente /i)
+            .map(v => v.trim())
+            .filter(v => v.length > 4);
+
+        if (viasChave.length > 0) {
+            const matchVia = poolOnline.find(c => {
+                const n = (c.nome || '').toLowerCase();
+                return viasChave.some(v => n.includes(v));
+            });
+            if (matchVia) {
+                return { camera: matchVia, nivelHierarquico: 'Mesma Via / Cruzamento' };
+            }
+        }
+
+        // Nível 2: Mesmo corredor operacional (ex: Linha Amarela, Av. Brasil, etc.)
+        if (curCorredor) {
+            const matchCorredor = poolOnline.find(c => this.identifyCorridor(c) === curCorredor);
+            if (matchCorredor) {
+                return { camera: matchCorredor, nivelHierarquico: `Corredor ${curCorredor}` };
+            }
+        }
+
+        // Nível 3: Mesmo bairro
+        if (curBairro) {
+            const matchBairro = poolOnline.find(c => (c.bairro || '').toLowerCase() === curBairro);
+            if (matchBairro) {
+                return { camera: matchBairro, nivelHierarquico: `Bairro ${currentCam.bairro}` };
+            }
+        }
+
+        // Nível 4: Proximidade geográfica Haversine via SpatialGridIndex
+        const lat = parseFloat(currentCam.latitude || currentCam.lat);
+        const lon = parseFloat(currentCam.longitude || currentCam.lon);
+        if (!isNaN(lat) && !isNaN(lon) && this.camerasGeoService.spatialIndex) {
+            const nearest = this.camerasGeoService.spatialIndex.findNearest(lat, lon, 5000, 10);
+            const firstOnline = nearest.results?.find(r => r.camera.status === 'online' && String(r.camera.id) !== curId);
+            if (firstOnline) {
+                return { camera: firstOnline.camera, nivelHierarquico: `Proximidade (${firstOnline.distanciaMetros}m)` };
+            }
+        }
+
+        return { camera: poolOnline[0], nivelHierarquico: 'Região Operacional' };
     }
 
     findNextOnlineCamera(currentCamId) {
-        if (!Array.isArray(this.currentCorrelatedCameras)) return null;
-        const currentNormalized = String(currentCamId);
-        const candidates = this.currentCorrelatedCameras.filter(c => {
-            const cam = c.camera || c;
-            return String(cam.id) !== currentNormalized && cam.status === 'online';
-        });
-        return candidates.length > 0 ? (candidates[0].camera || candidates[0]) : null;
+        const alt = this.findHierarchicalAlternativeCamera(this.currentSingleCamera || { id: currentCamId });
+        return alt ? alt.camera : null;
     }
 
-    exibirIndisponibilidadeCamera(cam, wrap) {
+    exibirIndisponibilidadeCamera(cam, wrap, isTimeout = false, motivoErro = 'TIMEOUT') {
         if (!wrap) return;
         if (this._streamWatchdogTimer) {
             clearTimeout(this._streamWatchdogTimer);
             this._streamWatchdogTimer = null;
+        }
+        if (this._frozenStreamCheckInterval) {
+            clearInterval(this._frozenStreamCheckInterval);
+            this._frozenStreamCheckInterval = null;
         }
 
         // Sincroniza imediatamente o status da gaveta lateral e do objeto da câmera
@@ -3476,9 +3964,52 @@ export class UiController {
             this.currentSingleCamera.status = 'offline';
         }
 
+        const altHierarquica = this.findHierarchicalAlternativeCamera(cam);
+
+        // AUTO-FAILOVER AUTÔNOMO TÁTICO (Requisito do CCO):
+        // Se houver câmera substituta qualificada, aciona transição automática com notificação
+        if (altHierarquica && this.autoFailoverEnabled !== false) {
+            const altCam = altHierarquica.camera;
+            console.info(`[AUTO-FAILOVER] Acionando failover hierárquico (${altHierarquica.nivelHierarquico}) de #${cam.id} para #${altCam.id}`);
+            
+            showToast(`⚠️ Câmera #${cam.id} indisponível. Abrindo câmera alternativa próxima: #${altCam.id} (${altCam.nome})...`, 'warning', 3500);
+
+            wrap.innerHTML = `
+                <div class="cicc-unavailable-card" style="background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.4);">
+                    <div style="font-size: 26px; color: #f59e0b; margin-bottom: 6px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></div>
+                    <h3 style="margin: 0 0 6px 0; color: #fbbf24; font-size: 13px; text-transform: uppercase;">
+                        Câmera #${escapeHtml(cam.id)} indisponível (${motivoErro})
+                    </h3>
+                    <p style="font-size: 11px; color: #cbd5e1; margin: 0 0 8px 0;">
+                        Acionando <b>Failover Hierárquico [${escapeHtml(altHierarquica.nivelHierarquico)}]</b>
+                    </p>
+                    <div style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 4px; border: 1px solid rgba(0,209,255,0.2); margin-bottom: 10px; font-size: 11px;">
+                        Carregando câmera substituta: <strong style="color:#00d1ff;">#${escapeHtml(altCam.id)} — ${escapeHtml(altCam.nome)}</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px; justify-content: center;">
+                        <button onclick="window.uiController.abrirCameraSelecionada(${JSON.stringify(altCam).replace(/"/g, '&quot;')})" class="btn btnSmall" style="background: #10b981; color: #000; font-weight: 800; padding: 6px 12px; font-size: 10.5px;">
+                            <i class="fa-solid fa-play"></i> Abrir Imediatamente
+                        </button>
+                        <button onclick="document.getElementById('cicc-dock-matrix')?.classList.remove('open')" class="btn btnSmall" style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 6px 12px; font-size: 10px;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Transição autônoma em 1.5s
+            setTimeout(() => {
+                const dock = document.getElementById('cicc-dock-matrix');
+                if (dock && dock.classList.contains('open')) {
+                    this.abrirCameraSelecionada(altCam);
+                }
+            }, 1500);
+
+            return;
+        }
+
         const rawId = parseInt(cam.id, 10);
         const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
-        const nextOnline = this.findNextOnlineCamera(cam.id);
 
         wrap.innerHTML = `
             <div class="cicc-unavailable-card">
@@ -3491,14 +4022,9 @@ export class UiController {
                     <span style="font-size: 10px; color: #94a3b8;">📍 ${escapeHtml(cam.bairro)}, Rio de Janeiro - RJ (Operadora: ${escapeHtml(cam.operadora || 'COR Rio / CET-Rio')})</span>
                 </p>
                 <p style="font-size: 10px; color: #64748b; margin: 0 0 14px 0;">
-                    A transmissão pública de origem excedeu o tempo limite de conexão (3s) ou está temporariamente fora do ar.
+                    A transmissão pública de origem excedeu o tempo limite (${motivoErro}) ou está temporariamente fora do ar.
                 </p>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                    ${nextOnline ? `
-                        <button onclick="window.uiController.abrirCameraSelecionada(window.uiController.findNextOnlineCamera('${cam.id}'))" class="btn btnSmall" style="background: #10b981; color: #000; font-weight: 800; padding: 6px 12px; font-size: 10.5px; display: flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16,185,129,0.3);">
-                            <i class="fa-solid fa-video"></i> Tentar Próxima Câmera Online (#${escapeHtml(nextOnline.id)})
-                        </button>
-                    ` : ''}
                     <button onclick="window.uiController.abrirCameraSelecionada(window.uiController.currentSingleCamera)" class="btn btnSmall" style="background: rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; font-size: 10px;">
                         <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
                     </button>
