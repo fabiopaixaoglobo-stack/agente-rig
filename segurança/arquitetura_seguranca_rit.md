@@ -358,9 +358,6 @@ Os dados de geolocalização e tokens operacionais possuem tempo de vida estrita
 
 Os seguintes arquivos críticos foram modificados e requerem revisão de segurança/privacidade:
 
-* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [package.json](file:///C:/Users/fapaixao/OneDrive/Agente RIG/package.json) - Última modificação detectada recentemente.
-* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [main.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/public/js/main.js) - Última modificação detectada recentemente.
-* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [auth.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/server/auth.js) - Última modificação detectada recentemente.
 * ⚠️ **[PENDENTE DE VALIDAÇÃO]** [server.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/server/server.js) - Última modificação detectada recentemente.
 
 > [!WARNING]
@@ -370,7 +367,7 @@ Os seguintes arquivos críticos foram modificados e requerem revisão de seguran
 
 ✅ Nenhum segredo ou credencial exposta foi detectada nos arquivos analisados.
 
-_Gerado automaticamente em: 2026-09-17T20:56:17.126Z_
+_Gerado automaticamente em: 2026-09-17T21:45:39.050Z_
 <!-- SECURITY-AUTO:END -->
 
 ---

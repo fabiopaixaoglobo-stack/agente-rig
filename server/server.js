@@ -137,22 +137,36 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// MIDDLEWARE DE TRANSIÇÃO CANÔNICA DE HOST E DEPRECIAÇÃO DE INFRAESTRUTURA
-app.use((req, res, next) => {
-    const host = (req.get('host') || '').toLowerCase();
-    const isLegacyHost = host.includes('agente-rig-backend.onrender.com');
+// ─────────────────────────────────────────────────────────────────────────────
+// MIDDLEWARE DE REDIRECIONAMENTO PERMANENTE (HTTP 301) — RIG ➜ RIT
+// Transfere o tráfego do host legado para o domínio oficial agenterit.com.br
+// preservando rota original, querystrings e parâmetros.
+// ─────────────────────────────────────────────────────────────────────────────
+const LEGACY_HOSTS = ['agente-rig-backend.onrender.com'];
+const EXEMPT_MONITORING_PATHS = ['/api/health', '/api/status'];
 
-    if (isLegacyHost) {
-        res.setHeader('X-API-Deprecation-Notice', 'agente-rig-backend.onrender.com is legacy. Please transition to api.agenterit.com.br or agente-rit-backend.onrender.com');
-        
-        // Redirecionamento opcional de páginas web (GET de browser) se CANONICAL_HOST estiver configurado
-        const canonicalHost = process.env.CANONICAL_HOST;
-        if (canonicalHost && req.method === 'GET' && !req.path.startsWith('/api/') && req.accepts('html')) {
-            const targetUrl = `https://${canonicalHost}${req.originalUrl}`;
-            console.log(`[308 Redirect] Redirecionando navegação web legada ${host}${req.originalUrl} -> ${targetUrl}`);
-            return res.redirect(308, targetUrl);
-        }
+app.use((req, res, next) => {
+    const rawHost = req.hostname || (req.get('host') || '').split(':')[0];
+    const hostname = (rawHost || '').toLowerCase();
+
+    // 1. Proteção mandatória para ambiente local (localhost / 127.0.0.1)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return next();
     }
+
+    // 2. Interceptação de acessos via host legado
+    if (LEGACY_HOSTS.includes(hostname)) {
+        // Exceção operacional para rotas de observabilidade / health check
+        if (EXEMPT_MONITORING_PATHS.includes(req.path)) {
+            res.setHeader('X-API-Deprecation-Notice', 'agente-rig-backend.onrender.com is legacy. Please transition to api.agenterit.com.br or agenterit.com.br');
+            return next();
+        }
+
+        // Redirecionamento permanente HTTP 301 preservando rota e querystring
+        const targetUrl = `https://agenterit.com.br${req.originalUrl}`;
+        return res.redirect(301, targetUrl);
+    }
+
     next();
 });
 app.use(express.json({ limit: '512kb' }));
@@ -251,6 +265,15 @@ app.get('/api/health', async (req, res) => {
             version: '3.5.2'
         });
     }
+});
+
+app.get('/api/status', (req, res) => {
+    res.json({
+        status: 'online',
+        service: 'agente-rit',
+        version: '3.5.2',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.get('/api/normas', (req, res) => {
