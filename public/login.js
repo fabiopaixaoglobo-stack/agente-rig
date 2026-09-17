@@ -30,12 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Store JWT and Audit ID
-                localStorage.setItem('rig_token', data.token);
-                if (data.auditId) {
-                    localStorage.setItem('rig_auditId', data.auditId);
+                // Store JWT and Audit ID (RIT prioritário e RIG legado espelhado)
+                if (typeof window.saveAuthSession === 'function') {
+                    window.saveAuthSession(data.token, data.usuario, data.auditId);
+                } else {
+                    localStorage.setItem('rit_token', data.token);
+                    localStorage.setItem('rig_token', data.token);
+                    if (data.auditId) {
+                        localStorage.setItem('rit_auditId', String(data.auditId));
+                        localStorage.setItem('rig_auditId', String(data.auditId));
+                    }
+                    localStorage.setItem('rit_user', JSON.stringify(data.usuario));
+                    localStorage.setItem('rig_user', JSON.stringify(data.usuario));
                 }
-                localStorage.setItem('rig_user', JSON.stringify(data.usuario));
                 
                 // Redirect to main page
                 window.location.href = '/index.html';

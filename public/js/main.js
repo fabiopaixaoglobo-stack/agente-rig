@@ -12,7 +12,7 @@ import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.2.0';
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
     console.info("[RIT LAYOUT] layout responsivo carregado");
-    console.log("🚀 Agente RIG v4.0.0 - Inicializando módulos...");
+    console.log("🚀 Agente RIT v4.0.0 - Inicializando módulos...");
     try {
         const mainMap = (CONFIG.FEATURE_MONITORAMENTO && document.getElementById("map")) ? new MapService("map") : null;
         const plannerMap = document.getElementById("mapPlanner") ? new MapService("mapPlanner") : null;
@@ -136,14 +136,18 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        window.AGENTE_RIG = { ui, mainMap, plannerMap, data, whatsapp, camerasRJ, corRio };
+        window.AGENTE_RIT = { ui, mainMap, plannerMap, data, whatsapp, camerasRJ, corRio };
+        try {
+            Object.freeze(window.AGENTE_RIT);
+        } catch (e) {}
+        window.AGENTE_RIG = window.AGENTE_RIT;
 
         window.fecharGuiaVisual = () => {
             const modal = document.getElementById("modalGuia");
             if (modal) modal.style.display = "none";
         };
     } catch (e) {
-        console.error("Falha ao iniciar Agente RIG:", e);
+        console.error("Falha ao iniciar Agente RIT:", e);
         document.body.insertAdjacentHTML(
             "afterbegin",
             `<div style="padding:16px;background:#3d0a0a;color:#fff;font-family:sans-serif;">

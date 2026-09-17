@@ -1,6 +1,8 @@
-# Agente RIG — Centro de comando RIT
+# Agente RIT — Centro de Comando (Rotas Inteligentes de Transportes)
 
-Aplicação web (Express + front-end estático) para monitoramento em mapa, importação de bases em Excel, auditoria e planejamento de rotas.
+Aplicação web (Express + front-end modular) para monitoramento em mapa, geocodificação, importação de bases de transporte, auditoria de acessos e planejamento preditivo de rotas.
+
+> **Nota de Histórico e Auditoria**: Originalmente desenvolvido sob a denominação interna "Agente RIG", o produto evoluiu oficialmente para **Agente RIT** (Rotas Inteligentes de Transportes). Identificadores técnicos de infraestrutura no Render, logs de auditoria de banco e evidências probatórias cronológicas foram preservados para manter a integridade documental e operacional.
 
 ## Requisitos
 

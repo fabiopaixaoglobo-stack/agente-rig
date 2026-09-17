@@ -1,6 +1,21 @@
+export const API_HOSTS = Object.freeze({
+    PRIMARY: 'https://api.agenterit.com.br',
+    SECONDARY: 'https://agente-rit-backend.onrender.com',
+    LEGACY: 'https://agente-rig-backend.onrender.com'
+});
+
+export function getApiBaseUrl() {
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        return '';
+    }
+    return API_HOSTS.PRIMARY;
+}
+
 export const CONFIG = {
     // Feature Flag de Monitoramento (true: ativo, false: temporariamente suspenso)
     FEATURE_MONITORAMENTO: false,
+    API_HOSTS,
+    getApiBaseUrl,
     DEFAULT_CENTER: [-22.9068, -43.1729],
     DEFAULT_ZOOM: 11,
     MAP_TILE_LAYER: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",

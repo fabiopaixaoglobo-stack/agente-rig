@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('rig_token');
+    const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('rit_token') || localStorage.getItem('rig_token'));
     
     if (!token) {
         window.location.href = '/login.html';
@@ -27,9 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const kpiTopUser = document.getElementById('kpi-top-user');
 
     btnLogout.addEventListener('click', () => {
-        localStorage.removeItem('rig_token');
-        localStorage.removeItem('rig_auditId');
-        localStorage.removeItem('rig_user');
+        if (typeof clearAuthSession === 'function') {
+            clearAuthSession();
+        } else {
+            localStorage.removeItem('rit_token');
+            localStorage.removeItem('rig_token');
+            localStorage.removeItem('rit_auditId');
+            localStorage.removeItem('rig_auditId');
+            localStorage.removeItem('rit_user');
+            localStorage.removeItem('rig_user');
+        }
         window.location.href = '/login.html';
     });
 
@@ -67,7 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('rig_token');
+                if (typeof clearAuthSession === 'function') {
+                    clearAuthSession();
+                } else {
+                    localStorage.removeItem('rit_token');
+                    localStorage.removeItem('rig_token');
+                }
                 window.location.href = '/login.html';
                 return;
             }
@@ -94,7 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('rig_token');
+                if (typeof clearAuthSession === 'function') {
+                    clearAuthSession();
+                } else {
+                    localStorage.removeItem('rit_token');
+                    localStorage.removeItem('rig_token');
+                }
                 window.location.href = '/login.html';
                 return;
             }

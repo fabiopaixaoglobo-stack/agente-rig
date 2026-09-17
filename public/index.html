@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agente RIG — Hero</title>
+  <title>Agente RIT — Rota Inteligente de Transporte</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="/styles/HomeHero.css" />
+  <script src="/js/auth-constants.js"></script>
 </head>
 <body>
   <div id="hero-root" class="hero-root">
@@ -98,9 +99,18 @@
             const data = await res.json();
             
             if (data.success) {
-                localStorage.setItem('rig_token', data.token);
-                localStorage.setItem('rig_user', JSON.stringify(data.usuario));
-                localStorage.setItem('rig_auditId', data.auditId);
+                if (typeof window.saveAuthSession === 'function') {
+                    window.saveAuthSession(data.token, data.usuario, data.auditId);
+                } else {
+                    localStorage.setItem('rit_token', data.token);
+                    localStorage.setItem('rig_token', data.token);
+                    localStorage.setItem('rit_user', JSON.stringify(data.usuario));
+                    localStorage.setItem('rig_user', JSON.stringify(data.usuario));
+                    if (data.auditId) {
+                        localStorage.setItem('rit_auditId', String(data.auditId));
+                        localStorage.setItem('rig_auditId', String(data.auditId));
+                    }
+                }
                 window.location.href = '/dashboard.html';
             } else {
                 msg.className = 'error-msg';

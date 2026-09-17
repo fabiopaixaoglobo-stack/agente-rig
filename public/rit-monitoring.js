@@ -313,8 +313,9 @@
         solicitarPosicaoClick(id) {
             const item = this.data.find(x => String(x.id) === String(id));
             if (!item) return;
-            if (window.AGENTE_RIG && window.AGENTE_RIG.ui) {
-                window.AGENTE_RIG.ui.abrirModalSolicitarPosicao(item.motorista, item.placa, item.id, 'Conexão Transportes', item.programa, item.origem, item.destino, item.horarioInicio, item.horarioFim);
+            const agente = window.AGENTE_RIT || window.AGENTE_RIG;
+            if (agente && agente.ui) {
+                agente.ui.abrirModalSolicitarPosicao(item.motorista, item.placa, item.id, 'Conexão Transportes', item.programa, item.origem, item.destino, item.horarioInicio, item.horarioFim);
             }
         }
 

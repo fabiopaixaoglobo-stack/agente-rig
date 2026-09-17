@@ -1,7 +1,7 @@
 {
-  "name": "agente-rig-fullstack",
+  "name": "agente-rit-fullstack",
   "version": "1.2.2",
-  "description": "Sistema Agente RIG - Versão Operacional Full",
+  "description": "Sistema Agente RIT - Rotas Inteligentes de Transportes",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",

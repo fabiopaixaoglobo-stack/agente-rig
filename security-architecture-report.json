@@ -1,7 +1,10 @@
 {
-  "timestamp": "2026-08-07T20:51:29.594Z",
+  "timestamp": "2026-09-17T20:56:21.831Z",
   "criticalModified": [
-    "package.json"
+    "package.json",
+    "public/js/main.js",
+    "server/auth.js",
+    "server/server.js"
   ],
   "secretsFound": [],
   "status": "NEEDS_REVIEW"

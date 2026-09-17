@@ -7,19 +7,25 @@
  */
 (function () {
     const PING_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
-    const AUDIT_KEY = 'rig_auditId';
-    const TOKEN_KEY = 'rig_token';
 
     function getAuditId() {
-        return localStorage.getItem(AUDIT_KEY);
+        if (typeof window.getAuthAuditId === 'function') return window.getAuthAuditId();
+        return localStorage.getItem('rit_auditId') || localStorage.getItem('rig_auditId');
     }
 
     function getToken() {
-        return localStorage.getItem(TOKEN_KEY);
+        if (typeof window.getAuthToken === 'function') return window.getAuthToken();
+        return localStorage.getItem('rit_token') || localStorage.getItem('rig_token');
     }
 
-    // Flag: marcada como true quando o usuário clica em logout ou navega internamente
+    // Flags: marcadas como true quando o usuário clica em logout ou navega internamente
+    window.__ritInternalNav = false;
     window.__rigInternalNav = false;
+
+    function markInternalNav() {
+        window.__ritInternalNav = true;
+        window.__rigInternalNav = true;
+    }
 
     // ── Heartbeat (ping) ────────────────────────
     function sendPing() {
@@ -37,7 +43,7 @@
     // ── Encerrar sessão via sendBeacon ───────────
     function closeSession() {
         // Se for navegação interna, não fechar a sessão
-        if (window.__rigInternalNav) return;
+        if (window.__ritInternalNav || window.__rigInternalNav) return;
 
         const auditId = getAuditId();
         if (!auditId) return;
@@ -66,7 +72,7 @@
         if (link) {
             const url = new URL(link.href, window.location.origin);
             if (url.origin === window.location.origin) {
-                window.__rigInternalNav = true;
+                markInternalNav();
             }
         }
     });
@@ -80,7 +86,7 @@
             set: function (val) {
                 const url = new URL(val, window.location.origin);
                 if (url.origin === window.location.origin) {
-                    window.__rigInternalNav = true;
+                    markInternalNav();
                 }
                 _origAssign.set.call(this, val);
             },

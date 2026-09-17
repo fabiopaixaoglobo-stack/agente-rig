@@ -350,4 +350,28 @@ Os dados de geolocalização e tokens operacionais possuem tempo de vida estrita
 | **Governança da Informação** | Soberania de processamento sem envio de dados a terceiros | **CONFORME** | Execução 100% interna sem chamadas de IA em runtime. |
 
 ---
-*Documento oficial homologado pelas equipes de Arquitetura de Segurança, Privacidade e Governança do Agente RIT — Agosto de 2026.*
+
+## 22. Monitoramento Contínuo e Auditoria Automatizada DevSecOps
+
+<!-- SECURITY-AUTO:START -->
+### 🚨 Controles Críticos Modificados Recentemente (Análise Automática)
+
+Os seguintes arquivos críticos foram modificados e requerem revisão de segurança/privacidade:
+
+* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [package.json](file:///C:/Users/fapaixao/OneDrive/Agente RIG/package.json) - Última modificação detectada recentemente.
+* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [main.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/public/js/main.js) - Última modificação detectada recentemente.
+* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [auth.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/server/auth.js) - Última modificação detectada recentemente.
+* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [server.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/server/server.js) - Última modificação detectada recentemente.
+
+> [!WARNING]
+> Modificações em arquivos críticos de autenticação, banco de dados ou geolocalização devem passar por auditoria AppSec manual antes de serem marcadas como homologadas.
+
+### 🛡️ Status de Varredura de Segredos
+
+✅ Nenhum segredo ou credencial exposta foi detectada nos arquivos analisados.
+
+_Gerado automaticamente em: 2026-09-17T20:56:17.126Z_
+<!-- SECURITY-AUTO:END -->
+
+---
+*Documento oficial homologado pelas equipes de Arquitetura de Segurança, Privacidade e Governança do Agente RIT — Setembro de 2026.*

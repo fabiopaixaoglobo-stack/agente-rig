@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="style.css?v=50" />
+  <script src="js/auth-constants.js"></script>
 </head>
 
 <body>
@@ -597,11 +598,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
   <div id="modalGuia" class="modal-overlay"><div class="modal-content"><img src="assets/norma_visual.jpg" alt="Guia visual das normas" style="max-width: 100%;"></div></div>
   <script>
-    if (!localStorage.getItem('rig_token')) {
+    const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('rit_token') || localStorage.getItem('rig_token'));
+    if (!token) {
         window.location.href = '/';
     } else {
         try {
-            const user = JSON.parse(localStorage.getItem('rig_user'));
+            const user = (typeof getAuthUser === 'function') ? getAuthUser() : JSON.parse(localStorage.getItem('rit_user') || localStorage.getItem('rig_user'));
             if (user && user.nome) {
                 const statusEl = document.getElementById('user-status');
                 statusEl.innerHTML = `<span class="dot"></span> ${user.nome.toUpperCase()} (${user.funcao})`;
@@ -610,17 +612,23 @@
     }
 
     function doLogout() {
-        const auditId = localStorage.getItem('rig_auditId');
+        const auditId = (typeof getAuthAuditId === 'function') ? getAuthAuditId() : (localStorage.getItem('rit_auditId') || localStorage.getItem('rig_auditId'));
         if (auditId) {
             fetch('/api/logout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ auditId })
             }).finally(() => {
+                if (typeof clearAuthSession === 'function') {
+                    clearAuthSession();
+                }
                 localStorage.clear();
                 window.location.href = '/';
             });
         } else {
+            if (typeof clearAuthSession === 'function') {
+                clearAuthSession();
+            }
             localStorage.clear();
             window.location.href = '/';
         }

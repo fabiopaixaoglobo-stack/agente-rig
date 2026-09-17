@@ -139,7 +139,8 @@ function run() {
     );
     
     if (isCheck) {
-        if (newDocContent !== docContent) {
+        const normalize = str => str.replace(/_Gerado automaticamente em: [^_]+_/g, '').trim();
+        if (normalize(newDocContent) !== normalize(docContent)) {
             console.error('[CHECK FAIL] O documento de arquitetura de segurança está desatualizado.');
             process.exit(1);
         }

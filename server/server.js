@@ -86,14 +86,75 @@ if (process.env.TRUST_PROXY === '1' || process.env.RENDER) {
     app.set('trust proxy', 1);
 }
 
-// MIDDLEWARES — CORS: defina ALLOWED_ORIGINS (lista separada por vírgula) em produção
-const allowedOrigins = process.env.ALLOWED_ORIGINS;
-if (allowedOrigins && allowedOrigins.trim()) {
-    const list = allowedOrigins.split(',').map((s) => s.trim()).filter(Boolean);
-    app.use(cors({ origin: list.length === 1 ? list[0] : list }));
-} else {
-    app.use(cors());
-}
+// LISTA CANÔNICA DE ORIGENS PERMITIDAS (RIT Oficial + Domínios Próprios + Legado RIG em transição)
+const CANONICAL_ALLOWED_ORIGINS = [
+    'https://agenterit.com.br',
+    'https://www.agenterit.com.br',
+    'https://api.agenterit.com.br',
+    'https://agente-rit-backend.onrender.com',
+    'https://agente-rit.onrender.com',
+    'https://agente-rig-backend.onrender.com' // Preservado durante a transição
+];
+
+const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+const allAllowedOrigins = Array.from(new Set([...CANONICAL_ALLOWED_ORIGINS, ...envOrigins]));
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permite requisições sem origin (como mobile apps, curl, SSR, server-to-server)
+        if (!origin) return callback(null, true);
+
+        // Permite se estiver na lista canônica ou env
+        if (allAllowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Permite domínios de desenvolvimento local (localhost, 127.0.0.1)
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+            return callback(null, true);
+        }
+
+        // Permite subdomínios autorizados de agenterit.com.br ou onrender
+        if (/^https:\/\/([a-z0-9-]+\.)?agenterit\.com\.br$/.test(origin) ||
+            /^https:\/\/agente-r[it]t?(-backend)?\.onrender\.com$/.test(origin)) {
+            return callback(null, true);
+        }
+
+        // Se não houver restrição rígida (ambiente dev), permite com aviso
+        if (process.env.NODE_ENV !== 'production' && !process.env.ALLOWED_ORIGINS) {
+            return callback(null, true);
+        }
+
+        console.warn(`⚠️ [CORS Block] Origem não autorizada: ${origin}`);
+        return callback(new Error(`Origem não permitida por CORS: ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
+
+// MIDDLEWARE DE TRANSIÇÃO CANÔNICA DE HOST E DEPRECIAÇÃO DE INFRAESTRUTURA
+app.use((req, res, next) => {
+    const host = (req.get('host') || '').toLowerCase();
+    const isLegacyHost = host.includes('agente-rig-backend.onrender.com');
+
+    if (isLegacyHost) {
+        res.setHeader('X-API-Deprecation-Notice', 'agente-rig-backend.onrender.com is legacy. Please transition to api.agenterit.com.br or agente-rit-backend.onrender.com');
+        
+        // Redirecionamento opcional de páginas web (GET de browser) se CANONICAL_HOST estiver configurado
+        const canonicalHost = process.env.CANONICAL_HOST;
+        if (canonicalHost && req.method === 'GET' && !req.path.startsWith('/api/') && req.accepts('html')) {
+            const targetUrl = `https://${canonicalHost}${req.originalUrl}`;
+            console.log(`[308 Redirect] Redirecionando navegação web legada ${host}${req.originalUrl} -> ${targetUrl}`);
+            return res.redirect(308, targetUrl);
+        }
+    }
+    next();
+});
 app.use(express.json({ limit: '512kb' }));
 
 // ROTAS API (antes do static para não haver ambiguidade com ficheiros em public/)
@@ -2525,6 +2586,9 @@ function iniciarKeepAlive() {
         console.log('ℹ️  RENDER_EXTERNAL_URL não definida — keep-alive desativado (ambiente local).');
         return;
     }
+    if (RENDER_URL.includes('agente-rig-backend')) {
+        console.log('ℹ️  [Migração Render] RENDER_EXTERNAL_URL aponta para host legado (agente-rig-backend). Configure RENDER_EXTERNAL_URL para https://agente-rit-backend.onrender.com ou https://api.agenterit.com.br no Render Dashboard quando o novo host for ativado.');
+    }
     const pingUrl = `${RENDER_URL}/api/health`;
     const INTERVALO_MS = 14 * 60 * 1000; // 14 minutos
 
@@ -2548,7 +2612,7 @@ async function iniciar() {
     }
     await carregarBases();
     app.listen(PORT, () => {
-        console.log(`🚀 Agente RIG v3.5.1 na porta ${PORT}`);
+        console.log(`🚀 Agente RIT v3.5.1 na porta ${PORT}`);
         iniciarKeepAlive();
     });
 }

@@ -1,5 +1,5 @@
 /***********************************************************************
- * AGENTE RIG – SCRIPT PRINCIPAL v3.4.0
+ * AGENTE RIT – SCRIPT PRINCIPAL v3.4.0
  ***********************************************************************/
 
 let MAPA = null;
@@ -144,15 +144,15 @@ function inicializarUploadPlanejador() {
       json.resultados.forEach(r => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #333";
-        tr.innerHTML = \`
-          <td style="padding: 8px;">\${escHtml(r.origem)}</td>
-          <td style="padding: 8px;">\${escHtml(r.destino)}</td>
-          <td style="padding: 8px;">\${escHtml(r.horario || '')}</td>
-          <td style="padding: 8px;">\${r.distancia_km ? r.distancia_km + ' km' : '-'}</td>
-          <td style="padding: 8px;">\${r.tempo_min ? r.tempo_min + ' min' : '-'}</td>
-          <td style="padding: 8px; font-weight:bold; color:var(--accent)">\${r.custo_estimado ? 'R$ ' + r.custo_estimado : '-'}</td>
-          <td style="padding: 8px; color: \${r.status === 'SUCESSO' ? 'var(--accent)' : 'var(--bad)'}">\${escHtml(r.status)} \${r.erro ? '<br><small>'+escHtml(r.erro)+'</small>' : ''}</td>
-        \`;
+        tr.innerHTML = `
+          <td style="padding: 8px;">${escHtml(r.origem)}</td>
+          <td style="padding: 8px;">${escHtml(r.destino)}</td>
+          <td style="padding: 8px;">${escHtml(r.horario || '')}</td>
+          <td style="padding: 8px;">${r.distancia_km ? r.distancia_km + ' km' : '-'}</td>
+          <td style="padding: 8px;">${r.tempo_min ? r.tempo_min + ' min' : '-'}</td>
+          <td style="padding: 8px; font-weight:bold; color:var(--accent)">${r.custo_estimado ? 'R$ ' + r.custo_estimado : '-'}</td>
+          <td style="padding: 8px; color: ${r.status === 'SUCESSO' ? 'var(--accent)' : 'var(--bad)'}">${escHtml(r.status)} ${r.erro ? '<br><small>'+escHtml(r.erro)+'</small>' : ''}</td>
+        `;
         tbody.appendChild(tr);
       });
 

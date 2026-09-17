@@ -12,20 +12,26 @@ const jwt = require('jsonwebtoken');
     page.on('pageerror', err => console.error(`[BROWSER ERROR] ${err.message}`));
 
     try {
-        // 1. Gera o token JWT para bypassar a tela de login
-        const JWT_SECRET = 'agente-rig-super-secret-2026';
+        // 1. Gera o token JWT para bypassar a tela de login (usando chave RIT ou legado)
+        const JWT_SECRET = process.env.JWT_SECRET_CURRENT || 'agente-rit-super-secret-2026';
         const token = jwt.sign({ id: 1, matricula: '68808', role: 'Administrador' }, JWT_SECRET);
 
-        console.log('🔑 Injetando credenciais e token de sessão...');
-        await page.goto('https://agente-rig-backend.onrender.com/');
+        // Host configurável com fallback para o serviço de produção ativo
+        const BASE_URL = process.env.TEST_API_URL || 'https://agente-rig-backend.onrender.com';
+
+        console.log(`🔑 Injetando credenciais e token de sessão em: ${BASE_URL}...`);
+        await page.goto(`${BASE_URL}/`);
         await page.evaluate(({ token }) => {
+            localStorage.setItem('rit_token', token);
             localStorage.setItem('rig_token', token);
-            localStorage.setItem('rig_user', JSON.stringify({ nome: 'Fábio', funcao: 'COORD OPERAÇÃO TRANSPORTES', matricula: '68808' }));
+            const user = { nome: 'Fábio', funcao: 'COORD OPERAÇÃO TRANSPORTES', matricula: '68808' };
+            localStorage.setItem('rit_user', JSON.stringify(user));
+            localStorage.setItem('rig_user', JSON.stringify(user));
         }, { token });
 
         // 2. Navega para o Dashboard
-        console.log('🌐 Navegando para o Dashboard...');
-        await page.goto('https://agente-rig-backend.onrender.com/dashboard.html');
+        console.log(`🌐 Navegando para o Dashboard em: ${BASE_URL}/dashboard.html...`);
+        await page.goto(`${BASE_URL}/dashboard.html`);
         await page.waitForLoadState('load');
 
         // 3. Aguarda os marcadores serem carregados no mapa

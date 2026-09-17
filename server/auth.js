@@ -6,10 +6,11 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { pool } = require('./database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'agente-rig-super-secret-2026';
+const JWT_SECRET_CURRENT = process.env.JWT_SECRET_CURRENT || process.env.JWT_SECRET || 'agente-rit-super-secret-2026';
+const JWT_SECRET_LEGACY = process.env.JWT_SECRET_LEGACY || 'agente-rig-super-secret-2026';
 
 // ──────────────────────────────────────────────
-// MIDDLEWARE JWT
+// MIDDLEWARE JWT (Validação em cascata CURRENT -> LEGACY)
 // ──────────────────────────────────────────────
 function verifyToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -19,10 +20,20 @@ function verifyToken(req, res, next) {
         return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Token inválido ou expirado.' });
-        req.user = user;
-        next();
+    jwt.verify(token, JWT_SECRET_CURRENT, (errCurrent, userCurrent) => {
+        if (!errCurrent) {
+            req.user = userCurrent;
+            return next();
+        }
+
+        // Se falhar com a chave corrente, tenta com o segredo legado para manter sessões ativas
+        jwt.verify(token, JWT_SECRET_LEGACY, (errLegacy, userLegacy) => {
+            if (!errLegacy) {
+                req.user = userLegacy;
+                return next();
+            }
+            return res.status(403).json({ error: 'Token inválido ou expirado.' });
+        });
     });
 }
 
@@ -287,7 +298,7 @@ function setupAuthRoutes(app) {
 
             const token = jwt.sign(
                 { id: user.id, matricula: user.matricula, role: user.funcao },
-                JWT_SECRET,
+                JWT_SECRET_CURRENT,
                 { expiresIn: '12h' }
             );
 
@@ -601,4 +612,4 @@ function setupAuthRoutes(app) {
     });
 }
 
-module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken };
+module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken, JWT_SECRET_CURRENT, JWT_SECRET_LEGACY };

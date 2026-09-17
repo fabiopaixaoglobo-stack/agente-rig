@@ -1,5 +1,5 @@
 /***********************************************************************
- * AGENTE RIG – SCRIPT PRINCIPAL
+ * AGENTE RIT – SCRIPT PRINCIPAL
  * Versão: FULL / SIMULADA / OPERACIONAL
  * Compatível com Render (Static Site)
  * NÃO requer backend
@@ -788,7 +788,7 @@ resposta = "<b>[Norma de Transporte / TNO]:</b> Os EPIs obrigatórios incluem bo
         resposta = "<b>[Regras de Contrato]:</b> As penalidades são aplicadas em caso de atraso injustificado, avaria de carga, ou infrações de trânsito cometidas durante a operação do serviço.";
       }
 
-      chatBox.innerHTML += `<div class="msg bot"><b>Agente RIG:</b> ${resposta}</div>`;
+      chatBox.innerHTML += `<div class="msg bot"><b>Agente RIT:</b> ${resposta}</div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
     }, 800);
   }

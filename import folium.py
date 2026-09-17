@@ -8,7 +8,7 @@ import json
 import sys
 
 # --- CONFIGURAÇÃO MASTER ---
-geolocator = Nominatim(user_agent="Agente_RIG_Global_VSC")
+geolocator = Nominatim(user_agent="Agente_RIT_Global_VSC")
 
 # --- MOTOR DE INCIDENTES (REAL-TIME AGGREGATOR) ---
 def get_current_risks():
@@ -47,9 +47,9 @@ def resolve_location(query):
         print(f"❌ Erro ao resolver localização '{query}': {e}")
         return None
 
-# --- FUNÇÃO PRINCIPAL DE EXECUÇÃO DO RIG ---
-def run_rig_analysis():
-    print("\n--- AGENTE RIG | ANÁLISE PREDITIVA ---")
+# --- FUNÇÃO PRINCIPAL DE EXECUÇÃO DO RIT ---
+def run_rit_analysis():
+    print("\n--- AGENTE RIT | ANÁLISE PREDITIVA ---")
     
     # 1. ENTRADAS DO USUÁRIO
     origem_query = input("📍 Digite a Origem (Endereço ou Lat,Lon): ")
@@ -64,7 +64,7 @@ def run_rig_analysis():
     modal_choice = int(input("Escolha o número do modal (1-4): ")) - 1
     selected_modal_name, selected_modal_factor = modal_options[modal_choice]
 
-    print("\n📡 RIG: Sincronizando Malha de Risco e Roteirização...")
+    print("\n📡 RIT: Sincronizando Malha de Risco e Roteirização...")
 
     try:
         raw_pts = [origem_query]
@@ -112,7 +112,7 @@ def run_rig_analysis():
         logger.info("Análise de Risco concluída", extra={"extra_info": {"incidentes_detectados": len(impactos)}})
 
         # 5. Saída no Terminal
-        print("\n--- BRIEFING AGENTE RIG ---")
+        print("\n--- BRIEFING AGENTE RIT ---")
         print(f"Risco na Rota: {'⚠️ DETECTADO' if impactos else '✅ SEGURO'}")
         print(f"Distância Total: {km:.2f} KM")
         print(f"Tempo Estimado: {minutos:.0f} Minutos")
@@ -133,7 +133,7 @@ def run_rig_analysis():
             # Usando .get() com um fallback para garantir que o ícone seja válido
             folium.Marker(i['coord'], popup=f"{i['tipo']}: {i['local']}", icon=folium.Icon(color=i.get('color', 'red'), icon=i.get('icon', 'exclamation-triangle'), prefix='fa')).add_to(m)
         
-        map_filename = "mapa_agente_rig.html"
+        map_filename = "mapa_agente_rit.html"
         m.save(map_filename)
         print(f"\n🗺️ Mapa gerado com sucesso: {os.path.abspath(map_filename)}")
         print("Abra este arquivo HTML no seu navegador para visualizar a rota e os alertas.\n")
@@ -144,4 +144,4 @@ def run_rig_analysis():
 
 # Executa a função principal quando o script é chamado
 if __name__ == "__main__":
-    run_rig_analysis()
+    run_rit_analysis()
