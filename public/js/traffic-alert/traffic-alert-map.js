@@ -126,19 +126,38 @@ export class TrafficAlertMap {
                 return;
             }
 
-            const sev = (inc.severity || inc.severidade || 'MÉDIO').toUpperCase();
-            let markerClass = 'ta-marker-cyan';
-            if (sev === 'CRÍTICO' || sev === 'ALTO') {
-                markerClass = 'ta-marker-crit';
-            } else if (sev === 'MÉDIO') {
-                markerClass = 'ta-marker-warn';
+            // Taxonomia de ícones operacionais estilo Waze (P2)
+            const text = `${inc.type || ''} ${inc.subtype || ''} ${inc.title || ''} ${inc.description || ''} ${inc.corridor || ''}`.toLowerCase();
+            let emoji = '⚠️';
+            if (text.includes('acidente') || text.includes('colis') || text.includes('tombamento') || text.includes('capotamento')) emoji = '💥';
+            else if (text.includes('obra') || text.includes('manuten') || text.includes('recapeamento') || text.includes('conservação')) emoji = '👷';
+            else if (text.includes('faixa') || text.includes('bloqueio') || text.includes('parcial')) emoji = '🚧';
+            else if (text.includes('interdi') || text.includes('fechada') || text.includes('bloqueada') || text.includes('interrompido')) emoji = '⛔';
+            else if (text.includes('polícia') || text.includes('policia') || text.includes('blitz') || text.includes('segurança')) emoji = '👮';
+            else if (text.includes('chuva') || text.includes('alagamento') || text.includes('bolsão') || text.includes('vento') || text.includes('tempo')) emoji = '⛈️';
+            else if (text.includes('semáforo') || text.includes('semaforo') || text.includes('sinal') || text.includes('apagado')) emoji = '🚦';
+            else if (text.includes('objeto') || text.includes('detrito') || text.includes('queda') || text.includes('árvore')) emoji = '🪵';
+            else if (text.includes('animal') || text.includes('cavalo') || text.includes('cachorro') || text.includes('bovino')) emoji = '🐮';
+            else if (text.includes('lento') || text.includes('tráfego') || text.includes('retenção') || text.includes('congestion') || text.includes('lentidão')) emoji = '🚗';
+
+            let sevClass = 'waze-pin-medio';
+            let borderColor = '#f59e0b';
+            if (sev === 'CRÍTICO') {
+                sevClass = 'waze-pin-crit';
+                borderColor = '#ef4444';
+            } else if (sev === 'ALTO') {
+                sevClass = 'waze-pin-alto';
+                borderColor = '#f97316';
+            } else if (sev === 'BAIXO') {
+                sevClass = 'waze-pin-baixo';
+                borderColor = '#0284c7';
             }
 
             const icon = L.divIcon({
-                className: 'ta-leaflet-marker',
-                html: `<div class="${markerClass}" title="${this._escapeHtml(inc.title || inc.corridor || 'Incidente')}"></div>`,
-                iconSize: [22, 22],
-                iconAnchor: [11, 11]
+                className: 'waze-incident-pin',
+                html: `<div class="waze-pin-inner ${sevClass}" style="border-color:${borderColor};" title="${this._escapeHtml(inc.title || inc.corridor || 'Incidente')}"><span>${emoji}</span></div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
             });
 
             const marker = L.marker([lat, lng], { icon });
@@ -150,7 +169,7 @@ export class TrafficAlertMap {
 
             marker.bindPopup(`
                 <div style="font-family:sans-serif; font-size:11px; color:#0f172a; line-height:1.4;">
-                    <div style="font-weight:bold; color:#0284c7;">${safeTitle}</div>
+                    <div style="font-weight:bold; color:${borderColor};">${emoji} ${safeTitle}</div>
                     <div style="font-size:10px; color:#475569;">${safeVia}</div>
                     <div style="margin-top:4px; font-weight:800;">Severidade: ${safeSev}</div>
                 </div>
@@ -163,6 +182,64 @@ export class TrafficAlertMap {
             });
 
             this.incidentLayer.addLayer(marker);
+        });
+    }
+
+    /**
+     * Renderiza sobreposição das condições de trânsito em tempo real nos corredores.
+     */
+    renderTrafficConditions(trafficData = []) {
+        if (!this.map || !this.corridorLayer) return;
+        this.corridorLayer.clearLayers();
+
+        const CORRIDOR_COORDS = {
+            'Linha Vermelha': [[-22.8130, -43.2480], [-22.8450, -43.2380], [-22.8800, -43.2350], [-22.9050, -43.2100], [-22.9100, -43.1950]],
+            'Linha Amarela': [[-22.8600, -43.2380], [-22.8850, -43.2600], [-22.8980, -43.2650], [-22.9300, -43.3200], [-22.9800, -43.3650]],
+            'Av. Brasil': [[-22.8980, -43.2100], [-22.8550, -43.2800], [-22.8450, -43.3000], [-22.8300, -43.3600], [-22.8500, -43.5400]],
+            'Avenida Brasil': [[-22.8980, -43.2100], [-22.8550, -43.2800], [-22.8450, -43.3000], [-22.8300, -43.3600], [-22.8500, -43.5400]],
+            'Ponte Rio-Niterói': [[-22.8750, -43.1100], [-22.8850, -43.1600], [-22.8900, -43.2000]],
+            'Presidente Dutra': [[-22.7550, -43.4500], [-22.7850, -43.3900], [-22.8150, -43.3450], [-22.8300, -43.3300]],
+            'Transolímpica': [[-22.8650, -43.3950], [-22.8720, -43.3870], [-22.9200, -43.4000], [-22.9600, -43.4150], [-23.0000, -43.4300]],
+            'Centro (Pres. Vargas)': [[-22.9030, -43.1780], [-22.9050, -43.1850], [-22.9080, -43.1920], [-22.9100, -43.2050]],
+            'Zona Sul (Aterro / Copacabana)': [[-22.9180, -43.1720], [-22.9350, -43.1750], [-22.9650, -43.1790], [-22.9850, -43.1900]],
+            'Barra da Tijuca (Ayrton Senna)': [[-22.9800, -43.3650], [-22.9900, -43.3600], [-23.0000, -43.3300], [-23.0080, -43.3100]]
+        };
+
+        const getTrafficColor = (status) => {
+            const s = String(status).toLowerCase();
+            if (s.includes('normal') || s.includes('livre')) return '#10b981';
+            if (s.includes('moderado')) return '#f59e0b';
+            if (s.includes('lento') || s.includes('intenso')) return '#f97316';
+            if (s.includes('crítico') || s.includes('critico')) return '#ef4444';
+            return '#10b981';
+        };
+
+        trafficData.forEach(item => {
+            let coords = CORRIDOR_COORDS[item.via];
+            if (!coords) {
+                const k = Object.keys(CORRIDOR_COORDS).find(key => item.via.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(item.via.toLowerCase()));
+                if (k) coords = CORRIDOR_COORDS[k];
+            }
+            if (!coords) return;
+
+            const color = getTrafficColor(item.status);
+            const line = L.polyline(coords, {
+                color,
+                weight: 5,
+                opacity: 0.8,
+                dashArray: item.status === 'Lento' || item.status === 'Crítico' ? '8, 6' : null
+            });
+
+            line.bindPopup(`
+                <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+                    <strong style="color:${color}; text-transform:uppercase;">${this._escapeHtml(item.via)}</strong><br>
+                    <strong>Fluxo:</strong> ${this._escapeHtml(item.status)}<br>
+                    <strong>Tempo:</strong> ${item.tempoAtual} min (Ref: ${item.tempoReferencia} min)<br>
+                    <strong>Diferença:</strong> ${this._escapeHtml(item.diferenca)}
+                </div>
+            `);
+
+            this.corridorLayer.addLayer(line);
         });
     }
 

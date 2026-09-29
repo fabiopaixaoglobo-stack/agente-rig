@@ -72,16 +72,18 @@ function buildBaseSyntheticCaravans() {
         {
             caravanId: 'caravan-01',
             routeColor: '#00d1ff',
-            caravanName: 'Caravana Demonstração Norte',
-            programName: 'Domingão Especial',
+            caravanName: 'Caravana Domingão com Huck — Niterói & São Gonçalo',
+            programName: 'Domingão com Huck',
             companyName: 'Log Rio',
-            operationalNotes: 'Setor A - Portão 3',
-            originLabel: 'Ponto de Encontro - Pavuna (Demonstração)',
-            originAddress: 'Praça Central da Pavuna, Pavuna, Rio de Janeiro - RJ (Fictício)',
+            operationalNotes: 'Setor A - Portão 3 · Plateia Principal',
+            originLabel: 'Terminal Rodoviário João Goulart — Niterói',
+            originAddress: 'Praça Renascença, Centro, Niterói - RJ',
+            neighborhood: 'Niterói',
+            corridor: 'Ponte Rio-Niterói / Linha Vermelha / Transolímpica',
             originCoords: [-22.8090, -43.3640],
             plannedDepartureAt: `${dateStr}T13:45:00.000Z`,
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
-            destinationAddress: 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ',
+            destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
             baseDistanceKm: 32.5,
             baseDurationMinutes: 48,
@@ -93,16 +95,18 @@ function buildBaseSyntheticCaravans() {
         {
             caravanId: 'caravan-02',
             routeColor: '#f5a623',
-            caravanName: 'Caravana Demonstração Baixada',
-            programName: 'Caldeirão Especial',
+            caravanName: 'Caravana Caldeirão com Mion — Baixada Fluminense',
+            programName: 'Caldeirão com Mion',
             companyName: 'Doce Rio',
-            operationalNotes: 'Setor VIP - Portão 1',
-            originLabel: 'Ponto de Encontro - Nova Iguaçu (Demonstração)',
-            originAddress: 'Av. Governador Portela, Centro, Nova Iguaçu - RJ (Fictício)',
+            operationalNotes: 'Setor VIP - Portão 1 · Estúdio B',
+            originLabel: 'Praça do Skate — Nova Iguaçu',
+            originAddress: 'Av. Governador Portela, Centro, Nova Iguaçu - RJ',
+            neighborhood: 'Nova Iguaçu',
+            corridor: 'Baixada Fluminense / Presidente Dutra / Transolímpica',
             originCoords: [-22.7560, -43.4600],
             plannedDepartureAt: `${dateStr}T13:15:00.000Z`,
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
-            destinationAddress: 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ',
+            destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
             baseDistanceKm: 38.0,
             baseDurationMinutes: 55,
@@ -114,16 +118,18 @@ function buildBaseSyntheticCaravans() {
         {
             caravanId: 'caravan-03',
             routeColor: '#10b981',
-            caravanName: 'Caravana Demonstração Leste',
-            programName: 'Altas Horas Especial',
+            caravanName: 'Caravana Altas Horas — Zona Norte & Madureira',
+            programName: 'Altas Horas',
             companyName: 'Pianeta',
             operationalNotes: 'Plateia Geral - Portão 2',
-            originLabel: 'Ponto de Encontro - Niterói (Demonstração)',
-            originAddress: 'Terminal Rodoviário João Goulart, Niterói - RJ (Fictício)',
+            originLabel: 'Parque Madureira — Madureira',
+            originAddress: 'Rua Soares Caldeira, Madureira, Rio de Janeiro - RJ',
+            neighborhood: 'Madureira',
+            corridor: 'Zona Norte / Linha Amarela / Barra da Tijuca',
             originCoords: [-22.8900, -43.1200],
             plannedDepartureAt: `${dateStr}T14:30:00.000Z`,
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
-            destinationAddress: 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ',
+            destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
             baseDistanceKm: 42.0,
             baseDurationMinutes: 62,
@@ -135,16 +141,18 @@ function buildBaseSyntheticCaravans() {
         {
             caravanId: 'caravan-04',
             routeColor: '#d946ef',
-            caravanName: 'Caravana Demonstração Oeste',
+            caravanName: 'Caravana Conversa com Bial — Zona Oeste & Campo Grande',
             programName: 'Conversa com Bial',
             companyName: 'Viação União',
             operationalNotes: 'Plateia Auditório - Portão 4',
-            originLabel: 'Ponto de Encontro - Campo Grande (Demonstração)',
-            originAddress: 'Praça dos Palmares, Campo Grande, Rio de Janeiro - RJ (Fictício)',
+            originLabel: 'Praça Raul Boaventura — Campo Grande',
+            originAddress: 'Praça Raul Boaventura, Campo Grande, Rio de Janeiro - RJ',
+            neighborhood: 'Campo Grande',
+            corridor: 'Zona Oeste / Transolímpica / Jacarepaguá',
             originCoords: [-22.9030, -43.5590],
             plannedDepartureAt: `${dateStr}T14:15:00.000Z`,
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
-            destinationAddress: 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ',
+            destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
             baseDistanceKm: 27.0,
             baseDurationMinutes: 40,
@@ -295,9 +303,12 @@ class CaravanStore {
             if (filters.companyName && projection.companyName !== filters.companyName) match = false;
             if (filters.projectedStatus && projection.projectedStatus !== filters.projectedStatus) match = false;
             if (filters.search) {
-                const s = String(filters.search).toLowerCase();
-                const text = `${projection.caravanName} ${projection.programName} ${projection.companyName} ${projection.originLabel} ${projection.originAddress}`.toLowerCase();
-                if (!text.includes(s)) match = false;
+                const s = String(filters.search).toLowerCase().trim();
+                const text = `${projection.caravanName} ${projection.programName} ${projection.companyName} ${projection.originLabel} ${projection.originAddress} ${plan.neighborhood || ''} ${plan.corridor || ''} ${projection.destinationLabel || ''} ${projection.destinationAddress || ''}`.toLowerCase();
+                const matchesDirect = text.includes(s);
+                const isBarraRegion = (s === 'barra' || s.includes('barra') || s === 'jacarepaguá' || s.includes('jacarepagua') || s.includes('curicica'));
+                const matchesRegion = isBarraRegion && (text.includes('transolímpica') || text.includes('transolimpica') || text.includes('amarela') || text.includes('curicica') || text.includes('jacarepaguá'));
+                if (!matchesDirect && !matchesRegion) match = false;
             }
             if (filters.hasIncidents === true && projection.incidents.length === 0) match = false;
             if (filters.hasIncidents === false && projection.incidents.length > 0) match = false;

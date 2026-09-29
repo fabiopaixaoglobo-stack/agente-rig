@@ -83,8 +83,23 @@ async function runCaravanasProductionValidation() {
         // ETAPA 2: VALIDAÇÃO DA INTERFACE DEDICADA DE PRODUÇÃO (/caravanas.html)
         // =========================================================================
         console.log('\n[2/4] Testando Interface Dedicada (/caravanas.html)...');
+
+        // 2.0 Teste de Controle de Acesso P1: acesso sem token redireciona para login (/)
+        const unauthContext = await browser.newContext();
+        const unauthPage = await unauthContext.newPage();
+        await unauthPage.goto(`http://127.0.0.1:${PORT}/caravanas.html`);
+        await unauthPage.waitForTimeout(500);
+        const unauthUrl = unauthPage.url();
+        check('Controle de Acesso (P1): Acesso direto sem token redireciona para login (/)', unauthUrl.endsWith('/') || unauthUrl.includes('login') || unauthUrl === `http://127.0.0.1:${PORT}/`);
+        await unauthContext.close();
+
+        // 2.1 Acesso Autenticado
         const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
         const page = await context.newPage();
+        await page.addInitScript(() => {
+            localStorage.setItem('rit_token', 'jwt-token-valido-cco');
+            localStorage.setItem('rit_user', JSON.stringify({ nome: 'Fábio Paixão', funcao: 'CCO Transportes' }));
+        });
 
         const consoleErrors = [];
         page.on('console', msg => {
@@ -99,12 +114,15 @@ async function runCaravanasProductionValidation() {
         const pageTitle = await page.title();
         check('Título oficial da página de produção de Caravanas', pageTitle.includes('Caravanas Inteligentes'));
 
-        // Header links
+        // Header links & Sessão
         const hasDashboardLink = await page.locator('header a[href="/dashboard.html"]').count() > 0;
         check('Cabeçalho contém atalho para o Painel Gerencial (/dashboard.html)', hasDashboardLink);
 
         const hasApresentacaoLink = await page.locator('header a[href="/apresentacao.html"]').count() > 0;
         check('Cabeçalho contém atalho para Como Funciona (/apresentacao.html)', hasApresentacaoLink);
+
+        const sessionName = await page.locator('#user-session-name').innerText();
+        check('Sessão do Operador exibida no cabeçalho', sessionName.includes('FÁBIO PAIXÃO'));
 
         // KPIs visíveis
         const kpiTotalVisible = await page.locator('#kpi-crv-total').isVisible();
@@ -118,6 +136,27 @@ async function runCaravanasProductionValidation() {
         const caravanCards = await page.locator('.caravan-card').count();
         check('Feed operacional renderizou cards de caravanas', caravanCards >= 4);
 
+        // Validação P1: Remoção de Caravanas Simuladas e uso de Operações Reais
+        const pageContent = await page.content();
+        check('Remoção de Caravanas Simuladas (P1): Zero ocorrências de "Caravana Demonstração"', !pageContent.includes('Caravana Demonstração'));
+        check('Operações Reais de Produção (P1): Presença de Huck, Mion, Altas Horas ou Bial', 
+            pageContent.includes('Huck') || pageContent.includes('Mion') || pageContent.includes('Altas Horas') || pageContent.includes('Bial'));
+
+        // Validação P2: Distância em KM visível
+        check('Caravana com Distância em KM (P2): Quilometragem visível nos cards de caravanas', pageContent.includes('km'));
+
+        // Validação P1: Busca por Bairro (Niterói, Madureira, Barra, etc.)
+        await page.fill('#filter-search', 'Niterói');
+        await page.waitForTimeout(350);
+        const niteroiFilteredCount = await page.locator('.caravan-card').count();
+        check('Busca por Bairro (P1): Busca por "Niterói" filtra corretamente as caravanas', niteroiFilteredCount >= 1);
+        await page.fill('#filter-search', '');
+        await page.waitForTimeout(350);
+
+        // Validação P1 & P2: Ícones Waze e Trânsito no Mapa Unificado
+        const wazeMarkers = await page.locator('.waze-incident-pin').count();
+        check('Ocorrências com Ícones Operacionais Waze (P2) no mapa', wazeMarkers >= 1);
+
         // Captura do ambiente standalone
         const shotStandalone = path.join(SCREENSHOTS_DIR, 'caravanas_producao_standalone.png');
         await page.screenshot({ path: shotStandalone });
@@ -130,6 +169,9 @@ async function runCaravanasProductionValidation() {
         await page.waitForTimeout(400);
         const drawerVisible = await page.locator('#tactical-drawer').isVisible();
         check('Drawer tático abriu com detalhes da caravana', drawerVisible);
+
+        const drawerContent = await page.locator('#tactical-drawer').innerText();
+        check('Distância em KM presente no Drawer Tático', drawerContent.includes('km'));
 
         const shotDrawer = path.join(SCREENSHOTS_DIR, 'caravanas_producao_drawer.png');
         await page.screenshot({ path: shotDrawer });
