@@ -1,0 +1,30 @@
+{
+  "name": "RIT Drive — Navegação Corporativa Inteligente",
+  "short_name": "RIT Drive",
+  "description": "Navegação operacional, score de risco e monitoramento de rotas em tempo real",
+  "start_url": "/rit-drive",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050A0F",
+  "theme_color": "#050A0F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/android-chrome-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

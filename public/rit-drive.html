@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RIT Drive" />
+  <meta name="theme-color" content="#050A0F" />
+  <title>RIT Drive — Navegação Veicular Inteligente (Map-First)</title>
+
+  <!-- Favicons & Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Fonts & Icons CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- RIT Drive Dedicated CSS -->
+  <link rel="stylesheet" href="/styles/rit-drive.css?v=2.0.0" />
+</head>
+
+<body>
+  <div class="rit-drive-app">
+    
+    <!-- 1. MAPA LEAFLET 100% DA VIEWPORT (MAP-FIRST ARCHITECTURE) -->
+    <div id="mapMobile" class="nav-map-container"></div>
+
+    <!-- 2. COCKPIT SUPERIOR: BANNER DE MANOBRA VEICULAR (ESTILO WAZE / MAPS) -->
+    <header id="nav-top-banner" class="nav-top-banner" role="banner" style="display:none;">
+      <div class="maneuver-primary-block">
+        <div id="maneuver-icon-container" class="maneuver-icon-box" aria-hidden="true">
+          <!-- Ícone de Manobra SVG injetado dinamicamente -->
+        </div>
+        <div class="maneuver-text-box">
+          <div id="maneuver-distance-text" class="maneuver-distance">-- m</div>
+          <div id="maneuver-street-text" class="maneuver-street">Carregando trajeto...</div>
+        </div>
+      </div>
+
+      <!-- Sub-banner da manobra subsequente ("Depois, ...") -->
+      <div id="sub-maneuver-row" class="sub-maneuver-strip" style="display:none;">
+        <span id="sub-maneuver-icon" class="sub-icon"></span>
+        <span id="sub-maneuver-text" class="sub-text">em seguida, curva</span>
+      </div>
+    </header>
+
+    <!-- 3. BARRA DE BUSCA / POIS RÁPIDOS (QUANDO EM ESPERA / IDLE) -->
+    <div id="nav-search-bar" class="nav-search-bar">
+      <div class="search-top-header">
+        <div class="brand-badge">
+          <i class="fa-solid fa-shield-halved" style="color:var(--cyan);"></i>
+          <span>RIT DRIVE</span>
+          <small class="version-tag">PRO</small>
+        </div>
+        <div class="quick-sim-controls">
+          <button id="btn-sim-toggle" class="btn-sim-quick" title="Iniciar/Pausar Simulação Veicular">
+            <i class="fa-solid fa-play"></i> Simular
+          </button>
+          <select id="sim-speed-select" class="sel-sim-speed" title="Multiplicador de Velocidade Monotônica">
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="5" selected>5x</option>
+            <option value="10">10x</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Atalhos de Destino 1-Toque -->
+      <div class="quick-dest-row">
+        <button class="quick-dest-btn active" data-target="globo_projac_sdu">
+          <i class="fa-solid fa-building"></i> Projac ➔ SDU
+        </button>
+        <button class="quick-dest-btn" data-target="barra_galeao">
+          <i class="fa-solid fa-plane-departure"></i> Barra ➔ Galeão
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. BOTÃO FLUTUANTE RECENTRALIZAR (APARECE SE O USUÁRIO ARRASTAR O MAPA) -->
+    <button id="btn-recenter-floating" class="btn-recenter-pill" style="display:none;" title="Recentralizar no Veículo">
+      <i class="fa-solid fa-crosshairs"></i>
+      <span>Recentralizar</span>
+    </button>
+
+    <!-- 5. BOTÕES FLUTUANTES DE AÇÃO RÁPIDA (FABS) -->
+    <div class="nav-floating-fabs">
+      <!-- Alternar Voz (Web Speech API) -->
+      <button id="btn-toggle-voice" class="fab-circle" title="Alternar Instruções de Voz" aria-label="Voz desativada">
+        <i class="fa-solid fa-volume-xmark"></i>
+      </button>
+
+      <!-- Resumo de Ocorrências no Corredor (Ocorrências da Minha Corrida) -->
+      <button id="btn-incidents-corridor-pill" class="fab-pill-incidents" title="Ver Ocorrências no Corredor da Rota">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="incidents-corridor-count" class="incidents-count">0</span>
+      </button>
+
+      <!-- Telemetria Sob Demanda -->
+      <button id="btn-toggle-telemetry" class="fab-circle" title="Abrir Telemetria Veicular">
+        <i class="fa-solid fa-gauge-simple-high"></i>
+      </button>
+
+      <!-- Link Command Center -->
+      <a href="/dashboard.html" class="fab-circle" title="Voltar ao Centro de Comando" style="text-decoration:none;">
+        <i class="fa-solid fa-gauge-high"></i>
+      </a>
+    </div>
+
+    <!-- 6. PAINEL DE TELEMETRIA RETRÁTIL SOB DEMANDA (FECHADO POR PADRÃO) -->
+    <div id="nav-telemetry-panel" class="nav-telemetry-panel" role="region" aria-label="Telemetria Veicular">
+      <div class="telemetry-panel-header">
+        <div class="telemetry-panel-title">
+          <i class="fa-solid fa-satellite-dish" style="color:var(--cyan);"></i>
+          <span>Telemetria Veicular & Sensores</span>
+        </div>
+        <button id="btn-close-telemetry" class="btn-close-tel" aria-label="Fechar Telemetria">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="tel-card speedometer">
+          <div id="tel-speed-val" class="tel-number">0</div>
+          <div class="tel-label">KM/H • VELOCIDADE</div>
+        </div>
+        <div class="tel-card heading">
+          <div id="tel-heading-val" class="tel-number">--°</div>
+          <div class="tel-label">RUMO / BEARING</div>
+        </div>
+        <div class="tel-card">
+          <div class="tel-label">BATERIA</div>
+          <div id="tel-battery-val" class="tel-val-sub">--%</div>
+        </div>
+        <div class="tel-card">
+          <div class="tel-label">REDE</div>
+          <div id="tel-network-val" class="tel-val-sub">--</div>
+        </div>
+        <div class="tel-card">
+          <div class="tel-label">ALTITUDE</div>
+          <div id="tel-altitude-val" class="tel-val-sub">-- m</div>
+        </div>
+        <div class="tel-card">
+          <div class="tel-label">PRECISÃO GPS</div>
+          <div id="tel-accuracy-val" class="tel-val-sub">-- m</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. HUD INFERIOR DE NAVEGAÇÃO (ESTILO WAZE / MAPS) -->
+    <footer id="nav-bottom-hud" class="nav-bottom-hud" role="region" aria-label="Status da Corrida" style="display:none;">
+      <!-- Puxador de Arrasto para Abrir a Gaveta -->
+      <div id="drawer-handle" class="hud-handle-bar" title="Puxar para ver detalhes da rota">
+        <div class="handle-pill"></div>
+      </div>
+
+      <div class="hud-content-row">
+        <!-- Botão Cancelar / Encerrar Rota -->
+        <button id="btn-end-route" class="btn-end-nav" title="Encerrar navegação da rota" aria-label="Encerrar navegação">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Métricas da Viagem: Tempo, Distância e ETA -->
+        <div class="hud-metrics-group">
+          <div id="hud-duration-val" class="hud-primary-time">-- min</div>
+          <div class="hud-sub-info">
+            <span id="hud-distance-val">-- km</span>
+            <span class="hud-dot">•</span>
+            <span id="hud-eta-val">ETA --:--</span>
+          </div>
+        </div>
+
+        <!-- Indicador de Status RIT -->
+        <div class="hud-status-badge">
+          <span class="status-pulse-dot"></span>
+          <span>RIT ON</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 8. GAVETA EXPANSÍVEL DE DETALHES DA CORRIDA (BOTTOM SHEET) -->
+    <aside id="nav-details-drawer" class="nav-details-drawer" aria-label="Detalhes da Rota">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <i class="fa-solid fa-route" style="color:var(--cyan);"></i>
+          <span>Ocorrências na Minha Corrida</span>
+        </div>
+      </div>
+
+      <div class="drawer-scroll-body">
+        <!-- Lista de Incidentes Filtrados estritamente no Trecho -->
+        <div id="drawer-incidents-list" class="drawer-incidents-container">
+          <div style="padding:12px; text-align:center; color:#64748B; font-size:12px;">
+            Aguardando sincronização de ocorrências...
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module">
+    import { bootstrapRitDrive } from '/js/rit-drive/bootstrap.js';
+    document.addEventListener('DOMContentLoaded', () => {
+      bootstrapRitDrive();
+    });
+  </script>
+</body>
+</html>

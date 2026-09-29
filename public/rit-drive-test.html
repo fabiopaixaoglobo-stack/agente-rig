@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RIT Drive — Centro de Testes, Diagnóstico & Simulação</title>
+
+  <!-- Fonts & Icons CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Estilos da Aplicação Principal e Estilos do Harness -->
+  <link rel="stylesheet" href="/styles/rit-drive.css?v=2.0.0" />
+  <link rel="stylesheet" href="/styles/rit-drive-test.css?v=2.0.0" />
+</head>
+
+<body>
+  <div class="test-harness-layout">
+    
+    <!-- BARRA LATERAL DE CONTROLE E DIAGNÓSTICO (ZERO IFRAMES) -->
+    <aside class="test-control-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fa-solid fa-vial-circle-check" style="color:var(--cyan);"></i>
+          <span>RIT DRIVE TEST HARNESS</span>
+        </div>
+        <a href="/rit-drive" class="btn-live-app" target="_blank" title="Abrir App Principal">
+          App Live <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
+      </div>
+
+      <!-- 1. Seletor de Resolução Sintética de Viewport -->
+      <section class="test-section">
+        <div class="section-title"><i class="fa-solid fa-display"></i> Viewport Preset</div>
+        <div class="viewport-btn-grid">
+          <button class="btn-preset active" data-w="100%" data-h="100%">Full 100%</button>
+          <button class="btn-preset" data-w="1280px" data-h="800px">1280x800</button>
+          <button class="btn-preset" data-w="393px" data-h="852px">iPhone 393px</button>
+          <button class="btn-preset" data-w="360px" data-h="640px">Android 360px</button>
+        </div>
+      </section>
+
+      <!-- 2. Seletor de Rotas Autorizadas -->
+      <section class="test-section">
+        <div class="section-title"><i class="fa-solid fa-route"></i> Rotas Autorizadas</div>
+        <div class="routes-btn-grid">
+          <button class="btn-route-sel active" data-route="globo_projac_sdu">Projac ➔ SDU (38 km)</button>
+          <button class="btn-route-sel" data-route="barra_galeao">Barra ➔ Galeão (32 km)</button>
+        </div>
+      </section>
+
+      <!-- 3. Controles do Motor de Simulação -->
+      <section class="test-section">
+        <div class="section-title"><i class="fa-solid fa-gauge-high"></i> Motor de Simulação</div>
+        <div class="sim-btn-row">
+          <button id="btn-test-sim-toggle" class="btn-action primary">
+            <i class="fa-solid fa-play"></i> Iniciar
+          </button>
+          <button id="btn-test-sim-step" class="btn-action">
+            <i class="fa-solid fa-forward-step"></i> +300m
+          </button>
+          <button id="btn-test-sim-restart" class="btn-action danger">
+            <i class="fa-solid fa-rotate-left"></i> Reiniciar
+          </button>
+        </div>
+        <div class="sim-speed-row">
+          <span style="font-size:11px; color:#94A3B8;">Velocidade:</span>
+          <div class="speed-chips">
+            <button class="speed-chip" data-speed="1">1x</button>
+            <button class="speed-chip" data-speed="2">2x</button>
+            <button class="speed-chip active" data-speed="5">5x</button>
+            <button class="speed-chip" data-speed="10">10x</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Injetor de Ocorrências Sintéticas (source='test') -->
+      <section class="test-section">
+        <div class="section-title"><i class="fa-solid fa-syringe"></i> Injetor de Incidentes (Test)</div>
+        <div class="inject-buttons">
+          <button class="btn-inject" data-type="acidente" data-pos="ahead">
+            <i class="fa-solid fa-car-burst"></i> Acidente +300m (À frente)
+          </button>
+          <button class="btn-inject" data-type="alagamento" data-pos="ahead">
+            <i class="fa-solid fa-water"></i> Alagamento +600m (À frente)
+          </button>
+          <button class="btn-inject" data-type="tiroteio" data-pos="ahead">
+            <i class="fa-solid fa-triangle-exclamation"></i> Tiroteio +800m (Crítico)
+          </button>
+          <button class="btn-inject rejected" data-type="engarrafamento" data-pos="behind">
+            <i class="fa-solid fa-ban"></i> Incidente -400m (Atrás / Rejeitar)
+          </button>
+          <button class="btn-inject rejected" data-type="blitz" data-pos="lateral">
+            <i class="fa-solid fa-ban"></i> Incidente 800m fora (Rejeitar)
+          </button>
+        </div>
+      </section>
+
+      <!-- 5. Testador de Voz e Áudio -->
+      <section class="test-section">
+        <div class="section-title"><i class="fa-solid fa-volume-high"></i> Teste de Voz Web Speech</div>
+        <button id="btn-test-speech" class="btn-action" style="width:100%;">
+          <i class="fa-solid fa-bullhorn"></i> Testar Anúncio de Curva
+        </button>
+      </section>
+
+      <!-- 6. Feed de Eventos e Telemetria em Tempo Real (In-Memory) -->
+      <section class="test-section log-section">
+        <div class="section-title"><i class="fa-solid fa-terminal"></i> Log de Eventos Sanitizado</div>
+        <div id="test-events-log" class="test-events-terminal"></div>
+      </section>
+    </aside>
+
+    <!-- PALCO DE EXECUÇÃO DA NAVEGAÇÃO REDIMENSIONÁVEL (SEM IFRAME) -->
+    <main class="test-stage-wrapper">
+      <div id="test-canvas-container" class="test-canvas-resizable">
+        
+        <!-- Componentes da Aplicação Principal Montados Diretamente -->
+        <div class="rit-drive-app">
+          <div id="mapMobile" class="nav-map-container"></div>
+
+          <!-- Top Maneuver Banner -->
+          <header id="nav-top-banner" class="nav-top-banner" role="banner" style="display:none;">
+            <div class="maneuver-primary-block">
+              <div id="maneuver-icon-container" class="maneuver-icon-box" aria-hidden="true"></div>
+              <div class="maneuver-text-box">
+                <div id="maneuver-distance-text" class="maneuver-distance">-- m</div>
+                <div id="maneuver-street-text" class="maneuver-street">Carregando trajeto...</div>
+              </div>
+            </div>
+            <div id="sub-maneuver-row" class="sub-maneuver-strip" style="display:none;">
+              <span id="sub-maneuver-icon" class="sub-icon"></span>
+              <span id="sub-maneuver-text" class="sub-text">em seguida</span>
+            </div>
+          </header>
+
+          <!-- Search Bar Idle -->
+          <div id="nav-search-bar" class="nav-search-bar">
+            <div class="search-top-header">
+              <div class="brand-badge">
+                <i class="fa-solid fa-shield-halved" style="color:var(--cyan);"></i>
+                <span>RIT DRIVE</span>
+                <small class="version-tag">TESTBED</small>
+              </div>
+            </div>
+            <div class="quick-dest-row">
+              <button class="quick-dest-btn active" data-target="globo_projac_sdu">Projac ➔ SDU</button>
+              <button class="quick-dest-btn" data-target="barra_galeao">Barra ➔ Galeão</button>
+            </div>
+          </div>
+
+          <!-- Recenter Button -->
+          <button id="btn-recenter-floating" class="btn-recenter-pill" style="display:none;" title="Recentralizar no Veículo">
+            <i class="fa-solid fa-crosshairs"></i>
+            <span>Recentralizar</span>
+          </button>
+
+          <!-- Floating FABs -->
+          <div class="nav-floating-fabs">
+            <button id="btn-toggle-voice" class="fab-circle" title="Alternar Voz">
+              <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+            <button id="btn-incidents-corridor-pill" class="fab-pill-incidents" title="Ocorrências no Corredor">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span id="incidents-corridor-count" class="incidents-count">0</span>
+            </button>
+            <button id="btn-toggle-telemetry" class="fab-circle" title="Telemetria">
+              <i class="fa-solid fa-gauge-simple-high"></i>
+            </button>
+          </div>
+
+          <!-- Telemetry Panel -->
+          <div id="nav-telemetry-panel" class="nav-telemetry-panel" role="region">
+            <div class="telemetry-panel-header">
+              <div class="telemetry-panel-title">
+                <i class="fa-solid fa-satellite-dish" style="color:var(--cyan);"></i>
+                <span>Telemetria em Tempo Real</span>
+              </div>
+              <button id="btn-close-telemetry" class="btn-close-tel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="telemetry-grid">
+              <div class="tel-card speedometer">
+                <div id="tel-speed-val" class="tel-number">0</div>
+                <div class="tel-label">KM/H</div>
+              </div>
+              <div class="tel-card heading">
+                <div id="tel-heading-val" class="tel-number">--°</div>
+                <div class="tel-label">HEADING</div>
+              </div>
+              <div class="tel-card">
+                <div class="tel-label">BATERIA</div>
+                <div id="tel-battery-val" class="tel-val-sub">--%</div>
+              </div>
+              <div class="tel-card">
+                <div class="tel-label">REDE</div>
+                <div id="tel-network-val" class="tel-val-sub">--</div>
+              </div>
+              <div class="tel-card">
+                <div class="tel-label">ALTITUDE</div>
+                <div id="tel-altitude-val" class="tel-val-sub">-- m</div>
+              </div>
+              <div class="tel-card">
+                <div class="tel-label">PRECISÃO</div>
+                <div id="tel-accuracy-val" class="tel-val-sub">-- m</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom HUD -->
+          <footer id="nav-bottom-hud" class="nav-bottom-hud" role="region" style="display:none;">
+            <div id="drawer-handle" class="hud-handle-bar">
+              <div class="handle-pill"></div>
+            </div>
+            <div class="hud-content-row">
+              <button id="btn-end-route" class="btn-end-nav"><i class="fa-solid fa-xmark"></i></button>
+              <div class="hud-metrics-group">
+                <div id="hud-duration-val" class="hud-primary-time">-- min</div>
+                <div class="hud-sub-info">
+                  <span id="hud-distance-val">-- km</span>
+                  <span class="hud-dot">•</span>
+                  <span id="hud-eta-val">ETA --:--</span>
+                </div>
+              </div>
+              <div class="hud-status-badge">
+                <span class="status-pulse-dot"></span>
+                <span>TEST ON</span>
+              </div>
+            </div>
+          </footer>
+
+          <!-- Drawer -->
+          <aside id="nav-details-drawer" class="nav-details-drawer">
+            <div class="drawer-header">
+              <div class="drawer-title">
+                <i class="fa-solid fa-route" style="color:var(--cyan);"></i>
+                <span>Ocorrências no Trecho</span>
+              </div>
+            </div>
+            <div class="drawer-scroll-body">
+              <div id="drawer-incidents-list" class="drawer-incidents-container"></div>
+            </div>
+          </aside>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="/js/rit-drive-test/test-harness.js"></script>
+</body>
+</html>

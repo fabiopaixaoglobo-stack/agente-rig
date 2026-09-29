@@ -1,0 +1,683 @@
+/* ==========================================================================
+   RIT DRIVE — Design System Veicular Profissional (Map-First Architecture)
+   Otimizado para Cockpit Móvel, Tablet e Desktop (Turn-by-Turn Guidance)
+   ========================================================================== */
+
+:root {
+  --cyan: #00D1FF;
+  --cyan-bright: #38BDF8;
+  --cyan-glow: rgba(0, 209, 255, 0.3);
+  --dark-bg: #050A0F;
+  --dark-surface: #0A1420;
+  --dark-card: rgba(10, 20, 32, 0.94);
+  --glass-border: rgba(0, 209, 255, 0.22);
+  --text-main: #FFFFFF;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  --good: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --safe-top: env(safe-area-inset-top, 16px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--dark-bg);
+  font-family: var(--font-family);
+  color: var(--text-main);
+  user-select: none;
+}
+
+/* ==========================================================================
+   1. VIEWPORT & CONTAINER MAP-FIRST
+   ========================================================================== */
+.rit-drive-app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: block;
+}
+
+/* Mapa Leaflet Ocupa 100% da Viewport de Ponta a Ponta */
+.nav-map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background: #050A0F;
+}
+
+/* ==========================================================================
+   2. COCKPIT SUPERIOR: BANNER DE MANOBRA VEICULAR (TOP BANNER)
+   ========================================================================== */
+.nav-top-banner {
+  position: absolute;
+  top: max(14px, var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 540px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, rgba(8, 26, 38, 0.96) 0%, rgba(4, 16, 24, 0.96) 100%);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(0, 209, 255, 0.15);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  animation: slideDownBanner 0.3s ease-out;
+}
+
+@keyframes slideDownBanner {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.maneuver-primary-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.maneuver-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(0, 209, 255, 0.12);
+  border: 1.5px solid rgba(0, 209, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.maneuver-text-box {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.maneuver-distance {
+  font-size: 26px;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.maneuver-street {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cyan-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.sub-maneuver-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sub-maneuver-strip .sub-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   3. BARRA DE BUSCA E POIS RÁPIDOS (IDLE MODE)
+   ========================================================================== */
+.nav-search-bar {
+  position: absolute;
+  top: max(14px, var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 540px;
+  z-index: 100;
+  background: var(--dark-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 12px 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+}
+
+.search-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.version-tag {
+  background: rgba(0, 209, 255, 0.2);
+  color: var(--cyan);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.quick-sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sim-quick {
+  background: var(--cyan);
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 11.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+
+.btn-sim-quick:hover {
+  opacity: 0.9;
+}
+
+.sel-sim-speed {
+  background: #0A1420;
+  border: 1px solid var(--glass-border);
+  color: #FFF;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quick-dest-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.quick-dest-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFF;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.quick-dest-btn:hover, .quick-dest-btn.active {
+  background: rgba(0, 209, 255, 0.18);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ==========================================================================
+   4. BOTÕES FLUTUANTES (FABS) & RECENTRALIZAR
+   ========================================================================== */
+.btn-recenter-pill {
+  position: absolute;
+  bottom: max(96px, calc(var(--safe-bottom) + 80px));
+  left: 20px;
+  z-index: 95;
+  background: #0F172A;
+  border: 1.5px solid var(--cyan);
+  color: #FFF;
+  padding: 10px 18px;
+  border-radius: 28px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 209, 255, 0.35);
+  cursor: pointer;
+  animation: pulseRecenter 2s infinite;
+}
+
+@keyframes pulseRecenter {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 209, 255, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 209, 255, 0); }
+}
+
+.nav-floating-fabs {
+  position: absolute;
+  right: 18px;
+  bottom: max(96px, calc(var(--safe-bottom) + 80px));
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.fab-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--dark-card);
+  border: 1.5px solid var(--glass-border);
+  color: #FFF;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fab-circle:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  transform: scale(1.05);
+}
+
+.fab-circle.voice-active {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.fab-pill-incidents {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 22px;
+  background: var(--dark-card);
+  border: 1.5px solid var(--glass-border);
+  color: #FFF;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fab-pill-incidents.has-incidents {
+  border-color: #EF4444;
+  color: #EF4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+}
+
+.incidents-count {
+  background: #EF4444;
+  color: #FFF;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+/* ==========================================================================
+   5. HUD INFERIOR DE NAVEGAÇÃO (BOTTOM HUD)
+   ========================================================================== */
+.nav-bottom-hud {
+  position: absolute;
+  bottom: max(12px, var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 540px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--dark-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.hud-handle-bar {
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.handle-pill {
+  width: 42px;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hud-content-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 18px 14px 18px;
+}
+
+.btn-end-nav {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1.5px solid #EF4444;
+  color: #EF4444;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-end-nav:hover {
+  background: #EF4444;
+  color: #FFF;
+}
+
+.hud-metrics-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hud-primary-time {
+  font-size: 26px;
+  font-weight: 900;
+  color: #10B981;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.hud-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.hud-dot {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.hud-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10B981;
+  color: #10B981;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.status-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* ==========================================================================
+   6. GAVETA EXPANSÍVEL DE DETALHES (DRAWER)
+   ========================================================================== */
+.nav-details-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  width: 100%;
+  max-width: 580px;
+  height: 60vh;
+  max-height: 500px;
+  background: #08111A;
+  border-top: 2px solid var(--cyan);
+  border-radius: 24px 24px 0 0;
+  z-index: 120;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-details-drawer.expanded {
+  transform: translate(-50%, 0);
+}
+
+.drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawer-title {
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+
+.drawer-incident-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.drawer-incident-card.severity-alta {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.incident-card-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.incident-card-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #FFF;
+}
+
+.incident-card-loc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 2px 0;
+}
+
+.incident-card-dist {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan-bright);
+}
+
+.incident-card-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   7. PAINEL DE TELEMETRIA SOB DEMANDA
+   ========================================================================== */
+.nav-telemetry-panel {
+  position: absolute;
+  top: max(14px, var(--safe-top));
+  left: 50%;
+  transform: translate(-50%, -120%);
+  width: calc(100% - 24px);
+  max-width: 520px;
+  z-index: 150;
+  background: rgba(8, 16, 26, 0.96);
+  border: 1.5px solid var(--cyan);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 209, 255, 0.2);
+  backdrop-filter: blur(14px);
+  padding: 18px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-telemetry-panel.active {
+  transform: translate(-50%, 0);
+}
+
+.telemetry-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.telemetry-panel-title {
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-close-tel {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.btn-close-tel:hover {
+  color: #FFF;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tel-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tel-card.speedometer {
+  grid-column: 1 / 2;
+  border-color: rgba(0, 209, 255, 0.4);
+}
+
+.tel-card.heading {
+  grid-column: 2 / 3;
+}
+
+.tel-number {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.tel-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.tel-val-sub {
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFF;
+}
+
+/* ==========================================================================
+   8. RESPONSIVIDADE E COCKPIT DESKTOP / TABLET
+   ========================================================================== */
+@media (min-width: 768px) {
+  .nav-top-banner {
+    max-width: 600px;
+  }
+  .nav-bottom-hud {
+    max-width: 600px;
+  }
+}

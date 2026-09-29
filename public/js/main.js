@@ -8,6 +8,7 @@ import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.1.1';
 import { CorRio } from './CorRio.js?v=4.1.1';
 import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.2.0';
 import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.2.0';
+import { TrafficAlertView } from './traffic-alert/traffic-alert-view.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
@@ -44,6 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
         window.plannerMap = plannerMap;
         window.map = transitoMap?.map || mainMap?.map;
         window.uiController = ui;
+
+        const trafficAlertView = new TrafficAlertView();
+        trafficAlertView.init();
+        window.trafficAlertView = trafficAlertView;
+        ui.trafficAlertView = trafficAlertView;
 
         console.info(`[MapService Debug] mapTransito instanciado:`, !!transitoMap?.map, `Container offset:`, document.getElementById("mapTransito")?.offsetWidth, "x", document.getElementById("mapTransito")?.offsetHeight);
 

@@ -14,6 +14,7 @@ const { pool, initDB } = require('./database');
 const { getRobotStatus, triggerDiagnostics } = require('./robot');
 const { getFogoCruzadoOccurrences, getFogoCruzadoToken, categorizarOcorrenciaFogo } = require('./fogocruzado');
 const { analisarRiscoRota, haversineDistanceMeters } = require('./risk-engine');
+const trafficAlertRoutes = require('./traffic-alert/routes/traffic-alert-routes');
 
 function generateOpaqueToken() {
     return crypto.randomBytes(32).toString('hex');
@@ -436,6 +437,9 @@ app.get('/api/cor/calor', async (req, res) => {
     const cache = await atualizarCacheCORLive(false);
     res.send(cache.calor);
 });
+
+// RIT ALERTA - Centro Integrado de Alertas de Trânsito Público (Exposição Oficial de Backend)
+app.use('/api/traffic-alert', trafficAlertRoutes);
 
 const serverGeocodeCache = new Map();
 
@@ -2588,6 +2592,28 @@ app.get('/uber-poc', (req, res) => {
     res.sendFile(path.join(publicPath, 'uber-poc.html'));
 });
 
+app.get('/rit-drive', (req, res) => {
+    res.sendFile(path.join(publicPath, 'rit-drive.html'));
+});
+
+app.get('/rit-drive/test', (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).send('Forbidden: Test harness is disabled in production.');
+    }
+    res.sendFile(path.join(publicPath, 'rit-drive-test.html'));
+});
+
+app.post('/api/telemetria/ping', (req, res) => {
+    const { speed, heading, battery, network, altitude, accuracy, lat, lon } = req.body || {};
+    res.json({
+        ok: true,
+        received_at: new Date().toISOString(),
+        status: 'TELEMETRIA_REGISTRADA',
+        eco_score: speed > 80 ? 'ATENÇÃO_VELOCIDADE' : 'EFICIENTE'
+    });
+});
+
+
 app.use(express.static(publicPath, {
     setHeaders: (res, path) => {
         if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
@@ -2634,9 +2660,17 @@ async function iniciar() {
         console.error('⚠️ [Startup Warning] Não foi possível conectar ao banco de dados:', dbErr.message);
     }
     await carregarBases();
-    app.listen(PORT, () => {
-        console.log(`🚀 Agente RIT v3.5.1 na porta ${PORT}`);
+    const HOST = process.env.HOST || '0.0.0.0';
+    const server = app.listen(PORT, HOST, () => {
+        console.log(`🚀 Agente RIT v3.5.2 listening on http://${HOST}:${PORT} (http://localhost:${PORT})`);
         iniciarKeepAlive();
+    });
+    server.on('error', (error) => {
+        console.error('SERVER_LISTEN_ERROR', {
+            code: error.code,
+            message: error.message
+        });
+        process.exitCode = 1;
     });
 }
 

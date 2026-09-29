@@ -765,9 +765,16 @@ export class UiController {
                     console.info("[MONITORAMENTO] Acesso à aba Monitoramento bloqueado temporariamente.");
                     this.aplicarModoPrivacidadeMonitoramento();
                 }
+
+                if (targetId === 'tab-traffic-alert') {
+                    if (this.trafficAlertView) this.trafficAlertView.onTabActivated();
+                    else if (window.trafficAlertView) window.trafficAlertView.onTabActivated();
+                }
                 
                 if (this.mapService) this.mapService.invalidateSize();
                 if (this.plannerService) this.plannerService.invalidateSize();
+                if (this.trafficAlertView?.map) this.trafficAlertView.map.invalidateSize();
+                else if (window.trafficAlertView?.map) window.trafficAlertView.map.invalidateSize();
                 if (this.transitoMap) {
                     this.transitoMap.invalidateSize();
                     if (this.activeOcorrencias.length === 0) {
