@@ -5,7 +5,7 @@
   "formattedDate": "29/09/2026",
   "status": "Homologado",
   "badge": "Release Notes Vivo",
-  "summary": "Módulo Caravanas Inteligentes, Drawer Tático, Multi-Rotas em 7 Cores, Geocodificação Offline e Auditoria Probatória com Checksums SHA-256.",
+  "summary": "Centro de Roteirização & Custos Multimodal, Módulo RIT Alerta, Caravanas Inteligentes, Drawer Tático, Multi-Rotas em 7 Cores, Geocodificação Offline e Auditoria Probatória com Checksums SHA-256.",
   "metrics": {
     "unitTests": "95/95",
     "smokeTests": "20/20",
@@ -14,11 +14,29 @@
   },
   "features": [
     {
+      "id": "roteirizacao",
+      "date": "29/09/2026",
+      "name": "Centro de Roteirização & Comparativo de Custos",
+      "subtitle": "Comparativo Multimodal VAH & Projeção 24h",
+      "desc": "Simulação em tempo real entre Frota Própria Globo, UberX, 99Pop, Táxi e Cooperativa. Projeção de trânsito em 24h indicando janela ideal com até 35% de economia e -20 min.",
+      "tag": "Custos & Rotas",
+      "status": "completed"
+    },
+    {
+      "id": "rit_alerta",
+      "date": "29/09/2026",
+      "name": "Módulo RIT Alerta Viário",
+      "subtitle": "Monitoramento Autônomo de Ocorrências",
+      "desc": "Integração contínua com CET-Rio, COR, Lamsa e EcoPonte. Triagem automática por severidade (Crítico, Médio, Baixo), filtros por corredores e SLA operacional no CCO.",
+      "tag": "Alertas CCO",
+      "status": "completed"
+    },
+    {
       "id": "caravanas",
       "date": "29/09/2026",
       "name": "Caravanas Inteligentes",
       "subtitle": "Módulo 02 · Homologado",
-      "desc": "Cadastro, monitoramento de janelas de chegada, mapa dinâmico de apoio tático e integração operacional para os Estúdios Globo.",
+      "desc": "Cadastro de caravanas de auditório, monitoramento de janelas de chegada nos Estúdios Globo, mapa dinâmico de apoio tático e câmeras no trajeto ≤2.500m.",
       "tag": "Operacional",
       "status": "completed"
     },
@@ -34,9 +52,9 @@
     {
       "id": "geocode",
       "date": "29/09/2026",
-      "name": "Geocodificação Offline",
+      "name": "Geocodificação Offline Imediata",
       "subtitle": "Zero Latência Viária",
-      "desc": "Mapeamento instantâneo para 5 Centros de Distribuição e rotas sem dependência de APIs externas pagas.",
+      "desc": "Mapeamento instantâneo para 5 Centros de Distribuição e rotas sem dependência de APIs externas pagas ou latência de rede.",
       "tag": "Performance",
       "status": "completed"
     },
@@ -45,7 +63,7 @@
       "date": "29/09/2026",
       "name": "Multi-Rotas Coloridas & Lote",
       "subtitle": "7 Cores Canônicas",
-      "desc": "Visualização simultânea de trajetos com diferenciação cromática, recálculo em lote e identificador tático unificado.",
+      "desc": "Visualização simultânea de trajetos com diferenciação cromática de 7 cores, recálculo em lote e identificador tático unificado.",
       "tag": "Cartografia",
       "status": "completed"
     },
@@ -78,7 +96,7 @@
       "checkpoint": "4.2",
       "date": "21/09/2026",
       "title": "RIT Alerta & Câmeras CET-Rio/COR",
-      "summary": "Monitoramento viário contínuo, 4.200 câmeras integradas nas 5 regionais Globo (RJ, SP, BSB, REC e BH).",
+      "summary": "Monitoramento viário contínuo, 4.297 câmeras integradas nas 5 regionais Globo (RJ, SP, BSB, REC e BH).",
       "status": "Concluído"
     }
   ]

@@ -94,14 +94,33 @@ async function run() {
   await page.screenshot({ path: slide1Path, fullPage: false });
   console.log(`[Test] Screenshot Slide 1 salvo em: ${slide1Path}`);
 
-  // 3. Navegação pelos 10 Slides
+  // 3. Navegação pelos Slides 2 e 3
+  console.log('[Test] Navegando para o Slide 2 (Central de Câmeras)...');
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(400);
+  const slide2Title = await page.locator('.slide[data-slide="2"] h2').innerText();
+  console.log(`[Test] Slide 2 título: "${slide2Title}"`);
+  const slide2Path = path.join(screenshotDir, 'apresentacao_slide2_cameras.png');
+  await page.screenshot({ path: slide2Path, fullPage: false });
+
+  console.log('[Test] Navegando para o Slide 3 (Centro de Roteirização & Custos)...');
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(400);
+  const slide3Title = await page.locator('.slide[data-slide="3"] h2').innerText();
+  console.log(`[Test] Slide 3 título: "${slide3Title}"`);
+  const slide3Path = path.join(screenshotDir, 'apresentacao_slide3_roteirizacao_custos.png');
+  await page.screenshot({ path: slide3Path, fullPage: false });
+
+  // 4. Navegação para os 10 Slides e Slide 10
   const totalSlides = await page.locator('.slide').count();
   console.log(`[Test] Total de slides encontrados no deck: ${totalSlides}`);
   if (totalSlides !== 10) {
     throw new Error(`Esperado 10 slides, encontrados: ${totalSlides}`);
   }
 
-  // Clicar em "ÚLTIMAS ENTREGAS (SLIDE 10)" direto da capa
+  // Voltar para a capa e clicar no botão do Slide 10
+  await page.keyboard.press('Home');
+  await page.waitForTimeout(300);
   console.log('[Test] Navegando diretamente para o Slide 10 via botão da capa...');
   await page.click('button:has-text("ÚLTIMAS ENTREGAS (SLIDE 10)")');
   await page.waitForTimeout(600);

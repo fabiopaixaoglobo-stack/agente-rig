@@ -1061,12 +1061,130 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 2: MÓDULO RIT ALERTA (JÁ DISPONÍVEL)                               -->
+    <!-- SLIDE 2: CENTRAL DE CÂMERAS & OCORRÊNCIAS (4.297 CÂMERAS & SINAL AO VIVO)  -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="2">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-tower-broadcast"></i> Módulo 01 · Já Disponível em Operação</span>
+          <span class="tag alert"><i class="fa-solid fa-satellite-dish"></i> Aba 01 · Monitoramento CCO em Tempo Real</span>
+          <h2 class="title-xl">Central de Câmeras & <span class="highlight">Ocorrências Viárias</span></h2>
+          <p class="description">
+            Painel tático de monitoramento cobrindo mais de 4.297 câmeras de trânsito em alta definição, georreferenciamento de incidentes viários (COR, CET-Rio, OTT e Fogo Cruzado) e mapas de satélite HD.
+          </p>
+          
+          <div class="toggle-views-container">
+            <button class="view-toggle-btn active" id="btn-cam-mapa">1. Mapa CCO & 4.297 Câmeras</button>
+            <button class="view-toggle-btn" id="btn-cam-live">2. Câmera ao Vivo #002425</button>
+          </div>
+
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon"><i class="fa-solid fa-video"></i></div>
+              <div class="feature-text">
+                <h4>4.297 Câmeras de Trânsito Ativas</h4>
+                <p>Visualização instantânea de feeds de concessionárias e CET-Rio com sinal de streaming ao vivo no CCO.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+              <div class="feature-text">
+                <h4>Camadas Inteligentes: OTT, Fogo Cruzado & Heatmap</h4>
+                <p>Sobreposição geográfica de incidentes, disparos, operações policiais e manchas de risco em tempo real.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><i class="fa-solid fa-crosshairs"></i></div>
+              <div class="feature-text">
+                <h4>Busca por Raio Inteligente (1 km a 5 km)</h4>
+                <p>Identificação automática das 10 câmeras mais próximas de qualquer endereço ou ocorrência na malha.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-right">
+          <div class="mockup-wrapper">
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+              <div class="mockup-title" id="title-mockup-cam">agente-rit-backend / dashboard.html#central-cameras</div>
+            </div>
+            <div class="mockup-content">
+              <div class="carousel-view active" id="view-cam-mapa">
+                <img class="mockup-img" src="assets/apresentacao/rit_central_cameras_mapa.png" alt="Central de Câmeras CCO" />
+              </div>
+              <div class="carousel-view" id="view-cam-live">
+                <img class="mockup-img" src="assets/apresentacao/rit_cameras_ao_vivo.png" alt="Sinal de Câmera ao Vivo" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SLIDE 3: CENTRO DE ROTEIRIZAÇÃO & COMPARATIVO MULTIMODAL DE CUSTOS (VAH)   -->
+    <!-- ========================================================================= -->
+    <section class="slide" data-slide="3">
+      <div class="split-container">
+        <div class="content-left">
+          <span class="tag success"><i class="fa-solid fa-calculator"></i> Aba 03 · Inteligência Financeira & Otimização</span>
+          <h2 class="title-xl">Centro de Roteirização & <span class="highlight">Custos Multimodal</span></h2>
+          <p class="description">
+            Motor de cálculo tarifário e análise de eficiência comparando rotas entre a Frota Própria da Globo e 7 modais de aplicativos com projeção horária de trânsito em 24h.
+          </p>
+
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon" style="color: #10B981;"><i class="fa-solid fa-scale-balanced"></i></div>
+              <div class="feature-text">
+                <h4>Comparativo Multimodal Estilo VAH (7 Modais)</h4>
+                <p>Simulação em tempo real: Frota Globo (R$ 103,57), UberX, 99Pop, Cooperativa, Uber Comfort, Táxi e Uber Black com score de custo-benefício.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon" style="color: #00D1FF;"><i class="fa-solid fa-chart-column"></i></div>
+              <div class="feature-text">
+                <h4>Projeção 24h & Janela Comercial Ideal</h4>
+                <p>Identificação algorítmica de horários fora de pico com economia estimada de até 35% e -20 min de retenção viária.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon" style="color: #F5A623;"><i class="fa-solid fa-leaf"></i></div>
+              <div class="feature-text">
+                <h4>Cálculo de Pedágios & Pegada CO₂</h4>
+                <p>Auditoria automática de custos de pedágio no trajeto e cálculo de impacto ambiental (kg de CO₂ por viagem).</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; gap: 8px;">
+            <span class="pillar-chip"><i class="fa-brands fa-whatsapp" style="color:#25D366;"></i> Resumo WhatsApp</span>
+            <span class="pillar-chip"><i class="fa-brands fa-waze" style="color:#00D1FF;"></i> Integração Waze</span>
+            <span class="pillar-chip"><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importação XLSX</span>
+          </div>
+        </div>
+
+        <div class="content-right">
+          <div class="mockup-wrapper">
+            <div class="mockup-bar">
+              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+              <div class="mockup-title">agente-rit-backend / dashboard.html#centro-roteirizacao-custos</div>
+            </div>
+            <div class="mockup-content">
+              <img class="mockup-img" src="assets/apresentacao/rit_roteirizacao_custos.png" alt="Centro de Roteirização e Comparativo Multimodal de Custos" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- SLIDE 4: MÓDULO RIT ALERTA (OCORRÊNCIAS VIÁRIAS EM TEMPO REAL)             -->
+    <!-- ========================================================================= -->
+    <section class="slide" data-slide="4">
+      <div class="split-container">
+        <div class="content-left">
+          <span class="tag alert"><i class="fa-solid fa-tower-broadcast"></i> Módulo RIT Alerta · Inteligência Viária</span>
           <h2 class="title-xl">Módulo <span class="highlight">RIT Alerta</span></h2>
           <p class="description">
             Monitoramento operacional contínuo de incidentes de trânsito em tempo real, integrando feeds oficiais da CET-Rio, COR, Lamsa, EcoPonte e concessionárias viárias.
@@ -1122,12 +1240,12 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 3: MÓDULO CARAVANAS INTELIGENTES (HOMOLOGADO CHECKPOINT 5.3)       -->
+    <!-- SLIDE 5: MÓDULO CARAVANAS INTELIGENTES (HOMOLOGADO CHECKPOINT 5.3)         -->
     <!-- ========================================================================= -->
-    <section class="slide" data-slide="3">
+    <section class="slide" data-slide="5">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag success"><i class="fa-solid fa-bus"></i> Módulo 02 · Homologado no Checkpoint 5.3</span>
+          <span class="tag success"><i class="fa-solid fa-bus"></i> Módulo Caravanas · Homologado Checkpoint 5.3</span>
           <h2 class="title-xl">Caravanas <span class="highlight">Inteligentes</span></h2>
           <p class="description">
             Planejamento dinâmico, monitoramento de janelas de chegada e suporte tático para caravanas de auditório e operações de plateia destinadas aos Estúdios Globo.
@@ -1143,21 +1261,21 @@
               <div class="feature-icon"><i class="fa-solid fa-map-pin"></i></div>
               <div class="feature-text">
                 <h4>Cadastro & Geocodificação Offline</h4>
-                <p>Modal com validações inline e cálculo de traçado geodésico sem dependência externa.</p>
+                <p>Modal com validações inline e cálculo de traçado geodésico para 5 CDs sem dependência externa.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-palette"></i></div>
               <div class="feature-text">
-                <h4>Visualização Multi-Rota & Lote</h4>
-                <p>Plotagem simultânea de 7 cores distintas e botão de recálculo em lote para todas as viagens.</p>
+                <h4>Visualização Multi-Rota em 7 Cores & Lote</h4>
+                <p>Plotagem simultânea com diferenciação cromática canônica e botão de recálculo em lote.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-sliders"></i></div>
               <div class="feature-text">
-                <h4>Drawer Tático, Câmeras & Rotas Consultivas</h4>
-                <p>Associação de câmeras a até 2.500m, comparativo Google/Waze e sugestões para desvios.</p>
+                <h4>Drawer Tático, Câmeras & Comparativo Google/Waze</h4>
+                <p>Associação de câmeras a até 2.500m do trajeto, telemetria e suporte a desvios consultivos.</p>
               </div>
             </div>
           </div>
@@ -1183,9 +1301,9 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 4: GOVERNANÇA E PRIVACIDADE                                         -->
+    <!-- SLIDE 6: GOVERNANÇA E PRIVACIDADE (PRIVACY BY DESIGN)                     -->
     <!-- ========================================================================= -->
-    <section class="slide" data-slide="4">
+    <section class="slide" data-slide="6">
       <div class="split-container">
         <div class="content-left">
           <span class="tag alert"><i class="fa-solid fa-user-shield"></i> Governança Institucional · Escopo Controlado</span>
@@ -1242,9 +1360,9 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 5: INTELIGÊNCIA CARTOGRÁFICA (MAPAS HOMOLOGADOS)                    -->
+    <!-- SLIDE 7: INTELIGÊNCIA CARTOGRÁFICA (MAPAS HOMOLOGADOS & FAILOVER)         -->
     <!-- ========================================================================= -->
-    <section class="slide" data-slide="5">
+    <section class="slide" data-slide="7">
       <div class="split-container">
         <div class="content-left">
           <span class="tag"><i class="fa-solid fa-earth-americas"></i> Infraestrutura GIS · Ambiente Homologado</span>
@@ -1293,9 +1411,9 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 6: AUDITORIA E CONFIABILIDADE (EVIDÊNCIAS CHECKPOINT 5.3)           -->
+    <!-- SLIDE 8: AUDITORIA E CONFIABILIDADE (EVIDÊNCIAS CHECKPOINT 5.3)           -->
     <!-- ========================================================================= -->
-    <section class="slide" data-slide="6">
+    <section class="slide" data-slide="8">
       <div class="hero-container" style="max-width: 980px;">
         <span class="tag success"><i class="fa-solid fa-microchip"></i> Qualidade de Software · Evidências Primárias</span>
         <h2 class="title-xl" style="margin-bottom: 8px;">Auditoria & <span class="highlight">Confiabilidade Técnica</span></h2>
@@ -1350,194 +1468,113 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 7: REGIÃO DE COBERTURA                                              -->
-    <!-- ========================================================================= -->
-    <section class="slide" data-slide="7">
-      <div class="hero-container" style="max-width: 980px;">
-        <span class="tag"><i class="fa-solid fa-map"></i> Atendimento Nacional · 5 Regionais Globo</span>
-        <h2 class="title-xl" style="margin-bottom: 8px;">Região de <span class="highlight">Cobertura Integrada</span></h2>
-        <p class="subtitle-hero" style="margin-bottom: 20px;">
-          Centro Integrado de Monitoramento cobrindo a malha viária e logística dos 5 principais polos operacionais da Globo no Brasil:
-        </p>
-
-        <div class="cards-grid-3x2">
-          
-          <div class="grid-card">
-            <div class="grid-card-icon"><i class="fa-solid fa-city"></i></div>
-            <div class="grid-card-title">Rio de Janeiro (RJ)</div>
-            <div class="grid-card-desc">
-              • Estúdios Globo (Curicica / Jacarepaguá)<br>
-              • Sede Jardim Botânico<br>
-              • Central CCO & Corredores Viários
-            </div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon"><i class="fa-solid fa-building"></i></div>
-            <div class="grid-card-title">São Paulo (SP)</div>
-            <div class="grid-card-desc">
-              • Sede Berrini & Centro de Produção<br>
-              • Marginal Pinheiros & Tietê<br>
-              • Operações Especiais de Equipes
-            </div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon"><i class="fa-solid fa-landmark"></i></div>
-            <div class="grid-card-title">Brasília (BSB)</div>
-            <div class="grid-card-desc">
-              • Setor de Rádio e TV Sul (SRTVS)<br>
-              • Eixo Monumental & Esplanada<br>
-              • Logística de Jornalismo Político
-            </div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon"><i class="fa-solid fa-sun"></i></div>
-            <div class="grid-card-title">Recife (REC)</div>
-            <div class="grid-card-desc">
-              • Polo Santo Amaro<br>
-              • Cobertura Metropolitana e Eventos<br>
-              • Suporte a Produções Regionais
-            </div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon"><i class="fa-solid fa-mountain"></i></div>
-            <div class="grid-card-title">Belo Horizonte (BH)</div>
-            <div class="grid-card-desc">
-              • Bairro Santa Efigênia & Serra<br>
-              • Anel Rodoviário e Acessos Regionais<br>
-              • Atendimento a Equipes de Campo
-            </div>
-          </div>
-
-          <div class="grid-card" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.03);">
-            <div class="grid-card-icon" style="color: #10B981;"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
-            <div class="grid-card-title">Operações Especiais</div>
-            <div class="grid-card-desc">
-              • Grandes coberturas e festivais<br>
-              • Eleições e transmissões ao vivo<br>
-              • Caravanas com recepção em estúdio
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SLIDE 8: ROADMAP PRÓXIMAS EVOLUÇÕES (EM ESTUDO)                           -->
-    <!-- ========================================================================= -->
-    <section class="slide" data-slide="8">
-      <div class="hero-container" style="max-width: 980px;">
-        <span class="tag purple"><i class="fa-solid fa-compass"></i> Planejamento Estratégico · Próximos Passos</span>
-        <h2 class="title-xl" style="margin-bottom: 8px;">Roadmap de <span class="highlight">Evoluções Futuras</span></h2>
-        <p class="subtitle-hero" style="margin-bottom: 20px;">
-          Módulos e capacidades em fase de estudo arquitetural para os próximos checkpoints de expansão do Agente RIT:
-        </p>
-
-        <div class="cards-grid-3x2">
-          
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-chart-line"></i></div>
-            <div class="grid-card-title">🔵 Analytics Operacional</div>
-            <div class="grid-card-desc">Indicadores históricos de tempo médio de percurso, retenções recorrentes e sazonalidade de trânsito.</div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-chart-pie"></i></div>
-            <div class="grid-card-title">🔵 Painel Executivo C-Level</div>
-            <div class="grid-card-desc">Visão consolidada para gerência de transportes com KPIs consolidados de custo, SLA e pontualidade.</div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-stopwatch"></i></div>
-            <div class="grid-card-title">🔵 Indicadores de Produtividade</div>
-            <div class="grid-card-desc">Métricas de precisão de janelas de embarque, recepção nos estúdios e tempo de permanência de plateia.</div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-clock-rotate-left"></i></div>
-            <div class="grid-card-title">🔵 Histórico Operacional</div>
-            <div class="grid-card-desc">Linha do tempo retroativa de viagens passadas para cruzamento de incidentes e auditoria de sinistros.</div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-brain"></i></div>
-            <div class="grid-card-title">🔵 IA para Recomendação de Rotas</div>
-            <div class="grid-card-desc">Modelos preditivos que sugerem horários ótimos de partida com base em padrões históricos de engarrafamento.</div>
-          </div>
-
-          <div class="grid-card">
-            <div class="grid-card-icon" style="color: #A855F7;"><i class="fa-solid fa-network-wired"></i></div>
-            <div class="grid-card-title">🔵 Central Unificada de Ocorrências</div>
-            <div class="grid-card-desc">Ingestão unificada de fontes heterogêneas com deduplicação semântica automatizada em tempo real.</div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SLIDE 9: ESTADO ATUAL DO SISTEMA (CHECKPOINT 5.3)                         -->
+    <!-- SLIDE 9: COBERTURA REGIONAL & ROADMAP OPERACIONAL (CP 5.4 A 5.7)           -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="9">
-      <div class="hero-container">
-        <span class="tag success"><i class="fa-solid fa-circle-check"></i> Status Oficial do Produto</span>
-        <h2 class="title-hero">ESTADO ATUAL <span class="highlight">DO SISTEMA</span></h2>
-        
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 10px 20px; margin-bottom: 20px; font-weight: 700; font-size: 13px; color: #a7f3d0;">
-          🟢 Homologação evidenciada e reproduzível com artefatos auditáveis (Checkpoint 5.3)
-        </div>
-
-        <p class="subtitle-hero" style="margin-bottom: 22px;">
-          O Agente RIT encontra-se plenamente operacional e congelado no branch de trabalho, apto para consulta operacional e esteiras de auditoria.
-        </p>
-
-        <!-- Indicadores de Prontidão -->
-        <div class="kpi-container" style="grid-template-columns: repeat(4, 1fr); max-width: 820px; margin-bottom: 26px;">
-          <div class="kpi-card">
-            <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-server"></i></div>
-            <div class="kpi-num">Ambiente</div>
-            <div class="kpi-lbl">Operacional & Modular</div>
+      <div class="hero-container" style="max-width: 1040px; padding: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 12px;">
+          <div>
+            <span class="tag"><i class="fa-solid fa-map-location-dot"></i> 5 Regionais Globo · Expansão Contínua</span>
+            <h2 class="title-xl" style="margin-bottom: 2px;">Cobertura Nacional & <span class="highlight">Roadmap Operacional</span></h2>
+            <p class="description" style="margin-bottom: 0;">Presença consolidada nas capitais e planejamento dos próximos checkpoints homologados.</p>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-database"></i></div>
-            <div class="kpi-num">Banco</div>
-            <div class="kpi-lbl">Dual: Memory / Postgres</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-robot"></i></div>
-            <div class="kpi-num">Robô Ativo</div>
-            <div class="kpi-lbl">Projeção Viária Online</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-desktop"></i></div>
-            <div class="kpi-num">Monitoramento</div>
-            <div class="kpi-lbl">Alerta & Caravanas Ativos</div>
+          <div style="display: flex; gap: 8px;">
+            <a href="/dashboard.html" class="btn-action-primary" style="padding: 6px 12px; font-size: 11px;">
+              <i class="fa-solid fa-desktop"></i> Dashboard
+            </a>
+            <a href="/ambiente-visual-confirmacao.html" class="btn-action-secondary" style="padding: 6px 12px; font-size: 11px;">
+              <i class="fa-solid fa-bus"></i> Caravanas
+            </a>
           </div>
         </div>
 
-        <!-- Botões de Ação Imediata -->
-        <div style="display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;">
-          <a href="/dashboard.html" class="btn-action-primary">
-            <i class="fa-solid fa-desktop"></i> ACESSAR DASHBOARD OPERACIONAL
-          </a>
+        <div class="releases-split-grid" style="height: 60vh;">
+          <!-- Coluna 1: As 5 Regionais Globo -->
+          <div class="releases-col-main" style="padding: 14px;">
+            <h4 class="history-title" style="margin-bottom: 10px;"><i class="fa-solid fa-city"></i> Polos Operacionais Ativos</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto;">
+              <div class="feature-item" style="padding: 8px 10px;">
+                <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="feature-text">
+                  <h4>Rio de Janeiro (RJ)</h4>
+                  <p>Estúdios Globo (Curicica), Jardim Botânico & Central CCO.</p>
+                </div>
+              </div>
+              <div class="feature-item" style="padding: 8px 10px;">
+                <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="feature-text">
+                  <h4>São Paulo (SP)</h4>
+                  <p>Berrini, Centro de Produção, Marginais Pinheiros & Tietê.</p>
+                </div>
+              </div>
+              <div class="feature-item" style="padding: 8px 10px;">
+                <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="feature-text">
+                  <h4>Brasília (BSB)</h4>
+                  <p>SRTVS, Eixo Monumental & Jornalismo Político.</p>
+                </div>
+              </div>
+              <div class="feature-item" style="padding: 8px 10px;">
+                <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="feature-text">
+                  <h4>Recife (REC)</h4>
+                  <p>Polo Santo Amaro & Produções Regionais Nordeste.</p>
+                </div>
+              </div>
+              <div class="feature-item" style="padding: 8px 10px; grid-column: span 2;">
+                <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="feature-text">
+                  <h4>Belo Horizonte (BH)</h4>
+                  <p>Santa Efigênia, Serra & Cobertura de Equipes de Campo em Minas Gerais.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna 2: Roadmap CP 5.4 - CP 5.7 -->
+          <div class="releases-col-side" style="padding: 14px; background: rgba(10, 19, 34, 0.7); border: 1px solid var(--glass-border); border-radius: 12px;">
+            <h4 class="history-title" style="color: #A855F7; margin-bottom: 8px;"><i class="fa-solid fa-compass"></i> Próximos Marcos do Roadmap</h4>
+            <div class="history-timeline" style="border: none; padding: 0; background: transparent;">
+              <div class="history-item">
+                <div class="history-dot" style="background: #A855F7;"></div>
+                <div class="history-header">
+                  <strong style="color: #c084fc;">CP 5.4 · Operação & Histórico</strong>
+                  <span class="history-date">Próxima Sprint</span>
+                </div>
+                <p>Histórico de recálculo em lote, timeline de alterações e registro do motivo operacional de desvios.</p>
+              </div>
+              <div class="history-item">
+                <div class="history-dot" style="background: #A855F7;"></div>
+                <div class="history-header">
+                  <strong style="color: #c084fc;">CP 5.5 · Inteligência & Risco</strong>
+                  <span class="history-date">Planejado</span>
+                </div>
+                <p>Sugestão automática de rotas alternativas, score de risco e correlação com ocorrências urbanas.</p>
+              </div>
+              <div class="history-item">
+                <div class="history-dot" style="background: #A855F7;"></div>
+                <div class="history-header">
+                  <strong style="color: #c084fc;">CP 5.6 · Gestão & Calendário</strong>
+                  <span class="history-date">Planejado</span>
+                </div>
+                <p>Agenda integrada de caravanas por programa, recepção em estúdio e consolidação por regional.</p>
+              </div>
+              <div class="history-item">
+                <div class="history-dot" style="background: #A855F7;"></div>
+                <div class="history-header">
+                  <strong style="color: #c084fc;">CP 5.7 · Executivo & SLAs</strong>
+                  <span class="history-date">Planejado</span>
+                </div>
+                <p>Painel gerencial de transportes, tempos médios de percurso e indicadores C-Level.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 12px; justify-content: center;">
           <button onclick="goToSlide(9)" class="btn-action-primary" style="background: linear-gradient(135deg, #F5A623 0%, #D97706 100%);">
             <i class="fa-solid fa-clock-rotate-left"></i> VER RELEASE NOTES VIVO (SLIDE 10)
           </button>
-          <a href="/ambiente-visual-confirmacao.html" class="btn-action-secondary">
-            <i class="fa-solid fa-bus"></i> COCKPIT DE CARAVANAS (HOMOLOGAÇÃO)
-          </a>
-          <a href="/index.html" class="btn-action-secondary">
-            <i class="fa-solid fa-house"></i> VOLTAR AO INÍCIO
-          </a>
-        </div>
-
-        <!-- Diretriz de Produto Permanente no Rodapé -->
-        <div style="margin-top: 24px; font-size: 10.5px; color: var(--muted); border-top: 1px solid var(--glass-border); padding-top: 10px; max-width: 780px;">
-          <strong>Diretriz Permanente de Produto:</strong> Toda nova funcionalidade aprovada em homologação atualiza automaticamente esta apresentação ("Como Funciona"), mantendo o histórico de releases, métricas de testes e evidências de conformidade permanentemente sincronizados.
         </div>
       </div>
     </section>
@@ -1781,7 +1818,32 @@
       }
     });
 
-    // Controle Carrossel do Slide 2 (RIT Alerta)
+    // Controle Carrossel do Slide 2 (Central de Câmeras & Ocorrências)
+    const btnCamMapa = document.getElementById('btn-cam-mapa');
+    const btnCamLive = document.getElementById('btn-cam-live');
+    const viewCamMapa = document.getElementById('view-cam-mapa');
+    const viewCamLive = document.getElementById('view-cam-live');
+    const titleCam = document.getElementById('title-mockup-cam');
+
+    if (btnCamMapa && btnCamLive) {
+      btnCamMapa.addEventListener('click', () => {
+        btnCamMapa.classList.add('active');
+        btnCamLive.classList.remove('active');
+        viewCamMapa.classList.add('active');
+        viewCamLive.classList.remove('active');
+        if (titleCam) titleCam.textContent = 'agente-rit-backend / dashboard.html#central-cameras';
+      });
+
+      btnCamLive.addEventListener('click', () => {
+        btnCamLive.classList.add('active');
+        btnCamMapa.classList.remove('active');
+        viewCamLive.classList.add('active');
+        viewCamMapa.classList.remove('active');
+        if (titleCam) titleCam.textContent = 'agente-rit-backend / dashboard.html#camera-ao-vivo-002425';
+      });
+    }
+
+    // Controle Carrossel do Slide 4 (RIT Alerta)
     const btnAlertaDesktop = document.getElementById('btn-alerta-desktop');
     const btnAlertaRodovias = document.getElementById('btn-alerta-rodovias');
     const viewAlertaDesktop = document.getElementById('view-alerta-desktop');
