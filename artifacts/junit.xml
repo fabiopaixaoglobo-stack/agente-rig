@@ -1,139 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testsuite name="🌐 ENDPOINTS REST OFICIAIS DO SUBSISTEMA (/api/traffic-alert/*) (v2.2)" time="0.417291" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="GET /health: Retorna status 200 com modo de persistência e telemetria" time="0.226588" classname="test"/>
-		<testcase name="GET /incidents: Retorna lista de incidentes ativos consolidados" time="0.019725" classname="test"/>
-		<testcase name="GET /incidents/:id: Retorna incidente por ID ou 404 se não encontrado" time="0.035392" classname="test"/>
-		<testcase name="GET /incidents/:id/sources e /history: Retorna fontes e trilha de auditoria" time="0.019200" classname="test"/>
-		<testcase name="GET /nearby: Retorna incidentes próximos ordenados por distância com Haversine puro" time="0.018366" classname="test"/>
+	<testsuite name="🌐 ENDPOINTS REST OFICIAIS DO SUBSISTEMA (/api/traffic-alert/*) (v2.2)" time="0.554134" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="GET /health: Retorna status 200 com modo de persistência e telemetria" time="0.237628" classname="test"/>
+		<testcase name="GET /incidents: Retorna lista de incidentes ativos consolidados" time="0.025544" classname="test"/>
+		<testcase name="GET /incidents/:id: Retorna incidente por ID ou 404 se não encontrado" time="0.031493" classname="test"/>
+		<testcase name="GET /incidents/:id/sources e /history: Retorna fontes e trilha de auditoria" time="0.104174" classname="test"/>
+		<testcase name="GET /nearby: Retorna incidentes próximos ordenados por distância com Haversine puro" time="0.031830" classname="test"/>
 	</testsuite>
-	<testsuite name="🚌 ACOMPANHAMENTO DE CARAVANAS: DTO &amp; PRIVACIDADE" time="0.019897" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Deve criar DTO canônico com isGpsBased estritamente false e isSynthetic true" time="0.012075" classname="test"/>
-		<testcase name="2. Deve rejeitar status projetados fora da taxonomia aprovada" time="0.002156" classname="test"/>
-		<testcase name="3. Deve rejeitar campos de dados pessoais sensíveis ou identificação de motoristas/passageiros" time="0.001084" classname="test"/>
+	<testsuite name="🚌 ACOMPANHAMENTO DE CARAVANAS: DTO &amp; PRIVACIDADE" time="0.011219" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Deve criar DTO canônico com isGpsBased estritamente false e isSynthetic true" time="0.005073" classname="test"/>
+		<testcase name="2. Deve rejeitar status projetados fora da taxonomia aprovada" time="0.002237" classname="test"/>
+		<testcase name="3. Deve rejeitar campos de dados pessoais sensíveis ou identificação de motoristas/passageiros" time="0.000894" classname="test"/>
 	</testsuite>
-	<testsuite name="📐 MOTOR GEOESPACIAL E PROJEÇÃO DE CHEGADA" time="0.022115" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Deve calcular corretamente menor distância de ocorrência até a rota" time="0.003884" classname="test"/>
-		<testcase name="2. Deve somar impacto de ocorrência dentro do buffer e ignorar ocorrência distante" time="0.006586" classname="test"/>
-		<testcase name="3. Deve marcar RISCO DE ATRASO quando chegada projetada ultrapassar a janela operacional" time="0.001215" classname="test"/>
-		<testcase name="4. Deve degradar graciosamente para FONTE INDISPONÍVEL sem scraping quando a fonte pública falhar" time="0.004240" classname="test"/>
-		<testcase name="5. Deve retornar DADOS INCOMPLETOS se endereço ou horário de saída estiverem ausentes" time="0.001150" classname="test"/>
+	<testsuite name="📐 MOTOR GEOESPACIAL E PROJEÇÃO DE CHEGADA" time="0.029482" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Deve calcular corretamente menor distância de ocorrência até a rota" time="0.003271" classname="test"/>
+		<testcase name="2. Deve somar impacto de ocorrência dentro do buffer e ignorar ocorrência distante" time="0.010438" classname="test"/>
+		<testcase name="3. Deve marcar RISCO DE ATRASO quando chegada projetada ultrapassar a janela operacional" time="0.006908" classname="test"/>
+		<testcase name="4. Deve degradar graciosamente para FONTE INDISPONÍVEL sem scraping quando a fonte pública falhar" time="0.004633" classname="test"/>
+		<testcase name="5. Deve retornar DADOS INCOMPLETOS se endereço ou horário de saída estiverem ausentes" time="0.001166" classname="test"/>
 	</testsuite>
-	<testsuite name="🏬 REPOSITÓRIO SINTÉTICO &amp; KPIS OPERACIONAIS" time="0.013182" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Deve inicializar as 4 caravanas sintéticas de homologação" time="0.006902" classname="test"/>
-		<testcase name="2. Deve calcular corretamente os 6 KPIs do módulo de caravanas" time="0.005512" classname="test"/>
+	<testsuite name="🏬 REPOSITÓRIO SINTÉTICO &amp; KPIS OPERACIONAIS" time="0.023732" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Deve inicializar as 4 caravanas sintéticas de homologação" time="0.008550" classname="test"/>
+		<testcase name="2. Deve calcular corretamente os 6 KPIs do módulo de caravanas" time="0.004328" classname="test"/>
 	</testsuite>
-	<testsuite name="🔒 SEGURANÇA, ESCOPO E PRESERVAÇÃO DO MONITORAMENTO" time="0.007634" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Nenhum arquivo do módulo de caravanas deve conter referências a GPS de hardware" time="0.005712" classname="test"/>
-		<testcase name="2. Aba Monitoramento 🔒 deve permanecer estritamente bloqueada no dashboard.html" time="0.001540" classname="test"/>
+	<testsuite name="🔒 SEGURANÇA, ESCOPO E PRESERVAÇÃO DO MONITORAMENTO" time="0.009200" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Nenhum arquivo do módulo de caravanas deve conter referências a GPS de hardware" time="0.007225" classname="test"/>
+		<testcase name="2. Aba Monitoramento 🔒 deve permanecer estritamente bloqueada no dashboard.html" time="0.001657" classname="test"/>
 	</testsuite>
-	<testsuite name="🚌 CHECKPOINT 5.3: CT-31 A CT-40 - CRUD, ROTAS E CÂMERAS PÚBLICAS" time="0.089559" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="CT-31: Deve incluir nova caravana com endereço, empresa e horário calculando geometria" time="0.024801" classname="test"/>
-		<testcase name="CT-32: Deve atualizar caravana existente e recalcular impacto imediatamente" time="0.020559" classname="test"/>
-		<testcase name="CT-33: Deve excluir caravana e manter integridade da contagem de KPIs" time="0.012319" classname="test"/>
-		<testcase name="CT-34: Deve rejeitar exclusão ou atualização de ID inexistente" time="0.002832" classname="test"/>
-		<testcase name="CT-35: Deve identificar câmeras públicas do COR-Rio no catálogo oficial" time="0.000833" classname="test"/>
-		<testcase name="CT-36: Deve associar câmeras do COR-Rio num raio de até 2.500m do traçado da rota" time="0.001663" classname="test"/>
-		<testcase name="CT-37: Deve calcular rota alternativa consultiva quando houver ocorrência severa na rota principal" time="0.008761" classname="test"/>
-		<testcase name="CT-38: Não deve gerar rota alternativa quando não houver ocorrências críticas" time="0.001623" classname="test"/>
-		<testcase name="CT-39: Deve construir objeto de comparativo de tráfego com tempo base, tempo dinâmico e link Waze" time="0.002204" classname="test"/>
-		<testcase name="CT-40: Deve recalcular todas as rotas com incidentes e manter consistência dos dados" time="0.003794" classname="test"/>
+	<testsuite name="🚌 CHECKPOINT 5.3: CT-31 A CT-40 - CRUD, ROTAS E CÂMERAS PÚBLICAS" time="0.067799" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="CT-31: Deve incluir nova caravana com endereço, empresa e horário calculando geometria" time="0.016154" classname="test"/>
+		<testcase name="CT-32: Deve atualizar caravana existente e recalcular impacto imediatamente" time="0.013962" classname="test"/>
+		<testcase name="CT-33: Deve excluir caravana e manter integridade da contagem de KPIs" time="0.018044" classname="test"/>
+		<testcase name="CT-34: Deve rejeitar exclusão ou atualização de ID inexistente" time="0.000617" classname="test"/>
+		<testcase name="CT-35: Deve identificar câmeras públicas do COR-Rio no catálogo oficial" time="0.000681" classname="test"/>
+		<testcase name="CT-36: Deve associar câmeras do COR-Rio num raio de até 2.500m do traçado da rota" time="0.001065" classname="test"/>
+		<testcase name="CT-37: Deve calcular rota alternativa consultiva quando houver ocorrência severa na rota principal" time="0.001310" classname="test"/>
+		<testcase name="CT-38: Não deve gerar rota alternativa quando não houver ocorrências críticas" time="0.000918" classname="test"/>
+		<testcase name="CT-39: Deve construir objeto de comparativo de tráfego com tempo base, tempo dinâmico e link Waze" time="0.001896" classname="test"/>
+		<testcase name="CT-40: Deve recalcular todas as rotas com incidentes e manter consistência dos dados" time="0.002441" classname="test"/>
 	</testsuite>
-	<testsuite name="🎨 CHECKPOINT 5.3: CT-41 A CT-50 - INTERFACE, MAPAS, RESPONSIVIDADE E GOVERNANÇA" time="0.079867" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="CT-41: ambiente-visual-confirmacao.html deve conter cabeçalho compacto com seletor RIT ALERTA / RIT CARAVANAS" time="0.032831" classname="test"/>
-		<testcase name="CT-42: ambiente-visual-confirmacao.html deve conter modal de inclusão de caravanas (+ INCLUIR CARAVANA)" time="0.002070" classname="test"/>
-		<testcase name="CT-43: ambiente-visual-confirmacao.html deve prover camadas Leaflet com Satélite e OSM sem CartoDB com erro de chave" time="0.012909" classname="test"/>
-		<testcase name="CT-44: ambiente-visual-confirmacao.html deve conter botão discreto Validação &amp; Governança abrindo gaveta CT-01 a CT-50" time="0.001625" classname="test"/>
-		<testcase name="CT-45: ambiente-visual-confirmacao.html deve possuir layout responsivo sem overflow horizontal" time="0.001408" classname="test"/>
-		<testcase name="CT-46: ambiente_visual_homologacao.html deve estar sincronizado com ambiente-visual-confirmacao.html" time="0.019288" classname="test"/>
-		<testcase name="CT-47: Varredura de segurança deve confirmar ausência total de scraping de Waze Live Map em todo o código" time="0.003793" classname="test"/>
-		<testcase name="CT-48: DTO de Caravanas deve conter disclaimer legal obrigatório em todas as instâncias" time="0.001899" classname="test"/>
-		<testcase name="CT-49: Taxonomia de severidade e cores das caravanas devem ser distintas e operacionais" time="0.001347" classname="test"/>
-		<testcase name="CT-50: Aba Monitoramento 🔒 deve permanecer inacessível com guarda corporativa" time="0.001403" classname="test"/>
+	<testsuite name="🎨 CHECKPOINT 5.3: CT-41 A CT-50 - INTERFACE, MAPAS, RESPONSIVIDADE E GOVERNANÇA" time="0.030875" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="CT-41: ambiente-visual-confirmacao.html deve conter cabeçalho compacto com seletor RIT ALERTA / RIT CARAVANAS" time="0.002443" classname="test"/>
+		<testcase name="CT-42: ambiente-visual-confirmacao.html deve conter modal de inclusão de caravanas (+ INCLUIR CARAVANA)" time="0.001721" classname="test"/>
+		<testcase name="CT-43: ambiente-visual-confirmacao.html deve prover camadas Leaflet com Satélite e OSM sem CartoDB com erro de chave" time="0.001909" classname="test"/>
+		<testcase name="CT-44: ambiente-visual-confirmacao.html deve conter botão discreto Validação &amp; Governança abrindo gaveta CT-01 a CT-50" time="0.001798" classname="test"/>
+		<testcase name="CT-45: ambiente-visual-confirmacao.html deve possuir layout responsivo sem overflow horizontal" time="0.001798" classname="test"/>
+		<testcase name="CT-46: ambiente_visual_homologacao.html deve estar sincronizado com ambiente-visual-confirmacao.html" time="0.006653" classname="test"/>
+		<testcase name="CT-47: Varredura de segurança deve confirmar ausência total de scraping de Waze Live Map em todo o código" time="0.005418" classname="test"/>
+		<testcase name="CT-48: DTO de Caravanas deve conter disclaimer legal obrigatório em todas as instâncias" time="0.001667" classname="test"/>
+		<testcase name="CT-49: Taxonomia de severidade e cores das caravanas devem ser distintas e operacionais" time="0.001524" classname="test"/>
+		<testcase name="CT-50: Aba Monitoramento 🔒 deve permanecer inacessível com guarda corporativa" time="0.004258" classname="test"/>
 	</testsuite>
-	<testsuite name="⚙️ VALIDAÇÃO DE CONFIGURAÇÃO E SANITIZAÇÃO DE URLS (v2.1)" time="0.021054" disabled="0" errors="0" tests="8" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Deve rejeitar tags HTML embutidas no valor da URL" time="0.004309" classname="test"/>
-		<testcase name="Deve rejeitar esquemas javascript:" time="0.003047" classname="test"/>
-		<testcase name="Deve rejeitar URLs com credenciais de autenticação embutidas" time="0.000652" classname="test"/>
-		<testcase name="Deve exigir protocolo HTTPS para hosts remotos" time="0.000470" classname="test"/>
-		<testcase name="Deve bloquear hosts fora da allowlist autorizada" time="0.000554" classname="test"/>
-		<testcase name="Deve aceitar hosts na allowlist e remover barra final (trailing slash)" time="0.000744" classname="test"/>
-		<testcase name="OSRM em modo demo deve forçar concorrência 1 e intervalo mínimo de 1100ms" time="0.000487" classname="test"/>
-		<testcase name="TomTom Orbis v2: Exige API Key quando habilitado e valida versão" time="0.000861" classname="test"/>
+	<testsuite name="⚙️ VALIDAÇÃO DE CONFIGURAÇÃO E SANITIZAÇÃO DE URLS (v2.1)" time="0.023304" disabled="0" errors="0" tests="8" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Deve rejeitar tags HTML embutidas no valor da URL" time="0.010329" classname="test"/>
+		<testcase name="Deve rejeitar esquemas javascript:" time="0.003427" classname="test"/>
+		<testcase name="Deve rejeitar URLs com credenciais de autenticação embutidas" time="0.000869" classname="test"/>
+		<testcase name="Deve exigir protocolo HTTPS para hosts remotos" time="0.000571" classname="test"/>
+		<testcase name="Deve bloquear hosts fora da allowlist autorizada" time="0.000495" classname="test"/>
+		<testcase name="Deve aceitar hosts na allowlist e remover barra final (trailing slash)" time="0.000904" classname="test"/>
+		<testcase name="OSRM em modo demo deve forçar concorrência 1 e intervalo mínimo de 1100ms" time="0.000578" classname="test"/>
+		<testcase name="TomTom Orbis v2: Exige API Key quando habilitado e valida versão" time="0.000970" classname="test"/>
 	</testsuite>
-	<testsuite name="🏙️ PROVEDOR PÚBLICO COR-RIO E ESTÁGIO OPERACIONAL (v2.1)" time="0.044948" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Identificação determinística de corredores viários estratégicos" time="0.003376" classname="test"/>
-		<testcase name="Normalização de Estágio do COR-Rio para DTO Canônico" time="0.033023" classname="test"/>
-		<testcase name="Normalização de ocorrência viária com interdição total em corredor estratégico" time="0.004446" classname="test"/>
-		<testcase name="CorRioProvider: Inicialização, User-Agent e headers em conformidade" time="0.001160" classname="test"/>
+	<testsuite name="🏙️ PROVEDOR PÚBLICO COR-RIO E ESTÁGIO OPERACIONAL (v2.1)" time="0.023057" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Identificação determinística de corredores viários estratégicos" time="0.003450" classname="test"/>
+		<testcase name="Normalização de Estágio do COR-Rio para DTO Canônico" time="0.011202" classname="test"/>
+		<testcase name="Normalização de ocorrência viária com interdição total em corredor estratégico" time="0.001494" classname="test"/>
+		<testcase name="CorRioProvider: Inicialização, User-Agent e headers em conformidade" time="0.001510" classname="test"/>
 	</testsuite>
-	<testsuite name="⏱️ PROTEÇÃO CONTRA POLLING AGRESSIVO E MUTEX COR-RIO (v2.2)" time="0.016922" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Chamada repetida dentro do intervalo mínimo retorna cache válido sem nova requisição" time="0.006204" classname="test"/>
-		<testcase name="Parâmetro force=true ignora o intervalo de cache e permite sincronização forçada" time="0.002784" classname="test"/>
-		<testcase name="Mutex de concorrência: Impede múltiplas chamadas simultâneas retornando cache em andamento" time="0.001850" classname="test"/>
+	<testsuite name="⏱️ PROTEÇÃO CONTRA POLLING AGRESSIVO E MUTEX COR-RIO (v2.2)" time="0.014164" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Chamada repetida dentro do intervalo mínimo retorna cache válido sem nova requisição" time="0.008462" classname="test"/>
+		<testcase name="Parâmetro force=true ignora o intervalo de cache e permite sincronização forçada" time="0.001279" classname="test"/>
+		<testcase name="Mutex de concorrência: Impede múltiplas chamadas simultâneas retornando cache em andamento" time="0.001630" classname="test"/>
 	</testsuite>
-	<testsuite name="🔍 MOTOR DE DEDUPLICAÇÃO E CONSOLIDAÇÃO DE FONTES (v2.1)" time="0.038877" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Deduplicação Exata: Rejeita fonte duplicada com o mesmo hash SHA-256" time="0.013984" classname="test"/>
-		<testcase name="Agrupamento Espaço-Temporal: Consolida dois relatos no mesmo corredor e raio &lt;= 1.500m" time="0.003223" classname="test"/>
-		<testcase name="Não agrupa ocorrências distantes (> 1.500m)" time="0.001044" classname="test"/>
+	<testsuite name="🔍 MOTOR DE DEDUPLICAÇÃO E CONSOLIDAÇÃO DE FONTES (v2.1)" time="0.024142" disabled="0" errors="0" tests="3" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Deduplicação Exata: Rejeita fonte duplicada com o mesmo hash SHA-256" time="0.016243" classname="test"/>
+		<testcase name="Agrupamento Espaço-Temporal: Consolida dois relatos no mesmo corredor e raio &lt;= 1.500m" time="0.002707" classname="test"/>
+		<testcase name="Não agrupa ocorrências distantes (> 1.500m)" time="0.001951" classname="test"/>
 	</testsuite>
-	<testsuite name="⚖️ TRATAMENTO DE DIVERGÊNCIA ENTRE FONTES (v2.1)" time="0.018804" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Cenário L: Oficial reporta liberação (RESOLVED), mas fonte comunitária ainda reporta ativo (ACTIVE)" time="0.010272" classname="test"/>
-		<testcase name="Divergência de Severidade Significativa: Ativa divergenceFlag sem adotar o pior caso às cegas" time="0.002532" classname="test"/>
+	<testsuite name="⚖️ TRATAMENTO DE DIVERGÊNCIA ENTRE FONTES (v2.1)" time="0.035518" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Cenário L: Oficial reporta liberação (RESOLVED), mas fonte comunitária ainda reporta ativo (ACTIVE)" time="0.027218" classname="test"/>
+		<testcase name="Divergência de Severidade Significativa: Ativa divergenceFlag sem adotar o pior caso às cegas" time="0.002720" classname="test"/>
 	</testsuite>
-	<testsuite name="📋 CONTRATOS DTO, DOMÍNIOS E CONFIANÇA A+ (v2.1)" time="0.028350" disabled="0" errors="0" tests="7" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Critério A+: Confirmação por fonte oficial garante nível A+" time="0.010672" classname="test"/>
-		<testcase name="Critério A+: Duas fontes independentes com pelo menos uma de alta confiabilidade garantem A+" time="0.002340" classname="test"/>
-		<testcase name="Critério A+: Confirmação visual HUMAN_CONFIRMED acompanhada de fonte reconhecida garante A+" time="0.001065" classname="test"/>
-		<testcase name="Regra de Proteção A+: Câmera disponível (CAMERA_AVAILABLE) isolada SEM confirmação humana NÃO concede A+" time="0.002147" classname="test"/>
-		<testcase name="Segregação de Domínio: PUBLIC_SAFETY_EVENT não confirma trânsito sem fonte viária oficial" time="0.001242" classname="test"/>
-		<testcase name="Rota OSRM pura: trafficAwareness é estritamente NOT_AVAILABLE com aviso padrão" time="0.001451" classname="test"/>
-		<testcase name="Hash SHA-256 e Descarte de Payload Bruto por Padrão" time="0.004652" classname="test"/>
+	<testsuite name="📋 CONTRATOS DTO, DOMÍNIOS E CONFIANÇA A+ (v2.1)" time="0.040258" disabled="0" errors="0" tests="7" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Critério A+: Confirmação por fonte oficial garante nível A+" time="0.010162" classname="test"/>
+		<testcase name="Critério A+: Duas fontes independentes com pelo menos uma de alta confiabilidade garantem A+" time="0.005774" classname="test"/>
+		<testcase name="Critério A+: Confirmação visual HUMAN_CONFIRMED acompanhada de fonte reconhecida garante A+" time="0.002015" classname="test"/>
+		<testcase name="Regra de Proteção A+: Câmera disponível (CAMERA_AVAILABLE) isolada SEM confirmação humana NÃO concede A+" time="0.002703" classname="test"/>
+		<testcase name="Segregação de Domínio: PUBLIC_SAFETY_EVENT não confirma trânsito sem fonte viária oficial" time="0.002271" classname="test"/>
+		<testcase name="Rota OSRM pura: trafficAwareness é estritamente NOT_AVAILABLE com aviso padrão" time="0.001641" classname="test"/>
+		<testcase name="Hash SHA-256 e Descarte de Payload Bruto por Padrão" time="0.001994" classname="test"/>
 	</testsuite>
-	<testsuite name="🛡️ SEGURANÇA DE FIXTURES E MODO DEMO (v2.1)" time="0.019544" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Em produção (NODE_ENV=production), fixtures são terminantemente bloqueadas mesmo se forçadas por env" time="0.007385" classname="test"/>
-		<testcase name="Em desenvolvimento, fixtures são permitidas somente com autorização explícita" time="0.000869" classname="test"/>
-		<testcase name="Segregação de dados: Todo incidente gerado possui campo isSynthetic obrigatório" time="0.006540" classname="test"/>
-		<testcase name="Formatação da mensagem de indisponibilidade oficial quando fontes reais falharem" time="0.001235" classname="test"/>
+	<testsuite name="🛡️ SEGURANÇA DE FIXTURES E MODO DEMO (v2.1)" time="0.014300" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Em produção (NODE_ENV=production), fixtures são terminantemente bloqueadas mesmo se forçadas por env" time="0.002717" classname="test"/>
+		<testcase name="Em desenvolvimento, fixtures são permitidas somente com autorização explícita" time="0.001173" classname="test"/>
+		<testcase name="Segregação de dados: Todo incidente gerado possui campo isSynthetic obrigatório" time="0.004962" classname="test"/>
+		<testcase name="Formatação da mensagem de indisponibilidade oficial quando fontes reais falharem" time="0.000698" classname="test"/>
 	</testsuite>
-	<testsuite name="🖥️ FRONTEND RIT ALERTA &amp; GOVERNANÇA (CHECKPOINT 4)" time="0.057331" disabled="0" errors="0" tests="7" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Arquivos obrigatórios do frontend RIT ALERTA foram criados e são não-vazios" time="0.012780" classname="test"/>
-		<testcase name="2. Aba Monitoramento 🔒 permanece estritamente preservada e bloqueada no dashboard.html" time="0.004721" classname="test"/>
-		<testcase name="3. Aba RIT ALERTA está presente no dashboard.html com título, selo e 5 cards de KPI" time="0.003901" classname="test"/>
-		<testcase name="4. Sanitização contra XSS e validação de URLs externas (traffic-alert-service.js)" time="0.013454" classname="test"/>
-		<testcase name="5. Proteção de Privacidade no Frontend: Nenhum arquivo em public/js/traffic-alert/ acessa GPS ou dados pessoais" time="0.015921" classname="test"/>
-		<testcase name="6. Recomendações no Drawer seguem estritamente padrão consultivo sem autoritarismo" time="0.001201" classname="test"/>
-		<testcase name="7. Acessibilidade e Fechamento do Drawer por Teclado e Botão" time="0.001953" classname="test"/>
+	<testsuite name="🖥️ FRONTEND RIT ALERTA &amp; GOVERNANÇA (CHECKPOINT 4)" time="0.095685" disabled="0" errors="0" tests="7" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Arquivos obrigatórios do frontend RIT ALERTA foram criados e são não-vazios" time="0.052884" classname="test"/>
+		<testcase name="2. Aba Monitoramento 🔒 permanece estritamente preservada e bloqueada no dashboard.html" time="0.010426" classname="test"/>
+		<testcase name="3. Aba RIT ALERTA está presente no dashboard.html com título, selo e 5 cards de KPI" time="0.002990" classname="test"/>
+		<testcase name="4. Sanitização contra XSS e validação de URLs externas (traffic-alert-service.js)" time="0.008379" classname="test"/>
+		<testcase name="5. Proteção de Privacidade no Frontend: Nenhum arquivo em public/js/traffic-alert/ acessa GPS ou dados pessoais" time="0.006195" classname="test"/>
+		<testcase name="6. Recomendações no Drawer seguem estritamente padrão consultivo sem autoritarismo" time="0.001756" classname="test"/>
+		<testcase name="7. Acessibilidade e Fechamento do Drawer por Teclado e Botão" time="0.007815" classname="test"/>
 	</testsuite>
-	<testsuite name="🔐 HASH DETERMINÍSTICO E POLÍTICA DE PAYLOAD BRUTO (v2.1)" time="0.013441" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="generatePayloadHash deve produzir hashes idênticos para payloads com mesmo conteúdo" time="0.002560" classname="test"/>
-		<testcase name="generatePayloadHash deve produzir hashes distintos para conteúdos diferentes" time="0.000701" classname="test"/>
-		<testcase name="Payload bruto deve ser descartado (undefined) quando storeRawPayload = false" time="0.003049" classname="test"/>
-		<testcase name="Payload bruto é preservado apenas quando explicitamente habilitado" time="0.001545" classname="test"/>
+	<testsuite name="🔐 HASH DETERMINÍSTICO E POLÍTICA DE PAYLOAD BRUTO (v2.1)" time="0.019479" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="generatePayloadHash deve produzir hashes idênticos para payloads com mesmo conteúdo" time="0.006345" classname="test"/>
+		<testcase name="generatePayloadHash deve produzir hashes distintos para conteúdos diferentes" time="0.001446" classname="test"/>
+		<testcase name="Payload bruto deve ser descartado (undefined) quando storeRawPayload = false" time="0.004070" classname="test"/>
+		<testcase name="Payload bruto é preservado apenas quando explicitamente habilitado" time="0.001659" classname="test"/>
 	</testsuite>
-	<testsuite name="📜 MIGRAÇÕES SQL: VALIDAÇÃO, IDEMPOTÊNCIA E ROLLBACK (v2.2)" time="0.017556" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="1. Existência física e integridade dos arquivos UP e DOWN" time="0.003121" classname="test"/>
-		<testcase name="2. Transacionalidade e Idempotência do script UP (001_traffic_alert_schema.sql)" time="0.005098" classname="test"/>
-		<testcase name="3. Reversibilidade Total do script DOWN (001_traffic_alert_schema.down.sql)" time="0.004424" classname="test"/>
-		<testcase name="4. Idempotência simulada: Execuções consecutivas são idempotentes" time="0.001747" classname="test"/>
+	<testsuite name="📜 MIGRAÇÕES SQL: VALIDAÇÃO, IDEMPOTÊNCIA E ROLLBACK (v2.2)" time="0.019954" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="1. Existência física e integridade dos arquivos UP e DOWN" time="0.006402" classname="test"/>
+		<testcase name="2. Transacionalidade e Idempotência do script UP (001_traffic_alert_schema.sql)" time="0.003380" classname="test"/>
+		<testcase name="3. Reversibilidade Total do script DOWN (001_traffic_alert_schema.down.sql)" time="0.003444" classname="test"/>
+		<testcase name="4. Idempotência simulada: Execuções consecutivas são idempotentes" time="0.002089" classname="test"/>
 	</testsuite>
-	<testsuite name="🚫 POLÍTICA DE NÃO-SCRAPING E GOVERNANÇA DE FONTES (v2.1)" time="0.254809" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Teste 38: Nenhum provider utiliza scraping HTML como fonte primária" time="0.004292" classname="test"/>
-		<testcase name="Teste 39: Alteração de layout HTML externo não afeta ingestão do sistema (SOURCE_STATUS = UNSUPPORTED)" time="0.247617" classname="test"/>
+	<testsuite name="🚫 POLÍTICA DE NÃO-SCRAPING E GOVERNANÇA DE FONTES (v2.1)" time="0.451682" disabled="0" errors="0" tests="2" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Teste 38: Nenhum provider utiliza scraping HTML como fonte primária" time="0.006280" classname="test"/>
+		<testcase name="Teste 39: Alteração de layout HTML externo não afeta ingestão do sistema (SOURCE_STATUS = UNSUPPORTED)" time="0.441503" classname="test"/>
 	</testsuite>
-	<testsuite name="🗄️ PERSISTÊNCIA RELACIONAL E REPOSITORY (5 TABELAS SEM POSTGIS) (v2.2)" time="0.013862" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Inicialização correta do TrafficRepository" time="0.002128" classname="test"/>
-		<testcase name="1. upsertIncident: Gravação de incidente no banco com idempotência" time="0.004485" classname="test"/>
-		<testcase name="2. addIncidentSource: Armazena apenas hash SHA-256 e descarta payload bruto" time="0.001584" classname="test"/>
-		<testcase name="3. findNearbyIncidents: Consulta geoespacial por Haversine e Bounding Box sem PostGIS" time="0.001112" classname="test"/>
-		<testcase name="4. addIncidentHistory e telemetria de saúde de provedores" time="0.001068" classname="test"/>
+	<testsuite name="🗄️ PERSISTÊNCIA RELACIONAL E REPOSITORY (5 TABELAS SEM POSTGIS) (v2.2)" time="0.026338" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Inicialização correta do TrafficRepository" time="0.003335" classname="test"/>
+		<testcase name="1. upsertIncident: Gravação de incidente no banco com idempotência" time="0.009709" classname="test"/>
+		<testcase name="2. addIncidentSource: Armazena apenas hash SHA-256 e descarta payload bruto" time="0.003529" classname="test"/>
+		<testcase name="3. findNearbyIncidents: Consulta geoespacial por Haversine e Bounding Box sem PostGIS" time="0.003120" classname="test"/>
+		<testcase name="4. addIncidentHistory e telemetria de saúde de provedores" time="0.001740" classname="test"/>
 	</testsuite>
-	<testsuite name="🔒 TRAVA ESTÁTICA DE ESCOPO - RIT ALERTA (v2.1)" time="0.059121" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
-		<testcase name="Diretório server/traffic-alert/ deve existir e possuir arquivos canônicos" time="0.002070" classname="test"/>
-		<testcase name="Nenhum arquivo em server/traffic-alert/ deve importar módulos operacionais ou de rastreamento" time="0.029121" classname="test"/>
-		<testcase name="Nenhum arquivo em server/traffic-alert/ deve referenciar tabelas proibidas de motoristas/atendimentos" time="0.010537" classname="test"/>
-		<testcase name="Nenhum arquivo em server/traffic-alert/ deve invocar APIs de geolocalização por hardware (GPS)" time="0.008693" classname="test"/>
-		<testcase name="Verificação de não-falso-positivo: Comentários e textos de conformidade são permitidos" time="0.003062" classname="test"/>
+	<testsuite name="🔒 TRAVA ESTÁTICA DE ESCOPO - RIT ALERTA (v2.1)" time="0.154591" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="WPA11PE0DH37EN">
+		<testcase name="Diretório server/traffic-alert/ deve existir e possuir arquivos canônicos" time="0.005251" classname="test"/>
+		<testcase name="Nenhum arquivo em server/traffic-alert/ deve importar módulos operacionais ou de rastreamento" time="0.039260" classname="test"/>
+		<testcase name="Nenhum arquivo em server/traffic-alert/ deve referenciar tabelas proibidas de motoristas/atendimentos" time="0.072923" classname="test"/>
+		<testcase name="Nenhum arquivo em server/traffic-alert/ deve invocar APIs de geolocalização por hardware (GPS)" time="0.028595" classname="test"/>
+		<testcase name="Verificação de não-falso-positivo: Comentários e textos de conformidade são permitidos" time="0.000814" classname="test"/>
 	</testsuite>
 	<!-- tests 95 -->
 	<!-- suites 20 -->
@@ -142,5 +142,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 2096.0852 -->
+	<!-- duration_ms 2110.1301 -->
 </testsuites>

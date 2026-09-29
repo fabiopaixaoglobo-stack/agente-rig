@@ -42,9 +42,19 @@ async function runCaravanasProductionValidation() {
     const browser = await chromium.launch({ headless: true });
     let totalChecks = 0;
     let passedChecks = 0;
+    const checksRecord = [];
+    const startTime = new Date();
 
-    function check(description, condition) {
+    function check(description, condition, category = 'GERAL') {
         totalChecks++;
+        const record = {
+            id: totalChecks,
+            category,
+            description,
+            passed: Boolean(condition),
+            timestamp: new Date().toISOString()
+        };
+        checksRecord.push(record);
         if (condition) {
             console.log(`  ✅ [PASS] ${description}`);
             passedChecks++;
@@ -212,6 +222,42 @@ async function runCaravanasProductionValidation() {
         console.log(`  📸 Screenshot salvo: ${shotDashboardTab}`);
 
         check('Zero erros graves no console do navegador', consoleErrors.length === 0);
+
+        const summaryData = {
+            timestamp: new Date().toISOString(),
+            testSuite: 'Agente RIT - Homologação Módulo Caravanas em Produção',
+            environment: {
+                target: `http://127.0.0.1:${PORT}`,
+                browser: 'Chromium (Headless)',
+                viewport: { width: 1920, height: 1080 }
+            },
+            execution: {
+                startedAt: startTime.toISOString(),
+                completedAt: new Date().toISOString(),
+                durationMs: Date.now() - startTime.getTime(),
+                totalChecks,
+                passedChecks,
+                failedChecks: totalChecks - passedChecks,
+                passRate: `${((passedChecks / totalChecks) * 100).toFixed(1)}%`
+            },
+            checks: checksRecord,
+            artifacts: [
+                { file: 'caravanas_producao_standalone.png', path: 'docs/screenshots/caravanas_producao_standalone.png', resolution: '1920x1080' },
+                { file: 'caravanas_producao_drawer.png', path: 'docs/screenshots/caravanas_producao_drawer.png', resolution: '1920x1080' },
+                { file: 'caravanas_producao_dashboard_tab.png', path: 'docs/screenshots/caravanas_producao_dashboard_tab.png', resolution: '1920x1080' }
+            ]
+        };
+
+        const artifactsDir = path.join(__dirname, '../artifacts');
+        if (!fs.existsSync(artifactsDir)) {
+            fs.mkdirSync(artifactsDir, { recursive: true });
+        }
+        fs.writeFileSync(
+            path.join(artifactsDir, 'playwright-caravanas-producao-summary.json'),
+            JSON.stringify(summaryData, null, 2),
+            'utf8'
+        );
+        console.log('  📄 Sumário estruturado salvo: artifacts/playwright-caravanas-producao-summary.json');
 
         console.log('\n===============================================================');
         console.log(`🎯 RESULTADO FINAL: ${passedChecks}/${totalChecks} VERIFICAÇÕES APROVADAS (100%)`);

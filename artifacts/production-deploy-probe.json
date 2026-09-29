@@ -1,0 +1,860 @@
+{
+  "auditTimestamp": "2026-09-29T20:52:43.971Z",
+  "environment": {
+    "name": "Produção",
+    "host": "agenterit.com.br",
+    "platform": "Render.com Cloud Infrastructure",
+    "cdnProxy": "Cloudflare / Reverse Proxy"
+  },
+  "gitRelease": {
+    "commitSha": "890ae73dff43c44dd6ce274ad7c1a4fbf1d8cfeb",
+    "branch": "refactor/migracao-identidade-rig-para-rit",
+    "originMainSha": "890ae73dff43c44dd6ce274ad7c1a4fbf1d8cfeb",
+    "originRefactorSha": "890ae73dff43c44dd6ce274ad7c1a4fbf1d8cfeb",
+    "inSyncWithOriginMain": true,
+    "inSyncWithOriginRefactor": true,
+    "author": "Fabio Paixao <fabio.paixao.globo@gmail.com>",
+    "date": "Tue Sep 29 17:42:06 2026 -0300",
+    "subject": "feat(caravanas): implementacao dos 8 requisitos de homologacao de caravanas e rit alerta",
+    "remoteUrl": "https://github.com/fabiopaixaoglobo-stack/agente-rig.git"
+  },
+  "endpoints": {
+    "caravansApi": {
+      "url": "https://agenterit.com.br/api/traffic-alert/caravans",
+      "httpStatus": 200,
+      "httpStatusText": "OK",
+      "latencyMs": 564,
+      "responseHeaders": {
+        "access-control-allow-credentials": "true",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a42ddf989ba96d46-GIG",
+        "connection": "keep-alive",
+        "content-encoding": "br",
+        "content-length": "2794",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Tue, 29 Sep 2026 20:52:45 GMT",
+        "etag": "W/\"44aa-fmweTuusTt4vJNZsbSuc6Zx8WhU\"",
+        "rndr-id": "6c8aba6d-338f-4145",
+        "server": "cloudflare",
+        "vary": "Origin, Accept-Encoding",
+        "x-powered-by": "Express",
+        "x-render-origin-server": "Render"
+      },
+      "payloadSummary": {
+        "ok": true,
+        "count": 4,
+        "isSynthetic": true,
+        "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS.",
+        "kpis": {
+          "totalPlanned": 4,
+          "withinWindow": 4,
+          "attention": 0,
+          "delayRisk": 0,
+          "attentionOrRisk": 0,
+          "withIncidents": 0,
+          "lastCalculatedAt": "2026-09-29T20:52:45.655Z",
+          "isSynthetic": true
+        },
+        "caravans": [
+          {
+            "caravanId": "caravan-01",
+            "caravanName": "Caravana Domingão com Huck — Niterói & São Gonçalo",
+            "programName": "Domingão com Huck",
+            "companyName": "Log Rio",
+            "neighborhood": "Niterói",
+            "corridor": "Ponte Rio-Niterói / Linha Vermelha / Transolímpica",
+            "baseDistanceKm": 32.5,
+            "baseDurationMinutes": 48,
+            "projectedArrivalAt": "2026-09-29T14:33:00.000Z",
+            "isGpsBased": false,
+            "sourceStatus": "ACTIVE"
+          },
+          {
+            "caravanId": "caravan-02",
+            "caravanName": "Caravana Caldeirão com Mion — Baixada Fluminense",
+            "programName": "Caldeirão com Mion",
+            "companyName": "Doce Rio",
+            "neighborhood": "Nova Iguaçu",
+            "corridor": "Baixada Fluminense / Presidente Dutra / Transolímpica",
+            "baseDistanceKm": 38,
+            "baseDurationMinutes": 55,
+            "projectedArrivalAt": "2026-09-29T14:10:00.000Z",
+            "isGpsBased": false,
+            "sourceStatus": "ACTIVE"
+          },
+          {
+            "caravanId": "caravan-03",
+            "caravanName": "Caravana Altas Horas — Zona Norte & Madureira",
+            "programName": "Altas Horas",
+            "companyName": "Pianeta",
+            "neighborhood": "Madureira",
+            "corridor": "Zona Norte / Linha Amarela / Barra da Tijuca",
+            "baseDistanceKm": 42,
+            "baseDurationMinutes": 62,
+            "projectedArrivalAt": "2026-09-29T15:32:00.000Z",
+            "isGpsBased": false,
+            "sourceStatus": "ACTIVE"
+          },
+          {
+            "caravanId": "caravan-04",
+            "caravanName": "Caravana Conversa com Bial — Zona Oeste & Campo Grande",
+            "programName": "Conversa com Bial",
+            "companyName": "Viação União",
+            "neighborhood": "Campo Grande",
+            "corridor": "Zona Oeste / Transolímpica / Jacarepaguá",
+            "baseDistanceKm": 27,
+            "baseDurationMinutes": 40,
+            "projectedArrivalAt": "2026-09-29T14:55:00.000Z",
+            "isGpsBased": false,
+            "sourceStatus": "ACTIVE"
+          }
+        ]
+      },
+      "rawPayload": {
+        "ok": true,
+        "count": 4,
+        "kpis": {
+          "totalPlanned": 4,
+          "withinWindow": 4,
+          "attention": 0,
+          "delayRisk": 0,
+          "attentionOrRisk": 0,
+          "withIncidents": 0,
+          "lastCalculatedAt": "2026-09-29T20:52:45.655Z",
+          "isSynthetic": true
+        },
+        "data": [
+          {
+            "caravanId": "caravan-01",
+            "caravanName": "Caravana Domingão com Huck — Niterói & São Gonçalo",
+            "programName": "Domingão com Huck",
+            "companyName": "Log Rio",
+            "operationalNotes": "Setor A - Portão 3 · Plateia Principal",
+            "originLabel": "Terminal Rodoviário João Goulart — Niterói",
+            "originAddress": "Praça Renascença, Centro, Niterói - RJ",
+            "neighborhood": "Niterói",
+            "corridor": "Ponte Rio-Niterói / Linha Vermelha / Transolímpica",
+            "originCoords": [
+              -22.809,
+              -43.364
+            ],
+            "plannedDepartureAt": "2026-09-29T13:45:00.000Z",
+            "destinationLabel": "ESTÚDIOS GLOBO — PONTO DE CHEGADA HOMOLOGAÇÃO",
+            "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
+            "destinationCoords": [
+              -22.955,
+              -43.41
+            ],
+            "baseDistanceKm": 32.5,
+            "baseDurationMinutes": 48,
+            "incidentImpactMinutes": 0,
+            "unquantifiedIncidentsCount": 0,
+            "projectedDurationMinutes": 48,
+            "projectedArrivalAt": "2026-09-29T14:33:00.000Z",
+            "operationalWindowStart": "2026-09-29T14:40:00.000Z",
+            "operationalWindowEnd": "2026-09-29T15:15:00.000Z",
+            "marginToWindowMinutes": 42,
+            "projectedStatus": "DENTRO DA JANELA",
+            "incidents": [],
+            "routeGeometry": [
+              [
+                -22.809,
+                -43.364
+              ],
+              [
+                -22.825,
+                -43.33
+              ],
+              [
+                -22.845,
+                -43.3
+              ],
+              [
+                -22.86,
+                -43.26
+              ],
+              [
+                -22.88,
+                -43.235
+              ],
+              [
+                -22.905,
+                -43.27
+              ],
+              [
+                -22.93,
+                -43.34
+              ],
+              [
+                -22.955,
+                -43.41
+              ]
+            ],
+            "criticalSegments": [],
+            "consultativeRecommendations": [
+              "Rota projetada com trânsito dentro do padrão operacional esperado.",
+              "Recomenda-se recalcular a projeção 30 minutos antes do horário planejado de saída."
+            ],
+            "alternativeRoute": null,
+            "cameras": [
+              {
+                "cameraId": "CAM-COR-0245",
+                "cameraName": "Linha Vermelha - Km 12 (Ilha do Fundão)",
+                "corridor": "Linha Vermelha",
+                "latitude": -22.879,
+                "longitude": -43.236,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 17,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0790",
+                "cameraName": "Estrada dos Bandeirantes x Curicica (Acesso Globo)",
+                "corridor": "Jacarepaguá",
+                "latitude": -22.956,
+                "longitude": -43.411,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 151,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0112",
+                "cameraName": "Av. Martin Luther King Jr x Pavuna",
+                "corridor": "Pavuna / Zona Norte",
+                "latitude": -22.8105,
+                "longitude": -43.365,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 196,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0340",
+                "cameraName": "Linha Amarela - Saída 7 (Bonsucesso)",
+                "corridor": "Linha Amarela",
+                "latitude": -22.898,
+                "longitude": -43.265,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "LAMSA / COR-Rio",
+                "isPublic": true,
+                "distanceToRouteMeters": 301,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0580",
+                "cameraName": "Transolímpica - Saída Curicica / Colônia",
+                "corridor": "Transolímpica",
+                "latitude": -22.948,
+                "longitude": -43.402,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 429,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0390",
+                "cameraName": "Linha Amarela - Praça do Pedágio",
+                "corridor": "Linha Amarela",
+                "latitude": -22.909,
+                "longitude": -43.31,
+                "status": "DESATUALIZADA",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "LAMSA",
+                "isPublic": true,
+                "distanceToRouteMeters": 1066,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-COR-0288",
+                "cameraName": "Linha Vermelha x Linha Amarela (Caju)",
+                "corridor": "Linha Vermelha",
+                "latitude": -22.884,
+                "longitude": -43.22,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 1600,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              },
+              {
+                "cameraId": "CAM-CCR-0014",
+                "cameraName": "Rodovia Presidente Dutra - Km 166 (Trevo Pavuna)",
+                "corridor": "Rodovia Presidente Dutra",
+                "latitude": -22.828,
+                "longitude": -43.365,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://www.ccrriosp.com.br",
+                "provider": "CCR RioSP",
+                "isPublic": true,
+                "distanceToRouteMeters": 1928,
+                "lastImageAt": "2026-09-29T20:49:45.654Z"
+              }
+            ],
+            "trafficComparison": {
+              "baseDurationMinutes": 48,
+              "trafficDurationMinutes": 48,
+              "differenceMinutes": 0,
+              "googleStatus": "REQUER_APROVACAO_QUOTA",
+              "googleQuotaNotice": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "googleNotes": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "wazeStatus": "CONSULTA_EXTERNA_DISPONIVEL",
+              "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
+              "lastQueriedAt": "2026-09-29T20:52:45.654Z"
+            },
+            "routeColor": "#00d1ff",
+            "sourceStatus": "ACTIVE",
+            "calculatedAt": "2026-09-29T20:52:45.654Z",
+            "expiresAt": "2026-09-29T21:07:45.654Z",
+            "isGpsBased": false,
+            "isSynthetic": true,
+            "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
+          },
+          {
+            "caravanId": "caravan-02",
+            "caravanName": "Caravana Caldeirão com Mion — Baixada Fluminense",
+            "programName": "Caldeirão com Mion",
+            "companyName": "Doce Rio",
+            "operationalNotes": "Setor VIP - Portão 1 · Estúdio B",
+            "originLabel": "Praça do Skate — Nova Iguaçu",
+            "originAddress": "Av. Governador Portela, Centro, Nova Iguaçu - RJ",
+            "neighborhood": "Nova Iguaçu",
+            "corridor": "Baixada Fluminense / Presidente Dutra / Transolímpica",
+            "originCoords": [
+              -22.756,
+              -43.46
+            ],
+            "plannedDepartureAt": "2026-09-29T13:15:00.000Z",
+            "destinationLabel": "ESTÚDIOS GLOBO — PONTO DE CHEGADA HOMOLOGAÇÃO",
+            "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
+            "destinationCoords": [
+              -22.955,
+              -43.41
+            ],
+            "baseDistanceKm": 38,
+            "baseDurationMinutes": 55,
+            "incidentImpactMinutes": 0,
+            "unquantifiedIncidentsCount": 0,
+            "projectedDurationMinutes": 55,
+            "projectedArrivalAt": "2026-09-29T14:10:00.000Z",
+            "operationalWindowStart": "2026-09-29T14:15:00.000Z",
+            "operationalWindowEnd": "2026-09-29T14:45:00.000Z",
+            "marginToWindowMinutes": 35,
+            "projectedStatus": "DENTRO DA JANELA",
+            "incidents": [],
+            "routeGeometry": [
+              [
+                -22.756,
+                -43.46
+              ],
+              [
+                -22.795,
+                -43.41
+              ],
+              [
+                -22.835,
+                -43.37
+              ],
+              [
+                -22.87,
+                -43.385
+              ],
+              [
+                -22.92,
+                -43.4
+              ],
+              [
+                -22.955,
+                -43.41
+              ]
+            ],
+            "criticalSegments": [],
+            "consultativeRecommendations": [
+              "Rota projetada com trânsito dentro do padrão operacional esperado.",
+              "Recomenda-se recalcular a projeção 30 minutos antes do horário planejado de saída."
+            ],
+            "alternativeRoute": null,
+            "cameras": [
+              {
+                "id": "CAM-TRANSOLIMPICA-01",
+                "cameraId": "CAM-COR-0512",
+                "cameraName": "Transolímpica - Acesso Deodoro / Magalhães Bastos",
+                "corridor": "Transolímpica",
+                "latitude": -22.872,
+                "longitude": -43.387,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 138,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0790",
+                "cameraName": "Estrada dos Bandeirantes x Curicica (Acesso Globo)",
+                "corridor": "Jacarepaguá",
+                "latitude": -22.956,
+                "longitude": -43.411,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 151,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0580",
+                "cameraName": "Transolímpica - Saída Curicica / Colônia",
+                "corridor": "Transolímpica",
+                "latitude": -22.948,
+                "longitude": -43.402,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 594,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-CCR-0014",
+                "cameraName": "Rodovia Presidente Dutra - Km 166 (Trevo Pavuna)",
+                "corridor": "Rodovia Presidente Dutra",
+                "latitude": -22.828,
+                "longitude": -43.365,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://www.ccrriosp.com.br",
+                "provider": "CCR RioSP",
+                "isPublic": true,
+                "distanceToRouteMeters": 904,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0112",
+                "cameraName": "Av. Martin Luther King Jr x Pavuna",
+                "corridor": "Pavuna / Zona Norte",
+                "latitude": -22.8105,
+                "longitude": -43.365,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 2223,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              }
+            ],
+            "trafficComparison": {
+              "baseDurationMinutes": 55,
+              "trafficDurationMinutes": 55,
+              "differenceMinutes": 0,
+              "googleStatus": "REQUER_APROVACAO_QUOTA",
+              "googleQuotaNotice": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "googleNotes": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "wazeStatus": "CONSULTA_EXTERNA_DISPONIVEL",
+              "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
+              "lastQueriedAt": "2026-09-29T20:52:45.655Z"
+            },
+            "routeColor": "#f5a623",
+            "sourceStatus": "ACTIVE",
+            "calculatedAt": "2026-09-29T20:52:45.655Z",
+            "expiresAt": "2026-09-29T21:07:45.655Z",
+            "isGpsBased": false,
+            "isSynthetic": true,
+            "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
+          },
+          {
+            "caravanId": "caravan-03",
+            "caravanName": "Caravana Altas Horas — Zona Norte & Madureira",
+            "programName": "Altas Horas",
+            "companyName": "Pianeta",
+            "operationalNotes": "Plateia Geral - Portão 2",
+            "originLabel": "Parque Madureira — Madureira",
+            "originAddress": "Rua Soares Caldeira, Madureira, Rio de Janeiro - RJ",
+            "neighborhood": "Madureira",
+            "corridor": "Zona Norte / Linha Amarela / Barra da Tijuca",
+            "originCoords": [
+              -22.89,
+              -43.12
+            ],
+            "plannedDepartureAt": "2026-09-29T14:30:00.000Z",
+            "destinationLabel": "ESTÚDIOS GLOBO — PONTO DE CHEGADA HOMOLOGAÇÃO",
+            "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
+            "destinationCoords": [
+              -22.955,
+              -43.41
+            ],
+            "baseDistanceKm": 42,
+            "baseDurationMinutes": 62,
+            "incidentImpactMinutes": 0,
+            "unquantifiedIncidentsCount": 0,
+            "projectedDurationMinutes": 62,
+            "projectedArrivalAt": "2026-09-29T15:32:00.000Z",
+            "operationalWindowStart": "2026-09-29T15:40:00.000Z",
+            "operationalWindowEnd": "2026-09-29T16:15:00.000Z",
+            "marginToWindowMinutes": 43,
+            "projectedStatus": "DENTRO DA JANELA",
+            "incidents": [],
+            "routeGeometry": [
+              [
+                -22.89,
+                -43.12
+              ],
+              [
+                -22.885,
+                -43.16
+              ],
+              [
+                -22.88,
+                -43.21
+              ],
+              [
+                -22.905,
+                -43.27
+              ],
+              [
+                -22.93,
+                -43.34
+              ],
+              [
+                -22.955,
+                -43.41
+              ]
+            ],
+            "criticalSegments": [],
+            "consultativeRecommendations": [
+              "Rota projetada com trânsito dentro do padrão operacional esperado.",
+              "Recomenda-se recalcular a projeção 30 minutos antes do horário planejado de saída."
+            ],
+            "alternativeRoute": null,
+            "cameras": [
+              {
+                "cameraId": "CAM-ECR-0008",
+                "cameraName": "Ponte Rio-Niterói - Vão Central (Sentido Rio)",
+                "corridor": "Ponte Rio-Niterói",
+                "latitude": -22.885,
+                "longitude": -43.16,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://www.ecoponte.com.br",
+                "provider": "EcoPonte",
+                "isPublic": true,
+                "distanceToRouteMeters": 0,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0288",
+                "cameraName": "Linha Vermelha x Linha Amarela (Caju)",
+                "corridor": "Linha Vermelha",
+                "latitude": -22.884,
+                "longitude": -43.22,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 17,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0790",
+                "cameraName": "Estrada dos Bandeirantes x Curicica (Acesso Globo)",
+                "corridor": "Jacarepaguá",
+                "latitude": -22.956,
+                "longitude": -43.411,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 151,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0580",
+                "cameraName": "Transolímpica - Saída Curicica / Colônia",
+                "corridor": "Transolímpica",
+                "latitude": -22.948,
+                "longitude": -43.402,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 429,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0340",
+                "cameraName": "Linha Amarela - Saída 7 (Bonsucesso)",
+                "corridor": "Linha Amarela",
+                "latitude": -22.898,
+                "longitude": -43.265,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "LAMSA / COR-Rio",
+                "isPublic": true,
+                "distanceToRouteMeters": 498,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0390",
+                "cameraName": "Linha Amarela - Praça do Pedágio",
+                "corridor": "Linha Amarela",
+                "latitude": -22.909,
+                "longitude": -43.31,
+                "status": "DESATUALIZADA",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "LAMSA",
+                "isPublic": true,
+                "distanceToRouteMeters": 1066,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0245",
+                "cameraName": "Linha Vermelha - Km 12 (Ilha do Fundão)",
+                "corridor": "Linha Vermelha",
+                "latitude": -22.879,
+                "longitude": -43.236,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 1199,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              }
+            ],
+            "trafficComparison": {
+              "baseDurationMinutes": 62,
+              "trafficDurationMinutes": 62,
+              "differenceMinutes": 0,
+              "googleStatus": "REQUER_APROVACAO_QUOTA",
+              "googleQuotaNotice": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "googleNotes": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "wazeStatus": "CONSULTA_EXTERNA_DISPONIVEL",
+              "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
+              "lastQueriedAt": "2026-09-29T20:52:45.655Z"
+            },
+            "routeColor": "#10b981",
+            "sourceStatus": "ACTIVE",
+            "calculatedAt": "2026-09-29T20:52:45.655Z",
+            "expiresAt": "2026-09-29T21:07:45.655Z",
+            "isGpsBased": false,
+            "isSynthetic": true,
+            "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
+          },
+          {
+            "caravanId": "caravan-04",
+            "caravanName": "Caravana Conversa com Bial — Zona Oeste & Campo Grande",
+            "programName": "Conversa com Bial",
+            "companyName": "Viação União",
+            "operationalNotes": "Plateia Auditório - Portão 4",
+            "originLabel": "Praça Raul Boaventura — Campo Grande",
+            "originAddress": "Praça Raul Boaventura, Campo Grande, Rio de Janeiro - RJ",
+            "neighborhood": "Campo Grande",
+            "corridor": "Zona Oeste / Transolímpica / Jacarepaguá",
+            "originCoords": [
+              -22.903,
+              -43.559
+            ],
+            "plannedDepartureAt": "2026-09-29T14:15:00.000Z",
+            "destinationLabel": "ESTÚDIOS GLOBO — PONTO DE CHEGADA HOMOLOGAÇÃO",
+            "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
+            "destinationCoords": [
+              -22.955,
+              -43.41
+            ],
+            "baseDistanceKm": 27,
+            "baseDurationMinutes": 40,
+            "incidentImpactMinutes": 0,
+            "unquantifiedIncidentsCount": 0,
+            "projectedDurationMinutes": 40,
+            "projectedArrivalAt": "2026-09-29T14:55:00.000Z",
+            "operationalWindowStart": "2026-09-29T15:00:00.000Z",
+            "operationalWindowEnd": "2026-09-29T15:30:00.000Z",
+            "marginToWindowMinutes": 35,
+            "projectedStatus": "DENTRO DA JANELA",
+            "incidents": [],
+            "routeGeometry": [
+              [
+                -22.903,
+                -43.559
+              ],
+              [
+                -22.885,
+                -43.5
+              ],
+              [
+                -22.87,
+                -43.43
+              ],
+              [
+                -22.91,
+                -43.41
+              ],
+              [
+                -22.955,
+                -43.41
+              ]
+            ],
+            "criticalSegments": [],
+            "consultativeRecommendations": [
+              "Rota projetada com trânsito dentro do padrão operacional esperado.",
+              "Recomenda-se recalcular a projeção 30 minutos antes do horário planejado de saída."
+            ],
+            "alternativeRoute": null,
+            "cameras": [
+              {
+                "cameraId": "CAM-COR-0790",
+                "cameraName": "Estrada dos Bandeirantes x Curicica (Acesso Globo)",
+                "corridor": "Jacarepaguá",
+                "latitude": -22.956,
+                "longitude": -43.411,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 151,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0620",
+                "cameraName": "Av. Brasil - Altura de Realengo",
+                "corridor": "Avenida Brasil",
+                "latitude": -22.868,
+                "longitude": -43.435,
+                "status": "OFFLINE",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 333,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              },
+              {
+                "cameraId": "CAM-COR-0580",
+                "cameraName": "Transolímpica - Saída Curicica / Colônia",
+                "corridor": "Transolímpica",
+                "latitude": -22.948,
+                "longitude": -43.402,
+                "status": "DISPONÍVEL",
+                "sourceUrl": "https://cor.rio/cameras",
+                "provider": "COR_RIO",
+                "isPublic": true,
+                "distanceToRouteMeters": 819,
+                "lastImageAt": "2026-09-29T20:49:45.655Z"
+              }
+            ],
+            "trafficComparison": {
+              "baseDurationMinutes": 40,
+              "trafficDurationMinutes": 40,
+              "differenceMinutes": 0,
+              "googleStatus": "REQUER_APROVACAO_QUOTA",
+              "googleQuotaNotice": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "googleNotes": "Integração Google Routes API desativada localmente (requer quota corporativa aprovada).",
+              "wazeStatus": "CONSULTA_EXTERNA_DISPONIVEL",
+              "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
+              "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
+              "lastQueriedAt": "2026-09-29T20:52:45.655Z"
+            },
+            "routeColor": "#d946ef",
+            "sourceStatus": "ACTIVE",
+            "calculatedAt": "2026-09-29T20:52:45.655Z",
+            "expiresAt": "2026-09-29T21:07:45.655Z",
+            "isGpsBased": false,
+            "isSynthetic": true,
+            "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
+          }
+        ],
+        "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS.",
+        "isGpsBased": false,
+        "isSynthetic": true
+      }
+    },
+    "caravanasHtml": {
+      "url": "https://agenterit.com.br/caravanas.html",
+      "httpStatus": 200,
+      "httpStatusText": "OK",
+      "latencyMs": 220,
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "access-control-allow-credentials": "true",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a42ddf9a2caa6d46-GIG",
+        "connection": "keep-alive",
+        "content-encoding": "br",
+        "content-type": "text/html; charset=UTF-8",
+        "date": "Tue, 29 Sep 2026 20:52:45 GMT",
+        "etag": "W/\"1f925-1a0eee8b030\"",
+        "expires": "0",
+        "last-modified": "Tue, 29 Sep 2026 20:43:42 GMT",
+        "pragma": "no-cache",
+        "rndr-id": "1c6a0475-e7a9-46bc",
+        "server": "cloudflare",
+        "transfer-encoding": "chunked",
+        "vary": "Origin, Accept-Encoding",
+        "x-powered-by": "Express",
+        "x-render-origin-server": "Render"
+      },
+      "contentLengthBytes": 128513,
+      "integrityChecks": {
+        "hasAuthRedirectTokenCheck": true,
+        "hasWazePinsStyle": true,
+        "hasCorridorCoordinates": true,
+        "hasDistanceMetric": true,
+        "hasDomingaoHuck": true,
+        "hasCaldeiraoMion": true
+      }
+    },
+    "dashboardHtml": {
+      "url": "https://agenterit.com.br/dashboard.html",
+      "httpStatus": 200,
+      "httpStatusText": "OK",
+      "latencyMs": 212,
+      "responseHeaders": {
+        "accept-ranges": "bytes",
+        "access-control-allow-credentials": "true",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a42ddf9bbe0f6d46-GIG",
+        "connection": "keep-alive",
+        "content-encoding": "br",
+        "content-type": "text/html; charset=UTF-8",
+        "date": "Tue, 29 Sep 2026 20:52:46 GMT",
+        "etag": "W/\"15f7d-1a0eee8b030\"",
+        "expires": "0",
+        "last-modified": "Tue, 29 Sep 2026 20:43:42 GMT",
+        "pragma": "no-cache",
+        "rndr-id": "90c2ace9-f0fc-4e11",
+        "server": "cloudflare",
+        "transfer-encoding": "chunked",
+        "vary": "Origin, Accept-Encoding",
+        "x-powered-by": "Express",
+        "x-render-origin-server": "Render"
+      },
+      "contentLengthBytes": 89529,
+      "integrityChecks": {
+        "hasTabBtnCaravanas": true,
+        "hasTabPaneCaravanas": true,
+        "hasCorridorFilterCentro": true,
+        "hasCorridorFilterTransolimpica": true,
+        "hasMonitoramentoLocked": true
+      }
+    }
+  }
+}

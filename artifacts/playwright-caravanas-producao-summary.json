@@ -1,0 +1,229 @@
+{
+  "timestamp": "2026-09-29T20:52:14.555Z",
+  "testSuite": "Agente RIT - Homologação Módulo Caravanas em Produção",
+  "environment": {
+    "target": "http://127.0.0.1:3015",
+    "browser": "Chromium (Headless)",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "execution": {
+    "startedAt": "2026-09-29T20:51:52.978Z",
+    "completedAt": "2026-09-29T20:52:14.555Z",
+    "durationMs": 21577,
+    "totalChecks": 27,
+    "passedChecks": 27,
+    "failedChecks": 0,
+    "passRate": "100.0%"
+  },
+  "checks": [
+    {
+      "id": 1,
+      "category": "GERAL",
+      "description": "Status HTTP 200 em GET /api/traffic-alert/caravans",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.173Z"
+    },
+    {
+      "id": 2,
+      "category": "GERAL",
+      "description": "Lista contém ao menos 4 caravanas operacionais",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.202Z"
+    },
+    {
+      "id": 3,
+      "category": "GERAL",
+      "description": "Garantia de Privacidade: isGpsBased estritamente false",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.202Z"
+    },
+    {
+      "id": 4,
+      "category": "GERAL",
+      "description": "Garantia de Governança: isSynthetic declarado",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.202Z"
+    },
+    {
+      "id": 5,
+      "category": "GERAL",
+      "description": "Presença de Disclaimer Legal da LGPD",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.203Z"
+    },
+    {
+      "id": 6,
+      "category": "GERAL",
+      "description": "Status HTTP 200 em GET /api/traffic-alert/caravans/kpis",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.240Z"
+    },
+    {
+      "id": 7,
+      "category": "GERAL",
+      "description": "KPIs estruturados contêm totalPlanned, withinWindow e attention",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.241Z"
+    },
+    {
+      "id": 8,
+      "category": "GERAL",
+      "description": "Status HTTP 200 em POST /api/traffic-alert/caravans/recalculate-all",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:53.268Z"
+    },
+    {
+      "id": 9,
+      "category": "GERAL",
+      "description": "Controle de Acesso (P1): Acesso direto sem token redireciona para login (/)",
+      "passed": true,
+      "timestamp": "2026-09-29T20:51:58.546Z"
+    },
+    {
+      "id": 10,
+      "category": "GERAL",
+      "description": "Título oficial da página de produção de Caravanas",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.820Z"
+    },
+    {
+      "id": 11,
+      "category": "GERAL",
+      "description": "Cabeçalho contém atalho para o Painel Gerencial (/dashboard.html)",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.882Z"
+    },
+    {
+      "id": 12,
+      "category": "GERAL",
+      "description": "Cabeçalho contém atalho para Como Funciona (/apresentacao.html)",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.898Z"
+    },
+    {
+      "id": 13,
+      "category": "GERAL",
+      "description": "Sessão do Operador exibida no cabeçalho",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.918Z"
+    },
+    {
+      "id": 14,
+      "category": "GERAL",
+      "description": "KPIs de Caravanas visíveis e operacionais",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.932Z"
+    },
+    {
+      "id": 15,
+      "category": "GERAL",
+      "description": "Mapa cartográfico Leaflet inicializado (#map-container)",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.942Z"
+    },
+    {
+      "id": 16,
+      "category": "GERAL",
+      "description": "Feed operacional renderizou cards de caravanas",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.951Z"
+    },
+    {
+      "id": 17,
+      "category": "GERAL",
+      "description": "Remoção de Caravanas Simuladas (P1): Zero ocorrências de \"Caravana Demonstração\"",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.992Z"
+    },
+    {
+      "id": 18,
+      "category": "GERAL",
+      "description": "Operações Reais de Produção (P1): Presença de Huck, Mion, Altas Horas ou Bial",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.992Z"
+    },
+    {
+      "id": 19,
+      "category": "GERAL",
+      "description": "Caravana com Distância em KM (P2): Quilometragem visível nos cards de caravanas",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:01.992Z"
+    },
+    {
+      "id": 20,
+      "category": "GERAL",
+      "description": "Busca por Bairro (P1): Busca por \"Niterói\" filtra corretamente as caravanas",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:02.474Z"
+    },
+    {
+      "id": 21,
+      "category": "GERAL",
+      "description": "Ocorrências com Ícones Operacionais Waze (P2) no mapa",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:02.935Z"
+    },
+    {
+      "id": 22,
+      "category": "GERAL",
+      "description": "Drawer tático abriu com detalhes da caravana",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:04.634Z"
+    },
+    {
+      "id": 23,
+      "category": "GERAL",
+      "description": "Distância em KM presente no Drawer Tático",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:04.642Z"
+    },
+    {
+      "id": 24,
+      "category": "GERAL",
+      "description": "Botão da aba Caravanas existe na navegação (#tab-btn-caravanas)",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:10.788Z"
+    },
+    {
+      "id": 25,
+      "category": "GERAL",
+      "description": "Painel #tab-caravanas ativado no Dashboard",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:12.233Z"
+    },
+    {
+      "id": 26,
+      "category": "GERAL",
+      "description": "Iframe do Módulo de Caravanas inserido no container da aba",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:12.254Z"
+    },
+    {
+      "id": 27,
+      "category": "GERAL",
+      "description": "Zero erros graves no console do navegador",
+      "passed": true,
+      "timestamp": "2026-09-29T20:52:14.555Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "caravanas_producao_standalone.png",
+      "path": "docs/screenshots/caravanas_producao_standalone.png",
+      "resolution": "1920x1080"
+    },
+    {
+      "file": "caravanas_producao_drawer.png",
+      "path": "docs/screenshots/caravanas_producao_drawer.png",
+      "resolution": "1920x1080"
+    },
+    {
+      "file": "caravanas_producao_dashboard_tab.png",
+      "path": "docs/screenshots/caravanas_producao_dashboard_tab.png",
+      "resolution": "1920x1080"
+    }
+  ]
+}
