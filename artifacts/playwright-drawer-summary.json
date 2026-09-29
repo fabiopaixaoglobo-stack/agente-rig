@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-09-29T13:45:27.549Z",
+  "testTarget": "http://localhost:3000/ambiente-visual-confirmacao.html",
+  "browser": {
+    "name": "Chromium",
+    "headless": true,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "stateBeforeClick": {
+    "hasHiddenClass": true,
+    "display": "none",
+    "visibility": "visible",
+    "opacity": "1",
+    "zIndex": "1000",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "left": 0
+    }
+  },
+  "stateAfterClick": {
+    "hasHiddenClass": false,
+    "display": "flex",
+    "visibility": "visible",
+    "opacity": "1",
+    "zIndex": "1000",
+    "rect": {
+      "top": 54,
+      "right": 1920,
+      "bottom": 1080,
+      "left": 1430,
+      "width": 490,
+      "height": 1026
+    },
+    "headerHeight": 54,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "dockedBelowHeader": true,
+    "dockedToRightEdge": true,
+    "hasContent": {
+      "title": true,
+      "camerasSection": true,
+      "comparisonSection": true,
+      "recommendations": false
+    }
+  },
+  "screenshot": {
+    "path": "docs/screenshots/rit_drawer_runtime_audit.png",
+    "file": "rit_drawer_runtime_audit.png",
+    "sizeBytes": 2307484
+  }
+}

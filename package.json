@@ -1,15 +1,21 @@
 {
   "name": "agente-rit-fullstack",
-  "version": "1.2.2",
+  "version": "1.3.0-rc.2",
   "description": "Sistema Agente RIT - Rotas Inteligentes de Transportes",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "serve": "node server/server.js",
     "build": "npm install",
+    "test": "node --test test/traffic-alert/*.test.js",
+    "smoke:homologacao": "node scripts/smoke-test-homologacao.js",
     "docs:security:update": "node scripts/update-security-architecture.js",
     "docs:security:check": "node scripts/update-security-architecture.js --check",
-    "test:security": "node scripts/test-security-architecture.js"
+    "test:security": "node scripts/test-security-architecture.js",
+    "test:traffic-alert": "node --test test/traffic-alert/*.test.js",
+    "audit:evidence": "node scripts/verify-all-evidence.js",
+    "audit:drawer": "node scripts/verify-drawer-runtime.js",
+    "migrate:traffic:dry": "node scripts/migrate-traffic-alert.js --dry-run"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
