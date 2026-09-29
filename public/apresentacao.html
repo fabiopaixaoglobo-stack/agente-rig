@@ -573,11 +573,21 @@
     /* Cards de Benefícios / KPIs Operacionais */
     .kpi-container {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
       width: 100%;
-      max-width: 980px;
+      max-width: 1040px;
       margin-top: 10px;
+    }
+    @media (max-width: 1024px) {
+      .kpi-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .kpi-container {
+        grid-template-columns: 1fr;
+      }
     }
     .kpi-card {
       background: rgba(10, 20, 36, 0.85);
@@ -1294,7 +1304,7 @@
     </div>
   </header>
 
-  <!-- Deck de 10 Slides -->
+  <!-- Deck de 8 Slides Operacionais -->
   <main class="deck" id="deck">
 
     <!-- ========================================================================= -->
@@ -1318,7 +1328,7 @@
           Centro de Comando, Monitoramento e Otimização Logística Urbana em Tempo Real · Suporte Operacional Globo CCO
         </p>
 
-        <!-- 4 KPIs Operacionais Explicativos do Checkpoint 5.3 -->
+        <!-- 5 KPIs Operacionais Explicativos do Checkpoint 5.3 -->
         <div class="kpi-container">
           <div class="kpi-card" onclick="openKpiModal(1)" title="Clique para ver o detalhamento da validação">
             <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-vial-circle-check"></i></div>
@@ -1351,6 +1361,14 @@
             <div class="kpi-lbl">Controle e Rastreabilidade de Evidências</div>
             <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
           </div>
+
+          <div class="kpi-card" onclick="openKpiModal(5)" title="Clique para ver o detalhamento de governança e histórico de entregas">
+            <div class="kpi-icon" style="color: #38BDF8;"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="kpi-num" style="color: #38BDF8;">CP 5.3</div>
+            <div class="kpi-label-main">GOVERNANÇA & ENTREGAS</div>
+            <div class="kpi-lbl">Privacidade Estrita & Histórico Vivo</div>
+            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+          </div>
         </div>
 
         <!-- 5 Pilares Estratégicos -->
@@ -1366,8 +1384,8 @@
           <button onclick="nextSlide()" class="btn-action-primary">
             EXPLORAR RECURSOS HOMOLOGADOS <i class="fa-solid fa-arrow-right"></i>
           </button>
-          <button onclick="goToSlide(9)" class="btn-action-secondary">
-            <i class="fa-solid fa-clock-rotate-left"></i> ÚLTIMAS ENTREGAS (SLIDE 10)
+          <button onclick="openKpiModal(5)" class="btn-action-secondary">
+            <i class="fa-solid fa-shield-halved"></i> GOVERNANÇA & ENTREGAS
           </button>
         </div>
       </div>
@@ -1826,196 +1844,6 @@
       </div>
     </section>
 
-    <!-- ========================================================================= -->
-    <!-- SLIDE 9: GOVERNANÇA E PRIVACIDADE (PRIVACIDADE DESDE A CONCEPÇÃO)         -->
-    <!-- ========================================================================= -->
-    <section class="slide" data-slide="9">
-      <div class="split-container">
-        <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-user-shield"></i> Governança Institucional · Escopo Controlado</span>
-          <h2 class="title-xl">Governança & <span class="highlight">Privacidade Estrita</span></h2>
-          <p class="description">
-            O Agente RIT opera sob estrito escopo consultivo e controlado, em conformidade com as diretrizes de privacidade desde a concepção (Privacy by Design), LGPD e governança corporativa da Globo.
-          </p>
-
-          <div class="features-list">
-            <div class="feature-item">
-              <div class="feature-icon" style="color:#F5A623;"><i class="fa-solid fa-ban"></i></div>
-              <div class="feature-text">
-                <h4>Não Utiliza GPS de Motoristas</h4>
-                <p>Trava estática na esteira automatizada de publicação garante zero consumo de hardware GPS ou APIs de geolocalização nativas do aparelho.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon" style="color:#F5A623;"><i class="fa-solid fa-user-slash"></i></div>
-              <div class="feature-text">
-                <h4>Não Rastreia Passageiros nem Coleta PII</h4>
-                <p>Nenhum dado pessoal, identidade ou telefone de motorista ou passageiro trafega ou é armazenado no sistema.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-calculator"></i></div>
-              <div class="feature-text">
-                <h4>Projeções Operacionais Sintéticas Declaradas</h4>
-                <p>Acompanhamento baseado exclusivamente no horário planejado e nas condições viárias públicas da malha urbana.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Código DTO com Disclaimer Obrigatório -->
-          <div class="code-box">
-            <span style="color:#64748b;">// DTO Canônico de Caravanas (Imutável)</span><br>
-            <span style="color:#38bdf8;">"isSynthetic"</span>: <span style="color:#a7f3d0;">true</span>,<br>
-            <span style="color:#38bdf8;">"isGpsBased"</span>: <span style="color:#f43f5e;">false</span>,<br>
-            <span style="color:#38bdf8;">"disclaimer"</span>: <span style="color:#fde047;">"PROJEÇÃO OPERACIONAL BASEADA NO HORÁRIO PLANEJADO — NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS"</span>
-          </div>
-        </div>
-
-        <div class="content-right">
-          <div class="mockup-wrapper">
-            <div class="mockup-bar">
-              <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit-backend / governanca-termo-aceite.png</div>
-            </div>
-            <div class="mockup-content">
-              <img class="mockup-img" src="assets/apresentacao/rit_validacao_governanca_drawer.png" alt="Termo de Aceite e Governança" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SLIDE 10: ÚLTIMAS ENTREGAS (HISTÓRICO VIVO DE ENTREGAS ALIMENTADO POR JSON) -->
-    <!-- ========================================================================= -->
-    <section class="slide" data-slide="10">
-      <div class="hero-container" style="max-width: 1040px; padding: 10px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 12px;">
-          <div>
-            <span class="tag alert"><i class="fa-solid fa-bolt"></i> Alimentado por data/releases.json</span>
-            <h2 class="title-xl" style="margin-bottom: 2px;">ÚLTIMAS ENTREGAS · <span class="highlight">HISTÓRICO VIVO DE EVOLUÇÃO</span></h2>
-            <p class="description" style="margin-bottom: 0;">Registro dinâmico de evolução contínua sincronizado a cada homologação aprovada no Agente RIT.</p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button onclick="reloadReleasesData()" class="btn-action-secondary" style="padding: 6px 12px; font-size: 11px;">
-              <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Histórico
-            </button>
-            <a href="data/releases.json" target="_blank" class="btn-action-secondary" style="padding: 6px 12px; font-size: 11px;">
-              <i class="fa-solid fa-file-code"></i> Ver JSON
-            </a>
-          </div>
-        </div>
-
-        <div class="releases-split-grid">
-          <!-- Coluna 1: Entregas do Checkpoint 5.3 -->
-          <div class="releases-col-main">
-            <div class="release-header-card">
-              <div class="release-header-left">
-                <span class="release-tag-active">CHECKPOINT ATUAL</span>
-                <span class="release-version-title" id="rel-current-version">Checkpoint 5.3</span>
-                <span class="release-date-badge" id="rel-current-date"><i class="fa-regular fa-calendar"></i> 29/09/2026</span>
-              </div>
-              <span class="release-status-pill"><i class="fa-solid fa-circle-check"></i> Homologado</span>
-            </div>
-            
-            <div class="releases-feature-list" id="releases-features-container">
-              <!-- Populado dinamicamente via JS ou fallback estático -->
-              <div class="release-feature-card">
-                <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                <div class="feature-body">
-                  <div class="feature-header-row">
-                    <strong>Caravanas Inteligentes</strong>
-                    <span class="feature-tag">Operacional</span>
-                  </div>
-                  <p>Cadastro, monitoramento de janelas de chegada, mapa dinâmico e suporte tático aos Estúdios Globo.</p>
-                </div>
-              </div>
-              <div class="release-feature-card">
-                <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                <div class="feature-body">
-                  <div class="feature-header-row">
-                    <strong>Painel Lateral Tático Integrado</strong>
-                    <span class="feature-tag">Interface CCO</span>
-                  </div>
-                  <p>Painel lateral retrátil com visualização de rotas, comparativo Google Maps vs Waze e telemetria.</p>
-                </div>
-              </div>
-              <div class="release-feature-card">
-                <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                <div class="feature-body">
-                  <div class="feature-header-row">
-                    <strong>Geocodificação Offline Imediata</strong>
-                    <span class="feature-tag">Performance</span>
-                  </div>
-                  <p>Mapeamento instantâneo para 5 Centros de Distribuição e rotas sem dependência de APIs externas pagas.</p>
-                </div>
-              </div>
-              <div class="release-feature-card">
-                <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                <div class="feature-body">
-                  <div class="feature-header-row">
-                    <strong>Multi-Rotas Coloridas & Lote</strong>
-                    <span class="feature-tag">Cartografia</span>
-                  </div>
-                  <p>Visualização simultânea de trajetos com 7 cores canônicas e recálculo unificado em lote.</p>
-                </div>
-              </div>
-              <div class="release-feature-card">
-                <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                <div class="feature-body">
-                  <div class="feature-header-row">
-                    <strong>Auditorias de Integridade & Rastreabilidade</strong>
-                    <span class="feature-tag">Governança</span>
-                  </div>
-                  <p>95 validações automatizadas, 20 testes de validação rápida, manifesto de 12 evidências e relatório de integridade.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Coluna 2: Histórico de Checkpoints & Diretriz Permanente -->
-          <div class="releases-col-side">
-            <h4 class="history-title"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Checkpoints</h4>
-            <div class="history-timeline" id="releases-history-container">
-              <div class="history-item">
-                <div class="history-dot"></div>
-                <div class="history-header">
-                  <strong>Checkpoint 5.2</strong>
-                  <span class="history-date">28/09/2026</span>
-                </div>
-                <p>Módulo Caravanas & Provedores Externos: cálculo comparativo Google/Waze e capturas de tela em alta definição.</p>
-              </div>
-              <div class="history-item">
-                <div class="history-dot"></div>
-                <div class="history-header">
-                  <strong>Checkpoint 5.1</strong>
-                  <span class="history-date">25/09/2026</span>
-                </div>
-                <p>Migração de Identidade RIG para RIT: preservação de rotas e segurança estática de privacidade.</p>
-              </div>
-              <div class="history-item">
-                <div class="history-dot"></div>
-                <div class="history-header">
-                  <strong>Checkpoint 4.2</strong>
-                  <span class="history-date">21/09/2026</span>
-                </div>
-                <p>RIT Alerta & Câmeras: integração contínua de feeds viários e 4.200 câmeras das 5 regionais Globo.</p>
-              </div>
-            </div>
-
-            <!-- Box da Diretriz Permanente de Produto -->
-            <div class="policy-box">
-              <div class="policy-icon"><i class="fa-solid fa-book-bookmark"></i></div>
-              <div class="policy-text">
-                <h5>Diretriz DP-RIT-001</h5>
-                <p>Toda nova funcionalidade homologada é registrada em data/releases.json e atualiza esta apresentação automaticamente.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- Modal Explicativo de KPIs Homologados -->
@@ -2063,7 +1891,7 @@
   <nav class="nav-bar">
     <button class="nav-btn" id="prev-btn"><i class="fa-solid fa-chevron-left"></i> Anterior</button>
     <div class="dots" id="dots-container"></div>
-    <div class="slide-counter" id="counter">1 / 10</div>
+    <div class="slide-counter" id="counter">1 / 8</div>
     <button class="nav-btn" id="next-btn">Próximo <i class="fa-solid fa-chevron-right"></i></button>
     <button class="fullscreen-btn" id="btn-fullscreen" title="Tela Cheia (F11)"><i class="fa-solid fa-expand"></i></button>
   </nav>
@@ -2257,6 +2085,23 @@
         ],
         risk: 'Evita adulteração acidental, perda da cadeia de custódia e inconsistências documentais entre a homologação e a operação real.',
         benefit: 'Assegura transparência, governança corporativa e máxima confiabilidade das informações apresentadas aos gestores.'
+      },
+      5: {
+        icon: '<i class="fa-solid fa-shield-halved" style="color:#38BDF8;"></i>',
+        tag: 'CHECKPOINT 5.3 · GOVERNANÇA & HISTÓRICO VIVO',
+        title: 'Governança Operacional e Histórico Vivo de Entregas',
+        desc: 'O Agente RIT opera sob estrito escopo consultivo e privacidade desde a concepção (LGPD), mantendo controle formal de versões e registro contínuo de todas as funcionalidades homologadas.',
+        checklist: [
+          'Trava de Privacidade: Zero GPS de motoristas e zero coleta de dados pessoais (PII)',
+          'Projeções Sintéticas: DTO com isSynthetic: true, isGpsBased: false e disclaimer obrigatório',
+          'Módulo Caravanas: Traçado multi-rotas em 7 cores, geocodificação offline e recálculo em lote',
+          'Central CCO: 4.297 câmeras de trânsito em alta definição e georreferenciamento de ocorrências',
+          'Matriz de Custos: Comparativo multimodal de rotas (VAH vs Veículo Próprio vs Provedores)',
+          'Radar Meteorológico: Detecção de chuvas em tempo real e monitoramento de satélite HD',
+          'Diretriz DP-RIT-001: Histórico integrado com data/releases.json (CP 5.3, 5.2, 5.1, 4.2)'
+        ],
+        risk: 'Elimina riscos jurídicos e trabalhistas relacionados à LGPD ou rastreamento indevido, e evita desalinhamento operacional sobre quais recursos já estão homologados.',
+        benefit: 'Assegura conformidade legal plena, auditoria documental transparente e clareza executiva imediata sobre as entregas ativas no sistema.'
       }
     };
 
