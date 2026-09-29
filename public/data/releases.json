@@ -1,0 +1,85 @@
+{
+  "checkpoint": "5.3",
+  "version": "CP 5.3",
+  "date": "2026-09-29",
+  "formattedDate": "29/09/2026",
+  "status": "Homologado",
+  "badge": "Release Notes Vivo",
+  "summary": "Módulo Caravanas Inteligentes, Drawer Tático, Multi-Rotas em 7 Cores, Geocodificação Offline e Auditoria Probatória com Checksums SHA-256.",
+  "metrics": {
+    "unitTests": "95/95",
+    "smokeTests": "20/20",
+    "playwrightEvidence": "12",
+    "auditEvidence": "15/15"
+  },
+  "features": [
+    {
+      "id": "caravanas",
+      "date": "29/09/2026",
+      "name": "Caravanas Inteligentes",
+      "subtitle": "Módulo 02 · Homologado",
+      "desc": "Cadastro, monitoramento de janelas de chegada, mapa dinâmico de apoio tático e integração operacional para os Estúdios Globo.",
+      "tag": "Operacional",
+      "status": "completed"
+    },
+    {
+      "id": "drawer",
+      "date": "29/09/2026",
+      "name": "Drawer Tático Integrado",
+      "subtitle": "Painel Lateral Retrátil",
+      "desc": "Interface colapsável com visualização de rotas, comparativo Google Maps vs Waze, geolocalização e telemetria de trânsito em tempo real.",
+      "tag": "Interface CCO",
+      "status": "completed"
+    },
+    {
+      "id": "geocode",
+      "date": "29/09/2026",
+      "name": "Geocodificação Offline",
+      "subtitle": "Zero Latência Viária",
+      "desc": "Mapeamento instantâneo para 5 Centros de Distribuição e rotas sem dependência de APIs externas pagas.",
+      "tag": "Performance",
+      "status": "completed"
+    },
+    {
+      "id": "multirotas",
+      "date": "29/09/2026",
+      "name": "Multi-Rotas Coloridas & Lote",
+      "subtitle": "7 Cores Canônicas",
+      "desc": "Visualização simultânea de trajetos com diferenciação cromática, recálculo em lote e identificador tático unificado.",
+      "tag": "Cartografia",
+      "status": "completed"
+    },
+    {
+      "id": "auditoria",
+      "date": "29/09/2026",
+      "name": "Auditoria Probatória com SHA-256",
+      "subtitle": "Rastreabilidade & Conformidade",
+      "desc": "95 testes automatizados, 20 smoke tests, manifesto SHA-256 das 12 evidências, relatório JUnit XML e script verificador audit:evidence.",
+      "tag": "Governança",
+      "status": "completed"
+    }
+  ],
+  "history": [
+    {
+      "checkpoint": "5.2",
+      "date": "28/09/2026",
+      "title": "Módulo Caravanas & Provedores Externos",
+      "summary": "Cálculo comparativo de rotas Google/Waze, mockups de alta definição e geocodificação offline preliminar.",
+      "status": "Concluído"
+    },
+    {
+      "checkpoint": "5.1",
+      "date": "25/09/2026",
+      "title": "Migração de Identidade RIG para RIT",
+      "summary": "Preservação de retrocompatibilidade, sanitização de rotas canônicas e segurança estática contra vazamento de dados sensíveis.",
+      "status": "Concluído"
+    },
+    {
+      "checkpoint": "4.2",
+      "date": "21/09/2026",
+      "title": "RIT Alerta & Câmeras CET-Rio/COR",
+      "summary": "Monitoramento viário contínuo, 4.200 câmeras integradas nas 5 regionais Globo (RJ, SP, BSB, REC e BH).",
+      "status": "Concluído"
+    }
+  ]
+}
