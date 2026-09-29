@@ -1,0 +1,167 @@
+{
+  "updatedAt": "2026-09-29T12:00:00-03:00",
+  "RJ": [
+    {
+      "via": "Linha Vermelha",
+      "status": "Normal",
+      "tempoAtual": 18,
+      "tempoReferencia": 16,
+      "diferenca": "+2 min"
+    },
+    {
+      "via": "Linha Amarela",
+      "status": "Moderado",
+      "tempoAtual": 24,
+      "tempoReferencia": 19,
+      "diferenca": "+5 min"
+    },
+    {
+      "via": "Av. Brasil",
+      "status": "Lento",
+      "tempoAtual": 45,
+      "tempoReferencia": 30,
+      "diferenca": "+15 min"
+    },
+    {
+      "via": "Ponte Rio-Niterói",
+      "status": "Normal",
+      "tempoAtual": 13,
+      "tempoReferencia": 13,
+      "diferenca": "0 min"
+    },
+    {
+      "via": "Presidente Dutra",
+      "status": "Moderado",
+      "tempoAtual": 32,
+      "tempoReferencia": 26,
+      "diferenca": "+6 min"
+    },
+    {
+      "via": "Transolímpica",
+      "status": "Normal",
+      "tempoAtual": 14,
+      "tempoReferencia": 14,
+      "diferenca": "0 min"
+    },
+    {
+      "via": "Centro (Pres. Vargas)",
+      "status": "Lento",
+      "tempoAtual": 28,
+      "tempoReferencia": 18,
+      "diferenca": "+10 min"
+    },
+    {
+      "via": "Zona Sul (Aterro / Copacabana)",
+      "status": "Moderado",
+      "tempoAtual": 22,
+      "tempoReferencia": 17,
+      "diferenca": "+5 min"
+    },
+    {
+      "via": "Barra da Tijuca (Ayrton Senna)",
+      "status": "Normal",
+      "tempoAtual": 12,
+      "tempoReferencia": 11,
+      "diferenca": "+1 min"
+    }
+  ],
+  "SP": [
+    {
+      "via": "Marginal Pinheiros",
+      "status": "Lento",
+      "tempoAtual": 42,
+      "tempoReferencia": 25,
+      "diferenca": "+17 min"
+    },
+    {
+      "via": "Marginal Tietê",
+      "status": "Crítico",
+      "tempoAtual": 58,
+      "tempoReferencia": 30,
+      "diferenca": "+28 min"
+    },
+    {
+      "via": "Rod. Castelo Branco",
+      "status": "Moderado",
+      "tempoAtual": 34,
+      "tempoReferencia": 26,
+      "diferenca": "+8 min"
+    },
+    {
+      "via": "Rod. Anhanguera",
+      "status": "Normal",
+      "tempoAtual": 21,
+      "tempoReferencia": 20,
+      "diferenca": "+1 min"
+    }
+  ],
+  "BSB": [
+    {
+      "via": "EPIA",
+      "status": "Moderado",
+      "tempoAtual": 22,
+      "tempoReferencia": 16,
+      "diferenca": "+6 min"
+    },
+    {
+      "via": "Eixo Monumental",
+      "status": "Normal",
+      "tempoAtual": 11,
+      "tempoReferencia": 10,
+      "diferenca": "+1 min"
+    },
+    {
+      "via": "Ponte JK",
+      "status": "Normal",
+      "tempoAtual": 9,
+      "tempoReferencia": 9,
+      "diferenca": "0 min"
+    }
+  ],
+  "REC": [
+    {
+      "via": "BR-101",
+      "status": "Moderado",
+      "tempoAtual": 31,
+      "tempoReferencia": 24,
+      "diferenca": "+7 min"
+    },
+    {
+      "via": "Via Mangue",
+      "status": "Normal",
+      "tempoAtual": 12,
+      "tempoReferencia": 12,
+      "diferenca": "0 min"
+    },
+    {
+      "via": "Agamenon Magalhães",
+      "status": "Lento",
+      "tempoAtual": 36,
+      "tempoReferencia": 20,
+      "diferenca": "+16 min"
+    }
+  ],
+  "BH": [
+    {
+      "via": "Anel Rodoviário",
+      "status": "Lento",
+      "tempoAtual": 38,
+      "tempoReferencia": 22,
+      "diferenca": "+16 min"
+    },
+    {
+      "via": "Cristiano Machado",
+      "status": "Moderado",
+      "tempoAtual": 26,
+      "tempoReferencia": 19,
+      "diferenca": "+7 min"
+    },
+    {
+      "via": "Antônio Carlos",
+      "status": "Normal",
+      "tempoAtual": 17,
+      "tempoReferencia": 16,
+      "diferenca": "+1 min"
+    }
+  ]
+}
