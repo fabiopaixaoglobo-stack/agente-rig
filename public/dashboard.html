@@ -50,6 +50,9 @@
     <button class="tabBtn" data-tab="tab-traffic-alert" id="tab-btn-traffic-alert" title="RIT ALERTA — Inteligência Autônoma de Trânsito">
       <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent);"></i> RIT Alerta
     </button>
+    <button class="tabBtn" data-tab="tab-caravanas" id="tab-btn-caravanas" title="Caravanas Inteligentes — Acompanhamento Tático e Projeção de Chegada aos Estúdios Globo">
+      <i class="fa-solid fa-bus" style="color: #38bdf8;"></i> Caravanas Inteligentes
+    </button>
     <button class="tabBtn cursor-not-allowed opacity-60" data-tab="tab-monitoramento" id="tab-btn-monitoramento" disabled title="Módulo desativado por governança e privacidade">
       Monitoramento 🔒
     </button>
@@ -812,6 +815,30 @@
       </div>
     </section>
 
+    <!-- CARAVANAS INTELIGENTES — CENTRO DE COMANDO E OPERAÇÕES (ESTÚDIOS GLOBO) -->
+    <section id="tab-caravanas" class="tabPane">
+      <div style="flex: 1; height: 100%; width: 100%; display: flex; flex-direction: column; position: relative;">
+        <div class="filterBar" style="background: rgba(10, 15, 28, 0.98); height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); z-index: 10;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; font-size: 11px; color: #38bdf8; text-transform: uppercase;">
+              <i class="fa-solid fa-bus"></i> Caravanas Inteligentes:
+            </span>
+            <span style="font-size: 10px; color: var(--muted);">Acompanhamento Tático & Projeção de Chegada · Estúdios Globo CCO</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btnSmall" onclick="const f=document.getElementById('iframe-caravanas'); if(f) f.src=f.src;" style="font-size: 9px; padding: 3px 8px; border: 1px solid rgba(0,209,255,0.3); color: #00d1ff; background: rgba(0,209,255,0.08); cursor: pointer;" title="Recarregar painel de caravanas">
+              <i class="fa-solid fa-rotate-right"></i> Recarregar
+            </button>
+            <a href="/caravanas.html" target="_blank" class="btn btnSmall" style="font-size: 9px; padding: 3px 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; cursor: pointer; text-decoration: none;" title="Abrir Caravanas em tela cheia / nova aba">
+              Abrir em Nova Aba ↗
+            </a>
+          </div>
+        </div>
+        <div style="flex: 1; width: 100%; height: calc(100% - 42px); position: relative; background: #070d18;">
+          <iframe id="iframe-caravanas" src="/caravanas.html" width="100%" height="100%" style="border:none; width:100%; height:100%; display:block;" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
 
   </main>
 
