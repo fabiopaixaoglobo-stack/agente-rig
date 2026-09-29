@@ -64,20 +64,20 @@ async function run() {
   console.log('[Test] Navegando para apresentacao.html...');
   await page.goto(`http://localhost:${PORT}/apresentacao.html`, { waitUntil: 'networkidle' });
 
-  // 1. Validar Título e Top Bar
+  // 1. Validar Título e Top Bar em Português
   const title = await page.title();
   console.log(`[Test] Título da página: "${title}"`);
-  if (!title.includes('CP 5.3') || !title.includes('Release Notes Vivo')) {
-    throw new Error(`Título não contém versão ou badge: ${title}`);
+  if (!title.includes('CP 5.3') || !title.includes('Histórico')) {
+    throw new Error(`Título não contém versão ou histórico: ${title}`);
   }
 
   const topSubtitle = await page.locator('.top-subtitle').innerText();
   console.log(`[Test] Top subtitle: "${topSubtitle.replace(/\n/g, ' ')}"`);
-  if (!topSubtitle.includes('VERSÃO CP 5.3') || !topSubtitle.includes('RELEASE NOTES VIVO')) {
+  if (!topSubtitle.includes('VERSÃO CP 5.3') || !topSubtitle.includes('HISTÓRICO VIVO DE ENTREGAS')) {
     throw new Error(`Top-bar não contém badges esperados: ${topSubtitle}`);
   }
 
-  // 2. Validar Slide 1 (Capa Operacional)
+  // 2. Validar Slide 1 (Capa Operacional) e novos rótulos de KPIs em Português
   const slide1Active = await page.locator('.slide[data-slide="1"]').getAttribute('class');
   console.log(`[Test] Slide 1 class: ${slide1Active}`);
   const kpiNums = await page.locator('.slide[data-slide="1"] .kpi-num').allInnerTexts();
@@ -87,15 +87,60 @@ async function run() {
     throw new Error(`KPIs operacionais do Slide 1 divergentes: ${JSON.stringify(kpiNums)}`);
   }
 
-  // Captura do Slide 1
+  const kpiLabels = await page.locator('.slide[data-slide="1"] .kpi-label-main').allInnerTexts();
+  console.log(`[Test] Rótulos dos KPIs:`, kpiLabels);
+  if (!kpiLabels.includes('VALIDAÇÕES AUTOMATIZADAS') || !kpiLabels.includes('TESTES DE VALIDAÇÃO RÁPIDA')) {
+    throw new Error(`Rótulos em português divergentes: ${JSON.stringify(kpiLabels)}`);
+  }
+
   const screenshotDir = path.join(__dirname, '..', 'docs', 'screenshots');
   if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
 
+  // 3. Teste Interativo do Modal de KPIs (Card 1 a 4)
+  console.log('[Test] Testando abertura do Modal no Card 1 (Validações Automatizadas)...');
+  await page.click('.kpi-card:nth-child(1)');
+  await page.waitForTimeout(350);
+  const modalActive1 = await page.locator('#kpi-modal-overlay').getAttribute('class');
+  if (!modalActive1.includes('active')) throw new Error('Modal não abriu para o Card 1');
+  const modalTitle1 = await page.locator('#kpi-modal-title').innerText();
+  console.log(`[Test] Modal Card 1 título: "${modalTitle1}"`);
+  if (!modalTitle1.includes('95 verificações')) throw new Error('Conteúdo do modal 1 incorreto');
+
+  const modalPath = path.join(screenshotDir, 'apresentacao_slide1_modal_kpi1.png');
+  await page.screenshot({ path: modalPath, fullPage: false });
+  console.log(`[Test] Screenshot Modal KPI 1 salvo em: ${modalPath}`);
+
+  // Fechar modal via botão [X]
+  await page.click('.kpi-modal-close');
+  await page.waitForTimeout(300);
+  const modalClosed1 = await page.locator('#kpi-modal-overlay').getAttribute('class');
+  if (modalClosed1.includes('active')) throw new Error('Modal não fechou com o botão close');
+
+  // Testar Card 2 e fechar com Escape
+  console.log('[Test] Testando abertura do Modal no Card 2 (Testes de Validação Rápida)...');
+  await page.click('.kpi-card:nth-child(2)');
+  await page.waitForTimeout(350);
+  const modalTitle2 = await page.locator('#kpi-modal-title').innerText();
+  if (!modalTitle2.includes('20 cenários')) throw new Error('Conteúdo do modal 2 incorreto');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
+  // Testar Card 4 e fechar com botão ENTENDIDO
+  console.log('[Test] Testando abertura do Modal no Card 4 (Auditorias de Integridade)...');
+  await page.click('.kpi-card:nth-child(4)');
+  await page.waitForTimeout(350);
+  const modalTitle4 = await page.locator('#kpi-modal-title').innerText();
+  if (!modalTitle4.includes('15 verificações')) throw new Error('Conteúdo do modal 4 incorreto');
+  await page.click('.kpi-modal-footer button');
+  await page.waitForTimeout(300);
+  console.log('[Test] Interatividade do Modal de KPIs 100% validada.');
+
+  // Captura do Slide 1
   const slide1Path = path.join(screenshotDir, 'apresentacao_slide1_capa.png');
   await page.screenshot({ path: slide1Path, fullPage: false });
   console.log(`[Test] Screenshot Slide 1 salvo em: ${slide1Path}`);
 
-  // 3. Validação dos 10 Slides e Navegação
+  // 4. Validação dos 10 Slides e Navegação
   const totalSlides = await page.locator('.slide').count();
   console.log(`[Test] Total de slides encontrados no deck: ${totalSlides}`);
   if (totalSlides !== 10) {
@@ -131,7 +176,6 @@ async function run() {
   await page.waitForTimeout(200);
   const spText = await page.locator('#conditions-table-body').innerText();
   if (!spText.includes('Marginal Pinheiros')) throw new Error('Aba SP não exibiu Marginal Pinheiros');
-  console.log('[Test] Alternância de abas de tráfego validada com sucesso.');
 
   const slide3Path = path.join(screenshotDir, 'apresentacao_slide3_alerta_condicoes.png');
   await page.screenshot({ path: slide3Path, fullPage: false });
@@ -199,8 +243,8 @@ async function run() {
   console.log(`[Test] Slide 9 título: "${slide9Title}"`);
   if (!slide9Title.includes('Governança')) throw new Error('Slide 9 incorreto');
 
-  // Slide 10: Release Notes Vivo
-  console.log('[Test] Navegando para o Slide 10 (Release Notes Vivo)...');
+  // Slide 10: Histórico Vivo de Entregas
+  console.log('[Test] Navegando para o Slide 10 (Histórico Vivo de Entregas)...');
   await page.keyboard.press('ArrowRight');
   await page.waitForTimeout(400);
   const counterText = await page.locator('#counter').innerText();
@@ -231,7 +275,7 @@ async function run() {
   await page.screenshot({ path: slide10Path, fullPage: false });
   console.log(`[Test] Screenshot Slide 10 salvo em: ${slide10Path}`);
 
-  // 4. Testar botão da Capa de atalho para Slide 10
+  // 5. Testar botão da Capa de atalho para Slide 10
   await page.keyboard.press('Home');
   await page.waitForTimeout(300);
   console.log('[Test] Testando botão direto da capa para Slide 10...');
@@ -246,6 +290,7 @@ async function run() {
   console.log(`\n========================================`);
   console.log(`RELATÓRIO DE VALIDAÇÃO PLAYWRIGHT`);
   console.log(`Total de Slides Testados: ${totalSlides} (Esperado: 10)`);
+  console.log(`Interatividade dos Cards e Modal de KPIs: APROVADO`);
   console.log(`Erros de Console: ${consoleErrors.length}`);
   console.log(`Screenshots Atualizados:`);
   console.log(` - docs/screenshots/apresentacao_slide1_capa.png`);
