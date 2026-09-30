@@ -40,6 +40,13 @@ export class TrafficAlertMap {
         }
 
         try {
+            this.map = L.map(this.containerId, {
+                center: this.DEFAULT_CENTER,
+                zoom: this.DEFAULT_ZOOM,
+                zoomControl: true,
+                attributionControl: false
+            });
+
             // Camada Satélite com Rótulos (Esri World Imagery + World Boundaries & Places)
             const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19,
@@ -101,6 +108,23 @@ export class TrafficAlertMap {
     resetView() {
         if (this.map) {
             this.map.setView(this.DEFAULT_CENTER, this.DEFAULT_ZOOM);
+        }
+    }
+
+    /**
+     * Ajusta o zoom do mapa para enquadrar os incidentes visíveis.
+     */
+    fitBoundsToVisible() {
+        if (!this.map || !this.incidentLayer) return;
+        try {
+            const bounds = this.incidentLayer.getBounds();
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+            } else {
+                this.resetView();
+            }
+        } catch (e) {
+            this.resetView();
         }
     }
 

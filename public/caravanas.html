@@ -127,7 +127,7 @@
   <!-- 1. CABEÇALHO COMPACTO OPERACIONAL (ALTURA MÁXIMA 54px — SEM SCROLL HORIZONTAL) -->
   <!-- ========================================================================= -->
   <header class="h-[54px] min-h-[54px] bg-[#0b1324] border-b border-[#1e2c4f] px-3 md:px-4 flex items-center justify-between z-30 shadow-md">
-    
+
     <!-- LADO ESQUERDO: BRAND + SELETOR DE FLUXO PRINCIPAL -->
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-2">
@@ -136,7 +136,7 @@
         </div>
         <div class="hidden sm:block">
           <div class="font-bold text-white text-xs leading-none">Agente RIT</div>
-          <div class="text-[9px] text-slate-400 font-mono">v1.3.0-rc.2 (CP 5.3)</div>
+          <div class="text-[9px] text-slate-400 font-mono">v1.3.0-rc.2 (CP 5.4)</div>
         </div>
       </div>
 
@@ -150,7 +150,17 @@
         <button id="btn-mode-caravanas" onclick="switchOperationalMode('caravanas')" class="px-3 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-all bg-cyan-950 text-cyan-300 border border-cyan-700 shadow">
           <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
           <span>RIT CARAVANAS</span>
-          <span class="text-[10px] text-cyan-200 hidden lg:inline">(Estúdios Globo)</span>
+          <span id="caravan-mode-subtitle" class="text-[10px] text-cyan-200 hidden lg:inline">(Estúdios Globo)</span>
+        </button>
+      </div>
+
+      <!-- SELETOR REGIONAL RJ / SP (ALTERAÇÃO SEM PERDA DE ESTADO) -->
+      <div class="bg-[#060a14] p-0.5 rounded-lg border border-[#1e2c4f] flex items-center ml-1">
+        <button id="btn-region-rj" onclick="switchRegion('RJ')" class="px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 bg-cyan-950 text-cyan-300 border border-cyan-700 shadow" title="Operação Rio de Janeiro (Estúdios Globo)">
+          <span>RJ</span>
+        </button>
+        <button id="btn-region-sp" onclick="switchRegion('SP')" class="px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 text-slate-400 hover:text-white" title="Operação São Paulo (Ed. Jornalista Roberto Marinho)">
+          <span>SP</span>
         </button>
       </div>
 
@@ -170,7 +180,7 @@
 
     <!-- LADO DIREITO: ATUALIZAÇÃO 10 MIN + STATUS FONTES + MENU DISCRETO GOVERNANÇA -->
     <div class="flex items-center gap-2 md:gap-3">
-      
+
       <!-- CONTADOR DE ATUALIZAÇÃO AUTOMÁTICA (10 MIN) -->
       <div class="hidden sm:flex items-center gap-2 bg-[#080e1c] border border-white/10 rounded-lg px-2.5 py-1">
         <div class="flex flex-col text-right">
@@ -230,10 +240,10 @@
     <!-- PAINEL LATERAL ESQUERDO (28% NO DESKTOP, COLAPSÁVEL, ROLÁVEL) -->
     <!-- ----------------------------------------------------------------------- -->
     <aside id="side-panel" class="w-full md:w-[380px] lg:w-[410px] min-w-[320px] max-w-[420px] bg-[#090f1d] border-r border-[#1e2c4f] flex flex-col z-10 transition-all duration-300">
-      
+
       <!-- SUB-CABEÇALHO COM 4 KPIS COMPACTOS DO MÓDULO ATIVO -->
       <div class="p-2.5 bg-[#0b1324] border-b border-[#1e2c4f]">
-        
+
         <!-- KPIS: RIT ALERTA -->
         <div id="kpis-alerta" class="grid grid-cols-4 gap-1.5 hidden">
           <div class="bg-[#070b14] border border-white/10 rounded p-1.5 text-center">
@@ -278,10 +288,10 @@
 
       <!-- BARRA DE CONTROLE E FILTROS DO PAINEL LATERAL -->
       <div class="p-2.5 bg-[#080d19] border-b border-[#1e2c4f] space-y-2">
-        
+
         <!-- BUSCA TEXTUAL DINÂMICA (DEBOUNCE 300MS) -->
         <div class="relative">
-          <input type="text" id="filter-search" oninput="handleSearchDebounce()" placeholder="Buscar via, bairro, programa, caravana..." 
+          <input type="text" id="filter-search" oninput="handleSearchDebounce()" placeholder="Buscar via, bairro, programa, caravana..."
             class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-500 rounded-md py-1.5 pl-8 pr-2 text-xs text-white placeholder-slate-500 outline-none transition" />
           <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
@@ -362,13 +372,46 @@
     <!-- ÁREA CENTRAL: MAPA TÁTICO CARTOGRÁFICO (SATÉLITE COM RÓTULOS POR PADRÃO) -->
     <!-- ----------------------------------------------------------------------- -->
     <section class="flex-1 flex flex-col relative overflow-hidden bg-black">
-      
+
       <!-- BANNER DE GOVERNANÇA COMPACTO FIXO NO MAPA -->
       <div class="absolute top-2 left-2 right-2 md:right-auto z-[400] bg-[#090f1d]/90 backdrop-blur border border-white/15 rounded-lg px-3 py-1.5 shadow-lg flex items-center gap-2 max-w-lg pointer-events-auto">
         <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
         <span class="text-[10px] text-slate-300 leading-tight">
           PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. <strong class="text-white">NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS.</strong>
         </span>
+      </div>
+
+      <!-- FLOATING LAYER CONTROLS (OTT, FOGO CRUZADO, TRÂNSITO, CÂMERAS) -->
+      <div id="tactical-layer-controls" class="absolute top-14 right-3 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2.5 shadow-2xl text-[10px] space-y-2 max-w-[210px] pointer-events-auto">
+        <div class="flex items-center justify-between pb-1 border-b border-white/10 font-bold text-white text-[10px]">
+          <span class="flex items-center gap-1"><i class="fa-solid fa-layer-group text-cyan-400"></i> Camadas</span>
+          <button id="btn-toggle-traffic-layer" onclick="toggleTrafficLayer()" class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+            <span id="traffic-layer-btn-text">Trânsito: ON</span>
+          </button>
+        </div>
+        <div class="space-y-1.5 text-slate-300">
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-ott" checked onchange="toggleLayer('ott', this.checked)" class="accent-rose-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 flex items-center justify-center text-[7px] text-white font-bold">🎯</span>
+            <span>OTT (Onde Tem Tiroteio)</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-fc" checked onchange="toggleLayer('fogoCruzado', this.checked)" class="accent-amber-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex items-center justify-center text-[7px] text-black font-bold">🔴</span>
+            <span>Fogo Cruzado</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-inc" checked onchange="toggleLayer('trafficIncidents', this.checked)" class="accent-orange-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-400 flex items-center justify-center text-[7px] text-black font-bold">⚠️</span>
+            <span>Ocorrências de Trânsito</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-cams" checked onchange="toggleLayer('cameras', this.checked)" class="accent-cyan-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 flex items-center justify-center text-[7px] text-black font-bold">🎥</span>
+            <span>Câmeras Públicas</span>
+          </label>
+        </div>
       </div>
 
       <!-- CONTAINER DO MAPA LEAFLET -->
@@ -378,10 +421,47 @@
       <div id="map-legend" class="absolute bottom-4 left-4 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/15 rounded-lg p-2.5 text-[10px] shadow-2xl max-w-xs transition">
         <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-white">
           <span>Rotas das Caravanas</span>
-          <span class="text-[9px] text-cyan-400">Estúdios Globo</span>
+          <span id="legend-dest-label" class="text-[9px] text-cyan-400">Estúdios Globo</span>
         </div>
         <div id="legend-items" class="space-y-1">
           <!-- Gerado dinamicamente com checkboxes e cores por caravana -->
+        </div>
+      </div>
+
+      <!-- LEGENDA DE FLUIDEZ DE TRÂNSITO (COLAPSÁVEL - TECLA 'T') -->
+      <div id="traffic-fluidity-legend" class="absolute bottom-16 right-4 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2.5 shadow-2xl text-[10px] max-w-xs transition-all pointer-events-auto">
+        <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-white text-[10px]">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-traffic-light text-amber-400"></i>
+            <span>Níveis de Trânsito</span>
+          </div>
+          <span class="text-[8px] text-slate-400 font-mono">Tecla 'T'</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px] text-slate-300">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#10b981]"></span>
+            <span>Livre / Fluido</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#eab308]"></span>
+            <span>Moderado</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#f97316]"></span>
+            <span>Lento</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#ef4444]"></span>
+            <span>Intenso</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#881337]"></span>
+            <span>Parado / Bloqueado</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-1.5 rounded-full bg-[#64748b]"></span>
+            <span>Sem Informação</span>
+          </div>
         </div>
       </div>
 
@@ -396,7 +476,7 @@
     <!-- DRAWER LATERAL DIREITO: DETALHAMENTO DA CARAVANA OU INCIDENTE -->
     <!-- ----------------------------------------------------------------------- -->
     <div id="tactical-drawer" class="fixed top-[54px] bottom-0 right-0 w-full sm:w-[460px] lg:w-[490px] bg-[#0c1426] border-l border-[#1e2c4f] shadow-2xl z-[1000] flex flex-col hidden">
-      
+
       <!-- CABEÇALHO DO DRAWER -->
       <div class="p-3 bg-[#080d19] border-b border-[#1e2c4f] flex items-center justify-between">
         <div>
@@ -431,7 +511,7 @@
   <!-- ========================================================================= -->
   <div id="modal-caravan-form" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 hidden">
     <div class="bg-[#0b1324] border border-[#1e2c4f] rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in flex flex-col">
-      
+
       <div class="p-4 bg-[#080e1c] border-b border-[#1e2c4f] flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="h-6 w-6 rounded bg-cyan-600 flex items-center justify-center text-black font-black text-xs">+</div>
@@ -441,7 +521,7 @@
       </div>
 
       <form id="form-caravan" onsubmit="handleCaravanSubmit(event)" class="p-4 space-y-3 overflow-y-auto max-h-[75vh] custom-scroll">
-        
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Data *</label>
@@ -517,7 +597,7 @@
   <!-- ========================================================================= -->
   <div id="modal-governance" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 hidden">
     <div class="bg-[#0b1324] border border-[#1e2c4f] rounded-xl w-full max-w-4xl shadow-2xl h-[85vh] flex flex-col overflow-hidden">
-      
+
       <!-- CABEÇALHO DO PAINEL DE GOVERNANÇA -->
       <div class="p-3 bg-[#080e1c] border-b border-[#1e2c4f] flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -548,7 +628,7 @@
 
       <!-- CORPO DAS ABAS DE GOVERNANÇA -->
       <div class="flex-1 overflow-y-auto custom-scroll p-4">
-        
+
         <!-- ABA 1: CASOS DE TESTE CT-01 A CT-50 -->
         <div id="gov-casos" class="space-y-3">
           <div class="flex items-center justify-between bg-[#080f20] p-2.5 rounded border border-white/10">
@@ -640,49 +720,157 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- MODAL: VISUALIZADOR INTERNO DE CÂMERAS PÚBLICAS (RJ & SP) -->
+  <!-- ========================================================================= -->
+  <div id="internal-camera-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[2000] flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-[#0b1324] border border-[#1e2c4f] rounded-xl w-full max-w-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+      <!-- Cabeçalho da Câmera -->
+      <div class="p-3 bg-[#080e1c] border-b border-[#1e2c4f] flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-700/60 flex items-center justify-center text-cyan-400">
+            <i class="fa-solid fa-video text-sm"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="modal-cam-name" class="text-sm font-bold text-white">Câmera Pública</h3>
+              <span id="modal-cam-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-700">ONLINE</span>
+            </div>
+            <p id="modal-cam-corridor" class="text-[10px] text-slate-400">Corredor Viário • Cidade</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="modal-cam-refresh-btn" onclick="refreshCurrentCamera()" class="p-1.5 rounded bg-[#101a30] text-cyan-400 hover:text-white border border-cyan-800/40 text-xs transition" title="Atualizar Imagem">
+            <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline text-[10px] font-semibold ml-1">Atualizar</span>
+          </button>
+          <button onclick="closeInternalCameraViewer()" class="text-slate-400 hover:text-white p-1.5 text-base">✕</button>
+        </div>
+      </div>
+
+      <!-- Barra de Metadados e Navegação -->
+      <div class="px-3 py-1.5 bg-[#060a14] border-b border-[#1e2c4f] flex flex-wrap items-center justify-between text-[10px] text-slate-400 gap-2">
+        <div class="flex items-center gap-3">
+          <span>Fonte: <strong id="modal-cam-source" class="text-slate-200">COR-Rio</strong></span>
+          <span>Consulta: <strong id="modal-cam-timestamp" class="text-cyan-400 font-mono">--:--:--</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="navigateCamera(-1)" class="px-2 py-0.5 rounded bg-[#0d162b] text-slate-300 hover:text-white border border-white/10 text-[10px]">
+            &larr; Anterior
+          </button>
+          <span id="modal-cam-counter" class="text-[9px] font-mono text-slate-500">1 de 6</span>
+          <button onclick="navigateCamera(1)" class="px-2 py-0.5 rounded bg-[#0d162b] text-slate-300 hover:text-white border border-white/10 text-[10px]">
+            Próxima &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Área de Visualização do Feed -->
+      <div id="modal-cam-viewport" class="flex-1 bg-black relative flex items-center justify-center min-h-[320px] sm:min-h-[420px] overflow-hidden">
+        <!-- Inserido dinamicamente: <img>, <iframe> ou Fallback Card -->
+      </div>
+
+      <!-- Rodapé com Botão Secundário de Fallback e Governança -->
+      <div class="p-2.5 bg-[#080e1c] border-t border-[#1e2c4f] flex items-center justify-between text-[10px]">
+        <span class="text-slate-500 flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-amber-400"></i>
+          Imagens públicas e feeds oficiais municipais / concessionárias viárias.
+        </span>
+        <a id="modal-cam-external-link" href="#" target="_blank" class="px-2.5 py-1 rounded bg-[#111c35] text-cyan-300 hover:text-white border border-cyan-800 text-[10px] flex items-center gap-1">
+          <span>Abrir Fonte Oficial</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- 5. JAVASCRIPT DE CONTROLE, MAPAS, ROTAS E ATUALIZAÇÃO CONTÍNUA (10 MIN) -->
   <!-- ========================================================================= -->
   <script>
-    // ESTADO GLOBAL DA APLICAÇÃO
+    // ESTADO GLOBAL DA APLICAÇÃO (RJ & SP)
     let currentMode = 'caravanas'; // 'alerta' | 'caravanas'
+    let currentRegion = (new URLSearchParams(window.location.search).get('region') || localStorage.getItem('rit_region') || 'RJ').toUpperCase();
+    if (currentRegion !== 'SP') currentRegion = 'RJ';
+
     let isAllRoutesMode = true;
     let selectedCaravanId = null;
     let selectedIncidentId = null;
+    let selectedSecurityId = null;
     let leafletMap = null;
     let tileLayers = {};
-    let activeCaravanRouteLayers = [];
-    let incidentMarkerLayers = [];
-    let cameraMarkerLayers = [];
-    let alternativeRouteLayer = null;
-    let trafficRouteLayers = [];
 
-    // BANCO SINTÉTICO EM MEMÓRIA
+    // LAYER GROUPS INDEPENDENTES NO LEAFLET
+    let ottLayerGroup = null;
+    let fogoCruzadoLayerGroup = null;
+    let trafficIncidentsLayerGroup = null;
+    let camerasLayerGroup = null;
+    let trafficFlowLayerGroup = null;
+    let caravanRoutesLayerGroup = null;
+    let destinationMarkerLayer = null;
+
+    let layerVisibility = {
+      ott: true,
+      fogoCruzado: true,
+      trafficIncidents: true,
+      cameras: true,
+      trafficFlow: true
+    };
+
+    // BANCO EM MEMÓRIA E DADOS DA API
     let caravansData = [];
     let incidentsData = [];
+    let securityOccurrencesData = [];
     let trafficConditionsData = [];
+    let camerasData = [];
+    let weatherAlertsData = null;
     let countdownSeconds = 600; // 10 minutos
     let countdownTimerInterval = null;
 
-    // CATÁLOGO DE CÂMERAS PÚBLICAS DO RIO DE JANEIRO (COR-RIO / CET-RIO / CONCESSIONÁRIAS)
+    // ESTADO DO VISUALIZADOR DE CÂMERAS INTERNO
+    let activeCameraList = [];
+    let activeCameraIndex = 0;
+
+    // DESTINOS REGIONAIS OFICIAIS GLOBO
+    const REGIONAL_CONFIG = {
+      RJ: {
+        coords: [-22.9550, -43.4100],
+        label: "ESTÚDIOS GLOBO",
+        sublabel: "Acesso Principal — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
+        center: [-22.9200, -43.3500],
+        zoom: 11,
+        subtitle: "(Estúdios Globo)"
+      },
+      SP: {
+        coords: [-23.6186, -46.6974],
+        label: "EDIFÍCIO JORNALISTA ROBERTO MARINHO",
+        sublabel: "Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP",
+        center: [-23.5800, -46.6800],
+        zoom: 11,
+        subtitle: "(Ed. Jornalista Roberto Marinho)"
+      }
+    };
+
+    // CATÁLOGO DE CÂMERAS PÚBLICAS (RJ & SP)
     const PUBLIC_CAMERAS_CATALOG = [
-      { id: 'CAM-COR-0102', name: 'Linha Vermelha - Km 12 (Fundão)', corridor: 'Linha Vermelha', lat: -22.8450, lng: -43.2380, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0145', name: 'Linha Vermelha - Acesso Baixada (Dutra)', corridor: 'Linha Vermelha', lat: -22.8130, lng: -43.2480, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-LAMSA-003', name: 'Linha Amarela - Saída 7 (Bonsucesso)', corridor: 'Linha Amarela', lat: -22.8980, lng: -43.2650, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-LAMSA-008', name: 'Linha Amarela - Praça do Pedágio', corridor: 'Linha Amarela', lat: -22.9090, lng: -43.3100, status: 'DESATUALIZADA', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-CCR-0014', name: 'Rod. Pres. Dutra - Km 166 (Pavuna)', corridor: 'Presidente Dutra', lat: -22.8280, lng: -43.3650, status: 'DISPONÍVEL', sourceUrl: 'https://www.ccrriosp.com.br' },
-      { id: 'CAM-COR-0512', name: 'Transolímpica - Deodoro / M. Bastos', corridor: 'Transolímpica', lat: -22.8720, lng: -43.3870, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0580', name: 'Transolímpica - Saída Curicica / Colônia', corridor: 'Transolímpica', lat: -22.9480, lng: -43.4020, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-ECR-0008', name: 'Ponte Rio-Niterói - Vão Central', corridor: 'Ponte Rio-Niterói', lat: -22.8850, lng: -43.1600, status: 'DISPONÍVEL', sourceUrl: 'https://www.ecoponte.com.br' },
-      { id: 'CAM-COR-0620', name: 'Av. Brasil - Altura de Realengo', corridor: 'Avenida Brasil', lat: -22.8680, lng: -43.4350, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0625', name: 'Av. Brasil - Altura de Irajá', corridor: 'Avenida Brasil', lat: -22.8450, lng: -43.3000, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0790', name: 'Estr. Bandeirantes x Curicica (Acesso Globo)', corridor: 'Barra da Tijuca', lat: -22.9560, lng: -43.4110, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0810', name: 'Av. Ayrton Senna x Alvorada', corridor: 'Barra da Tijuca', lat: -22.9900, lng: -43.3600, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0210', name: 'Av. Pres. Vargas x Av. Rio Branco', corridor: 'Centro', lat: -22.9030, lng: -43.1780, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' },
-      { id: 'CAM-COR-0310', name: 'Aterro do Flamengo - Altura MAM', corridor: 'Zona Sul', lat: -22.9180, lng: -43.1720, status: 'DISPONÍVEL', sourceUrl: 'https://cor.rio/cameras' }
+      // Rio de Janeiro (COR-Rio / CET-Rio / Concessionárias)
+      { id: 'CAM-COR-0102', region: 'RJ', name: 'Linha Vermelha - Km 12 (Fundão)', corridor: 'Linha Vermelha', lat: -22.8450, lng: -43.2380, status: 'DISPONÍVEL', source: 'COR-Rio', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      { id: 'CAM-COR-0145', region: 'RJ', name: 'Linha Vermelha - Acesso Baixada (Dutra)', corridor: 'Linha Vermelha', lat: -22.8130, lng: -43.2480, status: 'DISPONÍVEL', source: 'COR-Rio', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      { id: 'CAM-LAMSA-003', region: 'RJ', name: 'Linha Amarela - Saída 7 (Bonsucesso)', corridor: 'Linha Amarela', lat: -22.8980, lng: -43.2650, status: 'DISPONÍVEL', source: 'Lamsa', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      { id: 'CAM-CCR-0014', region: 'RJ', name: 'Rod. Pres. Dutra - Km 166 (Pavuna)', corridor: 'Presidente Dutra', lat: -22.8280, lng: -43.3650, status: 'DISPONÍVEL', source: 'CCR RioSP', sourceUrl: 'https://www.ccrriosp.com.br', suportaIframe: false },
+      { id: 'CAM-COR-0512', region: 'RJ', name: 'Transolímpica - Deodoro / M. Bastos', corridor: 'Transolímpica', lat: -22.8720, lng: -43.3870, status: 'DISPONÍVEL', source: 'COR-Rio', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      { id: 'CAM-COR-0580', region: 'RJ', name: 'Transolímpica - Saída Curicica / Colônia', corridor: 'Transolímpica', lat: -22.9480, lng: -43.4020, status: 'DISPONÍVEL', source: 'COR-Rio', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      { id: 'CAM-ECR-0008', region: 'RJ', name: 'Ponte Rio-Niterói - Vão Central', corridor: 'Ponte Rio-Niterói', lat: -22.8850, lng: -43.1600, status: 'DISPONÍVEL', source: 'Ecoponte', sourceUrl: 'https://www.ecoponte.com.br', suportaIframe: false },
+      { id: 'CAM-COR-0790', region: 'RJ', name: 'Estr. Bandeirantes x Curicica (Acesso Globo)', corridor: 'Barra da Tijuca', lat: -22.9560, lng: -43.4110, status: 'DISPONÍVEL', source: 'COR-Rio', sourceUrl: 'https://cor.rio/cameras', suportaIframe: false },
+      // São Paulo (CET-SP)
+      { id: 'SP_CET_23', region: 'SP', name: 'Av. Paulista x Av. Brigadeiro Luís Antônio', corridor: 'Av. Paulista', lat: -23.5680, lng: -46.6490, status: 'DISPONÍVEL', source: 'CET-SP', proxyUrl: '/api/cameras/cetsp/image/23/1.jpg', directImageUrl: 'https://cameras.cetsp.com.br/Cams/23/1.jpg', sourceUrl: 'https://cameras.cetsp.com.br', suportaIframe: false },
+      { id: 'SP_CET_180', region: 'SP', name: 'Consolação x R. Caio Prado', corridor: 'Consolação', lat: -23.5510, lng: -46.6500, status: 'DISPONÍVEL', source: 'CET-SP', proxyUrl: '/api/cameras/cetsp/image/180/1.jpg', directImageUrl: 'https://cameras.cetsp.com.br/Cams/180/1.jpg', sourceUrl: 'https://cameras.cetsp.com.br', suportaIframe: false },
+      { id: 'SP_CET_200', region: 'SP', name: 'Av. Brig. Faria Lima x R. Iguatemi', corridor: 'Faria Lima', lat: -23.5820, lng: -46.6850, status: 'DISPONÍVEL', source: 'CET-SP', proxyUrl: '/api/cameras/cetsp/image/200/1.jpg', directImageUrl: 'https://cameras.cetsp.com.br/Cams/200/1.jpg', sourceUrl: 'https://cameras.cetsp.com.br', suportaIframe: false },
+      { id: 'SP_CET_BERRINI', region: 'SP', name: 'Av. Eng. Luís Carlos Berrini x R. Quintana', corridor: 'Berrini', lat: -23.6100, lng: -46.6950, status: 'DISPONÍVEL', source: 'CET-SP', proxyUrl: '/api/cameras/cetsp/image/200/1.jpg', directImageUrl: 'https://cameras.cetsp.com.br/Cams/200/1.jpg', sourceUrl: 'https://cameras.cetsp.com.br', suportaIframe: false },
+      { id: 'SP_CET_MARGINAL', region: 'SP', name: 'Marginal Pinheiros x Ponte Estaiada', corridor: 'Marginal Pinheiros', lat: -23.6120, lng: -46.6980, status: 'DISPONÍVEL', source: 'CET-SP', proxyUrl: '/api/cameras/cetsp/image/23/1.jpg', directImageUrl: 'https://cameras.cetsp.com.br/Cams/23/1.jpg', sourceUrl: 'https://cameras.cetsp.com.br', suportaIframe: false }
     ];
 
-    // GEOMETRIAS DOS 9 PRINCIPAIS CORREDORES VIÁRIOS E REGIÕES DO RIO DE JANEIRO
+    // GEOMETRIAS DOS CORREDORES VIÁRIOS (RJ & SP)
     const CORRIDOR_COORDS = {
+      // Rio de Janeiro
       'Linha Vermelha': [[-22.8130, -43.2480], [-22.8450, -43.2380], [-22.8800, -43.2350], [-22.9050, -43.2100], [-22.9100, -43.1950]],
       'Linha Amarela': [[-22.8600, -43.2380], [-22.8850, -43.2600], [-22.8980, -43.2650], [-22.9300, -43.3200], [-22.9800, -43.3650]],
       'Av. Brasil': [[-22.8980, -43.2100], [-22.8550, -43.2800], [-22.8450, -43.3000], [-22.8300, -43.3600], [-22.8500, -43.5400]],
@@ -698,7 +886,18 @@
       'Barra da Tijuca (Ayrton Senna)': [[-22.9800, -43.3650], [-22.9900, -43.3600], [-23.0000, -43.3300], [-23.0080, -43.3100]],
       'Barra da Tijuca': [[-22.9800, -43.3650], [-22.9900, -43.3600], [-23.0000, -43.3300], [-23.0080, -43.3100]],
       'Zona Norte': [[-22.8750, -43.3350], [-22.8800, -43.3100], [-22.8950, -43.2700], [-22.9150, -43.2350]],
-      'Zona Oeste': [[-22.9030, -43.5590], [-22.8850, -43.5000], [-22.8700, -43.4300], [-22.9100, -43.4100]]
+      'Zona Oeste': [[-22.9030, -43.5590], [-22.8850, -43.5000], [-22.8700, -43.4300], [-22.9100, -43.4100]],
+
+      // São Paulo
+      'Marginal Pinheiros': [[-23.5150, -46.7450], [-23.5550, -46.7050], [-23.6000, -46.6980], [-23.6300, -46.7100], [-23.6600, -46.7200]],
+      'Marginal Tietê': [[-23.5180, -46.7350], [-23.5120, -46.6600], [-23.5100, -46.6200], [-23.5250, -46.5700], [-23.5350, -46.5200]],
+      'Av. Jornalista Roberto Marinho': [[-23.6186, -46.6974], [-23.6210, -46.6850], [-23.6250, -46.6700], [-23.6280, -46.6550]],
+      'Av. 23 de Maio': [[-23.5500, -46.6400], [-23.5650, -46.6420], [-23.5850, -46.6450], [-23.6050, -46.6500]],
+      'Av. dos Bandeirantes': [[-23.6000, -46.6980], [-23.6050, -46.6750], [-23.6100, -46.6500], [-23.6150, -46.6250]],
+      'Rod. Castello Branco': [[-23.5200, -46.7300], [-23.5150, -46.7800], [-23.5100, -46.8500], [-23.5050, -46.9000]],
+      'Rod. Anhanguera': [[-23.5100, -46.7300], [-23.4700, -46.7600], [-23.4300, -46.7900], [-23.3800, -46.8300]],
+      'Rod. Presidente Dutra (SP)': [[-23.5150, -46.5700], [-23.4900, -46.5200], [-23.4500, -46.4500], [-23.4200, -46.3800]],
+      'Av. Eng. Luís Carlos Berrini': [[-23.6000, -46.6980], [-23.6100, -46.6950], [-23.6186, -46.6974], [-23.6250, -46.6990]]
     };
 
     // CORES DISTINTAS POR ROTA PARA VISUALIZAÇÃO CONJUNTA
@@ -711,10 +910,6 @@
       '#ec4899', // Rosa vibrante
       '#8b5cf6'  // Roxo elétrico
     ];
-
-    // DESTINO COMUM: ESTÚDIOS GLOBO
-    const DESTINATION_COORDS = [-22.9550, -43.4100];
-    const DESTINATION_LABEL = "ESTÚDIOS GLOBO — DESTINO DE HOMOLOGAÇÃO";
 
     // 50 CASOS DE TESTE DO CCO (CT-01 A CT-50)
     const CT_50_SCENARIOS = [
@@ -897,21 +1092,22 @@
     }
 
     // =========================================================================
-    // INICIALIZAÇÃO DO MAPA LEAFLET COM SATÉLITE POR PADRÃO (ZERO API KEY ERROR)
+    // INICIALIZAÇÃO DO MAPA LEAFLET COM SATÉLITE POR PADRÃO & LAYERGROUPS
     // =========================================================================
     function initLeafletMap() {
       const container = document.getElementById('map-container');
       if (!container || leafletMap) return;
 
-      // Centro de operações do Rio de Janeiro
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
+
       leafletMap = L.map('map-container', {
-        center: [-22.8850, -43.3200],
-        zoom: 11,
+        center: regConf.center,
+        zoom: regConf.zoom,
         zoomControl: true,
         attributionControl: false
       });
 
-      // 1. CAMADA SATÉLITE COM RÓTULOS (ESRI WORLD IMAGERY + LABELS - PADRÃO OPERACIONAL)
+      // 1. CAMADA SATÉLITE COM RÓTULOS (PADRÃO OPERACIONAL)
       const satImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
         attribution: 'Esri World Imagery'
@@ -921,14 +1117,14 @@
       });
       tileLayers.satellite = L.layerGroup([satImagery, satLabels]);
 
-      // 2. CAMADA RUAS CARTOGRÁFICO OFICIAL (OPENSTREETMAP - 100% PÚBLICO E LIVRE)
+      // 2. CAMADA RUAS CARTOGRÁFICO OFICIAL
       tileLayers.streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         subdomains: ['a', 'b', 'c'],
         attribution: '© OpenStreetMap'
       });
 
-      // 3. CAMADA DARK COMMAND CENTER (ESRI DARK CANVAS)
+      // 3. CAMADA DARK COMMAND CENTER
       const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 });
       const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 });
       tileLayers.dark = L.layerGroup([darkBase, darkRef]);
@@ -936,7 +1132,15 @@
       // Adiciona o Satélite como camada padrão
       tileLayers.satellite.addTo(leafletMap);
 
-      // Tratamento gracioso de erro em tiles (fallback imediato para ruas)
+      // Camadas Operacionais Independentes
+      caravanRoutesLayerGroup = L.layerGroup().addTo(leafletMap);
+      trafficFlowLayerGroup = L.layerGroup().addTo(leafletMap);
+      trafficIncidentsLayerGroup = L.layerGroup().addTo(leafletMap);
+      ottLayerGroup = L.layerGroup().addTo(leafletMap);
+      fogoCruzadoLayerGroup = L.layerGroup().addTo(leafletMap);
+      camerasLayerGroup = L.layerGroup().addTo(leafletMap);
+
+      // Tratamento gracioso de erro em tiles
       satImagery.on('tileerror', () => {
         console.warn('[MAPA] Fallback cartográfico ativado para OpenStreetMap.');
         document.getElementById('map-view-indicator').innerText = 'Ruas (OpenStreetMap Fallback)';
@@ -945,7 +1149,7 @@
         }
       });
 
-      // Adiciona seletor de basemaps no canto superior direito
+      // Seletor de basemaps
       L.control.layers({
         '🛰️ Satélite com Rótulos (Padrão)': tileLayers.satellite,
         '🗺️ Ruas (OpenStreetMap)': tileLayers.streets,
@@ -956,348 +1160,303 @@
         document.getElementById('map-view-indicator').innerText = e.name;
       });
 
-      // Ponto de Destino Comum: Estúdios Globo (Jacarepaguá)
+      // Ponto de Destino Regional
+      updateDestinationMarker();
+
+      // Atalhos de Teclado Operacionais
+      document.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+        if (e.key === 't' || e.key === 'T') {
+          toggleTrafficLayer();
+        }
+        if (e.key === 'Escape') {
+          closeInternalCameraViewer();
+          closeTacticalDrawer();
+        }
+      });
+    }
+
+    function updateDestinationMarker() {
+      if (!leafletMap) return;
+      if (destinationMarkerLayer) {
+        leafletMap.removeLayer(destinationMarkerLayer);
+        destinationMarkerLayer = null;
+      }
+
+      const conf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
       const destIcon = L.divIcon({
         className: 'custom-dest-pin',
-        html: `<div style="background:#f5a623; border:2px solid #ffffff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(245,166,35,0.9); font-weight:900; color:#000; font-size:11px;">★</div>`,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13]
+        html: `<div style="background:#f5a623; border:2px solid #ffffff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(245,166,35,0.9); font-weight:900; color:#000; font-size:12px;">★</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
 
-      L.marker(DESTINATION_COORDS, { icon: destIcon })
+      destinationMarkerLayer = L.marker(conf.coords, { icon: destIcon })
         .addTo(leafletMap)
         .bindPopup(`
           <div style="font-family:sans-serif; font-size:11px; color:#000;">
-            <strong style="color:#d97706;">ESTÚDIOS GLOBO</strong><br>
+            <strong style="color:#d97706;">${escapeHtml(conf.label)}</strong><br>
             Ponto de Chegada e Recepção das Caravanas<br>
-            <span style="font-size:9px; color:#64748b;">Curicica / Jacarepaguá, Rio de Janeiro</span>
+            <span style="font-size:9px; color:#64748b;">${escapeHtml(conf.sublabel)}</span>
           </div>
         `);
+
+      const destLabelEl = document.getElementById('legend-dest-label');
+      if (destLabelEl) destLabelEl.innerText = conf.label;
     }
 
     // =========================================================================
-    // CARGA DE DADOS DA API E CONDIÇÕES DE TRÂNSITO EM TEMPO REAL
+    // CONTROLE REGIONAL RJ / SP
     // =========================================================================
-    async function loadTrafficConditions() {
+    function switchRegion(newRegion) {
+      if (currentRegion === newRegion) return;
+      currentRegion = newRegion;
+      localStorage.setItem('rit_region', newRegion);
+
       try {
-        const res = await fetch('/data/traffic-conditions.json');
+        const url = new URL(window.location.href);
+        url.searchParams.set('region', newRegion);
+        window.history.replaceState({}, '', url.toString());
+      } catch (e) {}
+
+      updateRegionButtonsUI();
+      updateProgramFilterOptions();
+
+      const conf = REGIONAL_CONFIG[newRegion];
+      if (leafletMap && conf) {
+        leafletMap.setView(conf.center, conf.zoom);
+        updateDestinationMarker();
+      }
+
+      loadAllDataForRegion(newRegion);
+      showToast(`Regional alterada para ${newRegion === 'SP' ? 'São Paulo (SP)' : 'Rio de Janeiro (RJ)'}`, 'info');
+    }
+
+    function updateRegionButtonsUI() {
+      const btnRj = document.getElementById('btn-region-rj');
+      const btnSp = document.getElementById('btn-region-sp');
+      const subtitle = document.getElementById('caravan-mode-subtitle');
+
+      if (currentRegion === 'SP') {
+        if (btnSp) btnSp.className = "px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 bg-cyan-950 text-cyan-300 border border-cyan-700 shadow";
+        if (btnRj) btnRj.className = "px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 text-slate-400 hover:text-white";
+        if (subtitle) subtitle.innerText = "(Ed. Jornalista Roberto Marinho)";
+      } else {
+        if (btnRj) btnRj.className = "px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 bg-cyan-950 text-cyan-300 border border-cyan-700 shadow";
+        if (btnSp) btnSp.className = "px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1 text-slate-400 hover:text-white";
+        if (subtitle) subtitle.innerText = "(Estúdios Globo)";
+      }
+    }
+
+    function updateProgramFilterOptions() {
+      const progSelect = document.getElementById('filter-program');
+      const regSelect = document.getElementById('filter-region-caravanas');
+      if (!progSelect) return;
+
+      if (currentRegion === 'SP') {
+        progSelect.innerHTML = `
+          <option value="">Todos os Programas SP</option>
+          <option value="Encontro com Patrícia Poeta">Encontro com Patrícia Poeta</option>
+          <option value="Altas Horas SP">Altas Horas</option>
+          <option value="Caldeirão SP">Caldeirão</option>
+        `;
+        if (regSelect) {
+          regSelect.innerHTML = `
+            <option value="">Todas Regiões SP</option>
+            <option value="Osasco">Osasco / Zona Oeste</option>
+            <option value="Santo André">ABC / Santo André</option>
+            <option value="Guarulhos">Guarulhos / Zona Norte</option>
+            <option value="Campinas">Campinas / Interior</option>
+            <option value="Brooklin">Brooklin / Berrini</option>
+          `;
+        }
+      } else {
+        progSelect.innerHTML = `
+          <option value="">Todos os Programas RJ</option>
+          <option value="Domingão com Huck">Domingão com Huck</option>
+          <option value="Caldeirão com Mion">Caldeirão com Mion</option>
+          <option value="Altas Horas">Altas Horas</option>
+          <option value="Conversa com Bial">Conversa com Bial</option>
+        `;
+        if (regSelect) {
+          regSelect.innerHTML = `
+            <option value="">Todas Regiões RJ</option>
+            <option value="Niterói">Niterói / Leste</option>
+            <option value="Nova Iguaçu">Baixada Fluminense</option>
+            <option value="Madureira">Zona Norte</option>
+            <option value="Campo Grande">Zona Oeste</option>
+            <option value="Barra da Tijuca">Barra da Tijuca</option>
+            <option value="Centro">Centro / Zona Sul</option>
+          `;
+        }
+      }
+    }
+
+    // =========================================================================
+    // CONTROLE DE CAMADAS (TOGGLES TÁTICOS)
+    // =========================================================================
+    function toggleLayer(layerKey, isVisible) {
+      layerVisibility[layerKey] = isVisible;
+      if (!leafletMap) return;
+
+      const groupMap = {
+        ott: ottLayerGroup,
+        fogoCruzado: fogoCruzadoLayerGroup,
+        trafficIncidents: trafficIncidentsLayerGroup,
+        cameras: camerasLayerGroup,
+        trafficFlow: trafficFlowLayerGroup
+      };
+
+      const group = groupMap[layerKey];
+      if (!group) return;
+
+      if (isVisible) {
+        if (!leafletMap.hasLayer(group)) leafletMap.addLayer(group);
+      } else {
+        if (leafletMap.hasLayer(group)) leafletMap.removeLayer(group);
+      }
+    }
+
+    function toggleTrafficLayer() {
+      const newState = !layerVisibility.trafficFlow;
+      layerVisibility.trafficFlow = newState;
+
+      const btn = document.getElementById('btn-toggle-traffic-layer');
+      const btnText = document.getElementById('traffic-layer-btn-text');
+      const legend = document.getElementById('traffic-fluidity-legend');
+
+      if (newState) {
+        if (btn) btn.className = "px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition";
+        if (btnText) btnText.innerText = "Trânsito: ON";
+        if (trafficFlowLayerGroup && leafletMap && !leafletMap.hasLayer(trafficFlowLayerGroup)) {
+          leafletMap.addLayer(trafficFlowLayerGroup);
+        }
+        if (legend) legend.classList.remove('hidden');
+      } else {
+        if (btn) btn.className = "px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-slate-800 transition";
+        if (btnText) btnText.innerText = "Trânsito: OFF";
+        if (trafficFlowLayerGroup && leafletMap && leafletMap.hasLayer(trafficFlowLayerGroup)) {
+          leafletMap.removeLayer(trafficFlowLayerGroup);
+        }
+        if (legend) legend.classList.add('hidden');
+      }
+    }
+
+    // =========================================================================
+    // CARGA DE DADOS REGIONAIS CONSOLIDADOS
+    // =========================================================================
+    async function loadAllDataForRegion(region = currentRegion) {
+      selectedCaravanId = null;
+      selectedIncidentId = null;
+      selectedSecurityId = null;
+
+      if (caravanRoutesLayerGroup) caravanRoutesLayerGroup.clearLayers();
+      if (trafficFlowLayerGroup) trafficFlowLayerGroup.clearLayers();
+      if (trafficIncidentsLayerGroup) trafficIncidentsLayerGroup.clearLayers();
+      if (ottLayerGroup) ottLayerGroup.clearLayers();
+      if (fogoCruzadoLayerGroup) fogoCruzadoLayerGroup.clearLayers();
+      if (camerasLayerGroup) camerasLayerGroup.clearLayers();
+
+      await Promise.allSettled([
+        fetchCaravans(region),
+        fetchSecurityOccurrences(region),
+        fetchTrafficConditions(region),
+        fetchWeatherAlerts(region),
+        fetchCameras(region),
+        fetchIncidents(region)
+      ]);
+
+      renderCaravanFeed();
+      renderCaravanRoutesOnMap();
+      renderTrafficConditionsOnMap();
+      renderSecurityOccurrencesOnMap();
+      renderCamerasOnMap();
+      renderIncidentPinsOnMap();
+      renderIncidentFeed();
+      updateTimestamp();
+    }
+
+    async function fetchCaravans(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/caravans?region=${region}`);
         if (res.ok) {
           const json = await res.json();
-          trafficConditionsData = json.RJ || [];
-          renderTrafficConditionsOnMap();
+          caravansData = json.data || [];
+          updateCaravanKpis(json.kpis || {});
         }
       } catch (e) {
-        console.warn('[TRAFFIC] Falha ao carregar condições de trânsito:', e.message);
+        console.warn('[CARAVANAS] Erro ao buscar caravanas:', e.message);
+      }
+    }
+
+    async function fetchSecurityOccurrences(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/security-occurrences?region=${region}`);
+        if (res.ok) {
+          const json = await res.json();
+          securityOccurrencesData = json.data || [];
+        }
+      } catch (e) {
+        console.warn('[SEGURANÇA] Erro ao buscar ocorrências OTT / Fogo Cruzado:', e.message);
+      }
+    }
+
+    async function fetchTrafficConditions(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/traffic-conditions?region=${region}`);
+        if (res.ok) {
+          const json = await res.json();
+          trafficConditionsData = json.corridors || [];
+        }
+      } catch (e) {
+        console.warn('[TRÂNSITO] Erro ao buscar condições de trânsito:', e.message);
+      }
+    }
+
+    async function fetchWeatherAlerts(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/weather-alerts?region=${region}`);
+        if (res.ok) {
+          weatherAlertsData = await res.json();
+        }
+      } catch (e) {
+        console.warn('[CLIMA] Erro ao buscar alertas meteorológicos:', e.message);
+      }
+    }
+
+    async function fetchCameras(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/cameras?region=${region}`);
+        if (res.ok) {
+          const json = await res.json();
+          camerasData = json.data || [];
+        }
+      } catch (e) {
+        camerasData = PUBLIC_CAMERAS_CATALOG.filter(c => c.region === region);
+      }
+      if (!camerasData || camerasData.length === 0) {
+        camerasData = PUBLIC_CAMERAS_CATALOG.filter(c => c.region === region);
+      }
+    }
+
+    async function fetchIncidents(region = currentRegion) {
+      try {
+        const res = await fetch(`/api/traffic-alert/incidents?region=${region}`);
+        if (res.ok) {
+          const json = await res.json();
+          incidentsData = json.data || [];
+          if (json.kpis) updateIncidentKpis(json.kpis);
+        }
+      } catch (e) {
+        console.warn('[ALERTA] Erro ao buscar incidentes:', e.message);
       }
     }
 
     async function loadInitialData() {
-      try {
-        // Carga de Caravanas (Operação Real CCO Estúdios Globo)
-        const crvRes = await fetch('/api/traffic-alert/caravans');
-        if (crvRes.ok) {
-          const json = await crvRes.json();
-          caravansData = json.data || [];
-          updateCaravanKpis(json.kpis || {});
-        } else {
-          console.warn('[CARAVANAS] Erro HTTP ao buscar caravanas:', crvRes.status);
-        }
-
-        // Carga de Incidentes Urbanos (RIT ALERTA)
-        const incRes = await fetch('/api/traffic-alert/incidents');
-        if (incRes.ok) {
-          const json = await incRes.json();
-          incidentsData = json.data || [];
-          if (json.kpis) updateIncidentKpis(json.kpis);
-        } else {
-          console.warn('[ALERTA] Erro HTTP ao buscar incidentes:', incRes.status);
-        }
-        
-        // Fallback robusto com dados reais de operação (Zero caravanas simuladas)
-        if (!caravansData || caravansData.length === 0) {
-          const today = new Date().toISOString().split('T')[0];
-          caravansData = [
-            {
-              caravanId: 'caravan-01',
-              caravanName: 'Caravana Domingão com Huck — Niterói & São Gonçalo',
-              programName: 'Domingão com Huck',
-              companyName: 'Log Rio',
-              neighborhood: 'Niterói',
-              corridor: 'Ponte Rio-Niterói / Linha Vermelha / Transolímpica',
-              originAddress: 'Praça Renascença, Centro, Niterói - RJ',
-              originCoords: [-22.8090, -43.3640],
-              destinationLabel: DESTINATION_LABEL,
-              destinationAddress: 'Portaria Principal Estúdios Globo — Curicica, Jacarepaguá',
-              baseDistanceKm: 32.5,
-              baseDurationMinutes: 48,
-              projectedDurationMinutes: 48,
-              plannedDepartureAt: `${today}T13:45:00.000Z`,
-              projectedArrivalAt: `${today}T14:33:00.000Z`,
-              projectedStatus: 'DENTRO DA JANELA',
-              marginToWindowMinutes: 42,
-              incidents: [],
-              cameras: PUBLIC_CAMERAS_CATALOG.slice(0, 3),
-              routeGeometry: [
-                [-22.8090, -43.3640],
-                [-22.8450, -43.3000],
-                [-22.8800, -43.2350],
-                [-22.9200, -43.3500],
-                DESTINATION_COORDS
-              ]
-            },
-            {
-              caravanId: 'caravan-02',
-              caravanName: 'Caravana Caldeirão com Mion — Baixada Fluminense',
-              programName: 'Caldeirão com Mion',
-              companyName: 'Doce Rio',
-              neighborhood: 'Nova Iguaçu',
-              corridor: 'Baixada Fluminense / Presidente Dutra / Transolímpica',
-              originAddress: 'Av. Governador Portela, Centro, Nova Iguaçu - RJ',
-              originCoords: [-22.7560, -43.4600],
-              destinationLabel: DESTINATION_LABEL,
-              destinationAddress: 'Portaria Principal Estúdios Globo — Curicica, Jacarepaguá',
-              baseDistanceKm: 38.0,
-              baseDurationMinutes: 55,
-              projectedDurationMinutes: 55,
-              plannedDepartureAt: `${today}T13:15:00.000Z`,
-              projectedArrivalAt: `${today}T14:10:00.000Z`,
-              projectedStatus: 'DENTRO DA JANELA',
-              marginToWindowMinutes: 35,
-              incidents: [],
-              cameras: PUBLIC_CAMERAS_CATALOG.slice(3, 6),
-              routeGeometry: [
-                [-22.7560, -43.4600],
-                [-22.7850, -43.3900],
-                [-22.8280, -43.3650],
-                [-22.8720, -43.3870],
-                DESTINATION_COORDS
-              ]
-            },
-            {
-              caravanId: 'caravan-03',
-              caravanName: 'Caravana Altas Horas — Zona Norte & Madureira',
-              programName: 'Altas Horas',
-              companyName: 'Pianeta',
-              neighborhood: 'Madureira',
-              corridor: 'Zona Norte / Linha Amarela / Curicica',
-              originAddress: 'Rua Carvalho de Souza, Madureira, Rio de Janeiro - RJ',
-              originCoords: [-22.8750, -43.3350],
-              destinationLabel: DESTINATION_LABEL,
-              destinationAddress: 'Portaria Principal Estúdios Globo — Curicica, Jacarepaguá',
-              baseDistanceKm: 42.0,
-              baseDurationMinutes: 62,
-              projectedDurationMinutes: 77,
-              plannedDepartureAt: `${today}T13:00:00.000Z`,
-              projectedArrivalAt: `${today}T14:17:00.000Z`,
-              projectedStatus: 'ATENÇÃO',
-              marginToWindowMinutes: 13,
-              incidents: [{
-                canonicalId: 'INC-LA-003',
-                title: 'Lentidão acentuada na Linha Amarela',
-                corridor: 'Linha Amarela',
-                distanceToRouteMeters: 450,
-                impactLabel: '+15 min'
-              }],
-              cameras: PUBLIC_CAMERAS_CATALOG.slice(2, 5),
-              criticalSegments: [{ segmentIndex: 2 }],
-              alternativeRoute: {
-                corridorName: 'Via Transolímpica / Av. Brasil',
-                estimatedSavingsMinutes: 12,
-                recommendationText: 'Desvio consultivo via Transolímpica evitando a retenção na Linha Amarela.'
-              },
-              routeGeometry: [
-                [-22.8750, -43.3350],
-                [-22.8950, -43.2700],
-                [-22.8980, -43.2650],
-                [-22.9300, -43.3200],
-                DESTINATION_COORDS
-              ]
-            },
-            {
-              caravanId: 'caravan-04',
-              caravanName: 'Caravana Conversa com Bial — Zona Oeste & Campo Grande',
-              programName: 'Conversa com Bial',
-              companyName: 'Viação União',
-              neighborhood: 'Campo Grande',
-              corridor: 'Zona Oeste / Transolímpica / Curicica',
-              originAddress: 'Rua Coronel Agostinho, Campo Grande, Rio de Janeiro - RJ',
-              originCoords: [-22.9030, -43.5590],
-              destinationLabel: DESTINATION_LABEL,
-              destinationAddress: 'Portaria Principal Estúdios Globo — Curicica, Jacarepaguá',
-              baseDistanceKm: 27.0,
-              baseDurationMinutes: 40,
-              projectedDurationMinutes: 40,
-              plannedDepartureAt: `${today}T14:00:00.000Z`,
-              projectedArrivalAt: `${today}T14:40:00.000Z`,
-              projectedStatus: 'DENTRO DA JANELA',
-              marginToWindowMinutes: 50,
-              incidents: [],
-              cameras: PUBLIC_CAMERAS_CATALOG.slice(5, 8),
-              routeGeometry: [
-                [-22.9030, -43.5590],
-                [-22.8850, -43.5000],
-                [-22.8700, -43.4300],
-                [-22.9100, -43.4100],
-                DESTINATION_COORDS
-              ]
-            }
-          ];
-          updateCaravanKpis({ totalPlanned: 4, withinWindow: 3, attention: 1, withIncidents: 1 });
-        }
-
-        // Fallback de Ocorrências com os 9 Corredores e Taxonomia Waze
-        if (!incidentsData || incidentsData.length === 0) {
-          incidentsData = [
-            {
-              id: 'inc-01',
-              canonicalId: 'INC-LV-001',
-              title: 'Acidente com retenção na Linha Vermelha',
-              corridor: 'Linha Vermelha',
-              type: 'acidente',
-              lat: -22.8800,
-              lng: -43.2350,
-              severity: 'CRÍTICO',
-              description: 'Colisão entre dois veículos na altura da Ilha do Fundão, sentido Centro. Duas faixas interditadas.',
-              impactLabel: '+25 min',
-              provider: 'COR-Rio',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-02',
-              canonicalId: 'INC-AB-002',
-              title: 'Obras na pista central da Avenida Brasil',
-              corridor: 'Avenida Brasil',
-              type: 'obras',
-              lat: -22.8450,
-              lng: -43.3000,
-              severity: 'ALTO',
-              description: 'Obras de recapeamento asfáltico na altura de Irajá, sentido Zona Oeste.',
-              impactLabel: '+20 min',
-              provider: 'COR-Rio',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-03',
-              canonicalId: 'INC-LA-003',
-              title: 'Lentidão acentuada na Linha Amarela',
-              corridor: 'Linha Amarela',
-              type: 'transito',
-              lat: -22.8980,
-              lng: -43.2650,
-              severity: 'MÉDIO',
-              description: 'Tráfego intenso na altura da Saída 7 (Bonsucesso) devido ao fluxo da manhã.',
-              impactLabel: '+15 min',
-              provider: 'LAMSA',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-04',
-              canonicalId: 'INC-TO-004',
-              title: 'Faixa bloqueada na Transolímpica',
-              corridor: 'Transolímpica',
-              type: 'faixa_bloqueada',
-              lat: -22.8720,
-              lng: -43.3870,
-              severity: 'MÉDIO',
-              description: 'Faixa da direita bloqueada para manutenção preventiva próximo ao acesso de Deodoro.',
-              impactLabel: '+10 min',
-              provider: 'COR-Rio',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-05',
-              canonicalId: 'INC-PRN-005',
-              title: 'Vento forte na Ponte Rio-Niterói',
-              corridor: 'Ponte Rio-Niterói',
-              type: 'tempo_ruim',
-              lat: -22.8850,
-              lng: -43.1600,
-              severity: 'MÉDIO',
-              description: 'Redução preventiva de velocidade no vão central devido a ventos fortes.',
-              impactLabel: '+12 min',
-              provider: 'EcoPonte',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-06',
-              canonicalId: 'INC-MAD-006',
-              title: 'Operação policial em Madureira',
-              corridor: 'Zona Norte',
-              type: 'policia',
-              lat: -22.8750,
-              lng: -43.3350,
-              severity: 'ALTO',
-              description: 'Operação de segurança viária com estreitamento de pista no viaduto de Madureira.',
-              impactLabel: '+18 min',
-              provider: 'CET-Rio',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-07',
-              canonicalId: 'INC-CEN-007',
-              title: 'Semáforo em amarelo intermitente no Centro',
-              corridor: 'Centro',
-              type: 'semaforo',
-              lat: -22.9030,
-              lng: -43.1780,
-              severity: 'BAIXO',
-              type: 'semaforo',
-              description: 'Cruzamento Av. Presidente Vargas x Rio Branco com lentidão leve.',
-              impactLabel: '+5 min',
-              provider: 'CET-Rio',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-08',
-              canonicalId: 'INC-DUT-008',
-              title: 'Animal na pista na Rodovia Pres. Dutra',
-              corridor: 'Baixada Fluminense',
-              type: 'animal',
-              lat: -22.7850,
-              lng: -43.3900,
-              severity: 'MÉDIO',
-              description: 'Presença de animal no acostamento na altura de São João de Meriti, atenção redobrada.',
-              impactLabel: '+8 min',
-              provider: 'CCR RioSP',
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'inc-09',
-              canonicalId: 'INC-ZS-009',
-              title: 'Objeto na pista no Aterro do Flamengo',
-              corridor: 'Zona Sul',
-              type: 'objeto',
-              lat: -22.9350,
-              lng: -43.1750,
-              severity: 'BAIXO',
-              description: 'Detritos de carga recolhidos pela Comlurb na altura do MAM, trânsito liberado.',
-              impactLabel: '+4 min',
-              provider: 'CET-Rio',
-              updatedAt: new Date().toISOString()
-            }
-          ];
-          updateIncidentKpis({
-            totalActive: 9,
-            totalCritical: 2,
-            corridorsCount: 9,
-            camerasActive: 14,
-            camerasTotal: 14
-          });
-        }
-      } catch (err) {
-        console.warn('[DATA] Executando com dados locais em memória:', err.message);
-      }
-
-      // Renderiza conforme o modo atual
-      if (currentMode === 'caravanas') {
-        renderCaravanFeed();
-        renderCaravanRoutesOnMap();
-      } else {
-        renderIncidentFeed();
-        renderIncidentsOnMap();
-      }
-
-      updateTimestamp();
+      await loadAllDataForRegion(currentRegion);
+    }
+    async function loadTrafficConditions() {
+      return Promise.resolve();
     }
 
     // =========================================================================
@@ -1358,7 +1517,7 @@
       const filtered = caravansData.filter(c => {
         if (prog && c.programName !== prog) return false;
         if (status && c.projectedStatus !== status) return false;
-        
+
         // Filtro por Região
         if (region) {
           const regionText = `${c.neighborhood || ''} ${c.corridor || ''} ${c.originAddress || ''}`.toLowerCase();
@@ -1377,7 +1536,7 @@
         // Busca por Via, Bairro, Programa ou Caravana
         if (search) {
           const fullText = `${c.caravanName} ${c.programName} ${c.companyName} ${c.originAddress} ${c.neighborhood || ''} ${c.corridor || ''} ${c.destinationLabel || ''}`.toLowerCase();
-          const matches = fullText.includes(search) || 
+          const matches = fullText.includes(search) ||
             (search.includes('barra') && (fullText.includes('curicica') || fullText.includes('jacarepaguá') || fullText.includes('estúdios globo'))) ||
             (search.includes('jacarepagu') && (fullText.includes('curicica') || fullText.includes('estúdios globo'))) ||
             (search.includes('baixada') && fullText.includes('nova iguaçu')) ||
@@ -1405,7 +1564,7 @@
       feed.innerHTML = filtered.map((c, idx) => {
         const isSelected = selectedCaravanId === c.caravanId;
         const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
-        
+
         let statusBadge = "bg-emerald-950/80 text-emerald-300 border-emerald-700";
         if (c.projectedStatus === 'ATENÇÃO') statusBadge = "bg-amber-950/80 text-amber-300 border-amber-700";
         if (c.projectedStatus === 'RISCO DE ATRASO') statusBadge = "bg-rose-950/80 text-rose-300 border-rose-700";
@@ -1467,15 +1626,11 @@
     // MAPA: PLOTAGEM CONJUNTA UNIFICADA (CARAVANAS + TRÂNSITO + OCORRÊNCIAS WAZE)
     // =========================================================================
     function renderCaravanRoutesOnMap() {
-      if (!leafletMap) return;
-      clearCaravanMapLayers();
-
-      // Renderiza camadas de suporte operacional no mesmo mapa (Item 8)
-      renderTrafficConditionsOnMap();
-      renderIncidentPinsOnMap();
+      if (!leafletMap || !caravanRoutesLayerGroup) return;
+      caravanRoutesLayerGroup.clearLayers();
 
       const legend = document.getElementById('legend-items');
-      legend.innerHTML = '';
+      if (legend) legend.innerHTML = '';
 
       if (caravansData.length === 0) return;
 
@@ -1485,21 +1640,19 @@
         const isSelected = selectedCaravanId === c.caravanId;
         const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
         const isHighlighted = isAllRoutesMode || isSelected;
-        const opacity = isSelected ? 1.0 : (isAllRoutesMode ? 0.85 : 0.15);
+        const opacity = isSelected ? 1.0 : (isAllRoutesMode ? 0.85 : 0.2);
         const weight = isSelected ? 6 : 4;
 
         if (Array.isArray(c.routeGeometry) && c.routeGeometry.length >= 2) {
-          // Polilinha da rota
           const polyline = L.polyline(c.routeGeometry, {
             color: color,
             weight: weight,
             opacity: opacity,
             lineCap: 'round',
             lineJoin: 'round'
-          }).addTo(leafletMap);
+          }).addTo(caravanRoutesLayerGroup);
 
           polyline.on('click', () => selectCaravan(c.caravanId, true));
-          activeCaravanRouteLayers.push(polyline);
 
           c.routeGeometry.forEach(pt => bounds.push(pt));
 
@@ -1507,41 +1660,48 @@
           const originCoords = c.originCoords || c.routeGeometry[0];
           const originIcon = L.divIcon({
             className: 'origin-marker',
-            html: `<div style="background:${color}; color:#000; font-weight:900; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; font-size:10px; box-shadow:0 0 10px ${color};">${idx + 1}</div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
+            html: `<div style="background:${color}; color:#000; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; font-size:10px; box-shadow:0 0 10px ${color}; cursor:pointer;">${idx + 1}</div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
           });
 
-          const originMarker = L.marker(originCoords, { icon: originIcon, opacity: isHighlighted ? 1 : 0.3 })
-            .addTo(leafletMap)
-            .bindPopup(`<strong>${escapeHtml(c.caravanName)}</strong><br>Origem: ${escapeHtml(c.originAddress)}<br>Distância: <strong style="color:#d97706;">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + ' km' : '--'}</strong>`);
-          
-          activeCaravanRouteLayers.push(originMarker);
+          const originMarker = L.marker(originCoords, { icon: originIcon, opacity: isHighlighted ? 1 : 0.4 })
+            .addTo(caravanRoutesLayerGroup)
+            .bindPopup(`
+              <div style="font-family:sans-serif; font-size:11px;">
+                <strong style="color:#00d1ff;">${escapeHtml(c.caravanName)}</strong><br>
+                <strong>Origem:</strong> ${escapeHtml(c.originAddress)}<br>
+                <strong>Distância:</strong> <strong style="color:#f5a623;">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + ' km' : '--'}</strong><br>
+                <strong>Duração:</strong> ${c.projectedDurationMinutes || c.baseDurationMinutes} min<br>
+                <button onclick="selectCaravan('${c.caravanId}', true)" style="margin-top:4px; background:#0284c7; color:#fff; border:none; padding:3px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Ver Detalhes ↗</button>
+              </div>
+            `);
 
-          // Rota Crítica (ex: Linha Vermelha Km 12) se houver ocorrência severa
+          // Segmentos críticos de trânsito
           if (c.criticalSegments && c.criticalSegments.length > 0 && isHighlighted) {
             const seg = c.routeGeometry.slice(2, 4);
             if (seg.length >= 2) {
-              const critLine = L.polyline(seg, {
-                color: '#f43f5e',
+              L.polyline(seg, {
+                color: '#ef4444',
                 weight: 6,
                 dashArray: '6, 6',
                 opacity: 0.95
-              }).addTo(leafletMap);
-              activeCaravanRouteLayers.push(critLine);
+              }).addTo(caravanRoutesLayerGroup);
             }
           }
 
           // Item na legenda do mapa
-          legend.innerHTML += `
-            <div class="flex items-center justify-between gap-2 py-0.5">
-              <label class="flex items-center gap-1.5 cursor-pointer" onclick="selectCaravan('${c.caravanId}', true)">
-                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color};"></span>
-                <span class="${isSelected ? 'text-white font-bold' : 'text-slate-300'} truncate max-w-[130px]">${escapeHtml(c.caravanName)}</span>
-              </label>
-              <span class="text-[9px] font-mono text-slate-400">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + 'km' : ''} ${c.projectedDurationMinutes || c.baseDurationMinutes}m</span>
-            </div>
-          `;
+          if (legend) {
+            legend.innerHTML += `
+              <div class="flex items-center justify-between gap-2 py-0.5">
+                <label class="flex items-center gap-1.5 cursor-pointer" onclick="selectCaravan('${c.caravanId}', true)">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color};"></span>
+                  <span class="${isSelected ? 'text-white font-bold' : 'text-slate-300'} truncate max-w-[130px]">${escapeHtml(c.caravanName)}</span>
+                </label>
+                <span class="text-[9px] font-mono text-slate-400">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + 'km' : ''} ${c.projectedDurationMinutes || c.baseDurationMinutes}m</span>
+              </div>
+            `;
+          }
         }
       });
 
@@ -1549,7 +1709,6 @@
       if (selectedCaravanId && !isAllRoutesMode) {
         const c = caravansData.find(item => item.caravanId === selectedCaravanId);
         if (c) {
-          // Plota Câmeras Próximas
           if (Array.isArray(c.cameras)) {
             c.cameras.forEach(cam => {
               const camLat = cam.latitude || cam.lat;
@@ -1558,56 +1717,61 @@
 
               const camIcon = L.divIcon({
                 className: 'cam-pin',
-                html: `<div style="background:#0284c7; color:#fff; width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:1px solid #fff; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.5);">🎥</div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
+                html: `<div style="background:#0284c7; color:#fff; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:1px solid #fff; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.5); cursor:pointer;">🎥</div>`,
+                iconSize: [22, 22],
+                iconAnchor: [11, 11]
               });
               const m = L.marker([camLat, camLng], { icon: camIcon })
-                .addTo(leafletMap)
-                .bindPopup(`<strong>Câmera Pública</strong><br>${escapeHtml(cam.cameraName || cam.name)}<br>Status: <strong>${cam.status}</strong><br><a href="${cam.sourceUrl}" target="_blank" style="color:#0284c7; font-weight:bold;">Ver Imagem ao Vivo ↗</a>`);
-              activeCaravanRouteLayers.push(m);
+                .addTo(caravanRoutesLayerGroup)
+                .bindPopup(`
+                  <div style="font-family:sans-serif; font-size:11px;">
+                    <strong>Câmera Pública</strong><br>
+                    <strong>${escapeHtml(cam.cameraName || cam.name)}</strong><br>
+                    Status: <strong style="color:#10b981;">${cam.status || 'ONLINE'}</strong><br>
+                    <button onclick="openInternalCameraViewer('${cam.id}')" style="margin-top:4px; background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">Visualizar Câmera Interna ↗</button>
+                  </div>
+                `);
+              m.on('click', () => openInternalCameraViewer(cam));
             });
           }
 
-          // Plota Rota Alternativa Consultiva se houver
           if (c.alternativeRoute) {
+            const destConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
             const altCoords = [
               c.originCoords || c.routeGeometry[0],
-              [-22.8400, -43.3400],
-              [-22.8700, -43.3900], // Via Transolímpica
-              [-22.9200, -43.4000],
-              DESTINATION_COORDS
+              currentRegion === 'SP' ? [-23.5400, -46.7200] : [-22.8400, -43.3400],
+              currentRegion === 'SP' ? [-23.5800, -46.7100] : [-22.8700, -43.3900],
+              destConf.coords
             ];
             const altLine = L.polyline(altCoords, {
               color: '#10b981',
               weight: 4,
               dashArray: '5, 8',
               opacity: 0.85
-            }).addTo(leafletMap);
-            altLine.bindPopup('<strong>ROTA ALTERNATIVA PARA AVALIAÇÃO</strong><br>Via Transolímpica (Economia estimada)');
-            activeCaravanRouteLayers.push(altLine);
+            }).addTo(caravanRoutesLayerGroup);
+            altLine.bindPopup(`<strong>ROTA ALTERNATIVA PARA AVALIAÇÃO</strong><br>${escapeHtml(c.alternativeRoute.corridorName || 'Desvio Consultivo')}<br>Economia estimada: ~${c.alternativeRoute.estimatedSavingsMinutes || 10} min`);
           }
         }
       }
 
-      if (bounds.length > 0) {
+      if (bounds.length > 0 && !selectedCaravanId) {
         leafletMap.fitBounds(bounds, { padding: [40, 40] });
       }
     }
 
     // =========================================================================
-    // SOBREPOSIÇÃO DE TRÂNSITO EM TEMPO REAL NOS CORREDORES
+    // SOBREPOSIÇÃO DE TRÂNSITO EM TEMPO REAL NOS CORREDORES (6 NÍVEIS)
     // =========================================================================
     function renderTrafficConditionsOnMap() {
-      if (!leafletMap) return;
-      trafficRouteLayers.forEach(l => leafletMap.removeLayer(l));
-      trafficRouteLayers = [];
+      if (!leafletMap || !trafficFlowLayerGroup) return;
+      trafficFlowLayerGroup.clearLayers();
+      if (!layerVisibility.trafficFlow) return;
 
       trafficConditionsData.forEach(item => {
         let coords = CORRIDOR_COORDS[item.via];
         if (!coords) {
-          const foundKey = Object.keys(CORRIDOR_COORDS).find(k => 
-            item.via.toLowerCase().includes(k.toLowerCase()) || 
+          const foundKey = Object.keys(CORRIDOR_COORDS).find(k =>
+            item.via.toLowerCase().includes(k.toLowerCase()) ||
             k.toLowerCase().includes(item.via.toLowerCase())
           );
           if (foundKey) coords = CORRIDOR_COORDS[foundKey];
@@ -1619,29 +1783,121 @@
           color: color,
           weight: 5,
           opacity: 0.85,
-          dashArray: item.status === 'Lento' || item.status === 'Crítico' ? '8, 6' : null
-        }).addTo(leafletMap);
+          dashArray: item.status === 'Lento' || item.status === 'Crítico' || item.status === 'Parado' ? '8, 6' : null
+        }).addTo(trafficFlowLayerGroup);
 
         line.bindPopup(`
           <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
             <strong style="color:${color}; text-transform:uppercase;">${escapeHtml(item.via)}</strong><br>
-            <strong>Status de Fluxo:</strong> ${escapeHtml(item.status)}<br>
-            <strong>Tempo Atual:</strong> ${item.tempoAtual} min (Ref: ${item.tempoReferencia} min)<br>
-            <span style="font-weight:bold; color:${item.diferenca.startsWith('+') ? '#ef4444' : '#10b981'};">Diferença: ${escapeHtml(item.diferenca)}</span>
+            <strong>Status de Fluidez:</strong> <span style="font-weight:bold; color:${color};">${escapeHtml(item.status)}</span><br>
+            <strong>Tempo Atual:</strong> ${item.tempoAtual || item.delayMinutes || '--'} min<br>
+            <span style="font-weight:bold; color:${String(item.diferenca || '').startsWith('+') ? '#ef4444' : '#10b981'};">Diferença: ${escapeHtml(item.diferenca || '+0 min')}</span>
           </div>
         `);
-
-        trafficRouteLayers.push(line);
       });
     }
 
     // =========================================================================
-    // PLOTAGEM DE OCORRÊNCIAS COM ÍCONES ESTILO WAZE
+    // PLOTAGEM DE OCORRÊNCIAS DE SEGURANÇA (OTT & FOGO CRUZADO)
+    // =========================================================================
+    function renderSecurityOccurrencesOnMap() {
+      if (!leafletMap) return;
+      if (ottLayerGroup) ottLayerGroup.clearLayers();
+      if (fogoCruzadoLayerGroup) fogoCruzadoLayerGroup.clearLayers();
+
+      securityOccurrencesData.forEach(occ => {
+        const lat = occ.latitude || occ.lat;
+        const lng = occ.longitude || occ.lng;
+        if (!lat || !lng) return;
+
+        const isOtt = (occ.source === 'OTT');
+        const targetGroup = isOtt ? ottLayerGroup : fogoCruzadoLayerGroup;
+        if (!targetGroup) return;
+
+        const iconHtml = isOtt
+          ? `<div class="waze-pin-inner waze-pin-crit" style="border-color:#ec4899; background:#fff;" title="${escapeHtml(occ.title)}"><span style="font-size:13px;">🎯</span></div>`
+          : `<div class="waze-pin-inner waze-pin-crit" style="border-color:#ef4444; background:#fff;" title="${escapeHtml(occ.title)}"><span style="font-size:13px;">🔴</span></div>`;
+
+        const icon = L.divIcon({
+          className: 'waze-incident-pin',
+          html: iconHtml,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const timeStr = occ.reportedAt ? new Date(occ.reportedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+        const freshness = occ.freshnessStatus || 'ATUAL';
+        const freshnessColor = freshness === 'ATUAL' ? '#10b981' : (freshness === 'RECENTE' ? '#f59e0b' : '#94a3b8');
+
+        const m = L.marker([lat, lng], { icon })
+          .addTo(targetGroup)
+          .bindPopup(`
+            <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong style="color:${isOtt ? '#ec4899' : '#ef4444'};">${isOtt ? '🎯 OTT (Onde Tem Tiroteio)' : '🔴 Fogo Cruzado'}</strong>
+                <span style="font-size:9px; background:${freshnessColor}22; color:${freshnessColor}; border:1px solid ${freshnessColor}; padding:1px 4px; border-radius:3px; font-weight:bold;">${freshness}</span>
+              </div>
+              <strong>${escapeHtml(occ.title)}</strong><br>
+              <span style="font-size:10px; color:#64748b;">${escapeHtml(occ.description || occ.address || '')}</span><br>
+              <span style="font-size:9.5px; color:#94a3b8;">Horário do Reporte: ${timeStr} • ${escapeHtml(occ.city || '')}</span><br>
+              <div style="margin-top:6px;">
+                <button onclick="selectSecurityOccurrence('${occ.id}')" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">
+                  Analisar no Painel Tático ↗
+                </button>
+              </div>
+            </div>
+          `);
+
+        m.on('click', () => selectSecurityOccurrence(occ.id));
+      });
+    }
+
+    // =========================================================================
+    // PLOTAGEM DE CÂMERAS PÚBLICAS NO MAPA
+    // =========================================================================
+    function renderCamerasOnMap() {
+      if (!leafletMap || !camerasLayerGroup) return;
+      camerasLayerGroup.clearLayers();
+      if (!layerVisibility.cameras) return;
+
+      camerasData.forEach(cam => {
+        const lat = cam.lat || cam.latitude;
+        const lng = cam.lng || cam.longitude;
+        if (!lat || !lng) return;
+
+        const icon = L.divIcon({
+          className: 'cam-pin',
+          html: `<div style="background:#0284c7; color:#fff; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:1px solid #fff; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.5); cursor:pointer;">🎥</div>`,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+
+        const m = L.marker([lat, lng], { icon })
+          .addTo(camerasLayerGroup)
+          .bindPopup(`
+            <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+              <strong style="color:#0284c7;">🎥 Câmera Pública</strong><br>
+              <strong>${escapeHtml(cam.name || cam.cameraName)}</strong><br>
+              <span style="font-size:10px; color:#64748b;">${escapeHtml(cam.corridor || cam.bairro || '')} • ${escapeHtml(cam.source || 'Órgão Oficial')}</span><br>
+              <div style="margin-top:6px;">
+                <button onclick="openInternalCameraViewer('${cam.id}')" style="background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                  Visualizar Câmera Interna ↗
+                </button>
+              </div>
+            </div>
+          `);
+
+        m.on('click', () => openInternalCameraViewer(cam));
+      });
+    }
+
+    // =========================================================================
+    // PLOTAGEM DE OCORRÊNCIAS URBANAS (WAZE STYLE)
     // =========================================================================
     function renderIncidentPinsOnMap() {
-      if (!leafletMap) return;
-      incidentMarkerLayers.forEach(l => leafletMap.removeLayer(l));
-      incidentMarkerLayers = [];
+      if (!leafletMap || !trafficIncidentsLayerGroup) return;
+      trafficIncidentsLayerGroup.clearLayers();
+      if (!layerVisibility.trafficIncidents) return;
 
       incidentsData.forEach(inc => {
         if (!inc.lat || !inc.lng) return;
@@ -1655,7 +1911,7 @@
         });
 
         const m = L.marker([inc.lat, inc.lng], { icon })
-          .addTo(leafletMap)
+          .addTo(trafficIncidentsLayerGroup)
           .bindPopup(`
             <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
               <strong style="color:${cfg.borderColor};">${cfg.emoji} ${escapeHtml(inc.title)}</strong><br>
@@ -1672,14 +1928,11 @@
         m.on('click', () => {
           selectIncident(inc.id, true);
         });
-
-        incidentMarkerLayers.push(m);
       });
     }
 
     function clearCaravanMapLayers() {
-      activeCaravanRouteLayers.forEach(l => leafletMap.removeLayer(l));
-      activeCaravanRouteLayers = [];
+      if (caravanRoutesLayerGroup) caravanRoutesLayerGroup.clearLayers();
     }
 
     // =========================================================================
@@ -1770,6 +2023,46 @@
         </div>
       `;
 
+      // 1.1 Indicador de Comparativo de Recálculo (Delta)
+      if (c.recalculationDelta) {
+        const delta = c.recalculationDelta;
+        const diff = delta.durationDiffMinutes || 0;
+        const diffSign = diff > 0 ? `+${diff}` : `${diff}`;
+        const diffColor = diff > 0 ? 'text-rose-400' : (diff < 0 ? 'text-emerald-400' : 'text-slate-300');
+        const timeRecalc = delta.recalculatedAt ? new Date(delta.recalculatedAt).toLocaleTimeString('pt-BR') : '--:--';
+        html += `
+          <div class="bg-[#09152a] border border-cyan-500/40 rounded-lg p-2.5 text-[10px] space-y-1.5">
+            <div class="flex items-center justify-between pb-1 border-b border-white/5">
+              <span class="text-cyan-300 font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-clock-rotate-left"></i> Projeção Recalculada às ${timeRecalc}
+              </span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-mono ${delta.statusChanged ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-slate-800 text-slate-300'}">
+                ${delta.statusChanged ? 'Status Alterado' : 'Estável'}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+              <div class="bg-black/40 p-1 rounded">
+                <span class="text-[8px] text-slate-400 block uppercase">Variação Tempo</span>
+                <strong class="${diffColor}">${diffSign} min</strong>
+              </div>
+              <div class="bg-black/40 p-1 rounded">
+                <span class="text-[8px] text-slate-400 block uppercase">Chegada Ant.</span>
+                <span class="text-slate-300">${delta.previousArrival ? new Date(delta.previousArrival).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+              </div>
+              <div class="bg-black/40 p-1 rounded">
+                <span class="text-[8px] text-slate-400 block uppercase">Nova Chegada</span>
+                <strong class="text-cyan-300">${arrTime}</strong>
+              </div>
+            </div>
+            ${c.trafficImpact ? `
+              <div class="text-[9px] text-slate-400 flex items-center justify-between pt-0.5">
+                <span>Impacto de Trânsito: <strong class="text-amber-300">+${c.trafficImpact.totalDelayMinutes} min</strong> (${c.trafficImpact.congestedSegmentsCount} trecho(s) com lentidão)</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
       // 2. Comparativo de Provedores com Governança
       html += `
         <div class="bg-[#070b14] border border-white/10 rounded-lg p-3 space-y-2">
@@ -1855,7 +2148,7 @@
         <div class="bg-[#070b14] border border-white/10 rounded-lg p-3 space-y-2">
           <div class="flex items-center justify-between">
             <h4 class="text-[11px] font-bold text-white uppercase">🎥 Câmeras Públicas Próximas (${cams.length})</h4>
-            <span class="text-[9px] text-slate-400">COR-Rio / CET-Rio</span>
+            <span class="text-[9px] text-slate-400">COR-Rio / CET-SP</span>
           </div>
           <div class="grid grid-cols-2 gap-2">
       `;
@@ -1870,8 +2163,13 @@
               <div class="text-[9px] text-slate-400 truncate">${escapeHtml(cam.corridor)}</div>
             </div>
             <div class="mt-2 pt-1 border-t border-white/5 flex items-center justify-between text-[9px]">
-              <span class="${cam.status === 'DISPONÍVEL' ? 'text-emerald-400' : 'text-amber-400'} font-semibold">${cam.status}</span>
-              <a href="${cam.sourceUrl}" target="_blank" class="text-cyan-400 hover:underline">Fonte ↗</a>
+              <span class="${cam.status === 'DISPONÍVEL' || cam.status === 'ONLINE' ? 'text-emerald-400' : 'text-amber-400'} font-semibold">${cam.status || 'ONLINE'}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="openInternalCameraViewer('${cam.id || cam.cameraId}')" class="px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-[9px] flex items-center gap-1">
+                  <i class="fa-solid fa-video text-[8px]"></i> Ver
+                </button>
+                <a href="${cam.sourceUrl}" target="_blank" class="text-slate-400 hover:text-cyan-300 text-[9px]" title="Abrir portal oficial">↗</a>
+              </div>
             </div>
           </div>
         `).join('');
@@ -1881,12 +2179,196 @@
       // 6. Botões de Ação
       html += `
         <div class="flex gap-2 pt-2">
-          <button onclick="recalculateSingleCaravan('${c.caravanId}')" class="flex-1 py-2 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs transition">
-            Recalcular Projeção
+          <button id="btn-recalculate-drawer" onclick="recalculateSingleCaravan('${c.caravanId}')" class="flex-1 py-2 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow">
+            <i class="fa-solid fa-arrows-rotate"></i> Recalcular Projeção
           </button>
           <button onclick="deleteCaravan('${c.caravanId}')" class="px-3 py-2 rounded bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 text-xs font-semibold">
             Excluir
           </button>
+        </div>
+      `;
+
+      body.innerHTML = html;
+      drawer.classList.remove('hidden');
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO: DRAWER TÁTICO DE OCORRÊNCIAS DE SEGURANÇA (OTT & FOGO CRUZADO)
+    // =========================================================================
+    function selectSecurityOccurrence(occId) {
+      selectedSecurityId = occId;
+      const occ = securityOccurrencesData.find(o => o.id === occId);
+      if (!occ) return;
+      const lat = occ.latitude || occ.lat;
+      const lng = occ.longitude || occ.lng;
+      if (lat && lng && leafletMap) {
+        leafletMap.setView([lat, lng], 14, { animate: true });
+      }
+      renderSecurityDrawer(occ);
+    }
+
+    function renderSecurityDrawer(occ) {
+      const drawer = document.getElementById('tactical-drawer');
+      const title = document.getElementById('drawer-title');
+      const tag = document.getElementById('drawer-tag');
+      const body = document.getElementById('drawer-body');
+
+      const isOtt = occ.source === 'OTT';
+      const sev = (occ.severity || 'ALTO').toUpperCase();
+      const freshness = occ.freshnessStatus || 'ATUAL';
+      const timeReported = occ.reportedAt ? new Date(occ.reportedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      const timeUpdated = occ.updatedAt ? new Date(occ.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : timeReported;
+
+      tag.innerText = `${occ.source} • ${freshness}`;
+      tag.className = `text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${isOtt ? 'bg-pink-950 text-pink-300 border border-pink-700' : 'bg-rose-950 text-rose-300 border border-rose-700'}`;
+      title.innerText = `${isOtt ? '🎯' : '🔴'} ${occ.title}`;
+
+      // Cruzamento espacial com caravanas (raio de 3.500m da rota)
+      const occLat = parseFloat(occ.latitude || occ.lat);
+      const occLng = parseFloat(occ.longitude || occ.lng);
+
+      const affectedCaravans = caravansData.map(c => {
+        let minDist = 999999;
+        if (!isNaN(occLat) && !isNaN(occLng) && Array.isArray(c.routeGeometry)) {
+          for (const pt of c.routeGeometry) {
+            const d = getHaversineDistanceMeters(occLat, occLng, pt[0], pt[1]);
+            if (d < minDist) minDist = d;
+          }
+        }
+        return { caravan: c, minDistMeters: Math.round(minDist) };
+      }).filter(item => item.minDistMeters <= 3500)
+        .sort((a, b) => a.minDistMeters - b.minDistMeters);
+
+      // Câmeras públicas próximas no raio de 3.500m
+      const catalog = camerasData.length > 0 ? camerasData : PUBLIC_CAMERAS_CATALOG;
+      const nearbyCameras = catalog.map(cam => {
+        const camLat = parseFloat(cam.lat || cam.latitude);
+        const camLng = parseFloat(cam.lng || cam.longitude);
+        const dist = (!isNaN(occLat) && !isNaN(occLng) && !isNaN(camLat) && !isNaN(camLng))
+          ? getHaversineDistanceMeters(occLat, occLng, camLat, camLng)
+          : 999999;
+        return { ...cam, distMeters: Math.round(dist) };
+      }).filter(cam => cam.distMeters <= 3500)
+        .sort((a, b) => a.distMeters - b.distMeters)
+        .slice(0, 4);
+
+      let html = `
+        <!-- 1. DADOS DA OCORRÊNCIA DE SEGURANÇA -->
+        <div class="bg-[#070b14] border border-white/10 rounded-lg p-3 space-y-2">
+          <div class="flex justify-between items-center border-b border-white/10 pb-1.5">
+            <div>
+              <span class="text-[9px] text-cyan-400 block font-mono uppercase">${escapeHtml(occ.corridor || occ.address || 'MALHA VIÁRIA')}</span>
+              <span class="text-xs font-bold text-white">${escapeHtml(occ.category || 'Ocorrência de Segurança')}</span>
+            </div>
+            <span class="text-[9px] px-2 py-0.5 rounded font-bold uppercase ${sev === 'CRÍTICO' ? 'bg-rose-950 text-rose-300 border border-rose-700' : 'bg-amber-950 text-amber-300 border border-amber-700'}">
+              ${sev}
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(occ.description || occ.title)}</p>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-[10px]">
+            <div>
+              <span class="text-slate-500 block text-[9px] uppercase">Fonte do Reporte:</span>
+              <strong class="text-cyan-300">${escapeHtml(occ.source === 'OTT' ? 'OTT (Onde Tem Tiroteio)' : 'Instituto Fogo Cruzado')}</strong>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[9px] uppercase">Horário do Reporte:</span>
+              <strong class="text-slate-200">${timeReported} (Atualizado: ${timeUpdated})</strong>
+            </div>
+          </div>
+          <div class="p-2 rounded bg-[#09152a] border border-cyan-800/40 text-[9px] text-cyan-200/90 leading-tight">
+            <i class="fa-solid fa-shield-halved text-cyan-400 mr-1"></i>
+            <strong>Aviso de Governança:</strong> Dados públicos de segurança colaborativa para apoio consultivo operacional. Não constituem confirmação tática de campo nem telemetria individual.
+          </div>
+        </div>
+
+        <!-- 2. CARAVANAS COM ROTAS NO RAIO DE PROXIMIDADE (3.500m) -->
+        <div class="bg-[#070b14] border border-white/10 rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[11px] font-bold text-white uppercase flex items-center gap-1.5">
+              <span>🚌 Caravanas no Raio de Alerta (${affectedCaravans.length})</span>
+            </h4>
+            <span class="text-[9px] text-slate-400">Buffer: 3.500m</span>
+          </div>
+      `;
+
+      if (affectedCaravans.length === 0) {
+        html += `
+          <div class="text-[10px] text-emerald-400 py-1.5 bg-[#061814] rounded px-2 border border-emerald-800/40">
+            ✓ Nenhuma caravana programada possui rota ativa passando a menos de 3,5 km deste evento.
+          </div>
+        `;
+      } else {
+        html += `<div class="space-y-1.5">` + affectedCaravans.map(item => {
+          const c = item.caravan;
+          return `
+            <div class="bg-[#0d172e] p-2.5 rounded border border-cyan-800/50 flex flex-col gap-1.5">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="font-bold text-white text-xs">${escapeHtml(c.caravanName)}</div>
+                  <div class="text-[10px] text-slate-400">${escapeHtml(c.programName)} • <span class="text-cyan-300">${escapeHtml(c.companyName || 'Log Operacional')}</span></div>
+                </div>
+                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-950 text-amber-300 border border-amber-800">
+                  Aprox. ${item.minDistMeters}m da Rota
+                </span>
+              </div>
+              <div class="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
+                <span class="text-slate-400">Horário Chegada Proj: <strong class="text-white font-mono">${c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</strong></span>
+                <button onclick="selectCaravan('${c.caravanId}', true)" class="px-2 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-[10px] flex items-center gap-1">
+                  Focar na Caravana ↗
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('') + `</div>`;
+      }
+      html += `</div>`;
+
+      // 3. CÂMERAS PÚBLICAS PRÓXIMAS (RAIO 3.500m)
+      html += `
+        <div class="bg-[#070b14] border border-white/10 rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[11px] font-bold text-white uppercase flex items-center gap-1.5">
+              <span>🎥 Câmeras Públicas no Entorno (${nearbyCameras.length})</span>
+            </h4>
+            <span class="text-[9px] text-slate-400">Monitoramento Oficial</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+      `;
+
+      if (nearbyCameras.length === 0) {
+        html += `<div class="col-span-2 text-[10px] text-slate-500 py-1">Nenhuma câmera pública identificada no raio de 3.500m.</div>`;
+      } else {
+        html += nearbyCameras.map(cam => `
+          <div class="bg-[#091122] border border-white/5 rounded p-2 text-[10px] flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-slate-200 truncate" title="${escapeHtml(cam.name || cam.cameraName)}">${escapeHtml(cam.name || cam.cameraName)}</div>
+              <div class="text-[9px] text-slate-400 truncate">${escapeHtml(cam.corridor)} • a ${cam.distMeters}m</div>
+            </div>
+            <div class="mt-2 pt-1 border-t border-white/5 flex items-center justify-between text-[9px]">
+              <span class="${cam.status === 'DISPONÍVEL' || cam.status === 'ONLINE' ? 'text-emerald-400' : 'text-amber-400'} font-semibold">${cam.status || 'ONLINE'}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="openInternalCameraViewer('${cam.id || cam.cameraId}')" class="px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-[9px] flex items-center gap-1">
+                  <i class="fa-solid fa-video text-[8px]"></i> Ver
+                </button>
+                <a href="${cam.sourceUrl}" target="_blank" class="text-slate-400 hover:text-cyan-300 text-[8px]" title="Abrir portal oficial">↗</a>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+      html += `</div></div>`;
+
+      // 4. DIRETRIZ CONSULTIVA CCO
+      html += `
+        <div class="bg-[#061b17] border border-emerald-600/40 rounded-lg p-3 space-y-1.5">
+          <h4 class="text-[11px] font-bold text-emerald-400 uppercase flex items-center gap-1">
+            <span>💡 Recomendação Consultiva CCO</span>
+          </h4>
+          <p class="text-[10px] text-emerald-200/90 leading-relaxed">
+            • Acompanhar a evolução deste evento através das câmeras públicas oficiais da via.<br>
+            • Em caso de retenção severa ou desvio recomendado pelas autoridades, avaliar via alternativa antes do embarque das caravanas.<br>
+            • Comunicação preventiva às equipes de produção e estúdios para ajuste de escala de gravação se necessário.
+          </p>
         </div>
       `;
 
@@ -2017,8 +2499,8 @@
 
       // Condição de trânsito em tempo real no corredor
       const corridorName = inc.corridor || inc.via || 'Malha Viária';
-      const trafficItem = trafficConditionsData.find(t => 
-        t.via.toLowerCase().includes(corridorName.toLowerCase()) || 
+      const trafficItem = trafficConditionsData.find(t =>
+        t.via.toLowerCase().includes(corridorName.toLowerCase()) ||
         corridorName.toLowerCase().includes(t.via.toLowerCase())
       );
 
@@ -2146,8 +2628,13 @@
               <div class="text-[9px] text-slate-400 truncate">${escapeHtml(cam.corridor)} • a ${cam.distMeters}m</div>
             </div>
             <div class="mt-2 pt-1 border-t border-white/5 flex items-center justify-between text-[9px]">
-              <span class="${cam.status === 'DISPONÍVEL' ? 'text-emerald-400' : 'text-amber-400'} font-semibold">${cam.status}</span>
-              <a href="${cam.sourceUrl}" target="_blank" class="text-cyan-400 hover:underline font-bold">Ver Câmera ao Vivo ↗</a>
+              <span class="${cam.status === 'DISPONÍVEL' || cam.status === 'ONLINE' ? 'text-emerald-400' : 'text-amber-400'} font-semibold">${cam.status || 'ONLINE'}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="openInternalCameraViewer('${cam.id || cam.cameraId}')" class="px-1.5 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-[9px] flex items-center gap-1">
+                  <i class="fa-solid fa-video text-[8px]"></i> Ver
+                </button>
+                <a href="${cam.sourceUrl}" target="_blank" class="text-slate-400 hover:text-cyan-300 text-[8px]" title="Abrir portal oficial">↗</a>
+              </div>
             </div>
           </div>
         `).join('');
@@ -2276,21 +2763,189 @@
       renderCaravanRoutesOnMap();
     }
 
+    // =========================================================================
+    // VISUALIZADOR INTERNO DE CÂMERAS PÚBLICAS (RJ & SP)
+    // =========================================================================
+    function openInternalCameraViewer(camIdOrObj) {
+      let cam = null;
+      const allCams = (camerasData && camerasData.length > 0) ? camerasData : PUBLIC_CAMERAS_CATALOG;
+
+      if (typeof camIdOrObj === 'object' && camIdOrObj !== null) {
+        cam = camIdOrObj;
+      } else {
+        cam = allCams.find(c => c.id === camIdOrObj || c.cameraId === camIdOrObj);
+      }
+
+      if (!cam) return;
+
+      activeCameraList = allCams.filter(c => (c.region || currentRegion) === currentRegion);
+      if (activeCameraList.length === 0) activeCameraList = [cam];
+
+      const foundIdx = activeCameraList.findIndex(c => c.id === cam.id);
+      activeCameraIndex = foundIdx !== -1 ? foundIdx : 0;
+
+      renderModalCamera(cam);
+      document.getElementById('internal-camera-modal').classList.remove('hidden');
+    }
+
+    function closeInternalCameraViewer() {
+      document.getElementById('internal-camera-modal').classList.add('hidden');
+      const viewport = document.getElementById('modal-cam-viewport');
+      if (viewport) viewport.innerHTML = '';
+    }
+
+    function refreshCurrentCamera() {
+      if (!activeCameraList || activeCameraList.length === 0) return;
+      const cam = activeCameraList[activeCameraIndex];
+      if (!cam) return;
+
+      const btnIcon = document.querySelector('#modal-cam-refresh-btn i');
+      if (btnIcon) btnIcon.classList.add('fa-spin');
+
+      setTimeout(() => {
+        renderModalCamera(cam);
+        if (btnIcon) btnIcon.classList.remove('fa-spin');
+        showToast(`Imagem da câmera "${cam.name || cam.cameraName}" atualizada.`, 'info');
+      }, 500);
+    }
+
+    function navigateCamera(direction) {
+      if (!activeCameraList || activeCameraList.length === 0) return;
+      activeCameraIndex = (activeCameraIndex + direction + activeCameraList.length) % activeCameraList.length;
+      renderModalCamera(activeCameraList[activeCameraIndex]);
+    }
+
+    function renderModalCamera(cam) {
+      if (!cam) return;
+      document.getElementById('modal-cam-name').innerText = cam.name || cam.cameraName || 'Câmera Pública';
+
+      const badge = document.getElementById('modal-cam-badge');
+      const isOnline = (cam.status === 'DISPONÍVEL' || cam.status === 'ONLINE');
+      badge.innerText = isOnline ? 'ONLINE' : 'MANUTENÇÃO';
+      badge.className = `px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isOnline ? 'bg-emerald-950 text-emerald-400 border border-emerald-700' : 'bg-amber-950 text-amber-400 border border-amber-700'}`;
+
+      document.getElementById('modal-cam-corridor').innerText = `${cam.corridor || 'Corredor Viário'} • ${cam.city || (currentRegion === 'SP' ? 'São Paulo' : 'Rio de Janeiro')}`;
+      document.getElementById('modal-cam-source').innerText = cam.source || (currentRegion === 'SP' ? 'CET-SP / Trânsito SP' : 'COR-Rio / CET-Rio');
+      document.getElementById('modal-cam-timestamp').innerText = new Date().toLocaleTimeString('pt-BR');
+      document.getElementById('modal-cam-counter').innerText = `${activeCameraIndex + 1} de ${activeCameraList.length}`;
+
+      const extLink = document.getElementById('modal-cam-external-link');
+      if (extLink) extLink.href = cam.sourceUrl || '#';
+
+      const viewport = document.getElementById('modal-cam-viewport');
+      viewport.innerHTML = `
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-4" id="cam-loading-indicator">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-cyan-400 mb-2"></i>
+          <span class="text-xs">Conectando ao feed oficial (${escapeHtml(cam.source || 'Órgão de Trânsito')})...</span>
+        </div>
+      `;
+
+      const streamUrl = cam.streamUrl || cam.url;
+
+      if (streamUrl && (streamUrl.endsWith('.jpg') || streamUrl.endsWith('.png') || streamUrl.includes('image') || streamUrl.includes('/api/cameras/cetsp/image'))) {
+        // Feed de imagem/snapshot público oficial
+        const img = new Image();
+        const cacheBustUrl = streamUrl.includes('?') ? `${streamUrl}&_t=${Date.now()}` : `${streamUrl}?_t=${Date.now()}`;
+        img.src = cacheBustUrl;
+        img.className = "max-w-full max-h-full object-contain relative z-10 transition-opacity duration-300";
+        img.alt = cam.name || cam.cameraName;
+        img.onload = () => {
+          viewport.innerHTML = '';
+          viewport.appendChild(img);
+        };
+        img.onerror = () => {
+          handleCameraDirectFailure(viewport, cam);
+        };
+      } else if (streamUrl && (streamUrl.includes('youtube.com') || streamUrl.includes('embed'))) {
+        // Stream embutível
+        viewport.innerHTML = `
+          <iframe src="${streamUrl}" class="w-full h-full border-0 relative z-10" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        `;
+      } else {
+        // Portal com restrição técnica de incorporação (X-Frame-Options / CSP)
+        setTimeout(() => {
+          handleCameraDirectFailure(viewport, cam);
+        }, 300);
+      }
+    }
+
+    function handleCameraDirectFailure(viewport, cam) {
+      viewport.innerHTML = `
+        <div class="p-6 text-center text-slate-300 max-w-md space-y-3 relative z-10">
+          <div class="w-14 h-14 rounded-full bg-cyan-950/80 border border-cyan-700/60 mx-auto flex items-center justify-center text-cyan-400 text-2xl shadow-lg">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-white text-sm">Visualização Controlada por Diretiva do Órgão</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              O portal oficial do <strong>${escapeHtml(cam.source || 'órgão de trânsito')}</strong> aplica proteção de cabeçalhos de segurança (X-Frame-Options / CSP) contra incorporação em frames de terceiros.
+            </p>
+          </div>
+          <div class="bg-[#091122] border border-white/10 rounded p-2.5 text-[10px] text-left space-y-1">
+            <div class="text-slate-400"><strong>Câmera:</strong> ${escapeHtml(cam.name || cam.cameraName)}</div>
+            <div class="text-slate-400"><strong>Via:</strong> ${escapeHtml(cam.corridor)}</div>
+            <div class="text-slate-400"><strong>Status Operacional:</strong> <span class="text-emerald-400 font-semibold">${cam.status || 'ONLINE'}</span></div>
+          </div>
+          <div class="pt-2">
+            <a href="${cam.sourceUrl}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition shadow-md">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              Abrir Visualização no Portal Oficial
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // RECÁLCULO DE PROJEÇÕES COM IMPACTO DE TRÂNSITO E COMPARATIVO (DELTA)
+    // =========================================================================
     async function recalculateSingleCaravan(id) {
+      const btn = document.getElementById('btn-recalculate-drawer') || document.querySelector(`button[onclick*="recalculateSingleCaravan('${id}')"]`);
+      const originalHtml = btn ? btn.innerHTML : 'Recalcular Projeção';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Recalculando...`;
+      }
+
       try {
         const res = await fetch(`/api/traffic-alert/caravans/${id}/recalculate`, { method: 'POST' });
         if (res.ok) {
           const json = await res.json();
+          const updatedCaravan = json.data;
           const idx = caravansData.findIndex(c => c.caravanId === id);
-          if (idx !== -1) caravansData[idx] = json.data;
+          if (idx !== -1) caravansData[idx] = updatedCaravan;
+
           renderCaravanFeed();
           renderCaravanRoutesOnMap();
-          renderCaravanDrawer(json.data);
+          renderCaravanDrawer(updatedCaravan);
+
+          const delta = updatedCaravan.recalculationDelta;
+          const diff = delta ? delta.durationDiffMinutes : 0;
+          const diffMsg = diff > 0 ? ` (+${diff} min de acréscimo)` : (diff < 0 ? ` (${diff} min de redução)` : ' (tempo estável)');
+
+          showToast(`Projeção recalculada com sucesso!${diffMsg}`, 'success');
+        } else {
+          showToast('Serviço de trânsito indisponível. Mantendo projeção anterior com indicação de dado prévio.', 'warning');
         }
-      } catch (e) {}
+      } catch (e) {
+        showToast('Falha na comunicação de rede. Mantendo cálculo anterior.', 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      }
     }
 
     async function recalculateAllCaravans() {
+      const btn = document.querySelector(`button[onclick="recalculateAllCaravans()"]`);
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span class="hidden lg:inline">CALCULANDO...</span>`;
+      }
+
       try {
         const res = await fetch('/api/traffic-alert/caravans/recalculate-all', { method: 'POST' });
         if (res.ok) {
@@ -2299,8 +2954,65 @@
           updateCaravanKpis(json.kpis || {});
           renderCaravanFeed();
           renderCaravanRoutesOnMap();
+          if (selectedCaravanId) {
+            const found = caravansData.find(c => c.caravanId === selectedCaravanId);
+            if (found) renderCaravanDrawer(found);
+          }
+          showToast(`Todas as rotas da região ${currentRegion} foram recalculadas.`, 'success');
+        } else {
+          showToast('Falha ao sincronizar recálculo global de rotas.', 'warning');
         }
-      } catch (e) {}
+      } catch (e) {
+        showToast('Falha na conexão durante o recálculo global.', 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      }
+    }
+
+    // =========================================================================
+    // HELPER: NOTIFICAÇÃO TOAST VISUAL
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      let toastContainer = document.getElementById('rit-toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'rit-toast-container';
+        toastContainer.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none';
+        document.body.appendChild(toastContainer);
+      }
+
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-950 border-emerald-600 text-emerald-200',
+        warning: 'bg-amber-950 border-amber-600 text-amber-200',
+        error: 'bg-rose-950 border-rose-600 text-rose-200',
+        info: 'bg-[#0f172a] border-cyan-600 text-cyan-200'
+      };
+      const icons = {
+        success: '<i class="fa-solid fa-circle-check text-emerald-400"></i>',
+        warning: '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>',
+        error: '<i class="fa-solid fa-circle-xmark text-rose-400"></i>',
+        info: '<i class="fa-solid fa-circle-info text-cyan-400"></i>'
+      };
+
+      toast.className = `p-3 rounded-lg border shadow-xl text-xs max-w-sm flex items-center gap-2.5 pointer-events-auto transform transition-all duration-300 opacity-0 translate-y-2 ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <span class="text-base shrink-0">${icons[type] || icons.info}</span>
+        <span class="flex-1">${escapeHtml(message)}</span>
+      `;
+
+      toastContainer.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
     }
 
     // =========================================================================
@@ -2319,7 +3031,7 @@
 
         const mins = Math.floor(countdownSeconds / 60);
         const secs = countdownSeconds % 60;
-        document.getElementById('countdown-timer').innerText = 
+        document.getElementById('countdown-timer').innerText =
           `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
       }, 1000);
     }

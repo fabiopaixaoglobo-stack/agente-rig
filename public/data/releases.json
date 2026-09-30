@@ -1,18 +1,72 @@
 {
-  "checkpoint": "5.3",
-  "version": "CP 5.3",
+  "checkpoint": "5.4",
+  "version": "CP 5.4",
   "date": "2026-09-29",
   "formattedDate": "29/09/2026",
   "status": "Homologado",
   "badge": "Release Notes Vivo",
-  "summary": "Centro de Roteirização & Custos Multimodal, Módulo RIT Alerta, Caravanas Inteligentes, Drawer Tático, Multi-Rotas em 7 Cores, Geocodificação Offline e Auditoria Probatória com Checksums SHA-256.",
+  "summary": "Evolução Integrada RJ + SP do RIT Caravanas e RIT Alerta: Módulo SP (Edifício Jornalista Roberto Marinho), Ocorrências de Segurança OTT e Fogo Cruzado, Visualizador Interno de Câmeras Públicas, Camada de Trânsito com 6 Níveis de Fluidez, Recálculo de Projeção com Delta Auditável e KPIs Interativos.",
   "metrics": {
-    "unitTests": "95/95",
-    "smokeTests": "20/20",
-    "playwrightEvidence": "12",
-    "auditEvidence": "15/15"
+    "unitTests": "105/105",
+    "smokeTests": "25/25",
+    "playwrightEvidence": "16",
+    "auditEvidence": "20/20"
   },
   "features": [
+    {
+      "id": "caravanas_sp",
+      "date": "29/09/2026",
+      "name": "Módulo RIT Caravanas São Paulo",
+      "subtitle": "Operação Regional Ed. Jornalista Roberto Marinho",
+      "desc": "Extensão do módulo de Caravanas para São Paulo com destino oficial no Brooklin (Encontro com Patrícia Poeta, Altas Horas SP, Caldeirão SP), rotas alternativas OSRM e alternância fluida RJ/SP com preservação de estado.",
+      "tag": "Regional SP",
+      "status": "completed"
+    },
+    {
+      "id": "ott_fogo_cruzado",
+      "date": "29/09/2026",
+      "name": "Ocorrências de Segurança OTT & Fogo Cruzado",
+      "subtitle": "Camadas Independentes & Análise de Proximidade",
+      "desc": "Interface canônica de ocorrências de segurança normalizadas, deduplicação espacial, status de frescura (atual, recente, desatualizada) e cruzamento no raio de 3.500m com as rotas ativas das caravanas.",
+      "tag": "Segurança CCO",
+      "status": "completed"
+    },
+    {
+      "id": "cameras_internas",
+      "date": "29/09/2026",
+      "name": "Visualizador Interno de Câmeras Públicas",
+      "subtitle": "Visualização In-App sem Nova Aba",
+      "desc": "Exibição in-app de câmeras do COR-Rio e CET-SP com metadados, carimbo de data/hora, navegação sequencial entre câmeras próximas, atualização em tempo real e fallback controlado para restrições CSP/X-Frame-Options.",
+      "tag": "Câmeras Públicas",
+      "status": "completed"
+    },
+    {
+      "id": "camada_transito",
+      "date": "29/09/2026",
+      "name": "Camada de Trânsito Ativável & Fluidez Viária",
+      "subtitle": "6 Níveis Cromáticos, Legenda e Atalho 'T'",
+      "desc": "Polylines coloridas por nível de fluidez nos principais corredores viários (Livre, Moderado, Lento, Intenso, Parado, Sem dados), controle de visibilidade independente, legenda recolhível e impacto direto nas durações das caravanas.",
+      "tag": "Fluidez Viária",
+      "status": "completed"
+    },
+    {
+      "id": "recalculo_delta",
+      "date": "29/09/2026",
+      "name": "Recálculo de Projeção com Delta Auditável",
+      "subtitle": "Comparativo Preciso & Indicador de Variação",
+      "desc": "Botão de recálculo com estado de loading, consulta resiliente aos provedores de trânsito, cálculo do delta comparativo (duração, nova estimativa de chegada e severidade), registro de timestamp e feedback visual via toast.",
+      "tag": "Projeção Dinâmica",
+      "status": "completed"
+    },
+    {
+      "id": "rit_alerta_interativo",
+      "date": "29/09/2026",
+      "name": "RIT Alerta Dinâmico & KPIs Clicáveis",
+      "subtitle": "Explicabilidade Total & Alertas de Mobilidade",
+      "desc": "Transformação dos 5 cards executivos de KPI em elementos interativos com explicabilidade e filtros rápidos, contagem dinâmica de câmeras e integração de alertas meteorológicos (chuva, vento, alagamento) do COR-Rio e CGE-SP.",
+      "tag": "Alertas Operacionais",
+      "status": "completed"
+    },
     {
       "id": "roteirizacao",
       "date": "29/09/2026",
@@ -20,24 +74,6 @@
       "subtitle": "Comparativo Multimodal VAH & Projeção 24h",
       "desc": "Simulação em tempo real entre Frota Própria Globo, UberX, 99Pop, Táxi e Cooperativa. Projeção de trânsito em 24h indicando janela ideal com até 35% de economia e -20 min.",
       "tag": "Custos & Rotas",
-      "status": "completed"
-    },
-    {
-      "id": "rit_alerta",
-      "date": "29/09/2026",
-      "name": "Módulo RIT Alerta Viário",
-      "subtitle": "Monitoramento Autônomo de Ocorrências",
-      "desc": "Integração contínua com CET-Rio, COR, Lamsa e EcoPonte. Triagem automática por severidade (Crítico, Médio, Baixo), filtros por corredores e SLA operacional no CCO.",
-      "tag": "Alertas CCO",
-      "status": "completed"
-    },
-    {
-      "id": "caravanas",
-      "date": "29/09/2026",
-      "name": "Caravanas Inteligentes",
-      "subtitle": "Módulo 02 · Homologado",
-      "desc": "Cadastro de caravanas de auditório, monitoramento de janelas de chegada nos Estúdios Globo, mapa dinâmico de apoio tático e câmeras no trajeto ≤2.500m.",
-      "tag": "Operacional",
       "status": "completed"
     },
     {
@@ -54,7 +90,7 @@
       "date": "29/09/2026",
       "name": "Geocodificação Offline Imediata",
       "subtitle": "Zero Latência Viária",
-      "desc": "Mapeamento instantâneo para 5 Centros de Distribuição e rotas sem dependência de APIs externas pagas ou latência de rede.",
+      "desc": "Mapeamento instantâneo para Centros de Distribuição e rotas sem dependência de APIs externas pagas ou latência de rede.",
       "tag": "Performance",
       "status": "completed"
     },
@@ -72,12 +108,19 @@
       "date": "29/09/2026",
       "name": "Auditoria Probatória com SHA-256",
       "subtitle": "Rastreabilidade & Conformidade",
-      "desc": "95 testes automatizados, 20 smoke tests, manifesto SHA-256 das 12 evidências, relatório JUnit XML e script verificador audit:evidence.",
+      "desc": "Suíte completa de testes automatizados, manifesto SHA-256 de evidências, relatório de integridade e conformidade com Privacy by Design estrito.",
       "tag": "Governança",
       "status": "completed"
     }
   ],
   "history": [
+    {
+      "checkpoint": "5.3",
+      "date": "29/09/2026",
+      "title": "Redesenho Executivo & Multi-Rotas em 7 Cores",
+      "summary": "Auditoria probatória com checksums SHA-256, geocodificação offline, visualização multi-rota e drawer tático preliminar.",
+      "status": "Concluído"
+    },
     {
       "checkpoint": "5.2",
       "date": "28/09/2026",

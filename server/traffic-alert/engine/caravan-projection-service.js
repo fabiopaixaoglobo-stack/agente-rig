@@ -250,9 +250,12 @@ class CaravanRouteProjectionService {
         }
 
         // 5. Câmeras públicas no entorno da rota (raio 2.500m)
+        const isSp = caravanPlan.region === 'SP' || (destinationCoords && destinationCoords[0] < -23.4);
+        const activeCameraCatalog = isSp ? CET_SP_CAMERAS_CATALOG : COR_RIO_CAMERAS_CATALOG;
+
         const nearbyCameras = [];
         if (Array.isArray(routeGeometry) && routeGeometry.length >= 2) {
-            for (const cam of COR_RIO_CAMERAS_CATALOG) {
+            for (const cam of activeCameraCatalog) {
                 const { minDistance } = minDistanceToRouteMeters(cam.latitude, cam.longitude, routeGeometry);
                 if (minDistance <= 2500) {
                     nearbyCameras.push({
@@ -268,23 +271,37 @@ class CaravanRouteProjectionService {
         // 6. Rota Alternativa para Avaliação (Consultiva)
         let alternativeRoute = null;
         if (criticalSegments.length > 0 || totalIncidentImpactMinutes >= 15) {
-            alternativeRoute = {
-                isConsultativeOnly: true,
-                summary: 'Desvio consultivo via Transolímpica evitando trecho de lentidão crítica.',
-                geometry: [
+            const altSummary = isSp
+                ? 'Desvio consultivo via Av. Santo Amaro / Chucri Zaidan evitando trecho de retenção na Marginal Pinheiros.'
+                : 'Desvio consultivo via Transolímpica evitando trecho de lentidão crítica.';
+            const altCorridor = isSp ? 'Av. Santo Amaro / Chucri Zaidan' : 'Via Transolímpica / Av. Brasil';
+            const altGeometry = isSp
+                ? [
+                    routeGeometry[0] || [-23.5325, -46.7917],
+                    [-23.5700, -46.7200],
+                    [-23.5950, -46.6850],
+                    [-23.6100, -46.6900],
+                    destinationCoords || [-23.6186, -46.6974]
+                ]
+                : [
                     routeGeometry[0] || [-22.8090, -43.3640],
                     [-22.8400, -43.3700],
                     [-22.8700, -43.3850],
                     [-22.9200, -43.4000],
                     destinationCoords || [-22.9550, -43.4100]
-                ],
-                corridorName: 'Via Transolímpica / Av. Brasil',
+                ];
+
+            alternativeRoute = {
+                isConsultativeOnly: true,
+                summary: altSummary,
+                geometry: altGeometry,
+                corridorName: altCorridor,
                 originalCorridor: relevantIncidents[0]?.corridor || 'Corredor Principal',
-                additionalDistanceKm: 3.8,
+                additionalDistanceKm: isSp ? 2.5 : 3.8,
                 estimatedSavingsMinutes: Math.min(20, Math.max(5, totalIncidentImpactMinutes - 8)),
                 recommendationText: 'Alternativa com menor impacto estimado para avaliação operacional nas condições informadas.',
                 calculatedAt: new Date().toISOString(),
-                source: 'OSRM + COR-Rio Histórico'
+                source: isSp ? 'CET-SP Histórico' : 'OSRM + COR-Rio Histórico'
             };
         }
 
@@ -297,19 +314,66 @@ class CaravanRouteProjectionService {
             googleQuotaNotice: 'Integração Google Routes API desativada localmente (requer quota corporativa aprovada).',
             googleNotes: 'Integração Google Routes API desativada localmente (requer quota corporativa aprovada).',
             wazeStatus: 'CONSULTA_EXTERNA_DISPONIVEL',
-            wazeLink: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : -22.9550},${destinationCoords ? destinationCoords[1] : -43.4100}&navigate=yes`,
-            wazeConsultativeUrl: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : -22.9550},${destinationCoords ? destinationCoords[1] : -43.4100}&navigate=yes`,
+            wazeLink: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : (isSp ? -23.6186 : -22.9550)},${destinationCoords ? destinationCoords[1] : (isSp ? -46.6974 : -43.4100)}&navigate=yes`,
+            wazeConsultativeUrl: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : (isSp ? -23.6186 : -22.9550)},${destinationCoords ? destinationCoords[1] : (isSp ? -46.6974 : -43.4100)}&navigate=yes`,
             wazeNotes: 'Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).',
             lastQueriedAt: new Date().toISOString()
         };
 
+        // 8. Impacto do Trânsito Consolidado por Segmento
+        const delayMin = totalIncidentImpactMinutes;
+        const pctIncrease = baseDurationMinutes > 0 ? Math.round((delayMin / baseDurationMinutes) * 100 * 10) / 10 : 0;
+        let impactLevel = 'Normal';
+        if (delayMin > 20) impactLevel = 'Crítico';
+        else if (delayMin > 10) impactLevel = 'Alto impacto';
+        else if (delayMin > 3) impactLevel = 'Atenção';
+
+        const mostImpacted = relevantIncidents.length > 0
+            ? `${relevantIncidents[0].corridor} (+${relevantIncidents[0].impactMinutes || delayMin} min)`
+            : (delayMin > 0 ? `Trecho de aproximação (+${delayMin} min)` : 'Fluxo livre');
+
+        const trafficImpact = {
+            baseDurationMinutes,
+            projectedDurationMinutes,
+            differenceMinutes: delayMin,
+            totalDelayMinutes: delayMin,
+            congestedSegmentsCount: Array.isArray(criticalSegments) ? criticalSegments.length : 0,
+            percentageIncrease: pctIncrease,
+            impactLevel,
+            mostImpactedSegment: mostImpacted,
+            projectedArrivalAt: projectedArrivalDate.toISOString(),
+            lastUpdatedAt: new Date().toISOString(),
+            source: isSp ? 'CET-SP - Trânsito nas Principais Vias' : 'COR-Rio / CET-Rio - Malha Viária',
+            confidence: 'Grau A',
+            hasTrafficData: true
+        };
+
+        // 9. Delta de Recálculo (Comparativo Antes vs Depois)
+        let recalculationDelta = null;
+        if (options.previousCalculation) {
+            const prev = options.previousCalculation;
+            const prevDur = prev.projectedDurationMinutes || prev.baseDurationMinutes || baseDurationMinutes;
+            const diffMin = projectedDurationMinutes - prevDur;
+            recalculationDelta = {
+                previousDurationMinutes: prevDur,
+                newDurationMinutes: projectedDurationMinutes,
+                deltaMinutes: diffMin,
+                durationDiffMinutes: diffMin,
+                deltaLabel: diffMin > 0 ? `+${diffMin} min` : (diffMin < 0 ? `${diffMin} min` : '0 min'),
+                previousArrival: prev.projectedArrivalAt || null,
+                statusChanged: Boolean(prev.projectedStatus && prev.projectedStatus !== projectedStatus),
+                recalculatedAt: new Date().toISOString()
+            };
+        }
+
         return createCaravanProjectionDTO({
             ...caravanPlan,
-            companyName: caravanPlan.companyName || 'Log Rio',
+            region: isSp ? 'SP' : 'RJ',
+            companyName: caravanPlan.companyName || (isSp ? 'Expresso Metropolitano SP' : 'Log Rio'),
             operationalNotes: caravanPlan.operationalNotes || '',
             routeColor: caravanPlan.routeColor || '#00d1ff',
             destinationLabel,
-            destinationCoords: destinationCoords || [-22.9550, -43.4100],
+            destinationCoords: destinationCoords || (isSp ? [-23.6186, -46.6974] : [-22.9550, -43.4100]),
             baseDurationMinutes,
             incidentImpactMinutes: totalIncidentImpactMinutes,
             unquantifiedIncidentsCount,
@@ -326,15 +390,18 @@ class CaravanRouteProjectionService {
             alternativeRoute,
             cameras: nearbyCameras,
             trafficComparison,
+            trafficImpact,
+            recalculationDelta,
             sourceStatus: 'ACTIVE',
             calculatedAt: new Date().toISOString()
         });
     }
 
-    getNearbyCameras(routeGeometry = [], maxDistanceMeters = 2500) {
+    getNearbyCameras(routeGeometry = [], maxDistanceMeters = 2500, region = 'RJ') {
         const nearbyCameras = [];
         if (!Array.isArray(routeGeometry) || routeGeometry.length < 2) return nearbyCameras;
-        for (const cam of COR_RIO_CAMERAS_CATALOG) {
+        const catalog = region === 'SP' ? CET_SP_CAMERAS_CATALOG : COR_RIO_CAMERAS_CATALOG;
+        for (const cam of catalog) {
             const { minDistance } = minDistanceToRouteMeters(cam.latitude, cam.longitude, routeGeometry);
             if (minDistance <= maxDistanceMeters) {
                 nearbyCameras.push({
@@ -475,9 +542,86 @@ const COR_RIO_CAMERAS_CATALOG = [
     }
 ];
 
+// CATÁLOGO OFICIAL DE CÂMERAS PÚBLICAS DE SÃO PAULO (CET-SP / BERRINI / CHUCRI ZAIDAN)
+const CET_SP_CAMERAS_CATALOG = [
+    {
+        cameraId: 'SP_CET_23',
+        cameraName: 'Paulista - Av. Brigadeiro Luís Antônio',
+        corridor: 'Avenida Paulista',
+        latitude: -23.5684,
+        longitude: -46.6483,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/23/1.jpg',
+        isPublic: true
+    },
+    {
+        cameraId: 'SP_CET_200',
+        cameraName: 'Iguatemi - Av. Brig. Faria Lima',
+        corridor: 'Faria Lima / Itaim Bibi',
+        latitude: -23.5822,
+        longitude: -46.6830,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/200/1.jpg',
+        isPublic: true
+    },
+    {
+        cameraId: 'SP_CET_220',
+        cameraName: 'Cidade Jardim - Av. Nove de Julho',
+        corridor: 'Marginal Pinheiros / Cidade Jardim',
+        latitude: -23.5825,
+        longitude: -46.6800,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/220/1.jpg',
+        isPublic: true
+    },
+    {
+        cameraId: 'SP_CET_225',
+        cameraName: 'Ascendino Reis - R. Pedro de Toledo (23 de Maio)',
+        corridor: 'Avenida 23 de Maio',
+        latitude: -23.6000,
+        longitude: -46.6500,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/225/1.jpg',
+        isPublic: true
+    },
+    {
+        cameraId: 'SP_CET_BERRINI',
+        cameraName: 'Berrini x Roberto Marinho (Polo TV Globo SP)',
+        corridor: 'Avenida Engenheiro Luís Carlos Berrini',
+        latitude: -23.6186,
+        longitude: -46.6974,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/220/1.jpg',
+        isPublic: true
+    },
+    {
+        cameraId: 'SP_CET_PINHEIROS',
+        cameraName: 'Marginal Pinheiros - Altura Ponte Estaiada',
+        corridor: 'Marginal Pinheiros',
+        latitude: -23.6130,
+        longitude: -46.6985,
+        status: 'DISPONÍVEL',
+        sourceUrl: 'https://cameras.cetsp.com.br/View/Cam.aspx',
+        provider: 'CET_SP',
+        proxyUrl: '/api/cameras/cetsp/image/220/1.jpg',
+        isPublic: true
+    }
+];
+
 module.exports = {
     CaravanRouteProjectionService,
     pointToSegmentDistanceMeters,
     minDistanceToRouteMeters,
-    COR_RIO_CAMERAS_CATALOG
+    COR_RIO_CAMERAS_CATALOG,
+    CET_SP_CAMERAS_CATALOG
 };

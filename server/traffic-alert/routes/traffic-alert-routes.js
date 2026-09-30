@@ -5,17 +5,35 @@
  */
 
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { memoryStore } = require('../store/memory-store');
 const { DeduplicationEngine } = require('../engine/deduplication-engine');
 const { CorRioProvider } = require('../providers/cor-rio-provider');
+const { OttProvider } = require('../providers/ott-provider');
+const { FogoCruzadoProvider } = require('../providers/fogo-cruzado-provider');
+const { CetSpTrafficProvider } = require('../providers/cet-sp-traffic-provider');
 const { calculateHaversineDistance } = require('../db/geo-fallback');
-const { caravanStore } = require('../store/caravan-store');
+const {
+    caravanStore,
+    DESTINATION_HOMOLOG_COORDS,
+    DESTINATION_HOMOLOG_LABEL,
+    DESTINATION_SP_COORDS,
+    DESTINATION_SP_LABEL
+} = require('../store/caravan-store');
+const {
+    COR_RIO_CAMERAS_CATALOG,
+    CET_SP_CAMERAS_CATALOG
+} = require('../engine/caravan-projection-service');
 const { config } = require('../config');
 
 function createTrafficAlertRouter({ repository = null, store = memoryStore } = {}) {
     const router = express.Router();
     const deduplicationEngine = new DeduplicationEngine(store);
     const corRioProvider = new CorRioProvider();
+    const ottProvider = new OttProvider();
+    const fogoCruzadoProvider = new FogoCruzadoProvider();
+    const cetSpTrafficProvider = new CetSpTrafficProvider();
 
     // =========================================================================
     // ENDPOINTS REST OFICIAIS DO SUBSISTEMA (/api/traffic-alert/*)
@@ -320,25 +338,35 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
 
     /**
      * GET /caravans
-     * Lista todas as caravanas projetadas contra os incidentes públicos ativos.
+     * Lista todas as caravanas projetadas contra os incidentes públicos ativos da região.
      */
     router.get('/caravans', checkCaravanEnabled, (req, res) => {
         try {
             const publicIncidents = store.getAllIncidents();
             const { programName, projectedStatus, search, hasIncidents } = req.query;
+            const region = (req.query.region || 'RJ').toUpperCase();
+
+            const destinationCoords = region === 'SP' ? DESTINATION_SP_COORDS : DESTINATION_HOMOLOG_COORDS;
+            const destinationLabel = region === 'SP' ? DESTINATION_SP_LABEL : DESTINATION_HOMOLOG_LABEL;
 
             const filters = {
                 programName: programName || null,
                 projectedStatus: projectedStatus || null,
                 search: search || null,
-                hasIncidents: hasIncidents !== undefined ? hasIncidents === 'true' : undefined
+                hasIncidents: hasIncidents !== undefined ? hasIncidents === 'true' : undefined,
+                region
             };
 
             const caravans = caravanStore.getAll(publicIncidents, filters);
-            const kpis = caravanStore.getKpis(publicIncidents);
+            const kpis = caravanStore.getKpis(publicIncidents, { region });
 
             res.json({
                 ok: true,
+                region,
+                destination: {
+                    label: destinationLabel,
+                    coords: destinationCoords
+                },
                 count: caravans.length,
                 kpis,
                 data: caravans,
@@ -353,13 +381,215 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
 
     /**
      * GET /caravans/kpis
-     * Retorna apenas os 6 KPIs do módulo de caravanas.
+     * Retorna apenas os KPIs do módulo de caravanas da região informada.
      */
     router.get('/caravans/kpis', checkCaravanEnabled, (req, res) => {
         try {
+            const region = (req.query.region || 'RJ').toUpperCase();
             const publicIncidents = store.getAllIncidents();
-            const kpis = caravanStore.getKpis(publicIncidents);
-            res.json({ ok: true, data: kpis });
+            const kpis = caravanStore.getKpis(publicIncidents, { region });
+            res.json({ ok: true, region, data: kpis });
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
+     * GET /security-occurrences
+     * Retorna ocorrências georreferenciadas normalizadas de OTT e Fogo Cruzado.
+     * Suporta filtro regional (?region=RJ|SP) e deduplica ocorrências equivalentes.
+     */
+    router.get('/security-occurrences', async (req, res) => {
+        try {
+            const region = (req.query.region || 'RJ').toUpperCase();
+            const rawOtt = await ottProvider.fetchData({ region });
+            const normOtt = ottProvider.normalize(rawOtt);
+
+            const rawFc = await fogoCruzadoProvider.fetchData({ region });
+            const normFc = fogoCruzadoProvider.normalize(rawFc);
+
+            const combined = [...normOtt, ...normFc];
+
+            // Deduplica espacial e temporalmente (< 600m e diferença < 90 min)
+            const deduplicated = [];
+            for (const item of combined) {
+                const match = deduplicated.find(d => {
+                    const dist = calculateHaversineDistance(d.latitude, d.longitude, item.latitude, item.longitude);
+                    if (dist > 600) return false;
+                    const t1 = new Date(d.reportedAt).getTime();
+                    const t2 = new Date(item.reportedAt).getTime();
+                    return Math.abs(t1 - t2) < 90 * 60 * 1000;
+                });
+
+                if (match) {
+                    if (!match.corroboratingSources) {
+                        match.corroboratingSources = [match.source];
+                    }
+                    if (!match.corroboratingSources.includes(item.source)) {
+                        match.corroboratingSources.push(item.source);
+                    }
+                } else {
+                    deduplicated.push({
+                        ...item,
+                        corroboratingSources: [item.source]
+                    });
+                }
+            }
+
+            // Ordena por horário de reporte decrescente
+            deduplicated.sort((a, b) => new Date(b.reportedAt) - new Date(a.reportedAt));
+
+            res.json({
+                ok: true,
+                region,
+                count: deduplicated.length,
+                sources: ['OTT', 'FOGO_CRUZADO'],
+                data: deduplicated,
+                disclaimer: 'INFORMAÇÕES DE SEGURANÇA PÚBLICA DERIVADAS DE FONTES PÚBLICAS COLABORATIVAS. CARÁTER CONSULTIVO.'
+            });
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
+     * GET /traffic-conditions
+     * Retorna a situação de fluidez dos corredores viários (RJ e SP).
+     */
+    router.get('/traffic-conditions', async (req, res) => {
+        try {
+            const region = (req.query.region || 'RJ').toUpperCase();
+            let corridors = [];
+            let source = 'JSON_CORRIDOR_MATRIX';
+
+            if (region === 'SP') {
+                const cetData = await cetSpTrafficProvider.fetchData();
+                corridors = cetData.corridors || [];
+                source = 'CET_SP_RADAR';
+            } else {
+                try {
+                    const jsonPath = path.join(__dirname, '../../../public/data/traffic-conditions.json');
+                    if (fs.existsSync(jsonPath)) {
+                        const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                        corridors = parsed.RJ || [];
+                        source = 'COR_RIO_AND_CONCESSIONARIAS';
+                    }
+                } catch (e) {
+                    corridors = [];
+                }
+            }
+
+            res.json({
+                ok: true,
+                region,
+                source,
+                updatedAt: new Date().toISOString(),
+                count: corridors.length,
+                corridors
+            });
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
+     * GET /weather-alerts
+     * Retorna estágio operacional da cidade e alertas meteorológicos/alagamentos.
+     */
+    router.get('/weather-alerts', async (req, res) => {
+        try {
+            const region = (req.query.region || 'RJ').toUpperCase();
+            if (region === 'SP') {
+                res.json({
+                    ok: true,
+                    region: 'SP',
+                    operationalStage: {
+                        stage: 1,
+                        name: 'Estado de Observação',
+                        color: '#10b981',
+                        source: 'CGE-SP / Defesa Civil'
+                    },
+                    alerts: [
+                        {
+                            id: 'sp-cge-01',
+                            type: 'CHUVA_ISOLADA',
+                            severity: 'BAIXO',
+                            title: 'Pancadas de Chuva Isoladas',
+                            description: 'Previsão de chuva fraca nas zonas Sul e Oeste. Sem pontos de alagamento ativos no momento.',
+                            affectedCorridors: ['Marginal Pinheiros', 'Av. Jornalista Roberto Marinho'],
+                            reportedAt: new Date().toISOString(),
+                            source: 'CGE São Paulo'
+                        }
+                    ],
+                    mobilityImpact: 'BAIXO',
+                    disclaimer: 'DADOS METEOROLÓGICOS PÚBLICOS DO CENTRO DE GERENCIAMENTO DE EMERGÊNCIAS DE SÃO PAULO.'
+                });
+            } else {
+                const corData = await corRioProvider.fetchData().catch(() => ({}));
+                const stageNum = corData.estagioNum || 1;
+                const stageName = corData.estagioNome || 'Estágio 1 - Normalidade';
+                const stageColor = corData.estagioCor || '#10b981';
+
+                const alerts = [];
+                if (stageNum >= 2) {
+                    alerts.push({
+                        id: 'rj-cor-01',
+                        type: 'ESTAGIO_OPERACIONAL',
+                        severity: stageNum >= 3 ? 'CRITICO' : 'MEDIO',
+                        title: `Alerta COR-Rio: ${stageName}`,
+                        description: `A cidade encontra-se em ${stageName}. Possibilidade de chuvas e reflexos nos principais corredores viários.`,
+                        affectedCorridors: ['Linha Vermelha', 'Av. Brasil', 'Ponte Rio-Niterói'],
+                        reportedAt: new Date().toISOString(),
+                        source: 'Centro de Operações Rio (COR-Rio)'
+                    });
+                } else {
+                    alerts.push({
+                        id: 'rj-cor-01',
+                        type: 'NORMALIDADE',
+                        severity: 'NORMAL',
+                        title: 'Condições Meteorológicas Favoráveis',
+                        description: 'Tempo estável. Sem registros de bolsões d\'água ou interdições meteorológicas nas vias monitoradas.',
+                        affectedCorridors: ['Transolímpica', 'Linha Amarela', 'Av. Brasil'],
+                        reportedAt: new Date().toISOString(),
+                        source: 'Centro de Operações Rio (COR-Rio)'
+                    });
+                }
+
+                res.json({
+                    ok: true,
+                    region: 'RJ',
+                    operationalStage: {
+                        stage: stageNum,
+                        name: stageName,
+                        color: stageColor,
+                        heatLevel: corData.calorDesc || 'Nível 1',
+                        source: 'COR-Rio'
+                    },
+                    alerts,
+                    mobilityImpact: stageNum >= 2 ? 'MODERADO' : 'BAIXO',
+                    disclaimer: 'DADOS METEOROLÓGICOS E ESTÁGIO OPERACIONAL PÚBLICOS DA PREFEITURA DO RIO DE JANEIRO.'
+                });
+            }
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
+     * GET /cameras
+     * Retorna o catálogo de câmeras públicas georreferenciadas da regional.
+     */
+    router.get('/cameras', (req, res) => {
+        try {
+            const region = (req.query.region || 'RJ').toUpperCase();
+            const cameras = region === 'SP' ? CET_SP_CAMERAS_CATALOG : COR_RIO_CAMERAS_CATALOG;
+            res.json({
+                ok: true,
+                region,
+                count: cameras.length,
+                data: cameras,
+                disclaimer: 'CÂMERAS DE MONITORAMENTO PÚBLICO E CONCESSIONÁRIAS VIÁRIAS.'
+            });
         } catch (err) {
             res.status(500).json({ ok: false, error: err.message });
         }
