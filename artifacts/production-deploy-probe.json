@@ -1,5 +1,5 @@
 {
-  "auditTimestamp": "2026-09-30T14:09:07.762Z",
+  "auditTimestamp": "2026-10-01T15:32:58.161Z",
   "environment": {
     "name": "Produção",
     "host": "agenterit.com.br",
@@ -7,15 +7,15 @@
     "cdnProxy": "Cloudflare / Reverse Proxy"
   },
   "gitRelease": {
-    "commitSha": "dad1d7de08b2bd5d9b00f303c0455fc4530b519b",
+    "commitSha": "768f3c07eda1bec1427092ad55ce0a8e0750940f",
     "branch": "refactor/migracao-identidade-rig-para-rit",
-    "originMainSha": "dad1d7de08b2bd5d9b00f303c0455fc4530b519b",
-    "originRefactorSha": "dad1d7de08b2bd5d9b00f303c0455fc4530b519b",
+    "originMainSha": "768f3c07eda1bec1427092ad55ce0a8e0750940f",
+    "originRefactorSha": "768f3c07eda1bec1427092ad55ce0a8e0750940f",
     "inSyncWithOriginMain": true,
     "inSyncWithOriginRefactor": true,
     "author": "Fabio Paixao <fabio.paixao.globo@gmail.com>",
-    "date": "Wed Sep 30 10:15:03 2026 -0300",
-    "subject": "feat(cp54): integrar evolução regional RJ e SP com ocorrencias OTT/FC e cameras internas",
+    "date": "Thu Oct 1 12:31:20 2026 -0300",
+    "subject": "fix(cco): correcoes de usabilidade, tooltips, remocao rir, reposicionamento por uf e auditoria de camadas",
     "remoteUrl": "https://github.com/fabiopaixaoglobo-stack/agente-rig.git"
   },
   "endpoints": {
@@ -23,19 +23,19 @@
       "url": "https://agenterit.com.br/api/traffic-alert/caravans",
       "httpStatus": 200,
       "httpStatusText": "OK",
-      "latencyMs": 377,
+      "latencyMs": 350,
       "responseHeaders": {
         "access-control-allow-credentials": "true",
         "alt-svc": "h3=\":443\"; ma=86400",
         "cf-cache-status": "DYNAMIC",
-        "cf-ray": "a433cdbc4c54e29f-GIG",
+        "cf-ray": "a43c85efdec9e2a1-GIG",
         "connection": "keep-alive",
         "content-encoding": "br",
-        "content-length": "3012",
+        "content-length": "2983",
         "content-type": "application/json; charset=utf-8",
-        "date": "Wed, 30 Sep 2026 14:09:08 GMT",
-        "etag": "W/\"4c08-W58hnq9UBzhofJhQO7PtaGKaWTU\"",
-        "rndr-id": "cadce52c-3bfc-4479",
+        "date": "Thu, 01 Oct 2026 15:32:59 GMT",
+        "etag": "W/\"4c08-5VgIifpKBKN5KBWgFVGlc/ymDFk\"",
+        "rndr-id": "fcf047e4-3fe4-46a5",
         "server": "cloudflare",
         "vary": "Origin, Accept-Encoding",
         "x-powered-by": "Express",
@@ -53,7 +53,7 @@
           "delayRisk": 0,
           "attentionOrRisk": 0,
           "withIncidents": 0,
-          "lastCalculatedAt": "2026-09-30T14:09:08.629Z",
+          "lastCalculatedAt": "2026-10-01T15:32:59.598Z",
           "isSynthetic": true
         },
         "caravans": [
@@ -66,7 +66,7 @@
             "corridor": "Ponte Rio-Niterói / Linha Vermelha / Transolímpica",
             "baseDistanceKm": 32.5,
             "baseDurationMinutes": 48,
-            "projectedArrivalAt": "2026-09-30T14:33:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:33:00.000Z",
             "isGpsBased": false,
             "sourceStatus": "ACTIVE"
           },
@@ -79,7 +79,7 @@
             "corridor": "Baixada Fluminense / Presidente Dutra / Transolímpica",
             "baseDistanceKm": 38,
             "baseDurationMinutes": 55,
-            "projectedArrivalAt": "2026-09-30T14:10:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:10:00.000Z",
             "isGpsBased": false,
             "sourceStatus": "ACTIVE"
           },
@@ -92,7 +92,7 @@
             "corridor": "Zona Norte / Linha Amarela / Barra da Tijuca",
             "baseDistanceKm": 42,
             "baseDurationMinutes": 62,
-            "projectedArrivalAt": "2026-09-30T15:32:00.000Z",
+            "projectedArrivalAt": "2026-10-01T15:32:00.000Z",
             "isGpsBased": false,
             "sourceStatus": "ACTIVE"
           },
@@ -105,7 +105,7 @@
             "corridor": "Zona Oeste / Transolímpica / Jacarepaguá",
             "baseDistanceKm": 27,
             "baseDurationMinutes": 40,
-            "projectedArrivalAt": "2026-09-30T14:55:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:55:00.000Z",
             "isGpsBased": false,
             "sourceStatus": "ACTIVE"
           }
@@ -129,7 +129,7 @@
           "delayRisk": 0,
           "attentionOrRisk": 0,
           "withIncidents": 0,
-          "lastCalculatedAt": "2026-09-30T14:09:08.629Z",
+          "lastCalculatedAt": "2026-10-01T15:32:59.598Z",
           "isSynthetic": true
         },
         "data": [
@@ -147,7 +147,7 @@
               -22.809,
               -43.364
             ],
-            "plannedDepartureAt": "2026-09-30T13:45:00.000Z",
+            "plannedDepartureAt": "2026-10-01T13:45:00.000Z",
             "destinationLabel": "ESTÚDIOS GLOBO — DESTINO DE HOMOLOGAÇÃO RJ",
             "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
             "destinationCoords": [
@@ -159,9 +159,9 @@
             "incidentImpactMinutes": 0,
             "unquantifiedIncidentsCount": 0,
             "projectedDurationMinutes": 48,
-            "projectedArrivalAt": "2026-09-30T14:33:00.000Z",
-            "operationalWindowStart": "2026-09-30T14:40:00.000Z",
-            "operationalWindowEnd": "2026-09-30T15:15:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:33:00.000Z",
+            "operationalWindowStart": "2026-10-01T14:40:00.000Z",
+            "operationalWindowEnd": "2026-10-01T15:15:00.000Z",
             "marginToWindowMinutes": 42,
             "projectedStatus": "DENTRO DA JANELA",
             "incidents": [],
@@ -217,7 +217,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 17,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0790",
@@ -230,7 +230,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 151,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0112",
@@ -243,7 +243,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 196,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0340",
@@ -256,7 +256,7 @@
                 "provider": "LAMSA / COR-Rio",
                 "isPublic": true,
                 "distanceToRouteMeters": 301,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0580",
@@ -269,7 +269,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 429,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0390",
@@ -282,7 +282,7 @@
                 "provider": "LAMSA",
                 "isPublic": true,
                 "distanceToRouteMeters": 1066,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0288",
@@ -295,7 +295,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 1600,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-CCR-0014",
@@ -308,7 +308,7 @@
                 "provider": "CCR RioSP",
                 "isPublic": true,
                 "distanceToRouteMeters": 1928,
-                "lastImageAt": "2026-09-30T14:06:08.628Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               }
             ],
             "trafficComparison": {
@@ -322,7 +322,7 @@
               "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
-              "lastQueriedAt": "2026-09-30T14:09:08.628Z"
+              "lastQueriedAt": "2026-10-01T15:32:59.597Z"
             },
             "trafficImpact": {
               "baseDurationMinutes": 48,
@@ -333,8 +333,8 @@
               "percentageIncrease": 0,
               "impactLevel": "Normal",
               "mostImpactedSegment": "Fluxo livre",
-              "projectedArrivalAt": "2026-09-30T14:33:00.000Z",
-              "lastUpdatedAt": "2026-09-30T14:09:08.628Z",
+              "projectedArrivalAt": "2026-10-01T14:33:00.000Z",
+              "lastUpdatedAt": "2026-10-01T15:32:59.597Z",
               "source": "COR-Rio / CET-Rio - Malha Viária",
               "confidence": "Grau A",
               "hasTrafficData": true
@@ -343,8 +343,8 @@
             "region": "RJ",
             "routeColor": "#00d1ff",
             "sourceStatus": "ACTIVE",
-            "calculatedAt": "2026-09-30T14:09:08.629Z",
-            "expiresAt": "2026-09-30T14:24:08.629Z",
+            "calculatedAt": "2026-10-01T15:32:59.597Z",
+            "expiresAt": "2026-10-01T15:47:59.597Z",
             "isGpsBased": false,
             "isSynthetic": true,
             "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
@@ -363,7 +363,7 @@
               -22.756,
               -43.46
             ],
-            "plannedDepartureAt": "2026-09-30T13:15:00.000Z",
+            "plannedDepartureAt": "2026-10-01T13:15:00.000Z",
             "destinationLabel": "ESTÚDIOS GLOBO — DESTINO DE HOMOLOGAÇÃO RJ",
             "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
             "destinationCoords": [
@@ -375,9 +375,9 @@
             "incidentImpactMinutes": 0,
             "unquantifiedIncidentsCount": 0,
             "projectedDurationMinutes": 55,
-            "projectedArrivalAt": "2026-09-30T14:10:00.000Z",
-            "operationalWindowStart": "2026-09-30T14:15:00.000Z",
-            "operationalWindowEnd": "2026-09-30T14:45:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:10:00.000Z",
+            "operationalWindowStart": "2026-10-01T14:15:00.000Z",
+            "operationalWindowEnd": "2026-10-01T14:45:00.000Z",
             "marginToWindowMinutes": 35,
             "projectedStatus": "DENTRO DA JANELA",
             "incidents": [],
@@ -426,7 +426,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 138,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0790",
@@ -439,7 +439,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 151,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0580",
@@ -452,7 +452,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 594,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-CCR-0014",
@@ -465,7 +465,7 @@
                 "provider": "CCR RioSP",
                 "isPublic": true,
                 "distanceToRouteMeters": 904,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0112",
@@ -478,7 +478,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 2223,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               }
             ],
             "trafficComparison": {
@@ -492,7 +492,7 @@
               "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
-              "lastQueriedAt": "2026-09-30T14:09:08.629Z"
+              "lastQueriedAt": "2026-10-01T15:32:59.597Z"
             },
             "trafficImpact": {
               "baseDurationMinutes": 55,
@@ -503,8 +503,8 @@
               "percentageIncrease": 0,
               "impactLevel": "Normal",
               "mostImpactedSegment": "Fluxo livre",
-              "projectedArrivalAt": "2026-09-30T14:10:00.000Z",
-              "lastUpdatedAt": "2026-09-30T14:09:08.629Z",
+              "projectedArrivalAt": "2026-10-01T14:10:00.000Z",
+              "lastUpdatedAt": "2026-10-01T15:32:59.597Z",
               "source": "COR-Rio / CET-Rio - Malha Viária",
               "confidence": "Grau A",
               "hasTrafficData": true
@@ -513,8 +513,8 @@
             "region": "RJ",
             "routeColor": "#f5a623",
             "sourceStatus": "ACTIVE",
-            "calculatedAt": "2026-09-30T14:09:08.629Z",
-            "expiresAt": "2026-09-30T14:24:08.629Z",
+            "calculatedAt": "2026-10-01T15:32:59.597Z",
+            "expiresAt": "2026-10-01T15:47:59.597Z",
             "isGpsBased": false,
             "isSynthetic": true,
             "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
@@ -533,7 +533,7 @@
               -22.89,
               -43.12
             ],
-            "plannedDepartureAt": "2026-09-30T14:30:00.000Z",
+            "plannedDepartureAt": "2026-10-01T14:30:00.000Z",
             "destinationLabel": "ESTÚDIOS GLOBO — DESTINO DE HOMOLOGAÇÃO RJ",
             "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
             "destinationCoords": [
@@ -545,9 +545,9 @@
             "incidentImpactMinutes": 0,
             "unquantifiedIncidentsCount": 0,
             "projectedDurationMinutes": 62,
-            "projectedArrivalAt": "2026-09-30T15:32:00.000Z",
-            "operationalWindowStart": "2026-09-30T15:40:00.000Z",
-            "operationalWindowEnd": "2026-09-30T16:15:00.000Z",
+            "projectedArrivalAt": "2026-10-01T15:32:00.000Z",
+            "operationalWindowStart": "2026-10-01T15:40:00.000Z",
+            "operationalWindowEnd": "2026-10-01T16:15:00.000Z",
             "marginToWindowMinutes": 43,
             "projectedStatus": "DENTRO DA JANELA",
             "incidents": [],
@@ -595,7 +595,7 @@
                 "provider": "EcoPonte",
                 "isPublic": true,
                 "distanceToRouteMeters": 0,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0288",
@@ -608,7 +608,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 17,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0790",
@@ -621,7 +621,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 151,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0580",
@@ -634,7 +634,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 429,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0340",
@@ -647,7 +647,7 @@
                 "provider": "LAMSA / COR-Rio",
                 "isPublic": true,
                 "distanceToRouteMeters": 498,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0390",
@@ -660,7 +660,7 @@
                 "provider": "LAMSA",
                 "isPublic": true,
                 "distanceToRouteMeters": 1066,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0245",
@@ -673,7 +673,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 1199,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               }
             ],
             "trafficComparison": {
@@ -687,7 +687,7 @@
               "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
-              "lastQueriedAt": "2026-09-30T14:09:08.629Z"
+              "lastQueriedAt": "2026-10-01T15:32:59.597Z"
             },
             "trafficImpact": {
               "baseDurationMinutes": 62,
@@ -698,8 +698,8 @@
               "percentageIncrease": 0,
               "impactLevel": "Normal",
               "mostImpactedSegment": "Fluxo livre",
-              "projectedArrivalAt": "2026-09-30T15:32:00.000Z",
-              "lastUpdatedAt": "2026-09-30T14:09:08.629Z",
+              "projectedArrivalAt": "2026-10-01T15:32:00.000Z",
+              "lastUpdatedAt": "2026-10-01T15:32:59.597Z",
               "source": "COR-Rio / CET-Rio - Malha Viária",
               "confidence": "Grau A",
               "hasTrafficData": true
@@ -708,8 +708,8 @@
             "region": "RJ",
             "routeColor": "#10b981",
             "sourceStatus": "ACTIVE",
-            "calculatedAt": "2026-09-30T14:09:08.629Z",
-            "expiresAt": "2026-09-30T14:24:08.629Z",
+            "calculatedAt": "2026-10-01T15:32:59.597Z",
+            "expiresAt": "2026-10-01T15:47:59.597Z",
             "isGpsBased": false,
             "isSynthetic": true,
             "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
@@ -728,7 +728,7 @@
               -22.903,
               -43.559
             ],
-            "plannedDepartureAt": "2026-09-30T14:15:00.000Z",
+            "plannedDepartureAt": "2026-10-01T14:15:00.000Z",
             "destinationLabel": "ESTÚDIOS GLOBO — DESTINO DE HOMOLOGAÇÃO RJ",
             "destinationAddress": "Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ",
             "destinationCoords": [
@@ -740,9 +740,9 @@
             "incidentImpactMinutes": 0,
             "unquantifiedIncidentsCount": 0,
             "projectedDurationMinutes": 40,
-            "projectedArrivalAt": "2026-09-30T14:55:00.000Z",
-            "operationalWindowStart": "2026-09-30T15:00:00.000Z",
-            "operationalWindowEnd": "2026-09-30T15:30:00.000Z",
+            "projectedArrivalAt": "2026-10-01T14:55:00.000Z",
+            "operationalWindowStart": "2026-10-01T15:00:00.000Z",
+            "operationalWindowEnd": "2026-10-01T15:30:00.000Z",
             "marginToWindowMinutes": 35,
             "projectedStatus": "DENTRO DA JANELA",
             "incidents": [],
@@ -786,7 +786,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 151,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0620",
@@ -799,7 +799,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 333,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               },
               {
                 "cameraId": "CAM-COR-0580",
@@ -812,7 +812,7 @@
                 "provider": "COR_RIO",
                 "isPublic": true,
                 "distanceToRouteMeters": 819,
-                "lastImageAt": "2026-09-30T14:06:08.629Z"
+                "lastImageAt": "2026-10-01T15:29:59.597Z"
               }
             ],
             "trafficComparison": {
@@ -826,7 +826,7 @@
               "wazeLink": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeConsultativeUrl": "https://www.waze.com/ul?ll=-22.955,-43.41&navigate=yes",
               "wazeNotes": "Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).",
-              "lastQueriedAt": "2026-09-30T14:09:08.629Z"
+              "lastQueriedAt": "2026-10-01T15:32:59.597Z"
             },
             "trafficImpact": {
               "baseDurationMinutes": 40,
@@ -837,8 +837,8 @@
               "percentageIncrease": 0,
               "impactLevel": "Normal",
               "mostImpactedSegment": "Fluxo livre",
-              "projectedArrivalAt": "2026-09-30T14:55:00.000Z",
-              "lastUpdatedAt": "2026-09-30T14:09:08.629Z",
+              "projectedArrivalAt": "2026-10-01T14:55:00.000Z",
+              "lastUpdatedAt": "2026-10-01T15:32:59.597Z",
               "source": "COR-Rio / CET-Rio - Malha Viária",
               "confidence": "Grau A",
               "hasTrafficData": true
@@ -847,8 +847,8 @@
             "region": "RJ",
             "routeColor": "#d946ef",
             "sourceStatus": "ACTIVE",
-            "calculatedAt": "2026-09-30T14:09:08.629Z",
-            "expiresAt": "2026-09-30T14:24:08.629Z",
+            "calculatedAt": "2026-10-01T15:32:59.597Z",
+            "expiresAt": "2026-10-01T15:47:59.597Z",
             "isGpsBased": false,
             "isSynthetic": true,
             "disclaimer": "PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS."
@@ -863,23 +863,23 @@
       "url": "https://agenterit.com.br/caravanas.html",
       "httpStatus": 200,
       "httpStatusText": "OK",
-      "latencyMs": 226,
+      "latencyMs": 392,
       "responseHeaders": {
         "accept-ranges": "bytes",
         "access-control-allow-credentials": "true",
         "alt-svc": "h3=\":443\"; ma=86400",
         "cache-control": "no-cache, no-store, must-revalidate",
         "cf-cache-status": "DYNAMIC",
-        "cf-ray": "a433cdbdbd5ae29f-GIG",
+        "cf-ray": "a43c85f14fa8e2a1-GIG",
         "connection": "keep-alive",
         "content-encoding": "br",
         "content-type": "text/html; charset=UTF-8",
-        "date": "Wed, 30 Sep 2026 14:09:08 GMT",
-        "etag": "W/\"29e5e-1a0f2a0da18\"",
+        "date": "Thu, 01 Oct 2026 15:33:00 GMT",
+        "etag": "W/\"29e5e-1a0f2a6c1d0\"",
         "expires": "0",
-        "last-modified": "Wed, 30 Sep 2026 14:03:43 GMT",
+        "last-modified": "Wed, 30 Sep 2026 14:10:10 GMT",
         "pragma": "no-cache",
-        "rndr-id": "2a26a09c-e98e-496e",
+        "rndr-id": "d3026927-3e43-48ab",
         "server": "cloudflare",
         "transfer-encoding": "chunked",
         "vary": "Origin, Accept-Encoding",
@@ -900,30 +900,30 @@
       "url": "https://agenterit.com.br/dashboard.html",
       "httpStatus": 200,
       "httpStatusText": "OK",
-      "latencyMs": 391,
+      "latencyMs": 326,
       "responseHeaders": {
         "accept-ranges": "bytes",
         "access-control-allow-credentials": "true",
         "alt-svc": "h3=\":443\"; ma=86400",
         "cache-control": "no-cache, no-store, must-revalidate",
         "cf-cache-status": "DYNAMIC",
-        "cf-ray": "a433cdbf6e6ee29f-GIG",
+        "cf-ray": "a43c85f3c972e2a1-GIG",
         "connection": "keep-alive",
         "content-encoding": "br",
         "content-type": "text/html; charset=UTF-8",
-        "date": "Wed, 30 Sep 2026 14:09:09 GMT",
-        "etag": "W/\"16967-1a0f2a0da18\"",
+        "date": "Thu, 01 Oct 2026 15:33:00 GMT",
+        "etag": "W/\"179f0-1a0f8180598\"",
         "expires": "0",
-        "last-modified": "Wed, 30 Sep 2026 14:03:43 GMT",
+        "last-modified": "Thu, 01 Oct 2026 15:31:59 GMT",
         "pragma": "no-cache",
-        "rndr-id": "8a3ee007-d7d5-4da8",
+        "rndr-id": "75d9c30f-2fd3-4228",
         "server": "cloudflare",
         "transfer-encoding": "chunked",
         "vary": "Origin, Accept-Encoding",
         "x-powered-by": "Express",
         "x-render-origin-server": "Render"
       },
-      "contentLengthBytes": 92052,
+      "contentLengthBytes": 96188,
       "integrityChecks": {
         "hasTabBtnCaravanas": true,
         "hasTabPaneCaravanas": true,
