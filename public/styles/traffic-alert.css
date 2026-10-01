@@ -1064,3 +1064,150 @@
     max-height: 400px;
   }
 }
+
+/* KPI CARD INTERACTIVITY & ACCESSIBILITY */
+.ta-kpi-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.ta-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 209, 255, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.ta-kpi-card:focus-visible {
+  outline: 2px solid var(--ta-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px var(--ta-cyan-glow);
+}
+
+.ta-kpi-card:active {
+  transform: translateY(0);
+}
+
+/* ESTILOS DO DRILL-DOWN DE KPIS NO DRAWER */
+.ta-drw-kpi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ta-drw-kpi-banner {
+  background: rgba(8, 20, 44, 0.8);
+  border: 1px solid rgba(0, 209, 255, 0.25);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.ta-drw-kpi-banner strong {
+  color: #fff;
+}
+
+.ta-drw-kpi-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.ta-drw-stat-card {
+  background: #050914;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.ta-drw-stat-lbl {
+  font-size: 8.5px;
+  color: var(--ta-muted);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.ta-drw-stat-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  font-family: var(--ta-mono);
+}
+
+.ta-drw-kpi-table-wrap {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.ta-drw-kpi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+  text-align: left;
+}
+
+.ta-drw-kpi-table th {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  font-weight: 800;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-transform: uppercase;
+  font-size: 9.5px;
+  letter-spacing: 0.4px;
+}
+
+.ta-drw-kpi-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.ta-drw-kpi-table tr:hover td {
+  background: rgba(0, 209, 255, 0.04);
+}
+
+.ta-btn-map-focus {
+  background: rgba(0, 209, 255, 0.12);
+  border: 1px solid rgba(0, 209, 255, 0.4);
+  color: var(--ta-cyan);
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.ta-btn-map-focus:hover, .ta-btn-map-focus:focus-visible {
+  background: var(--ta-cyan);
+  color: #000;
+  box-shadow: 0 0 8px var(--ta-cyan-glow);
+}
+
+/* TOOLTIP LEAFLET DOS CORREDORES */
+.ta-corridor-tooltip {
+  background: rgba(2, 6, 23, 0.95) !important;
+  border: 1px solid rgba(0, 209, 255, 0.4) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+}
+.ta-corridor-tooltip::before {
+  border-top-color: rgba(2, 6, 23, 0.95) !important;
+}
+

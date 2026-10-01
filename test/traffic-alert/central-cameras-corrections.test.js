@@ -55,12 +55,13 @@ describe('Aba Central de Câmeras & Ocorrências - Auditoria e Correções', () 
         assert.ok(uiControllerJs.includes('statDispEl.title = `Percentual de câmeras disponíveis:'), 'Atualização dinâmica de tooltip de disponibilidade ausente no ui-controller.js');
     });
 
-    it('4. Reposicionamento automático do mapa por UF (RJ, SP, MG, ES, DF, PE)', () => {
-        // Seletor possui opções de UF
+    it('4. Reposicionamento automático do mapa por UF (RJ, SP, MG, DF, PE)', () => {
+        // Seletor possui opções de UF operacionais (sem ES não suportado)
         assert.ok(dashboardHtml.includes('value="RJ"'), 'Opção RJ ausente');
         assert.ok(dashboardHtml.includes('value="SP"'), 'Opção SP ausente');
         assert.ok(dashboardHtml.includes('value="MG"'), 'Opção MG ausente');
-        assert.ok(dashboardHtml.includes('value="ES"'), 'Opção ES ausente');
+        assert.ok(dashboardHtml.includes('value="DF"'), 'Opção DF ausente');
+        assert.ok(dashboardHtml.includes('value="PE"'), 'Opção PE ausente');
 
         // ui-controller.js implementa flyTo/setView nas coordenadas das UFs
         assert.ok(uiControllerJs.includes("SP: {"), 'Configuração de SP ausente');

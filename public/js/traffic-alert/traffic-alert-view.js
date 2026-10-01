@@ -1,12 +1,7 @@
-/**
- * Agente RIT - Módulo RIT ALERTA
- * Controlador de Visão e Orquestrador UI (traffic-alert-view.js)
- * Proposta B Aprovada (Split 40/60) / Privacy by Design / Padrão Command Center
- */
-
 import { TrafficAlertService } from './traffic-alert-service.js';
 import { TrafficAlertMap } from './traffic-alert-map.js';
 import { TrafficAlertDrawer } from './traffic-alert-drawer.js';
+import { resolveRegionalConfig, REGIONAL_REGISTRY } from './regional-registry.js';
 
 export class TrafficAlertView {
     constructor() {
@@ -20,20 +15,22 @@ export class TrafficAlertView {
         this.corridorKpis = {};
         this.selectedIncident = null;
 
-        this.currentRegion = this._normalizeRegion(localStorage.getItem('rit_selected_regional') || 'RJ');
+        const initialCfg = resolveRegionalConfig(localStorage.getItem('rit_selected_regional') || 'RJ');
+        this.currentRegionalConfig = initialCfg;
+        this.currentRegion = initialCfg.internalCode;
+        this.currentUf = initialCfg.uf;
         this.activeViewTab = 'vias'; // 'vias' ou 'incidentes'
 
         this.isLoading = false;
         this.lastFetchTime = null;
         this.autoRefreshTimer = null;
         this.REFRESH_INTERVAL_MS = 60000; // 60 segundos
+        this.fetchToken = 0;
+        this.lastRunningToken = null;
     }
 
     _normalizeRegion(raw) {
-        if (!raw) return 'RJ';
-        const s = String(raw).toUpperCase().trim();
-        const map = { 'BH': 'BH', 'MG': 'BH', 'BSB': 'BSB', 'DF': 'BSB', 'REC': 'REC', 'PE': 'REC', 'SP': 'SP', 'RJ': 'RJ' };
-        return map[s] || s;
+        return resolveRegionalConfig(raw).internalCode;
     }
 
     /**
@@ -69,35 +66,74 @@ export class TrafficAlertView {
 
     /**
      * Alterna a Regional Ativa (RJ, SP, BH, BSB, REC) e sincroniza todo o módulo.
+     * Cancela requisições anteriores via token e elimina qualquer texto residual.
      */
     setRegional(rawReg) {
-        const reg = this._normalizeRegion(rawReg);
-        this.currentRegion = reg;
-        console.info(`[RIT ALERTA VIEW] Alternando inteligência para regional: ${reg}`);
+        const cfg = resolveRegionalConfig(rawReg);
+        this.currentRegionalConfig = cfg;
+        this.currentRegion = cfg.internalCode;
+        this.currentUf = cfg.uf;
+        this.fetchToken++;
+        const currentToken = this.fetchToken;
+        this.isLoading = false; // Desbloqueia concorrência para a nova regional
 
-        // Atualiza centro e enquadramento do mapa tático
+        console.info(`[RIT ALERTA VIEW] Alternando inteligência para regional: ${cfg.praca} (${cfg.uf}) [Token #${currentToken}]`);
+
+        // 1. Limpa dados em memória e camadas do mapa para evitar dados residuais
+        this.rawIncidents = [];
+        this.filteredIncidents = [];
+        this.trafficConditionsData = [];
+        this.corridorKpis = {};
+        this.camerasData = [];
+        this.weatherAlertsData = null;
+
         if (this.map) {
-            this.map.setRegionalCenter(reg);
+            if (this.map.corridorLayer) this.map.corridorLayer.clearLayers();
+            if (this.map.cameraLayer) this.map.cameraLayer.clearLayers();
+            if (this.map.incidentLayer) this.map.incidentLayer.clearLayers();
+            this.map.setRegionalCenter(cfg.internalCode);
         }
 
-        // Atualiza dropdown de corredores da regional
-        this._updateCorridorFilterOptions(reg);
-
-        // Atualiza badge de regional no subheader
+        // 2. Atualiza imediatamente labels e rodapés eliminando qualquer texto residual da regional anterior
         const subRegionBadge = document.getElementById('ta-sub-regional-badge');
         if (subRegionBadge) {
-            const labelMap = { 'RJ': 'RIO DE JANEIRO', 'SP': 'SÃO PAULO', 'BH': 'BELO HORIZONTE', 'BSB': 'BRASÍLIA', 'REC': 'RECIFE' };
-            subRegionBadge.textContent = `📍 PRAÇA: ${labelMap[reg] || reg} (${reg})`;
+            subRegionBadge.textContent = `📍 PRAÇA: ${cfg.praca} (${cfg.uf})`;
         }
 
-        // Atualiza legenda de malha urbana no mapa
         const mapMalhaLabel = document.getElementById('ta-map-malha-label');
         if (mapMalhaLabel) {
-            mapMalhaLabel.textContent = `| MALHA URBANA ${reg}`;
+            mapMalhaLabel.textContent = `| MALHA URBANA ${cfg.praca}`;
         }
 
-        // Busca dados atualizados para a nova praça
-        this.fetchData();
+        const mobFoot = document.getElementById('ta-kpi-mobilidade-foot');
+        if (mobFoot) mobFoot.textContent = `Aguardando cálculo (${cfg.uf})`;
+
+        const ativasFoot = document.getElementById('ta-kpi-ativas-foot');
+        if (ativasFoot) ativasFoot.textContent = `Monitoradas em ${cfg.uf}`;
+
+        const camsFoot = document.getElementById('ta-kpi-cams-foot');
+        if (camsFoot) camsFoot.textContent = `Rede Pública ${cfg.uf}`;
+
+        const critFoot = document.getElementById('ta-kpi-crit-foot');
+        if (critFoot) critFoot.textContent = `Verificando alertas...`;
+
+        const viasFoot = document.getElementById('ta-kpi-vias-foot');
+        if (viasFoot) viasFoot.textContent = `Monitorando corredores...`;
+
+        const fontesFoot = document.getElementById('ta-kpi-fontes-foot');
+        if (fontesFoot) fontesFoot.textContent = `${cfg.fontes}`;
+
+        const weatherText = document.getElementById('ta-weather-text');
+        if (weatherText) weatherText.textContent = `Monitoramento integrado de mobilidade urbana e alertas meteorológicos (${cfg.fontes}).`;
+
+        // 3. Atualiza dropdown de corredores da regional
+        this._updateCorridorFilterOptions(cfg.internalCode);
+
+        // 4. Renderiza tabela com estado de carregamento imediato
+        this._renderCorridorsTable();
+
+        // 5. Dispara busca de dados vinculada ao token atual
+        this.fetchData({ token: currentToken });
     }
 
     /**
@@ -211,10 +247,12 @@ export class TrafficAlertView {
 
     /**
      * Busca dados reais da API oficial /api/traffic-alert/*.
+     * Protegido contra race conditions por token sequencial.
      */
-    async fetchData({ silent = false } = {}) {
-        if (this.isLoading) return;
+    async fetchData({ token = this.fetchToken, silent = false } = {}) {
+        if (this.isLoading && token === this.lastRunningToken) return;
         this.isLoading = true;
+        this.lastRunningToken = token;
 
         if (!silent) {
             this._setLoadingState(true);
@@ -230,6 +268,15 @@ export class TrafficAlertView {
                 this.service.getCameras({ region: this.currentRegion })
             ]);
 
+            this.isLoading = false;
+            this._setLoadingState(false);
+
+            // Se o token mudou durante a requisição assíncrona, descarta para evitar race condition
+            if (token !== this.fetchToken) {
+                console.info(`[RIT ALERTA] Descartando resposta assíncrona de token antigo (${token} vs atual ${this.fetchToken})`);
+                return;
+            }
+
             const hRes = healthRes.status === 'fulfilled' ? healthRes.value : { ok: false };
             const iRes = incidentsRes.status === 'fulfilled' ? incidentsRes.value : { ok: false, data: [] };
             const tRes = trafficRes.status === 'fulfilled' ? trafficRes.value : { ok: false, corridors: [], kpis: {} };
@@ -237,8 +284,7 @@ export class TrafficAlertView {
             const cData = camerasRes.status === 'fulfilled' ? camerasRes.value : null;
 
             this.lastFetchTime = Date.now();
-            this.isLoading = false;
-            this._setLoadingState(false);
+            this.healthData = hRes;
 
             if (!iRes.ok && !hRes.ok && !tRes.ok) {
                 // Estado de degradação total / fontes indisponíveis
@@ -353,87 +399,69 @@ export class TrafficAlertView {
     }
 
     /**
-     * Configura interatividade e explicabilidade nos 5 cards executivos de KPI.
+     * Configura interatividade, acessibilidade por teclado e abertura de drill-down nos 7 cards executivos de KPI.
      */
     _bindKpiEvents() {
-        const cardAtivas = document.getElementById('ta-kpi-card-ativas');
-        const cardCrit = document.getElementById('ta-kpi-card-crit');
-        const cardVias = document.getElementById('ta-kpi-card-vias');
-        const cardCams = document.getElementById('ta-kpi-card-cams');
-        const cardFontes = document.getElementById('ta-kpi-fontes-card');
-        const filterBar = document.getElementById('ta-kpi-filter-bar');
-        const filterText = document.getElementById('ta-kpi-filter-text');
+        const kpiMapping = [
+            { id: 'ta-kpi-card-mobilidade', type: 'mobilidade' },
+            { id: 'ta-kpi-card-retencao', type: 'retencao' },
+            { id: 'ta-kpi-card-ativas', type: 'ativas' },
+            { id: 'ta-kpi-card-crit', type: 'criticos' },
+            { id: 'ta-kpi-card-vias', type: 'vias' },
+            { id: 'ta-kpi-card-cams', type: 'cameras' },
+            { id: 'ta-kpi-fontes-card', type: 'fontes' }
+        ];
+
+        const openKpiDrillDown = (cardEl, type) => {
+            if (!this.drawer) return;
+            const data = {
+                region: this.currentRegion,
+                regionalConfig: this.currentRegionalConfig || resolveRegionalConfig(this.currentRegion),
+                corridors: this.trafficConditionsData,
+                kpis: this.corridorKpis,
+                incidents: this.rawIncidents,
+                cameras: this.camerasData,
+                health: this.healthData
+            };
+            this.drawer.openKpiDetail(type, data, cardEl);
+        };
+
+        kpiMapping.forEach(({ id, type }) => {
+            const cardEl = document.getElementById(id);
+            if (!cardEl) return;
+
+            // Suporte a Clique
+            cardEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openKpiDrillDown(cardEl, type);
+            });
+
+            // Suporte a Teclado (Enter ou Espaço para acessibilidade WCAG)
+            cardEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openKpiDrillDown(cardEl, type);
+                }
+            });
+        });
+
+        // Barra de filtro secundária de ocorrências
         const filterClear = document.getElementById('ta-kpi-filter-clear');
-
-        const showFilterBanner = (msg) => {
-            if (filterBar) filterBar.style.display = 'flex';
-            if (filterText) filterText.textContent = msg;
-        };
-
-        const clearFilterBanner = () => {
-            if (filterBar) filterBar.style.display = 'none';
-            const sev = document.getElementById('ta-filter-severity');
-            const cor = document.getElementById('ta-filter-corridor');
-            const src = document.getElementById('ta-filter-search');
-            if (sev) sev.value = 'TODAS';
-            if (cor) cor.value = 'todos';
-            if (src) src.value = '';
-            this.applyFilters();
-            if (this.map && this.map.map) {
-                this.map.fitBoundsToVisible();
-            }
-        };
-
-        if (filterClear) filterClear.addEventListener('click', clearFilterBanner);
-
-        if (cardAtivas) {
-            cardAtivas.addEventListener('click', () => {
+        if (filterClear) {
+            filterClear.addEventListener('click', () => {
+                const filterBar = document.getElementById('ta-kpi-filter-bar');
+                if (filterBar) filterBar.style.display = 'none';
                 const sev = document.getElementById('ta-filter-severity');
                 const cor = document.getElementById('ta-filter-corridor');
+                const src = document.getElementById('ta-filter-search');
                 if (sev) sev.value = 'TODAS';
                 if (cor) cor.value = 'todos';
+                if (src) src.value = '';
                 this.applyFilters();
-                showFilterBanner(`Exibindo todas as ocorrências ativas em ${this.currentRegion} (${this.rawIncidents.length} monitoradas).`);
-                if (this.map && this.map.map) this.map.fitBoundsToVisible();
-            });
-        }
-
-        if (cardCrit) {
-            cardCrit.addEventListener('click', () => {
-                const sev = document.getElementById('ta-filter-severity');
-                if (sev) sev.value = 'CRÍTICO';
-                this.applyFilters();
-                showFilterBanner(`Filtro Ativo: Apenas ocorrências CRÍTICAS e bloqueios severos em ${this.currentRegion} (${this.filteredIncidents.length} encontradas).`);
-                if (this.map && this.map.map) this.map.fitBoundsToVisible();
-            });
-        }
-
-        if (cardVias) {
-            cardVias.addEventListener('click', () => {
-                const uniqueVias = new Set();
-                this.rawIncidents.forEach(i => { if (i.corridor || i.via) uniqueVias.add(i.corridor || i.via); });
-                const viasStr = Array.from(uniqueVias).join(', ') || 'Nenhuma via com retenção severa';
-                showFilterBanner(`Vias Estruturantes Afetadas (${this.currentRegion}): ${viasStr}`);
-            });
-        }
-
-        if (cardCams) {
-            cardCams.addEventListener('click', () => {
-                const total = this.camerasData?.length || 12;
-                showFilterBanner(`Câmeras Públicas (${this.currentRegion}): ${total} câmeras operacionais cadastradas na malha viária.`);
-            });
-        }
-
-        if (cardFontes) {
-            cardFontes.addEventListener('click', () => {
-                const fontesMap = {
-                    'RJ': 'COR-Rio, CET-Rio, Alerta Rio, OSRM',
-                    'SP': 'CET-SP, CGE-SP, OSRM',
-                    'BH': 'BHTRANS, Defesa Civil BH, OSRM',
-                    'BSB': 'DER-DF, Detran-DF, Defesa Civil DF, OSRM',
-                    'REC': 'CTTU Recife, APAC, OSRM'
-                };
-                alert(`[INTEGRIDADE DE FONTES PÚBLICAS — ${this.currentRegion}]\n\n• Fontes Oficiais: ${fontesMap[this.currentRegion] || 'Fontes Metropolitanas'}\n• Integridade: 100% dos feeds online e acessíveis\n• Conformidade: Privacy by Design estrito (sem GPS individual, sem dados pessoais).`);
+                if (this.map && this.map.map) {
+                    this.map.fitBoundsToVisible();
+                }
             });
         }
     }
@@ -449,13 +477,14 @@ export class TrafficAlertView {
 
         const corridors = this.trafficConditionsData || [];
         if (badgeCount) badgeCount.textContent = `${corridors.length} VIAS`;
-        if (regionalTitle) regionalTitle.textContent = `STATUS DAS VIAS MONITORADAS — ${this.currentRegion}`;
+        const cfg = this.currentRegionalConfig || resolveRegionalConfig(this.currentRegion);
+        if (regionalTitle) regionalTitle.textContent = `STATUS DAS VIAS MONITORADAS — ${cfg.praca}`;
 
         if (corridors.length === 0) {
             tableContainer.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align:center; padding:18px; color:var(--ta-muted);">
-                        Carregando malha viária de ${this.currentRegion}...
+                        Carregando malha viária de ${cfg.praca}...
                     </td>
                 </tr>
             `;
@@ -550,6 +579,7 @@ export class TrafficAlertView {
      * Atualiza os cards executivos de KPI no topo com inteligência de mobilidade regional.
      */
     _renderKPIs() {
+        const cfg = this.currentRegionalConfig || resolveRegionalConfig(this.currentRegion);
         const mobEl = document.getElementById('ta-kpi-mobilidade-num');
         const mobFoot = document.getElementById('ta-kpi-mobilidade-foot');
         const retEl = document.getElementById('ta-kpi-retencao-num');
@@ -578,7 +608,7 @@ export class TrafficAlertView {
         }
         if (mobFoot) {
             const mobLabel = mobVal >= 80 ? '🟢 Fluxo Regular' : (mobVal >= 55 ? '🟡 Lentidão Moderada' : '🔴 Malha Sobrecarregada');
-            mobFoot.textContent = `${mobLabel} (${this.currentRegion})`;
+            mobFoot.textContent = `${mobLabel} (${cfg.uf})`;
         }
 
         // 2. Tempo Médio de Retenção
@@ -594,7 +624,7 @@ export class TrafficAlertView {
 
         // 3. Ocorrências Ativas
         if (ativasEl) ativasEl.textContent = String(totalAtivas);
-        if (ativasFoot) ativasFoot.textContent = totalAtivas > 0 ? `Monitoradas em ${this.currentRegion}` : 'Nenhuma no momento';
+        if (ativasFoot) ativasFoot.textContent = totalAtivas > 0 ? `Monitoradas em ${cfg.uf}` : 'Nenhuma no momento';
 
         // 4. Incidentes Críticos e Bloqueios
         const critVal = kpis.corredoresCriticos ?? criticas.length;
@@ -614,7 +644,7 @@ export class TrafficAlertView {
         const totalCams = cams.length > 0 ? cams.length : 12;
         const onlineCams = cams.length > 0 ? cams.filter(c => c.status === 'ONLINE' || c.status === 'DISPONÍVEL').length : totalCams;
         if (camsEl) camsEl.textContent = `${onlineCams}/${totalCams}`;
-        if (camsFoot) camsFoot.textContent = `Rede Pública ${this.currentRegion}`;
+        if (camsFoot) camsFoot.textContent = `Rede Pública ${cfg.uf}`;
     }
 
     /**
@@ -625,6 +655,7 @@ export class TrafficAlertView {
         const lastSyncEl = document.getElementById('ta-sub-last-sync');
         const fontesCardNum = document.getElementById('ta-kpi-fontes-num');
         const fontesCardFoot = document.getElementById('ta-kpi-fontes-foot');
+        const cfg = this.currentRegionalConfig || resolveRegionalConfig(this.currentRegion);
 
         if (lastSyncEl) {
             const nowStr = new Date().toLocaleTimeString('pt-BR');
@@ -634,7 +665,7 @@ export class TrafficAlertView {
         if (healthRes.ok) {
             if (healthBadge) healthBadge.innerHTML = '<span class="ta-dot ta-dot-good"></span> FONTES SAUDÁVEIS (ONLINE)';
             if (fontesCardNum) fontesCardNum.textContent = '100%';
-            if (fontesCardFoot) fontesCardFoot.textContent = 'COR-Rio, CET-Rio, OSRM OK';
+            if (fontesCardFoot) fontesCardFoot.textContent = `${cfg.fontes} OK`;
         } else {
             if (healthBadge) healthBadge.innerHTML = '<span class="ta-dot ta-dot-bad"></span> FONTES EM DEGRADAÇÃO';
             if (fontesCardNum) fontesCardNum.textContent = 'DEGRADADO';

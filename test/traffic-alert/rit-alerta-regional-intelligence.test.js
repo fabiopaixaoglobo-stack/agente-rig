@@ -203,4 +203,118 @@ describe('🚦 RIT ALERTA — INTELIGÊNCIA REGIONAL DE TRÂNSITO', () => {
         assert.ok(css.includes('.ta-kpi-mobilidade'), 'Classe .ta-kpi-mobilidade deve existir');
         assert.ok(css.includes('.ta-kpi-retencao'), 'Classe .ta-kpi-retencao deve existir');
     });
+
+    it('8. Registro Canônico Centralizado (regional-registry.js) e remoção de ES do seletor', () => {
+        const registryPath = path.resolve(__dirname, '../../public/js/traffic-alert/regional-registry.js');
+        assert.ok(fs.existsSync(registryPath), 'regional-registry.js deve existir');
+        const regContent = fs.readFileSync(registryPath, 'utf8');
+
+        // Mapeamento canônico das 5 regionais Globo
+        assert.ok(regContent.includes("'RJ':"), 'Deve conter RJ');
+        assert.ok(regContent.includes("'SP':"), 'Deve conter SP');
+        assert.ok(regContent.includes("'MG':"), 'Deve conter MG');
+        assert.ok(regContent.includes("'DF':"), 'Deve conter DF');
+        assert.ok(regContent.includes("'PE':"), 'Deve conter PE');
+        assert.ok(regContent.includes("internalCode: 'BH'"), 'MG deve mapear para BH');
+        assert.ok(regContent.includes("internalCode: 'BSB'"), 'DF deve mapear para BSB');
+        assert.ok(regContent.includes("internalCode: 'REC'"), 'PE deve mapear para REC');
+
+        // Seletor no dashboard.html não deve conter ES sem suporte de dados
+        const html = fs.readFileSync(dashboardHtmlPath, 'utf8');
+        assert.strictEqual(html.includes('<option value="ES">'), false, '#seletor-regiao não deve conter opção ES sem suporte operacional');
+    });
+
+    it('9. Traçado duplo de trânsito (casing + overlay estilo Google Maps) e coordenadas polilinhas', async () => {
+        const mapJs = fs.readFileSync(trafficMapPath, 'utf8');
+
+        // Validação da técnica de traçado duplo (casing escuro de contraste + overlay colorido de fluidez)
+        assert.ok(mapJs.includes("color: '#020617'"), 'Deve conter casing escuro para contraste sobre satélite');
+        assert.ok(mapJs.includes("weight: 8"), 'Casing deve ter espessura 8 para contorno nítido');
+        assert.ok(mapJs.includes("renderTrafficConditions(trafficData"), 'Deve implementar renderTrafficConditions');
+        assert.ok(mapJs.includes("bindTooltip("), 'Linhas de trânsito devem ter hover tooltip explicativo');
+        assert.ok(mapJs.includes("bindPopup("), 'Linhas de trânsito devem ter click popup interativo com ação de detalhe');
+
+        // Confirma que /traffic-conditions na API preserva coordenadas e pino
+        const res = await fetch(`${baseUrl}/traffic-conditions?region=RJ`);
+        const json = await res.json();
+        assert.strictEqual(json.ok, true);
+        assert.strictEqual(json.corridors.length, 9);
+        for (const c of json.corridors) {
+            assert.ok(c.pinLocation, `Corredor ${c.via} deve ter pinLocation`);
+            // Se coordinates existir, deve ser um array de pontos (não 1 ponto escalar)
+            if (c.coordinates) {
+                assert.ok(Array.isArray(c.coordinates) && Array.isArray(c.coordinates[0]), 'Coordinates se fornecido deve ser polyline');
+            }
+        }
+    });
+
+    it('10. Acessibilidade por teclado (role="button", tabindex="0", Enter/Space) nos 7 cards de KPI', () => {
+        const html = fs.readFileSync(dashboardHtmlPath, 'utf8');
+        const viewJs = fs.readFileSync(trafficViewPath, 'utf8');
+
+        const kpis = [
+            'ta-kpi-card-mobilidade',
+            'ta-kpi-card-retencao',
+            'ta-kpi-card-ativas',
+            'ta-kpi-card-crit',
+            'ta-kpi-card-vias',
+            'ta-kpi-card-cams',
+            'ta-kpi-fontes-card'
+        ];
+
+        for (const id of kpis) {
+            // No HTML
+            assert.ok(html.includes(`id="${id}"`), `Markup deve conter #${id}`);
+            const cardRegex = new RegExp(`id="${id}"[^>]*role="button"`);
+            assert.ok(cardRegex.test(html) || html.includes(`id="${id}" tabindex="0" role="button"`), `Card #${id} deve ter role="button"`);
+            assert.ok(html.includes(`id="${id}" tabindex="0"`), `Card #${id} deve ter tabindex="0" para foco por teclado`);
+            assert.ok(html.includes('aria-haspopup="dialog"'), 'Cards de KPI devem declarar aria-haspopup="dialog"');
+        }
+
+        // No JS
+        assert.ok(viewJs.includes("e.key === 'Enter' || e.key === ' '"), 'Deve capturar teclas Enter e Espaço para acionamento por teclado');
+        assert.ok(viewJs.includes("openKpiDrillDown("), 'Deve disparar abertura do drill-down no clique e tecla');
+    });
+
+    it('11. Drawer lateral com container dedicado e drill-down estruturado dos 7 KPIs', () => {
+        const html = fs.readFileSync(dashboardHtmlPath, 'utf8');
+        const drawerJs = fs.readFileSync(path.resolve(__dirname, '../../public/js/traffic-alert/traffic-alert-drawer.js'), 'utf8');
+
+        // Containers no HTML
+        assert.ok(html.includes('id="ta-drw-kpi-container"'), 'Drawer deve possuir #ta-drw-kpi-container');
+        assert.ok(html.includes('id="ta-drw-incident-container"'), 'Drawer deve possuir #ta-drw-incident-container');
+
+        // Métodos no Drawer
+        assert.ok(drawerJs.includes('openKpiDetail(kpiType, data'), 'TrafficAlertDrawer deve implementar openKpiDetail');
+        assert.ok(drawerJs.includes('_buildKpiDetailHtml(kpiType, data'), 'TrafficAlertDrawer deve implementar _buildKpiDetailHtml');
+        assert.ok(drawerJs.includes('_bindKpiDetailActions(container)'), 'TrafficAlertDrawer deve implementar _bindKpiDetailActions');
+
+        // Verificação dos 7 tipos de KPI implementados no drill-down
+        for (const type of ['mobilidade', 'retencao', 'ativas', 'criticos', 'vias', 'cameras', 'fontes']) {
+            assert.ok(drawerJs.includes(`kpiType === '${type}'`), `TrafficAlertDrawer deve renderizar drill-down de '${type}'`);
+        }
+
+        // Restauração de foco ao fechar
+        assert.ok(drawerJs.includes('this.triggerElement.focus()'), 'Deve restaurar foco no elemento disparador ao fechar o Drawer');
+        assert.ok(drawerJs.includes("this.triggerElement.setAttribute('aria-expanded', 'false')"), 'Deve resetar aria-expanded ao fechar');
+    });
+
+    it('12. Resiliência contra Race Conditions e eliminação de textos residuais', () => {
+        const viewJs = fs.readFileSync(trafficViewPath, 'utf8');
+
+        // Tokens sequenciais de requisição
+        assert.ok(viewJs.includes('this.fetchToken++'), 'setRegional deve incrementar fetchToken a cada troca');
+        assert.ok(viewJs.includes('token !== this.fetchToken'), 'fetchData deve descartar respostas com token defasado');
+
+        // Limpeza imediata ao trocar regional
+        assert.ok(viewJs.includes('this.rawIncidents = [];'), 'setRegional deve limpar rawIncidents imediatamente');
+        assert.ok(viewJs.includes('this.trafficConditionsData = [];'), 'setRegional deve limpar trafficConditionsData imediatamente');
+
+        // Renderização com config canônica (sem residual 'RJ' fixo)
+        assert.ok(viewJs.includes('mobFoot.textContent = `${mobLabel} (${cfg.uf})`'), 'mobFoot deve usar cfg.uf');
+        assert.ok(viewJs.includes('ativasFoot.textContent = totalAtivas > 0 ? `Monitoradas em ${cfg.uf}` :'), 'ativasFoot deve usar cfg.uf');
+        assert.ok(viewJs.includes('camsFoot.textContent = `Rede Pública ${cfg.uf}`'), 'camsFoot deve usar cfg.uf');
+        assert.ok(viewJs.includes('fontesCardFoot.textContent = `${cfg.fontes} OK`'), 'fontesCardFoot deve usar cfg.fontes dinâmico');
+    });
 });
+

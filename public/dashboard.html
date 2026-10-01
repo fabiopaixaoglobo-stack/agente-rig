@@ -29,7 +29,6 @@
         <option value="RJ" selected>RJ</option>
         <option value="SP">SP</option>
         <option value="MG">MG</option>
-        <option value="ES">ES</option>
         <option value="DF">DF</option>
         <option value="PE">PE</option>
       </select>
@@ -560,7 +559,7 @@
       <!-- GRID DE 7 CARDS EXECUTIVOS (KPIS INTERATIVOS & EXPLICÁVEIS COM TOOLTIP) -->
       <div class="ta-kpi-grid" id="traffic-alert-kpi-grid">
         <!-- CARD 0: ÍNDICE DE MOBILIDADE -->
-        <div class="ta-kpi-card ta-kpi-mobilidade" id="ta-kpi-card-mobilidade" style="cursor:pointer;" title="Índice de Mobilidade: 100 = livre, 0 = totalmente bloqueado" data-tooltip="Índice Geral de Mobilidade Urbana: Medido de 0 a 100 com base na fluidez ponderada dos 9 corredores viários estratégicos da regional. 100 = livre; 0 = totalmente bloqueado." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-mobilidade" id="ta-kpi-card-mobilidade" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Índice de Mobilidade: abrir detalhamento dos 9 corredores" style="cursor:pointer;" title="Índice de Mobilidade: 100 = livre, 0 = totalmente bloqueado (Pressione Enter para ver detalhamento)" data-tooltip="Índice Geral de Mobilidade Urbana: Medido de 0 a 100 com base na fluidez ponderada dos 9 corredores viários estratégicos da regional. 100 = livre; 0 = totalmente bloqueado." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Mobilidade <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-good);">ÍNDICE</span>
@@ -575,7 +574,7 @@
         </div>
 
         <!-- CARD 0.5: TEMPO MÉDIO DE RETENÇÃO -->
-        <div class="ta-kpi-card ta-kpi-retencao" id="ta-kpi-card-retencao" style="cursor:pointer;" title="Tempo Médio de Retenção: Média dos atrasos nas vias monitoradas em relação ao fluxo livre" data-tooltip="Tempo Médio de Retenção: Média ponderada do tempo adicional de atraso (em minutos) enfrentado pelos motoristas nos eixos monitorados em relação ao tempo de trânsito livre." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-retencao" id="ta-kpi-card-retencao" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Tempo Médio de Retenção: abrir ranking de atrasos dos corredores" style="cursor:pointer;" title="Tempo Médio de Retenção: Média dos atrasos nas vias monitoradas em relação ao fluxo livre (Pressione Enter para ver detalhamento)" data-tooltip="Tempo Médio de Retenção: Média ponderada do tempo adicional de atraso (em minutos) enfrentado pelos motoristas nos eixos monitorados em relação ao tempo de trânsito livre." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Retenção Média <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-warning);">ATRASO</span>
@@ -590,7 +589,7 @@
         </div>
 
         <!-- CARD 1: OCORRÊNCIAS ATIVAS -->
-        <div class="ta-kpi-card ta-kpi-accent" id="ta-kpi-card-ativas" style="cursor:pointer;" title="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos." data-tooltip="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-accent" id="ta-kpi-card-ativas" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Ocorrências Ativas: abrir listagem completa de incidentes operacionais" style="cursor:pointer;" title="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos (Pressione Enter para ver detalhamento)" data-tooltip="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Ocorrências <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-accent);">● ATIVO</span>
@@ -605,7 +604,7 @@
         </div>
 
         <!-- CARD 2: INCIDENTES CRÍTICOS -->
-        <div class="ta-kpi-card ta-kpi-crit" id="ta-kpi-card-crit" style="cursor:pointer;" title="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional." data-tooltip="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-crit" id="ta-kpi-card-crit" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Incidentes Críticos: abrir lista de bloqueios e interrupções severas" style="cursor:pointer;" title="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional (Pressione Enter para ver detalhamento)" data-tooltip="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Críticos <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-bad);">BLOQUEIOS</span>
@@ -620,7 +619,7 @@
         </div>
 
         <!-- CARD 3: CORREDORES AFETADOS -->
-        <div class="ta-kpi-card ta-kpi-warn" id="ta-kpi-card-vias" style="cursor:pointer;" title="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado." data-tooltip="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado (velocidade < 80% do fluxo livre)." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-warn" id="ta-kpi-card-vias" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Vias Afetadas: abrir detalhamento dos corredores com fluxo lento ou retenção" style="cursor:pointer;" title="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado (Pressione Enter para ver detalhamento)" data-tooltip="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado (velocidade < 80% do fluxo livre)." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Vias Afetadas <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span>CORREDORES</span>
@@ -635,7 +634,7 @@
         </div>
 
         <!-- CARD 4: CÂMERAS PÚBLICAS DISPONÍVEIS -->
-        <div class="ta-kpi-card ta-kpi-cyan" id="ta-kpi-card-cams" style="cursor:pointer;" title="Cobertura: Quantidade de câmeras públicas online e acessíveis." data-tooltip="Cobertura: Quantidade de câmeras públicas online e acessíveis na malha viária monitorada." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-cyan" id="ta-kpi-card-cams" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Câmeras Públicas: abrir catálogo com status de disponibilidade e visão ao vivo" style="cursor:pointer;" title="Cobertura: Quantidade de câmeras públicas online e acessíveis na malha viária monitorada (Pressione Enter para ver detalhamento)" data-tooltip="Cobertura: Quantidade de câmeras públicas online e acessíveis na malha viária monitorada." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Câmeras <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span>COBERTURA</span>
@@ -650,7 +649,7 @@
         </div>
 
         <!-- CARD 5: SAÚDE DAS FONTES -->
-        <div class="ta-kpi-card ta-kpi-good" id="ta-kpi-fontes-card" style="cursor:pointer;" title="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito consultados." data-tooltip="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito e meteorologia consultados (APIs oficiais)." data-tooltip-pos="bottom">
+        <div class="ta-kpi-card ta-kpi-good" id="ta-kpi-fontes-card" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Saúde das Fontes: abrir diagnóstico operacional dos serviços de trânsito em tempo real" style="cursor:pointer;" title="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito consultados (Pressione Enter para ver detalhamento)" data-tooltip="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito e meteorologia consultados (APIs oficiais)." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
             <span>Fontes <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-good);" id="ta-kpi-fontes-badge">ONLINE</span>
@@ -660,7 +659,7 @@
             <span class="ta-kpi-subtext">disponibilidade</span>
           </div>
           <div class="ta-kpi-footer" id="ta-kpi-fontes-foot">
-            <span>COR-Rio, CET, OSRM</span>
+            <span>Fontes Oficiais OK</span>
           </div>
         </div>
       </div>
@@ -806,50 +805,56 @@
           </div>
 
           <div class="ta-drawer-content">
-            <!-- FATOS CONFIRMADOS & CLASSIFICAÇÃO -->
-            <div class="ta-drawer-section ta-sec-facts">
-              <div class="ta-section-badge-title">✅ Fatos Confirmados & Classificação Técnica</div>
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px;">
-                <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
-                  <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Severidade</div>
-                  <div style="font-size:12px; font-weight:800;" id="ta-drw-sev">MÉDIO</div>
+            <!-- CONTAINER DE DETALHAMENTO DOS KPIS EXECUTIVOS (DRILL-DOWN) -->
+            <div id="ta-drw-kpi-container" style="display:none;"></div>
+
+            <!-- CONTAINER DE DETALHAMENTO DE OCORRÊNCIA ESPECÍFICA -->
+            <div id="ta-drw-incident-container">
+              <!-- FATOS CONFIRMADOS & CLASSIFICAÇÃO -->
+              <div class="ta-drawer-section ta-sec-facts">
+                <div class="ta-section-badge-title">✅ Fatos Confirmados & Classificação Técnica</div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px;">
+                  <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Severidade</div>
+                    <div style="font-size:12px; font-weight:800;" id="ta-drw-sev">MÉDIO</div>
+                  </div>
+                  <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Confiança</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--ta-good);" id="ta-drw-conf">GRAU A</div>
+                  </div>
+                  <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Completude</div>
+                    <div style="font-size:12px; font-weight:800; color:var(--ta-cyan);" id="ta-drw-comp">--%</div>
+                  </div>
                 </div>
-                <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
-                  <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Confiança</div>
-                  <div style="font-size:12px; font-weight:800; color:var(--ta-good);" id="ta-drw-conf">GRAU A</div>
-                </div>
-                <div style="background:#050914; padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
-                  <div style="font-size:8px; color:var(--ta-muted); text-transform:uppercase;">Completude</div>
-                  <div style="font-size:12px; font-weight:800; color:var(--ta-cyan);" id="ta-drw-comp">--%</div>
+                <div style="font-size:10px; color:#cbd5e1; line-height:1.4;" id="ta-drw-factors-desc">
+                  Fatores Ponderados: Boletim oficial registrado.
                 </div>
               </div>
-              <div style="font-size:10px; color:#cbd5e1; line-height:1.4;" id="ta-drw-factors-desc">
-                Fatores Ponderados: Boletim oficial registrado.
+
+              <!-- DIVERGÊNCIAS ENTRE FONTES -->
+              <div class="ta-drawer-section ta-sec-divergence" id="ta-drw-divergence-box" style="display:none;">
+                <div class="ta-section-badge-title">⚠️ Divergência Entre Fontes Públicas</div>
+                <div style="font-size:10px; color:#fde68a; line-height:1.4;" id="ta-drw-divergence-text"></div>
               </div>
-            </div>
 
-            <!-- DIVERGÊNCIAS ENTRE FONTES -->
-            <div class="ta-drawer-section ta-sec-divergence" id="ta-drw-divergence-box" style="display:none;">
-              <div class="ta-section-badge-title">⚠️ Divergência Entre Fontes Públicas</div>
-              <div style="font-size:10px; color:#fde68a; line-height:1.4;" id="ta-drw-divergence-text"></div>
-            </div>
+              <!-- CÂMERAS PRÓXIMAS (4 ESTADOS) -->
+              <div class="ta-drawer-section ta-sec-cameras">
+                <div class="ta-section-badge-title">🎥 Monitoramento Visual (Câmeras Públicas no Raio)</div>
+                <div class="ta-cameras-grid" id="ta-drw-cameras-grid"></div>
+              </div>
 
-            <!-- CÂMERAS PRÓXIMAS (4 ESTADOS) -->
-            <div class="ta-drawer-section ta-sec-cameras">
-              <div class="ta-section-badge-title">🎥 Monitoramento Visual (Câmeras Públicas no Raio)</div>
-              <div class="ta-cameras-grid" id="ta-drw-cameras-grid"></div>
-            </div>
+              <!-- RECOMENDAÇÕES CONSULTIVAS -->
+              <div class="ta-drawer-section ta-sec-rec">
+                <div class="ta-section-badge-title">💡 Recomendações Consultivas (Suporte à Decisão)</div>
+                <div id="ta-drw-rec-container"></div>
+              </div>
 
-            <!-- RECOMENDAÇÕES CONSULTIVAS -->
-            <div class="ta-drawer-section ta-sec-rec">
-              <div class="ta-section-badge-title">💡 Recomendações Consultivas (Suporte à Decisão)</div>
-              <div id="ta-drw-rec-container"></div>
-            </div>
-
-            <!-- HISTÓRICO DE ATUALIZAÇÕES -->
-            <div class="ta-drawer-section">
-              <div class="ta-section-badge-title" style="color:#cbd5e1;">⏱️ Histórico de Atualizações da Ocorrência</div>
-              <div class="ta-timeline-list" id="ta-drw-timeline-list"></div>
+              <!-- HISTÓRICO DE ATUALIZAÇÕES -->
+              <div class="ta-drawer-section">
+                <div class="ta-section-badge-title" style="color:#cbd5e1;">⏱️ Histórico de Atualizações da Ocorrência</div>
+                <div class="ta-timeline-list" id="ta-drw-timeline-list"></div>
+              </div>
             </div>
           </div>
         </div>

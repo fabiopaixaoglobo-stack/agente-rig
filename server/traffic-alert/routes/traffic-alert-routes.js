@@ -651,12 +651,14 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
             let corridors = matrix[targetRegion] || matrix.RJ || [];
             const coordsMap = REGIONAL_COORDINATES[targetRegion] || {};
 
-            // Enriquece cada via com coordenadas do catálogo se não presentes
+            // Enriquece cada via com centro/pino de localização sem sobrescrever polylines
             corridors = corridors.map(c => {
-                const coords = coordsMap[c.via] || null;
+                const pin = coordsMap[c.via] || null;
+                const isPolyline = Array.isArray(c.coordinates) && Array.isArray(c.coordinates[0]);
                 return {
                     ...c,
-                    coordinates: c.coordinates || coords
+                    pinLocation: pin,
+                    coordinates: isPolyline ? c.coordinates : undefined
                 };
             });
 
