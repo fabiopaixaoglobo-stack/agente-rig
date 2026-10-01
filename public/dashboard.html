@@ -535,6 +535,7 @@
         <div class="ta-brand-row">
           <div class="ta-brand-title">RIT ALERTA — INTELIGÊNCIA AUTÔNOMA DE TRÂNSITO</div>
           <span class="ta-privacy-badge">SOMENTE DADOS PÚBLICOS | PRIVACY BY DESIGN</span>
+          <span class="ta-privacy-badge" id="ta-sub-regional-badge" style="background: rgba(0, 209, 255, 0.15); border: 1px solid #00d1ff; color: #00d1ff; font-weight: 800;">📍 PRAÇA: RIO DE JANEIRO (RJ)</span>
         </div>
         <div class="ta-meta-telemetry">
           <span id="ta-sub-health-status"><span class="ta-dot ta-dot-good"></span> FONTES SAUDÁVEIS</span>
@@ -556,12 +557,42 @@
         </div>
       </div>
 
-      <!-- GRID DE 5 CARDS EXECUTIVOS (KPIS INTERATIVOS & EXPLICÁVEIS) -->
+      <!-- GRID DE 7 CARDS EXECUTIVOS (KPIS INTERATIVOS & EXPLICÁVEIS COM TOOLTIP) -->
       <div class="ta-kpi-grid" id="traffic-alert-kpi-grid">
-        <!-- CARD 1: OCORRÊNCIAS ATIVAS -->
-        <div class="ta-kpi-card ta-kpi-accent" id="ta-kpi-card-ativas" style="cursor:pointer;" title="Clique para filtrar: Todas as ocorrências ativas">
+        <!-- CARD 0: ÍNDICE DE MOBILIDADE -->
+        <div class="ta-kpi-card ta-kpi-mobilidade" id="ta-kpi-card-mobilidade" style="cursor:pointer;" title="Índice de Mobilidade: 100 = livre, 0 = totalmente bloqueado" data-tooltip="Índice Geral de Mobilidade Urbana: Medido de 0 a 100 com base na fluidez ponderada dos 9 corredores viários estratégicos da regional. 100 = livre; 0 = totalmente bloqueado." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
-            <span>Ocorrências Ativas</span>
+            <span>Mobilidade <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
+            <span style="color:var(--ta-good);">ÍNDICE</span>
+          </div>
+          <div class="ta-kpi-value-row">
+            <span class="ta-kpi-num" id="ta-kpi-mobilidade-num">--</span>
+            <span class="ta-kpi-subtext">pontos / 100</span>
+          </div>
+          <div class="ta-kpi-footer" id="ta-kpi-mobilidade-foot">
+            <span>Aguardando cálculo</span>
+          </div>
+        </div>
+
+        <!-- CARD 0.5: TEMPO MÉDIO DE RETENÇÃO -->
+        <div class="ta-kpi-card ta-kpi-retencao" id="ta-kpi-card-retencao" style="cursor:pointer;" title="Tempo Médio de Retenção: Média dos atrasos nas vias monitoradas em relação ao fluxo livre" data-tooltip="Tempo Médio de Retenção: Média ponderada do tempo adicional de atraso (em minutos) enfrentado pelos motoristas nos eixos monitorados em relação ao tempo de trânsito livre." data-tooltip-pos="bottom">
+          <div class="ta-kpi-header">
+            <span>Retenção Média <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
+            <span style="color:var(--ta-warning);">ATRASO</span>
+          </div>
+          <div class="ta-kpi-value-row">
+            <span class="ta-kpi-num" id="ta-kpi-retencao-num">--</span>
+            <span class="ta-kpi-subtext">minutos extras</span>
+          </div>
+          <div class="ta-kpi-footer" id="ta-kpi-retencao-foot">
+            <span>Impacto Operacional</span>
+          </div>
+        </div>
+
+        <!-- CARD 1: OCORRÊNCIAS ATIVAS -->
+        <div class="ta-kpi-card ta-kpi-accent" id="ta-kpi-card-ativas" style="cursor:pointer;" title="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos." data-tooltip="Ocorrências Ativas: Quantidade de incidentes encontrados em fontes públicas monitoradas nos últimos 15 minutos." data-tooltip-pos="bottom">
+          <div class="ta-kpi-header">
+            <span>Ocorrências <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-accent);">● ATIVO</span>
           </div>
           <div class="ta-kpi-value-row">
@@ -574,9 +605,9 @@
         </div>
 
         <!-- CARD 2: INCIDENTES CRÍTICOS -->
-        <div class="ta-kpi-card ta-kpi-crit" id="ta-kpi-card-crit" style="cursor:pointer;" title="Clique para filtrar: Incidentes Críticos e Bloqueios">
+        <div class="ta-kpi-card ta-kpi-crit" id="ta-kpi-card-crit" style="cursor:pointer;" title="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional." data-tooltip="Incidentes Críticos: Ocorrências classificadas como bloqueio total, acidente grave, alagamento ou interrupção operacional." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
-            <span>Incidentes Críticos</span>
+            <span>Críticos <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-bad);">BLOQUEIOS</span>
           </div>
           <div class="ta-kpi-value-row">
@@ -589,9 +620,9 @@
         </div>
 
         <!-- CARD 3: CORREDORES AFETADOS -->
-        <div class="ta-kpi-card ta-kpi-warn" id="ta-kpi-card-vias" style="cursor:pointer;" title="Clique para detalhar: Eixos Viários Estruturantes">
+        <div class="ta-kpi-card ta-kpi-warn" id="ta-kpi-card-vias" style="cursor:pointer;" title="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado." data-tooltip="Vias Afetadas: Quantidade de corredores monitorados com velocidade abaixo do padrão esperado (velocidade < 80% do fluxo livre)." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
-            <span>Vias Afetadas</span>
+            <span>Vias Afetadas <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span>CORREDORES</span>
           </div>
           <div class="ta-kpi-value-row">
@@ -604,9 +635,9 @@
         </div>
 
         <!-- CARD 4: CÂMERAS PÚBLICAS DISPONÍVEIS -->
-        <div class="ta-kpi-card ta-kpi-cyan" id="ta-kpi-card-cams" style="cursor:pointer;" title="Clique para detalhar: Rede de Câmeras Públicas">
+        <div class="ta-kpi-card ta-kpi-cyan" id="ta-kpi-card-cams" style="cursor:pointer;" title="Cobertura: Quantidade de câmeras públicas online e acessíveis." data-tooltip="Cobertura: Quantidade de câmeras públicas online e acessíveis na malha viária monitorada." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
-            <span>Câmeras Públicas</span>
+            <span>Câmeras <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span>COBERTURA</span>
           </div>
           <div class="ta-kpi-value-row">
@@ -614,14 +645,14 @@
             <span class="ta-kpi-subtext">com visão ativa</span>
           </div>
           <div class="ta-kpi-footer" id="ta-kpi-cams-foot">
-            <span>Rede Pública COR / CET</span>
+            <span>Rede Pública</span>
           </div>
         </div>
 
         <!-- CARD 5: SAÚDE DAS FONTES -->
-        <div class="ta-kpi-card ta-kpi-good" id="ta-kpi-fontes-card" style="cursor:pointer;" title="Clique para detalhar: Integridade e Status das Fontes Oficiais">
+        <div class="ta-kpi-card ta-kpi-good" id="ta-kpi-fontes-card" style="cursor:pointer;" title="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito consultados." data-tooltip="Saúde das Fontes: Percentual de disponibilidade dos serviços de trânsito e meteorologia consultados (APIs oficiais)." data-tooltip-pos="bottom">
           <div class="ta-kpi-header">
-            <span>Saúde das Fontes</span>
+            <span>Fontes <i class="fa-solid fa-circle-info" style="font-size: 9px; opacity: 0.7;"></i></span>
             <span style="color:var(--ta-good);" id="ta-kpi-fontes-badge">ONLINE</span>
           </div>
           <div class="ta-kpi-value-row">
@@ -629,7 +660,7 @@
             <span class="ta-kpi-subtext">disponibilidade</span>
           </div>
           <div class="ta-kpi-footer" id="ta-kpi-fontes-foot">
-            <span>COR-Rio, CET-SP, OSRM</span>
+            <span>COR-Rio, CET, OSRM</span>
           </div>
         </div>
       </div>
@@ -645,48 +676,94 @@
         </button>
       </div>
 
-      <!-- PAINEL OPERACIONAL DIVIDIDO (40% FEED / 60% MAPA) -->
+      <!-- PAINEL OPERACIONAL DIVIDIDO (40% LATERAL / 60% MAPA) -->
       <div class="ta-operational-split">
-        <!-- COLUNA ESQUERDA: FEED DE OCORRÊNCIAS (40%) -->
+        <!-- COLUNA ESQUERDA: STATUS DAS VIAS & FEED DE INCIDENTES (40%) -->
         <div class="ta-feed-pane">
-          <div class="ta-feed-header">
-            <div class="ta-feed-title-row">
-              <div class="ta-feed-title">
-                <span>🚨 Feed Operacional de Incidentes</span>
-                <span class="ta-badge ta-badge-bad" id="ta-feed-count-badge">-- ATIVAS</span>
+          <!-- SWITCHER DE ABAS DA COLUNA ESQUERDA -->
+          <div class="ta-view-switch-bar">
+            <button id="ta-tab-btn-vias" class="ta-view-tab active" title="Exibir tabela estruturada de vias monitoradas">
+              <i class="fa-solid fa-road"></i> Status das Vias (<span id="ta-vias-count-badge">9 VIAS</span>)
+            </button>
+            <button id="ta-tab-btn-feed" class="ta-view-tab" title="Exibir feed de incidentes e ocorrências">
+              <i class="fa-solid fa-triangle-exclamation"></i> Ocorrências (<span id="ta-feed-count-badge">--</span>)
+            </button>
+          </div>
+
+          <!-- PAINEL 1: STATUS DAS VIAS MONITORADAS (TABELA ESTRUTURADA) -->
+          <div id="ta-vias-view-panel" class="ta-vias-panel" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+            <div class="ta-vias-panel-header">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="font-size: 11px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                  <span class="ta-dot ta-dot-good"></span>
+                  <span id="ta-vias-regional-label">STATUS DAS VIAS MONITORADAS — RJ</span>
+                </div>
+                <button id="ta-btn-refresh-vias" class="ta-btn-refresh" onclick="window.trafficAlertView?.fetchData()" title="Atualizar dados operacionais">
+                  🔄 Atualizar
+                </button>
               </div>
-              <button id="ta-btn-refresh" class="ta-btn-refresh" title="Atualizar dados da API pública">
-                🔄 Atualizar
-              </button>
             </div>
-            <!-- FILTROS -->
-            <div class="ta-filter-bar">
-              <select id="ta-filter-corridor" class="ta-select" aria-label="Filtrar por corredor viário">
-                <option value="todos">Todos os 9 Corredores e Regiões</option>
-                <option value="centro">Centro (Pres. Vargas / Rio Branco)</option>
-                <option value="zona sul">Zona Sul (Aterro / Copacabana)</option>
-                <option value="barra da tijuca">Barra da Tijuca (Ayrton Senna / Américas)</option>
-                <option value="zona norte">Zona Norte (Madureira / Tijuca)</option>
-                <option value="baixada">Baixada Fluminense (Dutra / Caxias)</option>
-                <option value="linha vermelha">Linha Vermelha</option>
-                <option value="linha amarela">Linha Amarela</option>
-                <option value="avenida brasil">Avenida Brasil</option>
-                <option value="transolímpica">Transolímpica</option>
-                <option value="ponte">Ponte Rio-Niterói</option>
-              </select>
-              <select id="ta-filter-severity" class="ta-select" aria-label="Filtrar por severidade">
-                <option value="TODAS">Severidade: Todas</option>
-                <option value="CRÍTICO">Crítico / Alto</option>
-                <option value="MÉDIO">Médio</option>
-                <option value="BAIXO">Baixo</option>
-              </select>
-              <input type="text" id="ta-filter-search" class="ta-input" placeholder="Filtrar via, bairro ou termo..." aria-label="Buscar termo no feed" />
+
+            <div class="ta-corridors-table-container">
+              <table class="ta-corridors-table">
+                <thead>
+                  <tr>
+                    <th class="ta-th-via" style="text-align: left;">Via</th>
+                    <th class="ta-th-status" style="text-align: center;">Status</th>
+                    <th class="ta-th-retencao" style="text-align: center;" title="Tempo de retenção em relação ao fluxo normal">Retenção</th>
+                    <th class="ta-th-vel" style="text-align: center;" title="Velocidade média atual">Velocidade</th>
+                    <th class="ta-th-ocorrencia" style="text-align: left;" title="Ocorrência em andamento">Ocorrência</th>
+                    <th class="ta-th-trend" style="text-align: center;" title="Tendência">Tendência</th>
+                    <th class="ta-th-action" style="text-align: center;" title="Focar no mapa">Foco</th>
+                  </tr>
+                </thead>
+                <tbody id="ta-corridors-table-body">
+                  <!-- Injetado dinamicamente por traffic-alert-view.js -->
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- LISTA DINÂMICA DE OCORRÊNCIAS -->
-          <div class="ta-feed-list" id="ta-feed-items">
-            <!-- Renderizado dinamicamente por traffic-alert-view.js -->
+          <!-- PAINEL 2: FEED DE OCORRÊNCIAS (DISPAROS, ACIDENTES, ALAGAMENTOS) -->
+          <div id="ta-feed-view-panel" class="ta-feed-view-panel" style="display: none; flex-direction: column; flex: 1; min-height: 0;">
+            <div class="ta-feed-header">
+              <div class="ta-feed-title-row">
+                <div class="ta-feed-title">
+                  <span>🚨 Feed Operacional de Incidentes</span>
+                </div>
+                <button id="ta-btn-refresh" class="ta-btn-refresh" title="Atualizar dados da API pública">
+                  🔄 Atualizar
+                </button>
+              </div>
+              <!-- FILTROS -->
+              <div class="ta-filter-bar">
+                <select id="ta-filter-corridor" class="ta-select" aria-label="Filtrar por corredor viário">
+                  <option value="todos">Todos os 9 Corredores e Regiões</option>
+                  <option value="centro">Centro</option>
+                  <option value="zona sul">Zona Sul</option>
+                  <option value="barra da tijuca">Barra da Tijuca</option>
+                  <option value="zona norte">Zona Norte</option>
+                  <option value="baixada">Baixada Fluminense</option>
+                  <option value="linha vermelha">Linha Vermelha</option>
+                  <option value="linha amarela">Linha Amarela</option>
+                  <option value="avenida brasil">Avenida Brasil</option>
+                  <option value="transolímpica">Transolímpica</option>
+                  <option value="ponte">Ponte Rio-Niterói</option>
+                </select>
+                <select id="ta-filter-severity" class="ta-select" aria-label="Filtrar por severidade">
+                  <option value="TODAS">Severidade: Todas</option>
+                  <option value="CRÍTICO">Crítico / Alto</option>
+                  <option value="MÉDIO">Médio</option>
+                  <option value="BAIXO">Baixo</option>
+                </select>
+                <input type="text" id="ta-filter-search" class="ta-input" placeholder="Filtrar via, bairro ou termo..." aria-label="Buscar termo no feed" />
+              </div>
+            </div>
+
+            <!-- LISTA DINÂMICA DE OCORRÊNCIAS -->
+            <div class="ta-feed-list" id="ta-feed-items">
+              <!-- Renderizado dinamicamente por traffic-alert-view.js -->
+            </div>
           </div>
         </div>
 
@@ -695,10 +772,10 @@
           <div class="ta-map-toolbar">
             <div class="ta-map-tool-group">
               <span style="font-size:10px; font-weight:800; color:var(--ta-accent);">MAPA OPERACIONAL RIT</span>
-              <span style="font-size:9px; color:var(--ta-muted);">| MALHA URBANA RJ</span>
+              <span style="font-size:9px; color:var(--ta-muted);" id="ta-map-malha-label">| MALHA URBANA RJ</span>
             </div>
             <div class="ta-map-tool-group">
-              <button class="ta-map-tool-btn" onclick="window.trafficAlertView?.map?.resetView()" title="Centralizar mapa no Rio de Janeiro">🎯 Centralizar</button>
+              <button class="ta-map-tool-btn" onclick="window.trafficAlertView?.map?.resetView()" title="Centralizar mapa na regional ativa">🎯 Centralizar</button>
             </div>
           </div>
 
@@ -707,9 +784,11 @@
 
           <!-- LEGENDA DO MAPA -->
           <div class="ta-map-legend">
-            <div class="ta-legend-item"><span class="ta-dot ta-dot-bad"></span> Incidente Crítico/Alto</div>
+            <div class="ta-legend-item"><span class="ta-dot ta-dot-good"></span> Normal (Fluxo Livre)</div>
             <div class="ta-legend-item"><span class="ta-dot ta-dot-warn"></span> Retenção Moderada</div>
-            <div class="ta-legend-item"><span class="ta-dot ta-dot-good"></span> Câmera Ativa</div>
+            <div class="ta-legend-item"><span class="ta-dot ta-dot-bad"></span> Congestionamento / Crítico</div>
+            <div class="ta-legend-item"><span class="ta-dot" style="background:#071018; border:1px solid #ef4444;"></span> Bloqueio Total</div>
+            <div class="ta-legend-item"><span class="ta-dot" style="background:#38bdf8;"></span> Câmera Ativa</div>
           </div>
         </div>
       </div>

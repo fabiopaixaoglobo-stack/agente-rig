@@ -135,12 +135,13 @@ export class TrafficAlertService {
     /**
      * GET /api/traffic-alert/incidents
      */
-    async getIncidents({ domain = null, corridor = null, isSynthetic = false } = {}) {
+    async getIncidents({ domain = null, corridor = null, isSynthetic = false, region = null } = {}) {
         try {
             const params = new URLSearchParams();
             if (domain) params.append('domain', domain);
             if (corridor) params.append('corridor', corridor);
             if (isSynthetic) params.append('is_synthetic', 'true');
+            if (region) params.append('region', region);
 
             const query = params.toString() ? `?${params.toString()}` : '';
             const res = await this._fetch(`/incidents${query}`);
@@ -163,6 +164,58 @@ export class TrafficAlertService {
                 lastValidTimestamp: this.lastValidTimestamp,
                 data: []
             };
+        }
+    }
+
+    /**
+     * GET /api/traffic-alert/traffic-conditions
+     */
+    async getTrafficConditions({ region = 'RJ' } = {}) {
+        try {
+            const query = region ? `?region=${encodeURIComponent(region)}` : '';
+            const res = await this._fetch(`/traffic-conditions${query}`);
+            return {
+                ok: true,
+                region: res.region || region,
+                source: res.source || 'FONTES_PUBLICAS',
+                count: res.count || 0,
+                kpis: res.kpis || {},
+                corridors: res.corridors || []
+            };
+        } catch (err) {
+            return {
+                ok: false,
+                error: err.message,
+                region,
+                corridors: [],
+                kpis: {}
+            };
+        }
+    }
+
+    /**
+     * GET /api/traffic-alert/weather-alerts
+     */
+    async getWeatherAlerts({ region = 'RJ' } = {}) {
+        try {
+            const query = region ? `?region=${encodeURIComponent(region)}` : '';
+            const res = await this._fetch(`/weather-alerts${query}`);
+            return res;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+     * GET /api/traffic-alert/cameras
+     */
+    async getCameras({ region = 'RJ' } = {}) {
+        try {
+            const query = region ? `?region=${encodeURIComponent(region)}` : '';
+            const res = await this._fetch(`/cameras${query}`);
+            return res;
+        } catch (err) {
+            return { ok: false, data: [] };
         }
     }
 

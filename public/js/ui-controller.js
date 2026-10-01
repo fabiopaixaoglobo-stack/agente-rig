@@ -1930,6 +1930,17 @@ export class UiController {
                 }
             }
 
+            // 5. SINCRONIZAÇÃO DA ABA RIT ALERTA COM A NOVA REGIONAL
+            try {
+                if (this.trafficAlertView && typeof this.trafficAlertView.setRegional === 'function') {
+                    this.trafficAlertView.setRegional(rawReg || reg);
+                } else if (window.trafficAlertView && typeof window.trafficAlertView.setRegional === 'function') {
+                    window.trafficAlertView.setRegional(rawReg || reg);
+                }
+            } catch (taErr) {
+                console.warn("[RIT] Erro ao sincronizar regional na aba RIT ALERTA:", taErr);
+            }
+
             console.log(`[REGIONALIZAÇÃO] Região alterada para: ${reg}`, config);
             showToast(`Região alterada para ${config.nome}`, 'info');
         };
