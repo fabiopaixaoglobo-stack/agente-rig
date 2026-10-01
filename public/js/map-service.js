@@ -32,7 +32,21 @@ export class MapService {
             return;
         }
         
-        let center = CONFIG.DEFAULT_CENTER; // Array [lat, lng]
+        const regionalCenters = {
+            RJ: { center: [-22.9068, -43.1729], zoom: 11 },
+            SP: { center: [-23.5505, -46.6333], zoom: 11 },
+            MG: { center: [-19.9167, -43.9345], zoom: 11 },
+            BH: { center: [-19.9167, -43.9345], zoom: 11 },
+            ES: { center: [-20.3155, -40.3128], zoom: 12 },
+            DF: { center: [-15.7975, -47.8919], zoom: 12 },
+            BSB: { center: [-15.7975, -47.8919], zoom: 12 },
+            PE: { center: [-8.0476, -34.8770], zoom: 12 },
+            REC: { center: [-8.0476, -34.8770], zoom: 12 }
+        };
+
+        const savedReg = (typeof localStorage !== 'undefined') ? localStorage.getItem('rit_selected_regional') : null;
+        let center = (savedReg && regionalCenters[savedReg]) ? regionalCenters[savedReg].center : CONFIG.DEFAULT_CENTER;
+        let initialZoom = (savedReg && regionalCenters[savedReg]) ? regionalCenters[savedReg].zoom : (CONFIG.DEFAULT_ZOOM || 12);
         if (!Array.isArray(center)) {
             center = [-22.9068, -43.1729];
         }
@@ -43,7 +57,7 @@ export class MapService {
                 zoomControl: true,
                 attributionControl: false,
                 preferCanvas: true
-            }).setView(center, CONFIG.DEFAULT_ZOOM || 12);
+            }).setView(center, initialZoom);
 
             // Provedores de Mapa Homologados - ZERO MARCA D'ÁGUA (Elimina 100% o 'API KEY REQUIRED')
             const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -505,13 +519,20 @@ export class MapService {
                 bounds = this.map.getBounds();
             } catch (e) {}
 
-            // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais
+            // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais no Viewport
             if (zoom <= 11) {
                 this.layerGroups.cameras.clearLayers();
                 this.cameraMarkersMap.clear();
 
+                const padBounds = bounds ? bounds.pad(0.3) : null;
+                const visibleBairros = padBounds
+                    ? this.bairroClusters.filter(b => padBounds.contains([b.latitude, b.longitude]))
+                    : this.bairroClusters;
+
+                if (!visibleBairros || visibleBairros.length === 0) return;
+
                 const regionalMap = new Map();
-                this.bairroClusters.forEach(b => {
+                visibleBairros.forEach(b => {
                     let reg = 'Zona Norte';
                     if (b.latitude < -22.95 && b.longitude > -43.25) reg = 'Zona Sul';
                     else if (b.longitude < -43.34) reg = 'Zona Oeste / Barra';
@@ -682,7 +703,7 @@ export class MapService {
                         <b>Último Teste:</b> ${testeStr}<br>
                         <b>Tempo de abertura:</b> ${tempoStr}
                         ${isSuspect ? '<br><span style="color:#f59e0b; font-size:9px;"><i class="fa-solid fa-triangle-exclamation"></i> Coordenada Suspeita (Revisão)</span>' : ''}
-                        ${isRir ? '<br><span style="color:#fbbf24; font-size:9px; font-weight:800;">🎸 CORREDOR ROCK IN RIO</span>' : ''}
+                        ${isRir ? '<br><span style="color:#fbbf24; font-size:9px; font-weight:800;">📡 CORREDOR ESTRATÉGICO</span>' : ''}
                     </div>
                 `, { direction: 'top', offset: [0, -12], opacity: 0.95 });
 
@@ -709,10 +730,10 @@ export class MapService {
     // MAPA DE CALOR PREDITIVO DE SEGURANÇA (HEATMAP)
     // ==========================================
     renderRiskHeatmap(occurrencesList, horizon = '24h') {
-        if (!this.map || !this.layerGroups.heatmap) return;
+        if (!this.map || !this.layerGroups.heatmap) return 0;
         this.layerGroups.heatmap.clearLayers();
 
-        if (!occurrencesList || occurrencesList.length === 0) return;
+        if (!occurrencesList || occurrencesList.length === 0) return 0;
 
         // Se Leaflet.heat estiver disponível
         if (typeof L.heatLayer === 'function') {
@@ -731,21 +752,27 @@ export class MapService {
                 return [lat, lon, intensity];
             }).filter(Boolean);
 
+            if (heatPoints.length === 0) return 0;
+
             const heat = L.heatLayer(heatPoints, {
-                radius: 28,
-                blur: 20,
+                radius: 35,
+                blur: 24,
+                minOpacity: 0.35,
                 maxZoom: 16,
                 max: 1.0,
                 gradient: {
-                    0.2: '#10b981',
-                    0.5: '#f59e0b',
+                    0.2: '#00d1ff',
+                    0.4: '#10b981',
+                    0.6: '#f59e0b',
                     0.8: '#ef4444',
                     1.0: '#881337'
                 }
             });
             this.layerGroups.heatmap.addLayer(heat);
+            return heatPoints.length;
         } else {
             console.warn('[MapService] Leaflet.heat não carregado. Pulando renderização do Heatmap.');
+            return 0;
         }
     }
 

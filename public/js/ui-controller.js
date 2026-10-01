@@ -1676,50 +1676,125 @@ export class UiController {
             RJ: {
                 nome: 'RIO DE JANEIRO',
                 label: 'RJ',
+                center: [-22.9068, -43.1729],
+                zoom: 11,
                 clima: '28°C ☀️ RIO DE JANEIRO',
                 fontes: '• COR.RIO<br>• Alerta Rio<br>• CET Rio<br>• Radar Meteorológico',
-                estagio: 'normal',
-                cor: '#228d46'
+                estagio: 'NORMAL',
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS', label: 'Todos os Corredores (139)', center: [-22.975, -43.375], zoom: 13 },
+                    { id: 'Ayrton Senna', label: 'Ayrton Senna (35 cams - 71.4%)', center: [-22.985, -43.365], zoom: 15 },
+                    { id: 'Abelardo Bueno', label: 'Abelardo Bueno (11 cams - 54.5%)', center: [-22.978, -43.385], zoom: 15 },
+                    { id: 'Salvador Allende', label: 'Salvador Allende (12 cams - 58.3%)', center: [-22.985, -43.405], zoom: 15 },
+                    { id: 'TransOlímpica', label: 'TransOlímpica (2 cams - 100%)', center: [-22.965, -43.395], zoom: 15 },
+                    { id: 'Linha Amarela', label: 'Linha Amarela (7 cams - 57.1%)', center: [-22.925, -43.325], zoom: 14 },
+                    { id: 'Barra Olímpica', label: 'Barra Olímpica / Corredores (72 cams - 75%)', center: [-22.980, -43.380], zoom: 14 }
+                ]
             },
             SP: {
                 nome: 'SÃO PAULO',
                 label: 'SP',
+                center: [-23.5505, -46.6333],
+                zoom: 11,
                 clima: '20°C ☁️ SÃO PAULO',
-                fontes: '• CET-SP<br>• CGE-SP',
+                fontes: '• CET-SP<br>• CGE-SP<br>• Monitoramento Viário SP',
                 estagio: 'NORMAL',
-                cor: '#228d46'
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS_SP', label: 'Todos os Corredores SP', center: [-23.5505, -46.6333], zoom: 12 },
+                    { id: 'Marginal Tiete', label: 'Marginal Tietê (Eixo Norte)', center: [-23.518, -46.625], zoom: 14 },
+                    { id: 'Marginal Pinheiros', label: 'Marginal Pinheiros (Eixo Sul/Oeste)', center: [-23.585, -46.695], zoom: 14 },
+                    { id: 'Av. Paulista', label: 'Av. Paulista / Consolação', center: [-23.561, -46.656], zoom: 15 },
+                    { id: 'Av. 23 de Maio', label: 'Av. 23 de Maio / Corredor Norte-Sul', center: [-23.570, -46.643], zoom: 14 },
+                    { id: 'Faria Lima', label: 'Av. Brig. Faria Lima / Itaim', center: [-23.580, -46.685], zoom: 15 }
+                ]
             },
-            BH: {
-                nome: 'BELO HORIZONTE',
-                label: 'BH',
+            MG: {
+                nome: 'MINAS GERAIS',
+                label: 'MG',
+                center: [-19.9167, -43.9345],
+                zoom: 11,
                 clima: '22°C 🌤️ BELO HORIZONTE',
-                fontes: '• BHTRANS<br>• Defesa Civil BH',
-                estagio: 'ATENÇÃO',
-                cor: '#f2d024'
+                fontes: '• BHTRANS<br>• Defesa Civil BH<br>• RealData Telecom',
+                estagio: 'NORMAL',
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS_MG', label: 'Todos os Corredores MG', center: [-19.9167, -43.9345], zoom: 12 },
+                    { id: 'Av. Afonso Pena', label: 'Av. Afonso Pena / Centro', center: [-19.923, -43.937], zoom: 15 },
+                    { id: 'Av. Amazonas', label: 'Av. Amazonas / Eixo Oeste', center: [-19.932, -43.955], zoom: 14 },
+                    { id: 'Av. Cristiano Machado', label: 'Av. Cristiano Machado (Vetor Norte)', center: [-19.875, -43.925], zoom: 14 },
+                    { id: 'Av. Antonio Carlos', label: 'Av. Antônio Carlos / Pampulha', center: [-19.870, -43.955], zoom: 14 },
+                    { id: 'Anel Rodoviario', label: 'Anel Rodoviário BH', center: [-19.905, -43.985], zoom: 13 }
+                ]
             },
-            BSB: {
-                nome: 'BRASÍLIA',
-                label: 'BSB',
+            ES: {
+                nome: 'ESPÍRITO SANTO',
+                label: 'ES',
+                center: [-20.3155, -40.3128],
+                zoom: 12,
+                clima: '26°C 🌤️ VITÓRIA',
+                fontes: '• Defesa Civil ES<br>• CETURB-ES',
+                estagio: 'NORMAL',
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS_ES', label: 'Todos os Corredores ES', center: [-20.3155, -40.3128], zoom: 13 },
+                    { id: 'Terceira Ponte', label: 'Terceira Ponte (Vitória - Vila Velha)', center: [-20.325, -40.295], zoom: 15 },
+                    { id: 'Reta da Penha', label: 'Av. N. Sra. da Penha (Reta da Penha)', center: [-20.300, -40.305], zoom: 15 },
+                    { id: 'Av. Vitoria', label: 'Av. Vitória / Centro', center: [-20.315, -40.320], zoom: 15 },
+                    { id: 'Rodovia das Paneleiras', label: 'Rodovia das Paneleiras', center: [-20.265, -40.295], zoom: 14 }
+                ]
+            },
+            DF: {
+                nome: 'DISTRITO FEDERAL',
+                label: 'DF',
+                center: [-15.7975, -47.8919],
+                zoom: 12,
                 clima: '24°C ☀️ BRASÍLIA',
-                fontes: '• DER-DF<br>• Defesa Civil DF',
+                fontes: '• DER-DF<br>• Defesa Civil DF<br>• Clima ao Vivo',
                 estagio: 'NORMAL',
-                cor: '#228d46'
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS_DF', label: 'Todos os Corredores DF', center: [-15.7975, -47.8919], zoom: 13 },
+                    { id: 'Eixo Monumental', label: 'Eixo Monumental / Esplanada', center: [-15.798, -47.875], zoom: 15 },
+                    { id: 'Eixo Rodoviario', label: 'Eixão (Asa Sul / Asa Norte)', center: [-15.805, -47.895], zoom: 14 },
+                    { id: 'EPTG', label: 'EPTG (Taguatinga - Plano)', center: [-15.825, -47.985], zoom: 13 }
+                ]
             },
-            REC: {
-                nome: 'RECIFE',
-                label: 'REC',
+            PE: {
+                nome: 'PERNAMBUCO',
+                label: 'PE',
+                center: [-8.0476, -34.8770],
+                zoom: 12,
                 clima: '30°C ☀️ RECIFE',
-                fontes: '• APAC<br>• CTTU',
+                fontes: '• APAC<br>• CTTU Recife<br>• Serttel',
                 estagio: 'NORMAL',
-                cor: '#228d46'
+                cor: '#228d46',
+                corredores: [
+                    { id: 'TODOS_PE', label: 'Todos os Corredores PE', center: [-8.0476, -34.8770], zoom: 13 },
+                    { id: 'Agamenon Magalhaes', label: 'Av. Gov. Agamenon Magalhães', center: [-8.050, -34.895], zoom: 15 },
+                    { id: 'Boa Viagem', label: 'Av. Boa Viagem / Orla', center: [-8.115, -34.898], zoom: 14 },
+                    { id: 'Av. Norte', label: 'Av. Norte Miguel Arraes', center: [-8.030, -34.905], zoom: 14 }
+                ]
             }
         };
 
-        const aplicarRegiao = (reg) => {
-            const config = regioes[reg];
-            if (!config) return;
+        // Aliases para compatibilidade com códigos legados
+        regioes.BH = regioes.MG;
+        regioes.BSB = regioes.DF;
+        regioes.REC = regioes.PE;
+
+        this.regionalConfigs = regioes;
+
+        const aplicarRegiao = (rawReg) => {
+            const aliasMap = { 'BH': 'MG', 'BSB': 'DF', 'REC': 'PE' };
+            const reg = aliasMap[rawReg] || rawReg || 'RJ';
+            const config = regioes[reg] || regioes.RJ;
 
             localStorage.setItem('rit_selected_regional', reg);
+            if (seletor.value !== reg && regioes[seletor.value]) {
+                seletor.value = reg;
+            }
 
             if (brandRegional) brandRegional.textContent = `TRANSPORTES ${config.label}`;
             if (tabBtnCameras) tabBtnCameras.textContent = `Câmeras ${config.label}`;
@@ -1756,12 +1831,102 @@ export class UiController {
                 }
             }
 
-            // Atualiza dinamicamente a aba de câmeras para a regional selecionada
-            if (this.camerasService && typeof this.camerasService.setRegional === 'function') {
-                try {
-                    this.camerasService.setRegional(reg);
-                } catch (camErr) {
-                    console.warn("[RIT] Erro ao sincronizar aba de câmeras com a regional:", camErr);
+            // 1. REPOSICIONAMENTO AUTOMÁTICO DO MAPA CCO (CENTRAL DE CÂMERAS & OCORRÊNCIAS)
+            if (this.transitoMap?.map && config.center) {
+                this.transitoMap.map.flyTo(config.center, config.zoom || 11, {
+                    duration: 1.0
+                });
+                setTimeout(() => {
+                    this.transitoMap?.map?.invalidateSize();
+                    if (typeof this.transitoMap?._renderCamerasLOD === 'function') {
+                        this.transitoMap._renderCamerasLOD();
+                    }
+                }, 350);
+            }
+
+            // Reposiciona outros mapas da aplicação se instanciados
+            if (this.mapService?.map && config.center) {
+                this.mapService.map.flyTo(config.center, config.zoom || 11, { duration: 1.0 });
+            }
+            if (this.plannerMap?.map && config.center) {
+                this.plannerMap.map.flyTo(config.center, config.zoom || 11, { duration: 1.0 });
+            }
+
+            // 2. ATUALIZAR FILTRO DE CORREDORES ESTRATÉGICOS NO CABEÇALHO CCO
+            const selCorredor = document.getElementById('seletor-corredor-rir');
+            if (selCorredor && Array.isArray(config.corredores)) {
+                selCorredor.innerHTML = config.corredores.map(c => 
+                    `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`
+                ).join('');
+            }
+
+            // 3. SINCRONIZAR INTELIGÊNCIA OPERACIONAL E OCORRÊNCIAS DA NOVA UF
+            this.atualizarInformesOTT();
+
+            // 4. ATUALIZAR INDICADORES VISUAIS DA UF
+            const camsBadge = document.getElementById('cicc-cams-count');
+            const rirCamsCount = document.getElementById('rir-cameras-count');
+            const rirOnline = document.getElementById('rir-cameras-online');
+            const rirOffline = document.getElementById('rir-cameras-offline');
+            const rirDisp = document.getElementById('rir-health-pct');
+            const rirStatDisp = document.getElementById('rir-stat-disponibilidade');
+
+            if (reg === 'RJ') {
+                if (camsBadge) camsBadge.textContent = '4.297';
+                this.carregarRuntimeCameras();
+            } else if (reg === 'SP') {
+                if (camsBadge) camsBadge.textContent = '12';
+                if (rirCamsCount) rirCamsCount.textContent = '12 câmeras';
+                if (rirOnline) rirOnline.textContent = '11 online';
+                if (rirOffline) rirOffline.textContent = '1 offline';
+                if (rirDisp) {
+                    rirDisp.textContent = '91.7%';
+                    rirDisp.style.color = '#10b981';
+                }
+                if (rirStatDisp) {
+                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando em SP: 91.7% (11 online de 12 câmeras monitoradas).";
+                }
+            } else if (reg === 'MG') {
+                if (camsBadge) camsBadge.textContent = '8';
+                if (rirCamsCount) rirCamsCount.textContent = '8 câmeras';
+                if (rirOnline) rirOnline.textContent = '7 online';
+                if (rirOffline) rirOffline.textContent = '1 offline';
+                if (rirDisp) {
+                    rirDisp.textContent = '87.5%';
+                    rirDisp.style.color = '#10b981';
+                }
+                if (rirStatDisp) {
+                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando em MG: 87.5% (7 online de 8 câmeras monitoradas).";
+                }
+            } else if (reg === 'ES') {
+                if (camsBadge) camsBadge.textContent = '6';
+                if (rirCamsCount) rirCamsCount.textContent = '6 câmeras';
+                if (rirOnline) rirOnline.textContent = '6 online';
+                if (rirOffline) rirOffline.textContent = '0 offline';
+                if (rirDisp) {
+                    rirDisp.textContent = '100%';
+                    rirDisp.style.color = '#10b981';
+                }
+                if (rirStatDisp) {
+                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando no ES: 100% (6 online de 6 câmeras monitoradas).";
+                }
+            } else if (reg === 'DF') {
+                if (camsBadge) camsBadge.textContent = '4';
+                if (rirCamsCount) rirCamsCount.textContent = '4 câmeras';
+                if (rirOnline) rirOnline.textContent = '4 online';
+                if (rirOffline) rirOffline.textContent = '0 offline';
+                if (rirDisp) {
+                    rirDisp.textContent = '100%';
+                    rirDisp.style.color = '#10b981';
+                }
+            } else if (reg === 'PE') {
+                if (camsBadge) camsBadge.textContent = '5';
+                if (rirCamsCount) rirCamsCount.textContent = '5 câmeras';
+                if (rirOnline) rirOnline.textContent = '4 online';
+                if (rirOffline) rirOffline.textContent = '1 offline';
+                if (rirDisp) {
+                    rirDisp.textContent = '80.0%';
+                    rirDisp.style.color = '#10b981';
                 }
             }
 
@@ -3070,6 +3235,13 @@ export class UiController {
                     (cam) => this.abrirDetalhesCameraCCO(cam),
                     (cam) => this.hoverCamera(cam)
                 );
+
+                // Garante que o mapa respeite a UF selecionada se diferente de RJ
+                const currentReg = document.getElementById('seletor-regiao')?.value || 'RJ';
+                if (currentReg !== 'RJ' && this.regionalConfigs?.[currentReg]?.center) {
+                    const c = this.regionalConfigs[currentReg];
+                    this.transitoMap.map.setView(c.center, c.zoom || 11);
+                }
             }
 
             // Carrega dados de auditoria operacional em tempo real (Runtime de Vídeo Real)
@@ -3109,14 +3281,20 @@ export class UiController {
             const isChecked = e.target.checked;
             this.transitoMap?.setLayerVisibility('heatmap', isChecked);
             if (selHorizonte) selHorizonte.style.display = isChecked ? 'inline-block' : 'none';
-            if (isChecked && this.activeOcorrencias.length > 0) {
-                this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, selHorizonte?.value || '24h');
+            if (isChecked) {
+                if (this.activeOcorrencias && this.activeOcorrencias.length > 0) {
+                    const count = this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, selHorizonte?.value || '24h');
+                    showToast(`🔥 Heatmap de Risco ativo: ${count || this.activeOcorrencias.length} eventos mapeados`, 'info');
+                } else {
+                    showToast('🔥 Heatmap ativo. Nenhuma ocorrência registrada no estado até o momento.', 'warning');
+                }
             }
         });
 
         selHorizonte?.addEventListener('change', (e) => {
-            if (toggleHeatmap?.checked && this.activeOcorrencias.length > 0) {
-                this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, e.target.value);
+            if (toggleHeatmap?.checked && this.activeOcorrencias && this.activeOcorrencias.length > 0) {
+                const count = this.transitoMap?.renderRiskHeatmap(this.activeOcorrencias, e.target.value);
+                showToast(`Heatmap recalculado para o horizonte ${e.target.value} (${count} eventos)`, 'info');
             }
         });
 
@@ -3261,7 +3439,7 @@ export class UiController {
                 }
             }
 
-            // 2. Carrega estatísticas consolidadas dos Corredores do Rock in Rio
+            // 2. Carrega estatísticas consolidadas dos Corredores Estratégicos CCO
             const respRir = await fetch('/api/cameras/corredores-rir');
             if (respRir.ok) {
                 const dataRir = await respRir.json();
@@ -3284,6 +3462,10 @@ export class UiController {
                     const dispPct = total > 0 ? (((online + lenta + degradada + hevc) / total) * 100).toFixed(1) : '76.3';
 
                     if (pctEl) pctEl.innerText = `${dispPct}%`;
+                    const statDispEl = document.getElementById('rir-stat-disponibilidade');
+                    if (statDispEl) {
+                        statDispEl.title = `Percentual de câmeras disponíveis: ${dispPct}% (${online + lenta + degradada + hevc} online ou operacionais de ${total} totais monitoradas). Cálculo: (Câmeras Online / Total de Câmeras) × 100.`;
+                    }
                     if (totalEl) totalEl.innerText = `${total || 139} câmeras`;
                     if (onlineEl) onlineEl.innerText = `${online + lenta + degradada} online`;
                     if (offlineEl) offlineEl.innerText = `${offline} offline`;
@@ -3323,11 +3505,20 @@ export class UiController {
             document.getElementById(c.id)?.addEventListener('change', aplicarFiltros);
         });
 
-        // Ouvinte do Seletor de Corredor (Etapa 8)
+        // Ouvinte do Seletor de Corredor
         document.getElementById('seletor-corredor-rir')?.addEventListener('change', (e) => {
             const corredor = e.target.value;
-            if (corredor === 'TODOS') {
-                this.transitoMap?.map?.flyTo([-22.975, -43.375], 13);
+            const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
+            const regConfig = this.regionalConfigs?.[reg] || this.regionalConfigs?.RJ;
+            const item = regConfig?.corredores?.find(c => c.id === corredor);
+            if (item && item.center) {
+                this.transitoMap?.map?.flyTo(item.center, item.zoom || 14, { duration: 1.0 });
+                return;
+            }
+            if (corredor === 'TODOS' || corredor === 'TODOS_SP' || corredor === 'TODOS_MG' || corredor === 'TODOS_ES' || corredor === 'TODOS_DF' || corredor === 'TODOS_PE') {
+                if (regConfig?.center) {
+                    this.transitoMap?.map?.flyTo(regConfig.center, regConfig.zoom || 11, { duration: 1.0 });
+                }
             } else if (corredor.includes('Ayrton Senna')) {
                 this.transitoMap?.map?.flyTo([-22.985, -43.365], 15);
             } else if (corredor.includes('Abelardo Bueno')) {
@@ -3338,6 +3529,8 @@ export class UiController {
                 this.transitoMap?.map?.flyTo([-22.965, -43.395], 15);
             } else if (corredor.includes('Linha Amarela')) {
                 this.transitoMap?.map?.flyTo([-22.925, -43.325], 14);
+            } else if (corredor.includes('Barra Olímpica')) {
+                this.transitoMap?.map?.flyTo([-22.980, -43.380], 14);
             }
         });
     }
@@ -3476,8 +3669,9 @@ export class UiController {
             // 3. Renderizar lista lateral com Índice de Cobertura Visual
             if (listEl) {
                 if (allItems.length === 0) {
-                    listEl.innerHTML = '<div style="color:#aaa; text-align:center; padding:15px 0;">Nenhuma ocorrência registrada hoje no Rio de Janeiro.</div>';
-                    showToast("Nenhuma ocorrência registrada hoje.", "info");
+                    const estadoNome = this.regionalConfigs?.[reg]?.nome || reg;
+                    listEl.innerHTML = `<div style="color:#aaa; text-align:center; padding:15px 0;">Nenhuma ocorrência registrada hoje em ${escapeHtml(estadoNome)}.</div>`;
+                    showToast(`Nenhuma ocorrência registrada hoje em ${estadoNome}.`, "info");
                     return;
                 }
 
