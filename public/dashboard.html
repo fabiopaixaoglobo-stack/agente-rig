@@ -534,7 +534,7 @@
         <div class="ta-brand-row">
           <div class="ta-brand-title">RIT ALERTA — INTELIGÊNCIA AUTÔNOMA DE TRÂNSITO</div>
           <span class="ta-privacy-badge">SOMENTE DADOS PÚBLICOS | PRIVACY BY DESIGN</span>
-          <span class="ta-privacy-badge" id="ta-sub-regional-badge" style="background: rgba(0, 209, 255, 0.15); border: 1px solid #00d1ff; color: #00d1ff; font-weight: 800;">📍 PRAÇA: RIO DE JANEIRO (RJ)</span>
+          <span class="ta-privacy-badge" id="ta-sub-regional-badge" style="background: rgba(0, 209, 255, 0.15); border: 1px solid #00d1ff; color: #00d1ff; font-weight: 800;">📍 PRAÇA: CARREGANDO...</span>
         </div>
         <div class="ta-meta-telemetry">
           <span id="ta-sub-health-status"><span class="ta-dot ta-dot-good"></span> FONTES SAUDÁVEIS</span>
@@ -547,7 +547,7 @@
       <div id="ta-weather-alert-banner" class="ta-weather-banner" style="margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 11px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0, 209, 255, 0.3); background: rgba(8, 20, 44, 0.9); box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span id="ta-weather-stage-badge" style="padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; background: #0284c7; color: #fff; letter-spacing: 0.5px;">ESTÁGIO OPERACIONAL</span>
-          <span id="ta-weather-text" style="color: #e2e8f0; font-weight: 600;">Monitoramento integrado de mobilidade urbana e alertas meteorológicos (COR-Rio / CGE-SP).</span>
+          <span id="ta-weather-text" style="color: #e2e8f0; font-weight: 600;">Monitoramento integrado de mobilidade urbana e alertas meteorológicos.</span>
         </div>
         <div id="ta-weather-details" style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 12px;">
           <span>🌧️ Chuva: <strong id="ta-weather-rain" style="color: #38bdf8;">Sem Alerta Severo</strong></span>
@@ -695,7 +695,7 @@
               <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <div style="font-size: 11px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
                   <span class="ta-dot ta-dot-good"></span>
-                  <span id="ta-vias-regional-label">STATUS DAS VIAS MONITORADAS — RJ</span>
+                  <span id="ta-vias-regional-label">STATUS DAS VIAS MONITORADAS</span>
                 </div>
                 <button id="ta-btn-refresh-vias" class="ta-btn-refresh" onclick="window.trafficAlertView?.fetchData()" title="Atualizar dados operacionais">
                   🔄 Atualizar
@@ -771,7 +771,7 @@
           <div class="ta-map-toolbar">
             <div class="ta-map-tool-group">
               <span style="font-size:10px; font-weight:800; color:var(--ta-accent);">MAPA OPERACIONAL RIT</span>
-              <span style="font-size:9px; color:var(--ta-muted);" id="ta-map-malha-label">| MALHA URBANA RJ</span>
+              <span style="font-size:9px; color:var(--ta-muted);" id="ta-map-malha-label">| MALHA URBANA REGIONAL</span>
             </div>
             <div class="ta-map-tool-group">
               <button class="ta-map-tool-btn" onclick="window.trafficAlertView?.map?.resetView()" title="Centralizar mapa na regional ativa">🎯 Centralizar</button>
@@ -1304,6 +1304,6 @@
   </div>
 
   <script src="session-manager.js"></script>
-  <script type="module" src="js/main.js?v=50"></script>
+  <script type="module" src="js/main.js?v=52"></script>
 </body>
 </html>

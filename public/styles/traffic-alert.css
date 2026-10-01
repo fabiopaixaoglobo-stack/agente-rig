@@ -760,31 +760,34 @@
 .waze-pin-medio { border-color: #f59e0b; }
 .waze-pin-baixo { border-color: #0284c7; }
 
-/* DRAWER LATERAL DE ANÁLISE PROFUNDA */
+/* DRAWER LATERAL DE ANÁLISE PROFUNDA (COEXISTÊNCIA TOTAL COM O MAPA - SEM MÁSCARA ESCURA/BLUR) */
 .ta-drawer-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   z-index: 10001;
   display: none;
   justify-content: flex-end;
-  backdrop-filter: blur(4px);
+  pointer-events: none; /* Permite clique e navegação contínua no mapa sob o drawer */
 }
 .ta-drawer-overlay.ta-open {
   display: flex;
 }
 
 .ta-drawer-panel {
-  width: 580px;
-  max-width: 92vw;
+  width: 440px;
+  max-width: 90vw;
   background: #090f1d;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
   height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.85);
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.85);
   animation: taDrawerSlide 0.25s ease-out;
   overflow-y: auto;
+  pointer-events: auto; /* O painel lateral permanece interativo com rolagem e cliques */
 }
 
 @keyframes taDrawerSlide {

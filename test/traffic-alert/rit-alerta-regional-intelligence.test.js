@@ -316,5 +316,66 @@ describe('🚦 RIT ALERTA — INTELIGÊNCIA REGIONAL DE TRÂNSITO', () => {
         assert.ok(viewJs.includes('camsFoot.textContent = `Rede Pública ${cfg.uf}`'), 'camsFoot deve usar cfg.uf');
         assert.ok(viewJs.includes('fontesCardFoot.textContent = `${cfg.fontes} OK`'), 'fontesCardFoot deve usar cfg.fontes dinâmico');
     });
+
+    it('13. Panes dedicados Leaflet e reposicionamento de controle de camadas para bottomright', () => {
+        const mapJs = fs.readFileSync(trafficMapPath, 'utf8');
+
+        // Panes dedicados com z-indexes crescentes
+        assert.ok(mapJs.includes("createPane('trafficCasingPane')"), 'Deve criar trafficCasingPane');
+        assert.ok(mapJs.includes("createPane('trafficPane')"), 'Deve criar trafficPane');
+        assert.ok(mapJs.includes("createPane('focusPane')"), 'Deve criar focusPane');
+        assert.ok(mapJs.includes("createPane('cameraPane')"), 'Deve criar cameraPane');
+        assert.ok(mapJs.includes("createPane('incidentPane')"), 'Deve criar incidentPane');
+
+        // Controle de camadas em bottomright para não colidir com botão Centralizar (topright)
+        assert.ok(mapJs.includes("position: 'bottomright'"), 'Controle de camadas deve estar posicionado em bottomright');
+
+        // Limpeza de todas as camadas
+        assert.ok(mapJs.includes('clearAllLayers()'), 'TrafficAlertMap deve possuir clearAllLayers()');
+    });
+
+    it('14. Drawer lateral transparente sem máscara/blur, com foco com padding offset', () => {
+        const css = fs.readFileSync(trafficCssPath, 'utf8');
+        const mapJs = fs.readFileSync(trafficMapPath, 'utf8');
+        const drawerJs = fs.readFileSync(path.resolve(__dirname, '../../public/js/traffic-alert/traffic-alert-drawer.js'), 'utf8');
+
+        // Overlay sem máscara nem blur (mapa 100% visível)
+        assert.ok(css.includes('background: transparent !important'), 'ta-drawer-overlay deve ter background transparente');
+        assert.ok(css.includes('backdrop-filter: none !important'), 'ta-drawer-overlay deve ter backdrop-filter none');
+        assert.ok(css.includes('pointer-events: none'), 'ta-drawer-overlay deve ter pointer-events none');
+
+        // Painel interativo com 440px
+        assert.ok(css.includes('pointer-events: auto'), 'ta-drawer-panel deve ter pointer-events auto');
+        assert.ok(css.includes('width: 440px'), 'ta-drawer-panel deve ter 440px');
+
+        // Offset de padding ao focar corredor para não cobrir sob o drawer
+        assert.ok(mapJs.includes('paddingBottomRight: [paddingRight, 40]'), 'focusCorridor deve aplicar padding offset para compensar drawer');
+        assert.ok(mapJs.includes('isDrawerOpen ? 460 : 50'), 'focusCorridor deve calcular paddingRight baseado no estado do drawer');
+
+        // Invalidate size ao abrir/fechar drawer
+        assert.ok(drawerJs.includes('map.invalidateSize()'), 'TrafficAlertDrawer deve invalidar tamanho do mapa');
+    });
+
+    it('15. Sincronização estrita de regional sem fallback indevido para RJ', async () => {
+        const routesJs = fs.readFileSync(path.resolve(__dirname, '../../server/traffic-alert/routes/traffic-alert-routes.js'), 'utf8');
+        const mainJs = fs.readFileSync(path.resolve(__dirname, '../../public/js/main.js'), 'utf8');
+
+        // Não deve haver fallback silencioso matrix.RJ em GET /traffic-conditions
+        assert.ok(!routesJs.includes('matrix[targetRegion] || matrix.RJ'), 'Não deve haver fallback silencioso para matrix.RJ');
+        assert.ok(routesJs.includes('matrix[targetRegion] || []'), 'Deve retornar lista da região solicitada ou vazia');
+
+        // main.js deve sincronizar regional imediatamente no startup
+        assert.ok(mainJs.includes('trafficAlertView.setRegional(activeReg)'), 'main.js deve chamar setRegional com regional ativa no startup');
+
+        // Endpoint /traffic-conditions para SP deve retornar APENAS corredores de SP
+        const resSp = await (await fetch(`${baseUrl}/traffic-conditions?region=SP`)).json();
+        assert.strictEqual(resSp.ok, true);
+        assert.strictEqual(resSp.region, 'SP');
+        const spVias = resSp.corridors.map(c => c.via);
+        assert.ok(spVias.includes('Marginal Tietê'), 'SP deve incluir Marginal Tietê');
+        assert.ok(!spVias.includes('Av Brasil'), 'SP NÃO deve conter Av Brasil');
+        assert.ok(!spVias.includes('Linha Vermelha'), 'SP NÃO deve conter Linha Vermelha');
+    });
 });
+
 

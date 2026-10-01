@@ -8,6 +8,10 @@ export class TrafficAlertMap {
         this.incidentLayer = null;
         this.cameraLayer = null;
         this.corridorLayer = null;
+        this.focusLayer = null;
+        this.corridorPolylines = {};
+        this.selectedCorridorVia = null;
+        this.selectedIncident = null;
         this.isInitialized = false;
 
         // Centros canônicos por Regional (zero GPS)
@@ -24,12 +28,29 @@ export class TrafficAlertMap {
     setRegionalCenter(region) {
         const cfg = resolveRegionalConfig(region);
         this.currentRegion = cfg.internalCode;
+        this.selectedCorridorVia = null;
+        this.selectedIncident = null;
+        if (this.focusLayer) this.focusLayer.clearLayers();
+
         if (this.map) {
             this.map.flyTo(cfg.center, cfg.zoom, { duration: 1.0 });
             setTimeout(() => {
                 try { this.map.invalidateSize(); } catch (e) {}
             }, 300);
         }
+    }
+
+    /**
+     * Limpa todas as camadas vetoriais do mapa.
+     */
+    clearAllLayers() {
+        if (this.corridorLayer) this.corridorLayer.clearLayers();
+        if (this.cameraLayer) this.cameraLayer.clearLayers();
+        if (this.incidentLayer) this.incidentLayer.clearLayers();
+        if (this.focusLayer) this.focusLayer.clearLayers();
+        this.corridorPolylines = {};
+        this.selectedCorridorVia = null;
+        this.selectedIncident = null;
     }
 
     /**
@@ -53,12 +74,35 @@ export class TrafficAlertMap {
         }
 
         try {
+            const activeCfg = resolveRegionalConfig(this.currentRegion);
             this.map = L.map(this.containerId, {
-                center: this.DEFAULT_CENTER,
-                zoom: this.DEFAULT_ZOOM,
+                center: activeCfg.center || this.DEFAULT_CENTER,
+                zoom: activeCfg.zoom || this.DEFAULT_ZOOM,
                 zoomControl: true,
                 attributionControl: false
             });
+
+            // Criação de PANES EXPLÍCITOS com Z-Index crescente para garantir renderização correta
+            if (!this.map.getPane('trafficCasingPane')) {
+                this.map.createPane('trafficCasingPane');
+                this.map.getPane('trafficCasingPane').style.zIndex = '450';
+            }
+            if (!this.map.getPane('trafficPane')) {
+                this.map.createPane('trafficPane');
+                this.map.getPane('trafficPane').style.zIndex = '460';
+            }
+            if (!this.map.getPane('focusPane')) {
+                this.map.createPane('focusPane');
+                this.map.getPane('focusPane').style.zIndex = '480';
+            }
+            if (!this.map.getPane('cameraPane')) {
+                this.map.createPane('cameraPane');
+                this.map.getPane('cameraPane').style.zIndex = '500';
+            }
+            if (!this.map.getPane('incidentPane')) {
+                this.map.createPane('incidentPane');
+                this.map.getPane('incidentPane').style.zIndex = '550';
+            }
 
             // Camada Satélite com Rótulos (Esri World Imagery + World Boundaries & Places)
             const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -85,18 +129,21 @@ export class TrafficAlertMap {
             // Padrão: Satélite com rótulos
             satelliteGroup.addTo(this.map);
 
+            // CONTROLE DE CAMADAS NO CANTO INFERIOR DIREITO (bottomright)
+            // Elimina qualquer colisão com o botão "Centralizar" no canto superior direito
             L.control.layers({
                 '🛰️ Satélite com Rótulos': satelliteGroup,
                 '🗺️ Ruas (OpenStreetMap)': streetsLayer,
                 '🏙️ Dark Command Center': darkGroup
-            }, null, { position: 'topright' }).addTo(this.map);
+            }, null, { position: 'bottomright' }).addTo(this.map);
 
-            this.incidentLayer = L.layerGroup().addTo(this.map);
-            this.cameraLayer = L.layerGroup().addTo(this.map);
             this.corridorLayer = L.layerGroup().addTo(this.map);
+            this.focusLayer = L.layerGroup().addTo(this.map);
+            this.cameraLayer = L.layerGroup().addTo(this.map);
+            this.incidentLayer = L.layerGroup().addTo(this.map);
 
             this.isInitialized = true;
-            console.info('[RIT ALERTA MAP] Mapa operacional inicializado com sucesso.');
+            console.info('[RIT ALERTA MAP] Mapa operacional inicializado com panes dedicados e camadas ativas.');
         } catch (err) {
             console.error('[RIT ALERTA MAP] Falha ao instanciar Leaflet:', err);
         }
@@ -116,13 +163,30 @@ export class TrafficAlertMap {
     }
 
     /**
-     * Centraliza o mapa nas coordenadas da regional ativa.
+     * Centraliza o mapa nas coordenadas da regional ativa ou enquadra os corredores.
      */
     resetView() {
-        if (this.map) {
-            const cfg = this.REGIONAL_CENTERS[this.currentRegion] || this.REGIONAL_CENTERS.RJ;
-            this.map.setView(cfg.center, cfg.zoom);
+        if (!this.map) return;
+        const cfg = resolveRegionalConfig(this.currentRegion);
+        this.selectedCorridorVia = null;
+        this.selectedIncident = null;
+
+        if (this.focusLayer) {
+            this.focusLayer.clearLayers();
         }
+
+        // Se houver corredores renderizados na regional, enquadra todos com fitBounds
+        if (this.corridorLayer && this.corridorLayer.getLayers().length > 0) {
+            try {
+                const bounds = this.corridorLayer.getBounds();
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                    this.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+                    return;
+                }
+            } catch (e) {}
+        }
+
+        this.map.setView(cfg.center, cfg.zoom);
     }
 
     /**
@@ -144,17 +208,54 @@ export class TrafficAlertMap {
 
     /**
      * Foca e aproxima o mapa em um corredor estruturante específico.
+     * Aplica halo no focusPane e compensa o Drawer lateral sem mascarar o mapa.
      */
     focusCorridor(viaName) {
         if (!this.map || !viaName) return;
-        const coords = this.getCorridorCoords(viaName);
-        if (coords && coords.length > 0) {
-            try {
-                const bounds = L.latLngBounds(coords);
-                this.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
-            } catch (e) {
-                this.map.setView(coords[0], 14);
-            }
+        this.selectedCorridorVia = viaName;
+        const coords = this.getCorridorCoords(viaName, this.currentRegion);
+        if (!coords || coords.length === 0) return;
+
+        // Limpa destaque anterior
+        if (this.focusLayer) {
+            this.focusLayer.clearLayers();
+        }
+
+        // Desenha halo de foco no focusPane mantendo a linha original íntegra
+        const halo = L.polyline(coords, {
+            pane: 'focusPane',
+            color: '#00d1ff',
+            weight: 12,
+            opacity: 0.8,
+            lineCap: 'round',
+            lineJoin: 'round',
+            interactive: false
+        });
+        if (this.focusLayer) {
+            this.focusLayer.addLayer(halo);
+        }
+
+        // Compensa a largura do drawer à direita se estiver aberto
+        const drawerEl = document.getElementById('trafficAlertDrawer');
+        const isDrawerOpen = drawerEl && drawerEl.classList.contains('ta-open');
+        const paddingRight = isDrawerOpen ? 460 : 50;
+
+        try {
+            const bounds = L.latLngBounds(coords);
+            this.map.fitBounds(bounds, {
+                paddingTopLeft: [40, 40],
+                paddingBottomRight: [paddingRight, 40],
+                maxZoom: 15
+            });
+        } catch (e) {
+            this.map.setView(coords[0], 14);
+        }
+
+        // Abre o popup do corredor se disponível
+        const vKey = viaName.toLowerCase().trim();
+        const ref = this.corridorPolylines[vKey];
+        if (ref && ref.overlay) {
+            try { ref.overlay.openPopup(); } catch (e) {}
         }
     }
 
@@ -271,12 +372,20 @@ export class TrafficAlertMap {
             return '#10b981'; // Verde fluido
         };
 
+        let renderedCount = 0;
+        this.corridorPolylines = {};
+
         trafficData.forEach(item => {
-            let coords = (Array.isArray(item.coordinates) && Array.isArray(item.coordinates[0])) ? item.coordinates : null;
+            let coords = (Array.isArray(item.geometry) && Array.isArray(item.geometry[0])) ? item.geometry
+                       : (Array.isArray(item.coordinates) && Array.isArray(item.coordinates[0])) ? item.coordinates : null;
             if (!coords || coords.length < 2) {
-                coords = this.getCorridorCoords(item.via, this.currentRegion);
+                coords = this.getCorridorCoords(item.via || item.name, this.currentRegion);
             }
             if (!coords || coords.length < 2) return;
+
+            // Validação estrita de cada par de coordenadas
+            const validCoords = coords.filter(pt => Array.isArray(pt) && pt.length >= 2 && Number.isFinite(pt[0]) && Number.isFinite(pt[1]));
+            if (validCoords.length < 2) return;
 
             const color = getTrafficColor(item.status);
             const isCrit = (item.status || '').toLowerCase().includes('crítico') || (item.status || '').toLowerCase().includes('bloqueio');
@@ -284,8 +393,9 @@ export class TrafficAlertMap {
             const velText = item.velocidadeAtualKmH ? `${item.velocidadeAtualKmH} km/h` : (item.velocidadePadraoKmH ? `${item.velocidadePadraoKmH} km/h` : '--');
             const ocorrenciaText = item.ocorrenciaAtiva || 'Fluxo regular sem ocorrências ativas';
 
-            // 1. CASING EXTERNO (Contraste escuro para visibilidade sobre satélite e mapas escuros)
-            const casing = L.polyline(coords, {
+            // 1. CASING EXTERNO (trafficCasingPane com z-index 450 para máximo contraste sobre satélite)
+            const casing = L.polyline(validCoords, {
+                pane: 'trafficCasingPane',
                 color: '#020617',
                 weight: 8,
                 opacity: 0.95,
@@ -294,8 +404,9 @@ export class TrafficAlertMap {
                 interactive: false
             });
 
-            // 2. OVERLAY COLORIDO (Representação das condições de trânsito em tempo real estilo Google Maps)
-            const overlay = L.polyline(coords, {
+            // 2. OVERLAY COLORIDO (trafficPane com z-index 460 representando a fluidez em tempo real)
+            const overlay = L.polyline(validCoords, {
+                pane: 'trafficPane',
                 color: color,
                 weight: isCrit ? 6 : 5,
                 opacity: 0.95,
@@ -310,7 +421,7 @@ export class TrafficAlertMap {
                 <div style="font-family:system-ui,-apple-system,sans-serif; font-size:11px; padding:3px 6px; line-height:1.4;">
                     <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
                         <span style="font-size:12px;">🚦</span>
-                        <strong style="color:#fff; text-transform:uppercase; font-size:11px;">${this._escapeHtml(item.via)}</strong>
+                        <strong style="color:#fff; text-transform:uppercase; font-size:11px;">${this._escapeHtml(item.via || item.name)}</strong>
                         <span style="background:${color}22; color:${color}; border:1px solid ${color}66; padding:1px 5px; border-radius:3px; font-weight:800; font-size:9.5px;">${this._escapeHtml(item.status)}</span>
                     </div>
                     <div style="color:#94a3b8; font-size:10px;">
@@ -342,14 +453,14 @@ export class TrafficAlertMap {
             overlay.bindPopup(`
                 <div style="font-family:system-ui,-apple-system,sans-serif; font-size:11px; line-height:1.45; min-width:200px; color:#e2e8f0;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
-                        <strong style="color:${color}; text-transform:uppercase; font-size:12px;">${this._escapeHtml(item.via)}</strong>
+                        <strong style="color:${color}; text-transform:uppercase; font-size:12px;">${this._escapeHtml(item.via || item.name)}</strong>
                         <span style="background:${color}22; color:${color}; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:800;">${this._escapeHtml(item.status)}</span>
                     </div>
                     <div style="margin-bottom:3px;"><strong>Retenção:</strong> <span style="color:#f59e0b;">${this._escapeHtml(diffText)}</span></div>
                     <div style="margin-bottom:3px;"><strong>Velocidade:</strong> ${velText} (Padrão: ${item.velocidadePadraoKmH ? item.velocidadePadraoKmH + ' km/h' : '--'})</div>
                     <div style="margin-bottom:3px;"><strong>Tendência:</strong> ${this._escapeHtml(item.tendencia || 'ESTÁVEL')}</div>
                     <div style="margin-bottom:6px; font-size:10px; color:#cbd5e1;"><strong>Situação:</strong> ${this._escapeHtml(ocorrenciaText)}</div>
-                    <button onclick="window.trafficAlertView && window.trafficAlertView.drawer && window.trafficAlertView.drawer.openKpiDetail('vias', { selectedVia: '${this._escapeHtml(item.via)}' })" style="width:100%; background:var(--ta-cyan, #00d1ff); color:#000; font-weight:800; border:none; border-radius:4px; padding:5px; cursor:pointer; font-size:10px; text-transform:uppercase;">
+                    <button onclick="window.trafficAlertView && window.trafficAlertView.drawer && window.trafficAlertView.drawer.openKpiDetail('vias', { selectedVia: '${this._escapeHtml(item.via || item.name)}' })" style="width:100%; background:var(--ta-cyan, #00d1ff); color:#000; font-weight:800; border:none; border-radius:4px; padding:5px; cursor:pointer; font-size:10px; text-transform:uppercase;">
                         Ver Detalhes do Corredor
                     </button>
                 </div>
@@ -357,7 +468,13 @@ export class TrafficAlertMap {
 
             this.corridorLayer.addLayer(casing);
             this.corridorLayer.addLayer(overlay);
+
+            const vKey = (item.via || item.name || '').toLowerCase().trim();
+            this.corridorPolylines[vKey] = { casing, overlay, data: item };
+            renderedCount++;
         });
+
+        console.info(`[RIT ALERTA MAP] Regional: ${this.currentRegion} | Corredores recebidos: ${trafficData.length} | Linhas renderizadas: ${renderedCount} | Camada ativa: Sim`);
     }
 
     /**

@@ -68,6 +68,10 @@ export class TrafficAlertDrawer {
         this.isOpen = true;
         document.addEventListener('keydown', this._onKeyDown);
 
+        if (window.trafficAlertView?.map?.invalidateSize) {
+            window.trafficAlertView.map.invalidateSize();
+        }
+
         // Foco acessível no botão fechar
         const closeBtn = this.overlayEl.querySelector('.ta-drawer-close');
         if (closeBtn) {
@@ -91,6 +95,8 @@ export class TrafficAlertDrawer {
         if (!this.overlayEl) this.init();
         if (!this.overlayEl) return;
 
+        this._currentKpiData = data;
+
         const kpiContainer = document.getElementById('ta-drw-kpi-container');
         const incContainer = document.getElementById('ta-drw-incident-container');
         if (incContainer) incContainer.style.display = 'none';
@@ -104,6 +110,10 @@ export class TrafficAlertDrawer {
         this.overlayEl.classList.add('ta-open');
         this.isOpen = true;
         document.addEventListener('keydown', this._onKeyDown);
+
+        if (window.trafficAlertView?.map?.invalidateSize) {
+            window.trafficAlertView.map.invalidateSize();
+        }
 
         // Foco acessível no botão fechar
         const closeBtn = this.overlayEl.querySelector('.ta-drawer-close');
@@ -120,6 +130,10 @@ export class TrafficAlertDrawer {
         this.overlayEl.classList.remove('ta-open');
         this.isOpen = false;
         document.removeEventListener('keydown', this._onKeyDown);
+
+        if (window.trafficAlertView?.map?.invalidateSize) {
+            window.trafficAlertView.map.invalidateSize();
+        }
 
         if (this.triggerElement && typeof this.triggerElement.setAttribute === 'function') {
             this.triggerElement.setAttribute('aria-expanded', 'false');
@@ -898,7 +912,6 @@ export class TrafficAlertDrawer {
         container.querySelectorAll('[data-focus-corridor]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const via = btn.getAttribute('data-focus-corridor');
-                this.close();
                 if (window.trafficAlertView && window.trafficAlertView.map && typeof window.trafficAlertView.map.focusCorridor === 'function') {
                     window.trafficAlertView.map.focusCorridor(via);
                 }

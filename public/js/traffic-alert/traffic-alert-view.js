@@ -57,6 +57,19 @@ export class TrafficAlertView {
         this._bindKpiEvents();
         this._updateCorridorFilterOptions(this.currentRegion);
 
+        // Ouve alteração direta no seletor global de regional (#seletor-regiao)
+        const seletorGlobal = document.getElementById('seletor-regiao');
+        if (seletorGlobal) {
+            seletorGlobal.addEventListener('change', (e) => {
+                this.setRegional(e.target.value);
+            });
+        }
+        window.addEventListener('rit:regional-changed', (e) => {
+            if (e.detail?.regional) {
+                this.setRegional(e.detail.regional);
+            }
+        });
+
         // Se a aba já estiver ativa no DOM, inicializa o mapa
         const tabPane = document.getElementById('tab-traffic-alert');
         if (tabPane && tabPane.classList.contains('active')) {
@@ -88,21 +101,42 @@ export class TrafficAlertView {
         this.weatherAlertsData = null;
 
         if (this.map) {
-            if (this.map.corridorLayer) this.map.corridorLayer.clearLayers();
-            if (this.map.cameraLayer) this.map.cameraLayer.clearLayers();
-            if (this.map.incidentLayer) this.map.incidentLayer.clearLayers();
+            if (typeof this.map.clearAllLayers === 'function') {
+                this.map.clearAllLayers();
+            } else {
+                if (this.map.corridorLayer) this.map.corridorLayer.clearLayers();
+                if (this.map.cameraLayer) this.map.cameraLayer.clearLayers();
+                if (this.map.incidentLayer) this.map.incidentLayer.clearLayers();
+                if (this.map.focusLayer) this.map.focusLayer.clearLayers();
+            }
             this.map.setRegionalCenter(cfg.internalCode);
         }
 
         // 2. Atualiza imediatamente labels e rodapés eliminando qualquer texto residual da regional anterior
         const subRegionBadge = document.getElementById('ta-sub-regional-badge');
         if (subRegionBadge) {
-            subRegionBadge.textContent = `📍 PRAÇA: ${cfg.praca} (${cfg.uf})`;
+            subRegionBadge.textContent = `📍 PRAÇA: ${cfg.praca}`;
         }
 
         const mapMalhaLabel = document.getElementById('ta-map-malha-label');
         if (mapMalhaLabel) {
             mapMalhaLabel.textContent = `| MALHA URBANA ${cfg.praca}`;
+        }
+
+        const regionalTitle = document.getElementById('ta-vias-regional-label');
+        if (regionalTitle) {
+            regionalTitle.textContent = `STATUS DAS VIAS MONITORADAS — ${cfg.praca}`;
+        }
+
+        const weatherBadge = document.getElementById('ta-weather-stage-badge');
+        if (weatherBadge) {
+            weatherBadge.textContent = `ESTÁGIO 1 (${cfg.uf})`;
+            weatherBadge.style.background = '#0284c7';
+        }
+
+        const weatherText = document.getElementById('ta-weather-text');
+        if (weatherText) {
+            weatherText.textContent = `Monitoramento integrado de mobilidade urbana e alertas meteorológicos (${cfg.fontes}).`;
         }
 
         const mobFoot = document.getElementById('ta-kpi-mobilidade-foot');
@@ -115,16 +149,16 @@ export class TrafficAlertView {
         if (camsFoot) camsFoot.textContent = `Rede Pública ${cfg.uf}`;
 
         const critFoot = document.getElementById('ta-kpi-crit-foot');
-        if (critFoot) critFoot.textContent = `Verificando alertas...`;
+        if (critFoot) {
+            critFoot.textContent = `Verificando alertas...`;
+            critFoot.style.color = '';
+        }
 
         const viasFoot = document.getElementById('ta-kpi-vias-foot');
         if (viasFoot) viasFoot.textContent = `Monitorando corredores...`;
 
         const fontesFoot = document.getElementById('ta-kpi-fontes-foot');
         if (fontesFoot) fontesFoot.textContent = `${cfg.fontes}`;
-
-        const weatherText = document.getElementById('ta-weather-text');
-        if (weatherText) weatherText.textContent = `Monitoramento integrado de mobilidade urbana e alertas meteorológicos (${cfg.fontes}).`;
 
         // 3. Atualiza dropdown de corredores da regional
         this._updateCorridorFilterOptions(cfg.internalCode);
@@ -215,9 +249,12 @@ export class TrafficAlertView {
      */
     onTabActivated() {
         console.info('[RIT ALERTA] Aba ativada. Ajustando mapa e sincronizando dados...');
-        const savedRegional = this._normalizeRegion(localStorage.getItem('rit_selected_regional') || 'RJ');
-        if (savedRegional !== this.currentRegion) {
-            this.setRegional(savedRegional);
+        const seletorVal = document.getElementById('seletor-regiao')?.value;
+        const savedRegional = localStorage.getItem('rit_selected_regional');
+        const targetReg = this._normalizeRegion(seletorVal || savedRegional || 'RJ');
+
+        if (targetReg !== this.currentRegion) {
+            this.setRegional(targetReg);
             return;
         }
 
@@ -228,9 +265,17 @@ export class TrafficAlertView {
             this.map.invalidateSize();
         }
 
-        // Se ainda não buscou dados ou se os dados têm mais de 30 segundos
+        // Se houver dados de corredores em memória, garante renderização imediata no mapa
+        if (this.trafficConditionsData && this.trafficConditionsData.length > 0 && this.map.isInitialized) {
+            this.map.renderTrafficConditions(this.trafficConditionsData);
+        }
+        if (this.camerasData && this.camerasData.length > 0 && this.map.isInitialized) {
+            this.map.renderNearbyCameras(this.camerasData);
+        }
+
+        // Se ainda não buscou dados ou se os dados têm mais de 30 segundos ou se tabela está vazia
         const now = Date.now();
-        if (!this.lastFetchTime || (now - this.lastFetchTime > 30000)) {
+        if (!this.lastFetchTime || (now - this.lastFetchTime > 30000) || this.trafficConditionsData.length === 0) {
             this.fetchData();
         }
 
@@ -283,6 +328,12 @@ export class TrafficAlertView {
             const wData = weatherRes.status === 'fulfilled' ? weatherRes.value : null;
             const cData = camerasRes.status === 'fulfilled' ? camerasRes.value : null;
 
+            // Valida se a resposta de trânsito é da regional atualmente ativa
+            if (tRes && tRes.region && this._normalizeRegion(tRes.region) !== this.currentRegion) {
+                console.warn(`[RIT ALERTA] Descartando resposta de região divergente (${tRes.region} vs atual ${this.currentRegion})`);
+                return;
+            }
+
             this.lastFetchTime = Date.now();
             this.healthData = hRes;
 
@@ -305,12 +356,12 @@ export class TrafficAlertView {
             this.applyFilters();
 
             // Atualiza traçado dos 9 corredores no mapa tático
-            if (this.trafficConditionsData.length > 0) {
+            if (this.trafficConditionsData.length > 0 && this.map) {
                 this.map.renderTrafficConditions(this.trafficConditionsData);
             }
 
             // Plota câmeras da regional no mapa
-            if (this.camerasData.length > 0) {
+            if (this.camerasData.length > 0 && this.map) {
                 this.map.renderNearbyCameras(this.camerasData);
             }
         } catch (err) {
@@ -889,6 +940,7 @@ export class TrafficAlertView {
         const feedList = document.getElementById('ta-feed-items');
         if (!feedList) return;
 
+        const cfg = this.currentRegionalConfig || resolveRegionalConfig(this.currentRegion);
         const timeStr = lastValidTimestamp ? new Date(lastValidTimestamp).toLocaleString('pt-BR') : 'Horário não registrado';
 
         feedList.innerHTML = `
@@ -896,7 +948,7 @@ export class TrafficAlertView {
                 <div class="ta-empty-icon" style="color:var(--ta-bad);">📡 ✕</div>
                 <div class="ta-empty-title" style="color:var(--ta-bad);">Fontes Públicas Temporariamente Indisponíveis</div>
                 <div class="ta-empty-desc">
-                    Não foi possível sincronizar os boletins públicos estruturados da Prefeitura do Rio / CET-Rio.<br>
+                    Não foi possível sincronizar os boletins públicos estruturados (${this._escapeHtml(cfg.fontes)}).<br>
                     <strong>Último dado válido:</strong> ${this._escapeHtml(timeStr)}
                 </div>
                 <div style="font-size:9.5px; color:#cbd5e1; background:rgba(0,0,0,0.4); padding:6px 10px; border-radius:4px; margin-top:6px;">

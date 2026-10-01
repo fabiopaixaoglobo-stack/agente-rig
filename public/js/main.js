@@ -47,9 +47,13 @@ document.addEventListener("DOMContentLoaded", () => {
         window.uiController = ui;
 
         const trafficAlertView = new TrafficAlertView();
-        trafficAlertView.init();
         window.trafficAlertView = trafficAlertView;
         ui.trafficAlertView = trafficAlertView;
+        trafficAlertView.init();
+
+        // Sincroniza imediatamente com a regional ativa no seletor global ou localStorage
+        const activeReg = document.getElementById('seletor-regiao')?.value || localStorage.getItem('rit_selected_regional') || 'RJ';
+        trafficAlertView.setRegional(activeReg);
 
         console.info(`[MapService Debug] mapTransito instanciado:`, !!transitoMap?.map, `Container offset:`, document.getElementById("mapTransito")?.offsetWidth, "x", document.getElementById("mapTransito")?.offsetHeight);
 
