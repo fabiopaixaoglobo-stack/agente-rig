@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --primary-color: #00D1FF;
     --primary-dark: #009ecc;
     --bg-color: #0c1322;
@@ -218,6 +218,8 @@ body {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 50;
 }
 
 .kpi-card {
@@ -229,16 +231,21 @@ body {
     align-items: center;
     gap: 10px;
     position: relative;
-    cursor: help;
+    cursor: pointer;
     transition: all 0.2s ease;
     min-width: 0;
+    user-select: none;
 }
 
 .kpi-card:hover {
     background-color: var(--card-hover);
     border-color: var(--primary-color);
-    box-shadow: 0 4px 14px rgba(0, 209, 255, 0.18);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 209, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.kpi-card:active {
+    transform: translateY(0);
 }
 
 .kpi-icon {
@@ -304,6 +311,8 @@ body {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 40;
 }
 
 .governance-card {
@@ -360,6 +369,8 @@ body {
     padding-bottom: 6px;
     flex-shrink: 0;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 30;
 }
 
 .tab-btn {
@@ -411,6 +422,8 @@ body {
     flex: 1;
     min-height: 420px;
     overflow: hidden;
+    position: relative;
+    z-index: 10;
 }
 
 .table-header {
@@ -741,30 +754,35 @@ tbody tr:hover {
     position: relative;
 }
 
+[data-tooltip]:hover {
+    z-index: 99999 !important;
+}
+
 [data-tooltip]::before {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: calc(100% + 7px);
+    bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    padding: 6px 11px;
-    background: #07111e;
-    color: #f1f5f9;
-    border: 1px solid #00D1FF;
+    padding: 8px 12px;
+    background: #09101d !important;
+    background-color: #09101d !important;
+    color: #ffffff !important;
+    border: 1px solid #00D1FF !important;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 500;
     white-space: normal;
     width: max-content;
-    max-width: 260px;
-    line-height: 1.35;
+    max-width: 280px;
+    line-height: 1.4;
     text-align: center;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75), 0 0 10px rgba(0, 209, 255, 0.35);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.98), 0 0 14px rgba(0, 209, 255, 0.35) !important;
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-    z-index: 999999;
+    z-index: 1000000 !important;
     text-transform: none;
     letter-spacing: 0;
 }
@@ -772,7 +790,7 @@ tbody tr:hover {
 [data-tooltip]::after {
     content: '';
     position: absolute;
-    bottom: calc(100% + 2px);
+    bottom: calc(100% + 3px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
     border-width: 5px 5px 0 5px;
@@ -782,25 +800,25 @@ tbody tr:hover {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-    z-index: 1000000;
+    z-index: 1000001 !important;
 }
 
 [data-tooltip]:hover::before,
 [data-tooltip]:hover::after {
-    opacity: 1;
-    visibility: visible;
+    opacity: 1 !important;
+    visibility: visible !important;
     transform: translateX(-50%) translateY(0);
 }
 
 /* Tooltip posicionado para baixo */
 [data-tooltip-pos="bottom"]::before {
     bottom: auto;
-    top: calc(100% + 7px);
+    top: calc(100% + 8px);
 }
 
 [data-tooltip-pos="bottom"]::after {
     bottom: auto;
-    top: calc(100% + 2px);
+    top: calc(100% + 3px);
     border-width: 0 5px 5px 5px;
     border-color: transparent transparent #00D1FF transparent;
 }
@@ -810,7 +828,7 @@ tbody tr:hover {
     bottom: auto;
     top: 50%;
     left: auto;
-    right: calc(100% + 7px);
+    right: calc(100% + 8px);
     transform: translateY(-50%) translateX(4px);
 }
 
@@ -818,7 +836,7 @@ tbody tr:hover {
     bottom: auto;
     top: 50%;
     left: auto;
-    right: calc(100% + 2px);
+    right: calc(100% + 3px);
     border-width: 5px 0 5px 5px;
     border-color: transparent transparent transparent #00D1FF;
     transform: translateY(-50%) translateX(4px);
@@ -827,6 +845,117 @@ tbody tr:hover {
 [data-tooltip-pos="left"]:hover::before,
 [data-tooltip-pos="left"]:hover::after {
     transform: translateY(-50%) translateX(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL DE DETALHES DOS KPIS (DRILL-DOWN)
+   ═══════════════════════════════════════════════════════════════════ */
+.kpi-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(4, 8, 16, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.kpi-modal-box {
+    background: #0f192a;
+    border: 1px solid #00D1FF;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 209, 255, 0.2);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 820px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.kpi-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(12, 19, 34, 0.8);
+}
+
+.kpi-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary-color);
+}
+
+.kpi-modal-title i {
+    font-size: 20px;
+}
+
+.kpi-modal-title h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.kpi-modal-close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.kpi-modal-close-btn:hover {
+    color: #ffffff;
+}
+
+.kpi-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    max-height: calc(85vh - 70px);
+}
+
+.drilldown-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.drilldown-table th {
+    background: rgba(12, 19, 34, 0.6);
+    color: var(--primary-color);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10.5px;
+}
+
+.drilldown-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
+.drilldown-table tr:hover td {
+    background: rgba(0, 209, 255, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════════

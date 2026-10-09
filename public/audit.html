@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="audit.css?v=2026.3">
+    <link rel="stylesheet" href="audit.css?v=2026.4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -49,56 +49,56 @@
             
             <!-- KPIs Principais em Linha Única Compacta -->
             <div class="kpi-grid">
-                <div class="kpi-card" data-tooltip="Total de colaboradores autenticados com sessão ativa e conectada ao Agente RIT neste exato momento." data-tooltip-pos="bottom">
+                <div class="kpi-card" id="card-kpi-active" data-tooltip="Total de colaboradores com conexão ativa agora. Clique para filtrar os usuários ativos na tabela." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-users"></i></div>
                     <div class="kpi-info">
                         <div class="kpi-header-row">
                             <span class="kpi-title">Usuários Ativos (Agora)</span>
-                            <i class="ph ph-info kpi-help-icon"></i>
+                            <i class="ph ph-funnel kpi-help-icon" title="Clique para filtrar"></i>
                         </div>
                         <h3 id="kpi-active-users">0</h3>
                     </div>
                 </div>
 
-                <div class="kpi-card" data-tooltip="Total de acessos e logins bem-sucedidos efetuados no Agente RIT na data de hoje." data-tooltip-pos="bottom">
+                <div class="kpi-card" id="card-kpi-today" data-tooltip="Total de acessos efetuados no Agente RIT hoje. Clique para filtrar os logins da data atual na tabela." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-sign-in"></i></div>
                     <div class="kpi-info">
                         <div class="kpi-header-row">
                             <span class="kpi-title">Logins Hoje</span>
-                            <i class="ph ph-info kpi-help-icon"></i>
+                            <i class="ph ph-funnel kpi-help-icon" title="Clique para filtrar"></i>
                         </div>
                         <h3 id="kpi-logins-today">0</h3>
                     </div>
                 </div>
 
-                <div class="kpi-card" data-tooltip="Total acumulado de colaboradores individuais cadastrados que já acessaram a plataforma." data-tooltip-pos="bottom">
+                <div class="kpi-card" id="card-kpi-unique" data-tooltip="Total acumulado de colaboradores individuais cadastrados. Clique para abrir a lista detalhada de colaboradores." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-user-check"></i></div>
                     <div class="kpi-info">
                         <div class="kpi-header-row">
                             <span class="kpi-title">Usuários Únicos</span>
-                            <i class="ph ph-info kpi-help-icon"></i>
+                            <i class="ph ph-list-magnifying-glass kpi-help-icon" title="Clique para detalhar"></i>
                         </div>
                         <h3 id="kpi-unique-users">0</h3>
                     </div>
                 </div>
 
-                <div class="kpi-card" data-tooltip="Tempo médio de permanência dos colaboradores conectados ao sistema por sessão." data-tooltip-pos="bottom">
+                <div class="kpi-card" id="card-kpi-avg" data-tooltip="Tempo médio de permanência dos usuários por sessão. Clique para ver a distribuição detalhada dos tempos de conexão." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-clock"></i></div>
                     <div class="kpi-info">
                         <div class="kpi-header-row">
                             <span class="kpi-title">Média de Sessão</span>
-                            <i class="ph ph-info kpi-help-icon"></i>
+                            <i class="ph ph-chart-donut kpi-help-icon" title="Clique para detalhar"></i>
                         </div>
                         <h3 id="kpi-avg-session">0m</h3>
                     </div>
                 </div>
 
-                <div class="kpi-card" data-tooltip="Colaborador com o maior volume histórico de logins e acessos ao sistema." data-tooltip-pos="bottom">
+                <div class="kpi-card" id="card-kpi-top" data-tooltip="Colaborador com maior volume de acessos ao sistema. Clique para filtrar todo o histórico deste usuário na tabela." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-star"></i></div>
                     <div class="kpi-info">
                         <div class="kpi-header-row">
                             <span class="kpi-title">Usuário Mais Ativo</span>
-                            <i class="ph ph-info kpi-help-icon"></i>
+                            <i class="ph ph-funnel kpi-help-icon" title="Clique para filtrar"></i>
                         </div>
                         <h3 id="kpi-top-user" title="">-</h3>
                     </div>
@@ -299,11 +299,13 @@
                         <table id="recover-table">
                             <thead>
                                 <tr>
-                                    <th data-tooltip="E-mail do colaborador que solicitou recuperação">E-mail</th>
-                                    <th data-tooltip="Data e hora em que a recuperação foi solicitada">Solicitado Em</th>
-                                    <th data-tooltip="Status do envio do e-mail de recuperação">E-mail Enviado</th>
-                                    <th data-tooltip="Indica se um novo cadastro foi realizado">Novo Cadastro Realizado</th>
-                                    <th data-tooltip="Data em que o novo cadastro foi finalizado">Data Cadastro</th>
+                                    <th data-tooltip="Nome e Matrícula do colaborador identificado no sistema">Colaborador</th>
+                                    <th data-tooltip="E-mail corporativo utilizado na recuperação">E-mail</th>
+                                    <th data-tooltip="Data e hora em que a solicitação foi enviada">Solicitado Em</th>
+                                    <th data-tooltip="Confirmação de disparo do e-mail com instruções">E-mail Enviado</th>
+                                    <th data-tooltip="Indica se a nova senha foi gravada com sucesso">Senha Redefinida?</th>
+                                    <th data-tooltip="Comprovação de sucesso: indica se o colaborador conseguiu se autenticar após a recuperação">Conseguiu Logar? (Sucesso)</th>
+                                    <th data-tooltip="Data e hora do primeiro login registrado após a solicitação">Login Pós-Troca</th>
                                 </tr>
                             </thead>
                             <tbody id="recover-tbody">
@@ -314,9 +316,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Detalhes dos KPIs (Drill-Down) -->
+        <div id="kpi-modal" class="kpi-modal-overlay" style="display: none;">
+            <div class="kpi-modal-box">
+                <div class="kpi-modal-header">
+                    <div class="kpi-modal-title">
+                        <i id="kpi-modal-icon" class="ph ph-chart-bar"></i>
+                        <h3 id="kpi-modal-heading">Detalhamento do Resumo</h3>
+                    </div>
+                    <button id="kpi-modal-close" class="kpi-modal-close-btn" title="Fechar">&times;</button>
+                </div>
+                <div id="kpi-modal-body" class="kpi-modal-body">
+                    <!-- Conteúdo dinâmico via JS -->
+                </div>
+            </div>
+        </div>
     </div>
     <script src="js/auth-constants.js"></script>
     <script src="session-manager.js"></script>
-    <script src="audit.js?v=2026.3"></script>
+    <script src="audit.js?v=2026.4"></script>
 </body>
 </html>

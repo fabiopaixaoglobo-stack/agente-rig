@@ -31,11 +31,14 @@
     function sendPing() {
         const auditId = getAuditId();
         const token = getToken();
-        if (!auditId || !token) return;
+        if (!auditId && !token) return;
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
 
         fetch('/api/session/ping', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ auditId })
         }).catch(() => { /* silencioso */ });
     }
@@ -99,7 +102,7 @@
     window.addEventListener('beforeunload', closeSession);
 
     // ── Iniciar heartbeat ───────────────────────
-    if (getAuditId() && getToken()) {
+    if (getAuditId() || getToken()) {
         // Ping imediato no carregamento
         sendPing();
         // Ping periódico

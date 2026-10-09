@@ -498,11 +498,33 @@ function setupAuthRoutes(app) {
     app.post('/api/session/ping', async (req, res) => {
         try {
             const { auditId } = req.body;
-            if (!auditId) return res.json({ success: false });
-            await pool.query(
-                `UPDATE auditoria SET ultimo_ping = NOW() WHERE id = $1 AND data_hora_logout IS NULL`,
-                [auditId]
-            );
+            let userId = null;
+
+            const authHeader = req.headers['authorization'];
+            const token = authHeader && authHeader.split(' ')[1];
+            if (token) {
+                try {
+                    const decoded = jwt.verify(token, JWT_SECRET_CURRENT);
+                    userId = decoded.id;
+                } catch (e) {
+                    try {
+                        const decodedLeg = jwt.verify(token, JWT_SECRET_LEGACY);
+                        userId = decodedLeg.id;
+                    } catch (_) {}
+                }
+            }
+
+            if (auditId) {
+                await pool.query(
+                    `UPDATE auditoria SET ultimo_ping = NOW() WHERE id = $1 AND data_hora_logout IS NULL`,
+                    [auditId]
+                );
+            } else if (userId) {
+                await pool.query(
+                    `UPDATE auditoria SET ultimo_ping = NOW() WHERE id_usuario = $1 AND data_hora_logout IS NULL`,
+                    [userId]
+                );
+            }
             return res.json({ success: true });
         } catch (err) {
             console.error('Erro no /api/session/ping:', err);
@@ -696,8 +718,16 @@ function setupAuthRoutes(app) {
     // RBAC: Estritamente restrito a Administradores, Auditores e Gestores
     app.get('/api/audit', verifyToken, requireRole(['Administrador', 'Auditor', 'Gestor']), async (req, res) => {
         try {
-            // Auto-cleanup: fecha sessões que estão abertas há mais de 12h
-            // OU que não enviaram ping nos últimos 30 minutos (browser fechou sem beacon)
+            // Se o usuário logado está consultando ativamente o painel, renova o heartbeat da sua sessão aberta
+            if (req.user && req.user.id) {
+                await pool.query(
+                    `UPDATE auditoria SET ultimo_ping = NOW() WHERE id_usuario = $1 AND data_hora_logout IS NULL`,
+                    [req.user.id]
+                );
+            }
+
+            // Auto-cleanup: fecha sessões que estão sem ping há mais de 45 minutos (ou sem ping inicial há mais de 45min)
+            // OU com mais de 12 horas corridas
             await pool.query(`
                 UPDATE auditoria
                 SET data_hora_logout = COALESCE(ultimo_ping, data_hora_login + INTERVAL '30 minutes'),
@@ -707,8 +737,8 @@ function setupAuthRoutes(app) {
                 WHERE data_hora_logout IS NULL
                   AND (
                       data_hora_login < NOW() - INTERVAL '12 hours'
-                      OR (ultimo_ping IS NOT NULL AND ultimo_ping < NOW() - INTERVAL '30 minutes')
-                      OR (ultimo_ping IS NULL AND data_hora_login < NOW() - INTERVAL '30 minutes')
+                      OR (ultimo_ping IS NOT NULL AND ultimo_ping < NOW() - INTERVAL '45 minutes')
+                      OR (ultimo_ping IS NULL AND data_hora_login < NOW() - INTERVAL '45 minutes')
                   )
             `);
 
@@ -794,13 +824,37 @@ function setupAuthRoutes(app) {
         try {
             const query = `
                 SELECT 
-                    email,
-                    solicitado_em,
-                    email_enviado,
-                    cadastro_concluido,
-                    concluido_em
-                FROM recuperacao_senha
-                ORDER BY solicitado_em DESC;
+                    r.id,
+                    r.email,
+                    u.nome,
+                    u.sobrenome,
+                    u.matricula,
+                    r.solicitado_em,
+                    r.email_enviado,
+                    r.cadastro_concluido,
+                    r.concluido_em,
+                    (
+                        SELECT a.data_hora_login 
+                        FROM auditoria a 
+                        WHERE a.id_usuario = u.id AND a.data_hora_login >= (r.solicitado_em - INTERVAL '5 minutes')
+                        ORDER BY a.data_hora_login ASC 
+                        LIMIT 1
+                    ) AS login_pos_recuperacao,
+                    (
+                        SELECT a.data_hora_login 
+                        FROM auditoria a 
+                        WHERE a.id_usuario = u.id 
+                        ORDER BY a.data_hora_login DESC 
+                        LIMIT 1
+                    ) AS ultimo_login_geral,
+                    EXISTS (
+                        SELECT 1 
+                        FROM auditoria a 
+                        WHERE a.id_usuario = u.id AND a.data_hora_login >= (r.solicitado_em - INTERVAL '5 minutes')
+                    ) AS conseguiu_logar
+                FROM recuperacao_senha r
+                LEFT JOIN users u ON LOWER(TRIM(u.email)) = LOWER(TRIM(r.email))
+                ORDER BY r.solicitado_em DESC;
             `;
             const result = await pool.query(query);
 

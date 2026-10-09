@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        updateKPIs(filtered);
+        updateKPIs(auditData);
         renderTable(filtered);
     }
 
@@ -704,27 +704,57 @@ document.addEventListener('DOMContentLoaded', () => {
         recoverTbody.innerHTML = '';
 
         if (!rows || rows.length === 0) {
-            recoverTbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum registro de recuperação encontrado.</td></tr>';
+            recoverTbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum registro de recuperação encontrado com os filtros atuais.</td></tr>';
             return;
         }
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
 
+            // Colaborador
+            const nomeCompleto = `${row.nome || ''} ${row.sobrenome || ''}`.trim();
+            const colaboradorHtml = nomeCompleto 
+                ? `<div><strong>${escapeHTML(nomeCompleto)}</strong> <span style="font-size:10.5px; color:#00D1FF; background:rgba(0,209,255,0.12); padding:1px 6px; border-radius:4px; margin-left:4px;">Mat: ${escapeHTML(row.matricula || '-')}</span></div>`
+                : `<span style="color:#94a3b8; font-style:italic;">Não localizado na base</span>`;
+
+            // E-mail Enviado
             const emailEnviadoHtml = row.email_enviado 
                 ? '<span class="badge-status badge-normal"><i class="ph ph-check-circle"></i> Sim</span>' 
                 : '<span class="badge-status badge-long"><i class="ph ph-x-circle"></i> Não</span>';
-                
-            const novoCadastroHtml = row.novo_cadastro_realizado 
-                ? '<span class="badge-status badge-normal"><i class="ph ph-check-circle"></i> Sim</span>' 
+
+            // Senha Redefinida?
+            const senhaRedefinidaHtml = row.cadastro_concluido 
+                ? `<span class="badge-status badge-normal"><i class="ph ph-check-circle"></i> Sim</span> <small style="display:block; color:#94a3b8; font-size:10.5px; margin-top:2px;">${formatDateTime(row.concluido_em)}</small>` 
                 : '<span class="badge-status badge-active"><i class="ph ph-clock"></i> Pendente</span>';
 
+            // Conseguiu Logar? (Sucesso efetivo do processo)
+            let loginSucessoHtml = '';
+            if (row.conseguiu_logar || row.login_pos_recuperacao) {
+                loginSucessoHtml = `<span class="badge-status badge-normal" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#34d399; font-weight:700;"><i class="ph ph-check-circle"></i> Logou com Sucesso</span>`;
+            } else if (row.cadastro_concluido) {
+                loginSucessoHtml = `<span class="badge-status badge-active" style="background:rgba(245,158,11,0.2); border-color:#f59e0b; color:#fbbf24;"><i class="ph ph-hourglass-medium"></i> Senha Criada (Sem Acesso)</span>`;
+            } else {
+                loginSucessoHtml = `<span class="badge-status badge-long" style="background:rgba(239,68,68,0.2); border-color:#ef4444; color:#fca5a5;"><i class="ph ph-x-circle"></i> Não Acessou (Pendente)</span>`;
+            }
+
+            // Data Login Pós-Troca
+            let dataLoginHtml = '';
+            if (row.login_pos_recuperacao) {
+                dataLoginHtml = `<strong style="color:#00D1FF;">${formatDateTime(row.login_pos_recuperacao)}</strong>`;
+            } else if (row.ultimo_login_geral) {
+                dataLoginHtml = `<span style="color:#94a3b8; font-size:11px;">Último anterior: ${formatDateTime(row.ultimo_login_geral)}</span>`;
+            } else {
+                dataLoginHtml = `<span style="color:#64748b; font-size:11px;">Nunca acessou</span>`;
+            }
+
             tr.innerHTML = `
+                <td>${colaboradorHtml}</td>
                 <td><strong>${escapeHTML(row.email)}</strong></td>
                 <td>${formatDateTime(row.solicitado_em)}</td>
                 <td>${emailEnviadoHtml}</td>
-                <td>${novoCadastroHtml}</td>
-                <td>${formatDateTime(row.data_cadastro)}</td>
+                <td>${senhaRedefinidaHtml}</td>
+                <td>${loginSucessoHtml}</td>
+                <td>${dataLoginHtml}</td>
             `;
 
             recoverTbody.appendChild(tr);
@@ -790,6 +820,292 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             errorMessage.style.display = 'block';
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DRILL-DOWN DOS KPIS E MODAL INTERATIVO DE DETALHES
+    // ═══════════════════════════════════════════════════════════════════
+    const kpiModal = document.getElementById('kpi-modal');
+    const kpiModalClose = document.getElementById('kpi-modal-close');
+    const kpiModalHeading = document.getElementById('kpi-modal-heading');
+    const kpiModalIcon = document.getElementById('kpi-modal-icon');
+    const kpiModalBody = document.getElementById('kpi-modal-body');
+
+    function openKPIModal(heading, iconClass, bodyHtml) {
+        if (!kpiModal) return;
+        if (kpiModalHeading) kpiModalHeading.textContent = heading;
+        if (kpiModalIcon) kpiModalIcon.className = iconClass;
+        if (kpiModalBody) kpiModalBody.innerHTML = bodyHtml;
+        kpiModal.style.display = 'flex';
+    }
+
+    function closeKPIModal() {
+        if (kpiModal) kpiModal.style.display = 'none';
+    }
+
+    if (kpiModalClose) {
+        kpiModalClose.addEventListener('click', closeKPIModal);
+    }
+    if (kpiModal) {
+        kpiModal.addEventListener('click', (e) => {
+            if (e.target === kpiModal) closeKPIModal();
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && kpiModal && kpiModal.style.display === 'flex') {
+            closeKPIModal();
+        }
+    });
+
+    function switchToAcessosTab() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        const btnAcessos = document.querySelector('.tab-btn[data-tab="tab-acessos"]');
+        const contentAcessos = document.getElementById('tab-acessos');
+        if (btnAcessos) btnAcessos.classList.add('active');
+        if (contentAcessos) contentAcessos.classList.add('active');
+    }
+
+    function scrollToTable() {
+        const tableSec = document.querySelector('.table-section');
+        if (tableSec) {
+            tableSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            tableSec.style.boxShadow = '0 0 20px rgba(0, 209, 255, 0.45)';
+            setTimeout(() => {
+                tableSec.style.boxShadow = '';
+            }, 1200);
+        }
+    }
+
+    // ── Drill-down 1: Usuários Ativos (Agora) ───────────────────
+    const cardKpiActive = document.getElementById('card-kpi-active');
+    if (cardKpiActive) {
+        cardKpiActive.addEventListener('click', () => {
+            switchToAcessosTab();
+            if (filterStatus) {
+                filterStatus.value = (filterStatus.value === 'Ativo') ? '' : 'Ativo';
+            }
+            renderDashboard();
+            scrollToTable();
+        });
+    }
+
+    // ── Drill-down 2: Logins Hoje ───────────────────────────────
+    const cardKpiToday = document.getElementById('card-kpi-today');
+    if (cardKpiToday) {
+        cardKpiToday.addEventListener('click', () => {
+            switchToAcessosTab();
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (filterDate) {
+                filterDate.value = (filterDate.value === todayStr) ? '' : todayStr;
+            }
+            renderDashboard();
+            scrollToTable();
+        });
+    }
+
+    // ── Drill-down 3: Usuários Únicos (Modal Detalhado) ──────────
+    const cardKpiUnique = document.getElementById('card-kpi-unique');
+    if (cardKpiUnique) {
+        cardKpiUnique.addEventListener('click', () => {
+            const uniqueMap = new Map();
+            auditData.forEach(row => {
+                const key = row.matricula || row.email || 'desconhecido';
+                if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, {
+                        nome: `${row.nome || ''} ${row.sobrenome || ''}`.trim() || 'Colaborador',
+                        matricula: row.matricula || '-',
+                        email: row.email || '-',
+                        totalLogins: 0,
+                        primeiroLogin: row.data_hora_login,
+                        ultimoLogin: row.data_hora_login,
+                        ativoAgora: false
+                    });
+                }
+                const entry = uniqueMap.get(key);
+                entry.totalLogins++;
+                if (!row.data_hora_logout) entry.ativoAgora = true;
+                if (new Date(row.data_hora_login) > new Date(entry.ultimoLogin)) {
+                    entry.ultimoLogin = row.data_hora_login;
+                }
+                if (new Date(row.data_hora_login) < new Date(entry.primeiroLogin)) {
+                    entry.primeiroLogin = row.data_hora_login;
+                }
+            });
+
+            const uniqueList = Array.from(uniqueMap.values()).sort((a, b) => b.totalLogins - a.totalLogins);
+
+            let tableHtml = `
+                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <span style="color: #94a3b8; font-size: 12px;">Total de colaboradores individuais: <strong>${uniqueList.length}</strong></span>
+                    <span style="color: #00D1FF; font-size: 11.5px; font-weight: 600;">Classificado por volume histórico de acessos</span>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="drilldown-table">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Matrícula</th>
+                                <th>E-mail</th>
+                                <th>Total Acessos</th>
+                                <th>Último Acesso</th>
+                                <th>Status Atual</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            uniqueList.forEach(u => {
+                const statusTag = u.ativoAgora 
+                    ? '<span class="badge-status badge-active" style="padding: 2px 8px; font-size: 11px;"><span class="status-dot status-active"></span> Conectado</span>'
+                    : '<span class="badge-status badge-normal" style="padding: 2px 8px; font-size: 11px;">Finalizado</span>';
+
+                tableHtml += `
+                    <tr>
+                        <td><strong>${escapeHTML(u.nome)}</strong></td>
+                        <td><code>${escapeHTML(u.matricula)}</code></td>
+                        <td>${escapeHTML(u.email)}</td>
+                        <td><span style="background: rgba(0, 209, 255, 0.12); color: #00D1FF; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${u.totalLogins}</span></td>
+                        <td>${formatDateTime(u.ultimoLogin)}</td>
+                        <td>${statusTag}</td>
+                        <td>
+                            <button class="btn-filter-user-modal" data-user="${escapeHTML(u.matricula)}" style="background: rgba(0,209,255,0.15); border: 1px solid #00D1FF; color: #00D1FF; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">
+                                Filtrar Histórico
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            openKPIModal('Detalhamento de Colaboradores Únicos Cadastrados', 'ph ph-user-check', tableHtml);
+
+            document.querySelectorAll('.btn-filter-user-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mat = btn.getAttribute('data-user');
+                    closeKPIModal();
+                    switchToAcessosTab();
+                    if (filterUser) filterUser.value = mat;
+                    renderDashboard();
+                    scrollToTable();
+                });
+            });
+        });
+    }
+
+    // ── Drill-down 4: Média de Sessão (Modal) ───────────────────
+    const cardKpiAvg = document.getElementById('card-kpi-avg');
+    if (cardKpiAvg) {
+        cardKpiAvg.addEventListener('click', () => {
+            let totalSecs = 0;
+            let count = 0;
+            let fast = 0;
+            let medium = 0;
+            let long = 0;
+
+            const sessions = [];
+
+            auditData.forEach(row => {
+                let sec = row.tempo_sessao;
+                const isActive = !row.data_hora_logout;
+                if (isActive && row.data_hora_login) {
+                    sec = Math.floor((Date.now() - new Date(row.data_hora_login).getTime()) / 1000);
+                }
+                if (sec !== null && sec !== undefined && !isNaN(sec)) {
+                    totalSecs += sec;
+                    count++;
+                    if (sec < 900) fast++;
+                    else if (sec <= 3600) medium++;
+                    else long++;
+
+                    sessions.push({
+                        nome: `${row.nome || ''} ${row.sobrenome || ''}`.trim() || 'Colaborador',
+                        matricula: row.matricula || '-',
+                        login: row.data_hora_login,
+                        segundos: sec,
+                        ativo: isActive
+                    });
+                }
+            });
+
+            const avgSec = count > 0 ? Math.floor(totalSecs / count) : 0;
+            const top5 = sessions.sort((a, b) => b.segundos - a.segundos).slice(0, 5);
+
+            let bodyHtml = `
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;">
+                    <div style="background: rgba(0,209,255,0.08); border: 1px solid rgba(0,209,255,0.3); border-radius: 8px; padding: 12px; text-align: center;">
+                        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">TEMPO MÉDIO GERAL</span>
+                        <strong style="font-size: 18px; color: #00D1FF;">${formatSessionTime(avgSec)}</strong>
+                    </div>
+                    <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 12px; text-align: center;">
+                        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">RÁPIDAS (&le; 15 min)</span>
+                        <strong style="font-size: 18px; color: #10b981;">${fast}</strong>
+                    </div>
+                    <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 12px; text-align: center;">
+                        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">MÉDIAS (15m a 1h)</span>
+                        <strong style="font-size: 18px; color: #f59e0b;">${medium}</strong>
+                    </div>
+                    <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 12px; text-align: center;">
+                        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">LONGAS (&gt; 1h)</span>
+                        <strong style="font-size: 18px; color: #ef4444;">${long}</strong>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 13px; color: #00D1FF; margin-bottom: 8px; text-transform: uppercase;">Top 5 Sessões Mais Prolongadas Registradas</h4>
+                <div style="overflow-x: auto;">
+                    <table class="drilldown-table">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Matrícula</th>
+                                <th>Início do Acesso</th>
+                                <th>Tempo Conectado</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            top5.forEach(s => {
+                bodyHtml += `
+                    <tr>
+                        <td><strong>${escapeHTML(s.nome)}</strong></td>
+                        <td><code>${escapeHTML(s.matricula)}</code></td>
+                        <td>${formatDateTime(s.login)}</td>
+                        <td><strong style="color: #fca5a5;">${formatSessionTime(s.segundos)}</strong></td>
+                        <td>${s.ativo ? '<span class="badge-status badge-active" style="padding: 2px 6px; font-size: 10px;"><span class="status-dot status-active"></span> Ativo</span>' : '<span class="badge-status badge-normal" style="padding: 2px 6px; font-size: 10px;">Finalizado</span>'}</td>
+                    </tr>
+                `;
+            });
+
+            bodyHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            openKPIModal('Análise de Tempo de Conexão e Permanência', 'ph ph-clock', bodyHtml);
+        });
+    }
+
+    // ── Drill-down 5: Usuário Mais Ativo ────────────────────────
+    const cardKpiTop = document.getElementById('card-kpi-top');
+    if (cardKpiTop) {
+        cardKpiTop.addEventListener('click', () => {
+            const topUserName = (kpiTopUser?.textContent || '').trim();
+            if (topUserName && topUserName !== '-') {
+                switchToAcessosTab();
+                if (filterUser) filterUser.value = topUserName;
+                renderDashboard();
+                scrollToTable();
+            }
+        });
     }
 
     // Anti-Freeze: Ticker ao vivo a cada 10 segundos para atualizar tempos de conexões ativas
