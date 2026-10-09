@@ -17,8 +17,8 @@ Conjunto de scripts Python para descoberta automática e acesso a câmeras veicu
 ## ⚙️ Instalação
 
 ```powershell
-# 1. Acesse a pasta
-cd "c:\Users\fapaixao\OneDrive\Agente RIG\dashcam"
+# 1. Acesse a pasta a partir da raiz do projeto
+cd dashcam
 
 # 2. (Opcional) Crie ambiente virtual
 python -m venv .venv

@@ -33,3 +33,10 @@ server/data/
 # Scratch temporário
 scratch/
 test-results-full.txt
+
+*.zip
+*.docx
+Dossier_Registro_Agente_RIT/
+Registro Agente RIT/
+Outros Arquivos/
+evidence_screenshots/

@@ -270,6 +270,74 @@ async function initDB() {
             `);
             await client.query(`CREATE INDEX IF NOT EXISTS idx_rotas_status_atendimento ON rotas_importadas(status_atendimento);`);
             await client.query(`CREATE INDEX IF NOT EXISTS idx_auditoria_operacional_data_hora ON auditoria_operacional(data_hora);`);
+
+            // FASE 7 - Preparação Multiempresa (Organization_ID / Tenant)
+            await client.query(`
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id TEXT DEFAULT 'globo';
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS papel TEXT DEFAULT 'Colaborador';
+                ALTER TABLE lotes_importacao ADD COLUMN IF NOT EXISTS organization_id TEXT DEFAULT 'globo';
+                ALTER TABLE rotas_importadas ADD COLUMN IF NOT EXISTS organization_id TEXT DEFAULT 'globo';
+                ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS organization_id TEXT DEFAULT 'globo';
+            `);
+
+            // FASE 3 - Tabela LGPD_AUDIT (Rastreabilidade e Minimização)
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS lgpd_audit (
+                    id SERIAL PRIMARY KEY,
+                    id_usuario INTEGER,
+                    usuario_identificador TEXT,
+                    papel_usuario TEXT,
+                    recurso_acessado TEXT NOT NULL,
+                    acao TEXT NOT NULL,
+                    dado_visualizado TEXT,
+                    ip_origem TEXT,
+                    user_agent TEXT,
+                    organization_id TEXT DEFAULT 'globo',
+                    data_hora TIMESTAMPTZ DEFAULT NOW(),
+                    detalhes JSONB
+                );
+                CREATE INDEX IF NOT EXISTS idx_lgpd_audit_user_data ON lgpd_audit(id_usuario, data_hora);
+                CREATE INDEX IF NOT EXISTS idx_lgpd_audit_recurso ON lgpd_audit(recurso_acessado);
+                CREATE INDEX IF NOT EXISTS idx_lgpd_audit_org ON lgpd_audit(organization_id);
+            `);
+
+            // FASE 6 - Tabela de Metadados e Telemetria de IA para Câmeras
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS camera_ai_telemetry (
+                    id SERIAL PRIMARY KEY,
+                    camera_id VARCHAR(32) NOT NULL,
+                    data_hora TIMESTAMPTZ DEFAULT NOW(),
+                    congestionamento_nivel VARCHAR(20) DEFAULT 'BAIXO',
+                    congestionamento_score NUMERIC(5,2) DEFAULT 0,
+                    chuva_detectada BOOLEAN DEFAULT FALSE,
+                    chuva_intensidade VARCHAR(20) DEFAULT 'NENHUMA',
+                    pista_bloqueada BOOLEAN DEFAULT FALSE,
+                    motivo_bloqueio TEXT,
+                    aglomeracao_detectada BOOLEAN DEFAULT FALSE,
+                    aglomeracao_densidade VARCHAR(20) DEFAULT 'BAIXA',
+                    acidente_detectado BOOLEAN DEFAULT FALSE,
+                    acidente_tipo VARCHAR(50),
+                    confianca_ia NUMERIC(5,2) DEFAULT 0,
+                    metadados JSONB,
+                    organization_id TEXT DEFAULT 'globo'
+                );
+                CREATE INDEX IF NOT EXISTS idx_cam_ai_id_data ON camera_ai_telemetry(camera_id, data_hora);
+                CREATE INDEX IF NOT EXISTS idx_cam_ai_bloqueio ON camera_ai_telemetry(pista_bloqueada);
+                CREATE INDEX IF NOT EXISTS idx_cam_ai_acidente ON camera_ai_telemetry(acidente_detectado);
+            `);
+
+            // FASE 8 - Índices de Performance e Otimização
+            await client.query(`
+                CREATE INDEX IF NOT EXISTS idx_rotas_id_lote ON rotas_importadas(id_lote);
+                CREATE INDEX IF NOT EXISTS idx_rotas_criado_em ON rotas_importadas(criado_em);
+                CREATE INDEX IF NOT EXISTS idx_rotas_matricula ON rotas_importadas(matricula);
+                CREATE INDEX IF NOT EXISTS idx_rotas_org_id ON rotas_importadas(organization_id);
+                CREATE INDEX IF NOT EXISTS idx_auditoria_id_usuario ON auditoria(id_usuario);
+                CREATE INDEX IF NOT EXISTS idx_auditoria_data_login ON auditoria(data_hora_login);
+                CREATE INDEX IF NOT EXISTS idx_recuperacao_email ON recuperacao_senha(email);
+                CREATE INDEX IF NOT EXISTS idx_eventos_seguranca_data ON eventos_seguranca(data_hora);
+                CREATE INDEX IF NOT EXISTS idx_eventos_seguranca_usuario ON eventos_seguranca(usuario);
+            `);
         } catch (constErr) {
             console.warn('⚠️ [HARDENING SCHEMA] Constraints ou FKs parciais:', constErr.message);
         }
@@ -597,6 +665,139 @@ async function getAllRuntimeStatuses(statusFilter = null) {
     return res.rows || [];
 }
 
+// ──────────────────────────────────────────────
+// FASE 3: GOVERNANÇA LGPD & RETENÇÃO
+// ──────────────────────────────────────────────
+async function registrarAuditoriaLGPD(params = {}) {
+    const id_usuario = params.id_usuario || params.usuario_id || null;
+    const usuario_identificador = params.usuario_identificador || params.usuario_nome || null;
+    const papel_usuario = params.papel_usuario || params.usuario_papel || 'Colaborador';
+    const recurso_acessado = params.recurso_acessado || 'DADOS_GERAIS';
+    const acao = params.acao || params.operacao || 'CONSULTA';
+    const dado_visualizado = params.dado_visualizado || 
+        (Array.isArray(params.campos_visualizados) ? params.campos_visualizados.join(', ') : params.campos_visualizados) || null;
+    const ip_origem = params.ip_origem || params.ip || null;
+    const user_agent = params.user_agent || null;
+    const organization_id = params.organization_id || 'globo';
+    const detalhes = params.detalhes || {};
+
+    try {
+        const query = `
+            INSERT INTO lgpd_audit (
+                id_usuario, usuario_identificador, papel_usuario, recurso_acessado,
+                acao, dado_visualizado, ip_origem, user_agent, organization_id, detalhes, data_hora
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+            RETURNING id;
+        `;
+        const res = await pool.query(query, [
+            id_usuario,
+            usuario_identificador ? String(usuario_identificador).slice(0, 100) : null,
+            papel_usuario ? String(papel_usuario).slice(0, 50) : null,
+            String(recurso_acessado).slice(0, 100),
+            String(acao).toUpperCase().slice(0, 50),
+            dado_visualizado ? String(dado_visualizado).slice(0, 255) : null,
+            ip_origem ? String(ip_origem).slice(0, 50) : null,
+            user_agent ? String(user_agent).slice(0, 255) : null,
+            String(organization_id || 'globo').slice(0, 50),
+            JSON.stringify(detalhes || {})
+        ]);
+        return res.rows[0]?.id || null;
+    } catch (err) {
+        console.warn('⚠️ [LGPD AUDIT] Falha ao gravar registro de auditoria LGPD:', err.message);
+        return null;
+    }
+}
+
+async function getLGPDLogs(optsOrLimit = 50, orgId = null) {
+    try {
+        let limit = 50;
+        let offset = 0;
+        let organization_id = null;
+
+        if (typeof optsOrLimit === 'object' && optsOrLimit !== null) {
+            limit = optsOrLimit.limit || 50;
+            offset = optsOrLimit.offset || 0;
+            organization_id = optsOrLimit.organization_id || null;
+        } else {
+            limit = typeof optsOrLimit === 'number' ? optsOrLimit : 50;
+            organization_id = orgId;
+        }
+
+        let query = `
+            SELECT id, id_usuario, usuario_identificador, papel_usuario, recurso_acessado,
+                   acao, dado_visualizado, ip_origem, organization_id, data_hora, detalhes
+            FROM lgpd_audit
+        `;
+        const params = [];
+        if (organization_id) {
+            query += ` WHERE (organization_id = $1 OR organization_id IS NULL)`;
+            params.push(organization_id);
+        }
+        query += ` ORDER BY data_hora DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+
+        const res = await pool.query(query, params);
+        return (res.rows || []).map(r => ({
+            ...r,
+            usuario_nome: r.usuario_identificador || 'SISTEMA',
+            usuario_papel: r.papel_usuario || 'Colaborador',
+            operacao: r.acao || 'ACESSO',
+            campos_visualizados: r.dado_visualizado || '-'
+        }));
+    } catch (err) {
+        console.warn('⚠️ [LGPD AUDIT] Falha ao recuperar logs LGPD:', err.message);
+        return [];
+    }
+}
+
+async function executarExpurgoLGPD(options = {}) {
+    const mesesRetencaoGPS = (typeof options === 'object' && options.mesesGPS) ? options.mesesGPS : 12;
+    const diasRetencaoSenha = typeof options === 'number' ? options : (typeof options === 'object' && options.diasSenha ? options.diasSenha : 30);
+    const diasRetencaoLGPD = typeof options === 'number' ? options : (typeof options === 'object' && options.diasLGPD ? options.diasLGPD : 90);
+
+    const relatorio = {
+        gpsRemovidos: 0,
+        senhasRemovidas: 0,
+        tokensExpirados: 0,
+        lgpdAuditRemovidos: 0,
+        expurgados: 0,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const resGps = await pool.query(
+            "DELETE FROM gps_historico_atendimento WHERE data_hora < NOW() - ($1 || ' months')::INTERVAL",
+            [mesesRetencaoGPS]
+        );
+        relatorio.gpsRemovidos = resGps.rowCount || 0;
+
+        const resSenha = await pool.query(
+            "DELETE FROM recuperacao_senha WHERE solicitado_em < NOW() - ($1 || ' days')::INTERVAL",
+            [diasRetencaoSenha]
+        );
+        relatorio.senhasRemovidas = resSenha.rowCount || 0;
+
+        const resTokens = await pool.query(
+            "UPDATE acessos_externos_atendimento SET status = 'EXPIRADO' WHERE expira_em < NOW() AND status = 'ATIVO'"
+        );
+        relatorio.tokensExpirados = resTokens.rowCount || 0;
+
+        const resLgpd = await pool.query(
+            "DELETE FROM lgpd_audit WHERE data_hora < NOW() - ($1 || ' days')::INTERVAL",
+            [diasRetencaoLGPD]
+        );
+        relatorio.lgpdAuditRemovidos = resLgpd.rowCount || 0;
+
+        relatorio.expurgados = relatorio.gpsRemovidos + relatorio.senhasRemovidas + relatorio.lgpdAuditRemovidos;
+
+        console.log(`🧹 [EXPURGO LGPD] Concluído: GPS: ${relatorio.gpsRemovidos} expurgados, Senhas: ${relatorio.senhasRemovidas} expurgadas, LGPD Audit: ${relatorio.lgpdAuditRemovidos} expurgados, Total: ${relatorio.expurgados}.`);
+        return relatorio;
+    } catch (err) {
+        console.warn('⚠️ [EXPURGO LGPD] Erro ao executar expurgo:', err.message);
+        return relatorio;
+    }
+}
+
 module.exports = {
     pool,
     initDB,
@@ -606,5 +807,9 @@ module.exports = {
     bulkUpsertRuntimeStatus,
     getRuntimeStatusSummary,
     getRuntimeCorredoresStats,
-    getAllRuntimeStatuses
+    getAllRuntimeStatuses,
+    registrarAuditoriaLGPD,
+    getLGPDLogs,
+    executarExpurgoLGPD
 };
+

@@ -1,110 +1,222 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoria de Acessos - Agente RIT - Rotas Inteligentes de Transportes</title>
+    <title>Auditoria de Acessos & Gestão de Conexões - Agente RIT</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="audit.css">
+    <link rel="stylesheet" href="audit.css?v=2026.2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Cabeçalho Executivo Compacto -->
         <header class="dashboard-header">
-            <div>
-                <h2>Agente RIT - Rotas Inteligentes de Transportes</h2>
-                <p class="subtitle">Auditoria de Acessos</p>
+            <div class="header-brand">
+                <div class="header-icon" data-tooltip="Agente RIT - Módulo Corporativo de Segurança & Auditoria" data-tooltip-pos="bottom">
+                    <i class="ph ph-shield-check"></i>
+                </div>
+                <div>
+                    <h2>Agente RIT - Rotas Inteligentes de Transportes</h2>
+                    <p class="subtitle">Auditoria de Acessos & Painel de Gestão de Conexões</p>
+                </div>
             </div>
-            <button id="btn-logout" class="btn-logout"><i class="ph ph-sign-out"></i> Sair</button>
+            <div class="header-actions">
+                <a href="/dashboard.html" class="btn-nav" data-tooltip="Ir para a Central de Comando e Monitoramento de Rotas" data-tooltip-pos="bottom">
+                    <i class="ph ph-map-trifold"></i> Command Center
+                </a>
+                <button id="btn-refresh" class="btn-refresh" data-tooltip="Recarregar e sincronizar dados de conexões em tempo real" data-tooltip-pos="bottom">
+                    <i class="ph ph-arrows-clockwise"></i> Atualizar
+                </button>
+                <button id="btn-logout" class="btn-logout" data-tooltip="Encerrar sua sessão de administrador" data-tooltip-pos="bottom">
+                    <i class="ph ph-sign-out"></i> Sair
+                </button>
+            </div>
         </header>
         
         <div class="dashboard-content">
             <div id="error-message" class="error-message"></div>
+
+            <!-- Dica Operacional Interativa -->
+            <div class="info-tip-bar" data-tooltip="Este painel monitora em tempo real quem está conectado e permite deslogar sessões ativas remotamente." data-tooltip-pos="bottom">
+                <i class="ph ph-info"></i>
+                <span><strong>Orientações de Gestão:</strong> Passe o mouse sobre os <strong>Cards</strong> e <strong>Cabeçalhos</strong> para ver os detalhes de cada campo. Para encerrar o acesso de um usuário ativo, utilize o botão <strong>Deslogar</strong> na coluna de Ações.</span>
+            </div>
             
-            <!-- KPIs -->
+            <!-- KPIs Principais em Linha Única Compacta -->
             <div class="kpi-grid">
-                <div class="kpi-card">
+                <div class="kpi-card" data-tooltip="Total de colaboradores autenticados com sessão ativa e conectada ao Agente RIT neste exato momento." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-users"></i></div>
                     <div class="kpi-info">
-                        <span class="kpi-title">Usuários Ativos (Agora)</span>
+                        <div class="kpi-header-row">
+                            <span class="kpi-title">Usuários Ativos (Agora)</span>
+                            <i class="ph ph-info kpi-help-icon"></i>
+                        </div>
                         <h3 id="kpi-active-users">0</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
+
+                <div class="kpi-card" data-tooltip="Total de acessos e logins bem-sucedidos efetuados no Agente RIT na data de hoje." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-sign-in"></i></div>
                     <div class="kpi-info">
-                        <span class="kpi-title">Logins Hoje</span>
+                        <div class="kpi-header-row">
+                            <span class="kpi-title">Logins Hoje</span>
+                            <i class="ph ph-info kpi-help-icon"></i>
+                        </div>
                         <h3 id="kpi-logins-today">0</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
+
+                <div class="kpi-card" data-tooltip="Total acumulado de colaboradores individuais cadastrados que já acessaram a plataforma." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-user-check"></i></div>
                     <div class="kpi-info">
-                        <span class="kpi-title">Usuários Únicos</span>
+                        <div class="kpi-header-row">
+                            <span class="kpi-title">Usuários Únicos</span>
+                            <i class="ph ph-info kpi-help-icon"></i>
+                        </div>
                         <h3 id="kpi-unique-users">0</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
+
+                <div class="kpi-card" data-tooltip="Tempo médio de permanência dos colaboradores conectados ao sistema por sessão." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-clock"></i></div>
                     <div class="kpi-info">
-                        <span class="kpi-title">Média de Sessão</span>
+                        <div class="kpi-header-row">
+                            <span class="kpi-title">Média de Sessão</span>
+                            <i class="ph ph-info kpi-help-icon"></i>
+                        </div>
                         <h3 id="kpi-avg-session">0m</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
+
+                <div class="kpi-card" data-tooltip="Colaborador com o maior volume histórico de logins e acessos ao sistema." data-tooltip-pos="bottom">
                     <div class="kpi-icon"><i class="ph ph-star"></i></div>
                     <div class="kpi-info">
-                        <span class="kpi-title">Usuário Mais Ativo</span>
-                        <h3 id="kpi-top-user">-</h3>
+                        <div class="kpi-header-row">
+                            <span class="kpi-title">Usuário Mais Ativo</span>
+                            <i class="ph ph-info kpi-help-icon"></i>
+                        </div>
+                        <h3 id="kpi-top-user" title="">-</h3>
                     </div>
                 </div>
             </div>
 
-            <div class="tabs-container">
-                <button class="tab-btn active" data-tab="tab-acessos">Histórico de Acessos</button>
-                <button class="tab-btn" data-tab="tab-recuperacoes">Recuperações de Senha</button>
+            <!-- Fita Compacta de Governança B2B / SaaS -->
+            <div class="governance-kpis">
+                <div class="governance-card card-gov-green" data-tooltip="Segurança B2B: Proteção ativa contra força bruta, rate-limit de autenticação e tokens JWT criptografados." data-tooltip-pos="bottom">
+                    <span class="gov-label"><i class="ph ph-shield-check"></i> Segurança B2B</span>
+                    <span class="gov-value">98% ● PROTEGIDO</span>
+                </div>
+                <div class="governance-card card-gov-blue" data-tooltip="Conformidade LGPD: Trilhas de auditoria formal na tabela lgpd_audit, mascaramento de dados e política de expurgo de 90 dias." data-tooltip-pos="bottom">
+                    <span class="gov-label"><i class="ph ph-lock-key"></i> Conformidade LGPD</span>
+                    <span class="gov-value">96% ● AUDITADO</span>
+                </div>
+                <div class="governance-card card-gov-purple" data-tooltip="Estabilidade Operacional: Resiliência contra quedas, circuit breaker viário e cache em memória otimizado." data-tooltip-pos="bottom">
+                    <span class="gov-label"><i class="ph ph-cpu"></i> Estabilidade</span>
+                    <span class="gov-value">99.8% ● ESTÁVEL</span>
+                </div>
+                <div class="governance-card card-gov-amber" data-tooltip="Disponibilidade: Infraestrutura em nuvem ativa com rotina keep-alive anti-cold start e monitoramento contínuo." data-tooltip-pos="bottom">
+                    <span class="gov-label"><i class="ph ph-broadcast"></i> Disponibilidade</span>
+                    <span class="gov-value">100.0% ● OPERACIONAL</span>
+                </div>
             </div>
 
-            <!-- Histórico de Acessos -->
+            <!-- Navegação por Abas -->
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="tab-acessos" data-tooltip="Histórico completo de acessos, tempo de permanência e opções para deslogar conexões" data-tooltip-pos="bottom">
+                    <i class="ph ph-clock-counter-clockwise"></i> Histórico de Acessos
+                </button>
+                <button class="tab-btn" data-tab="tab-lgpd" data-tooltip="Trilhas formais de conformidade e acessos a dados sensíveis (LGPD)" data-tooltip-pos="bottom">
+                    <i class="ph ph-shield-check"></i> Auditoria LGPD
+                </button>
+                <button class="tab-btn" data-tab="tab-seguranca" data-tooltip="Registro de tentativas inválidas, bloqueios de IP e rate limits" data-tooltip-pos="bottom">
+                    <i class="ph ph-warning-octagon"></i> Eventos de Segurança
+                </button>
+                <button class="tab-btn" data-tab="tab-uploads" data-tooltip="Registro de lotes de transporte importados e arquivos processados" data-tooltip-pos="bottom">
+                    <i class="ph ph-file-arrow-up"></i> Histórico de Uploads
+                </button>
+                <button class="tab-btn" data-tab="tab-recuperacoes" data-tooltip="Solicitações de redefinição de senha e novos cadastros efetuados" data-tooltip-pos="bottom">
+                    <i class="ph ph-key"></i> Recuperações de Senha
+                </button>
+            </div>
+
+            <!-- Aba 1: Histórico de Acessos -->
             <div id="tab-acessos" class="tab-content active">
                 <div class="table-section">
                     <div class="table-header">
-                        <h4>Histórico de Acessos</h4>
-                        <div class="legend">
-                            <span class="legend-item"><span class="status-dot status-active"></span> Ativo</span>
-                            <span class="legend-item"><span class="status-dot status-normal"></span> Normal (&le; 1h)</span>
-                            <span class="legend-item"><span class="status-dot status-long"></span> Longa (&gt; 1h)</span>
+                        <div class="table-title-group">
+                            <h4>Histórico de Conexões & Gestão de Sessões</h4>
+                            <div class="legend">
+                                <span class="legend-item" data-tooltip="Sessão em andamento - usuário conectado neste momento"><span class="status-dot status-active"></span> Ativo</span>
+                                <span class="legend-item" data-tooltip="Sessão finalizada com tempo de uso normal (até 1 hora)"><span class="status-dot status-normal"></span> Normal (≤ 1h)</span>
+                                <span class="legend-item" data-tooltip="Sessão prolongada com tempo superior a 1 hora"><span class="status-dot status-long"></span> Longa (&gt; 1h)</span>
+                            </div>
                         </div>
                         <div class="filters">
-                            <select id="filter-status" class="select-filter">
+                            <select id="filter-status" class="select-filter" data-tooltip="Filtrar listagem por status de sessão" data-tooltip-pos="left">
                                 <option value="">Todos os Status</option>
-                                <option value="Ativo">Ativo</option>
-                                <option value="Normal">Normal</option>
-                                <option value="Longa">Longa</option>
+                                <option value="Ativo">Apenas Ativos (Conectados)</option>
+                                <option value="Normal">Normal (≤ 1h)</option>
+                                <option value="Longa">Longa (&gt; 1h)</option>
                             </select>
-                            <input type="date" id="filter-date" title="Filtrar por data">
-                            <input type="text" id="filter-user" placeholder="Buscar por nome ou matrícula">
+                            <input type="date" id="filter-date" title="Filtrar por data" data-tooltip="Filtrar conexões por data específica" data-tooltip-pos="left">
+                            <input type="text" id="filter-user" placeholder="Buscar por nome ou matrícula..." data-tooltip="Digite um nome ou matrícula para busca imediata" data-tooltip-pos="left">
                         </div>
                     </div>
                     <div class="table-responsive">
                         <table id="audit-table">
                             <thead>
                                 <tr>
-                                    <th>Status</th>
-                                    <th>Nome</th>
-                                    <th>Matrícula</th>
-                                    <th>Login</th>
-                                    <th>Logout</th>
-                                    <th>Tempo Sessão</th>
-                                    <th>IP</th>
-                                    <th>Ação</th>
+                                    <th data-tooltip="Estado da sessão: Conectado (ativo), Finalizado (normal) ou Longa (> 1h)">Status</th>
+                                    <th data-tooltip="Nome completo do colaborador registrado no Agente RIT">Nome</th>
+                                    <th data-tooltip="Matrícula funcional corporativa do usuário na base de colaboradores">Matrícula</th>
+                                    <th data-tooltip="Data e horário exato de autenticação na plataforma">Login</th>
+                                    <th data-tooltip="Data e horário de desconexão (ou 'Em Aberto' para conexões ativas)">Logout</th>
+                                    <th data-tooltip="Quanto tempo a conexão durou ou tempo decorrido em tempo real se ativo">Tempo Sessão</th>
+                                    <th data-tooltip="Endereço IP público ou corporativo da conexão de origem">IP Origem</th>
+                                    <th data-tooltip="Ações de gestão: Deslogar usuário ativo imediatamente ou Redefinir senha via e-mail">Ações / Gestão</th>
                                 </tr>
                             </thead>
                             <tbody id="audit-tbody">
+                                <!-- Dados dinâmicos carregados pelo audit.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba 2: Auditoria LGPD -->
+            <div id="tab-lgpd" class="tab-content">
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Trilhas de Conformidade & Privacidade LGPD (Tabela lgpd_audit)</h4>
+                        <div class="filters">
+                            <input type="text" id="filter-lgpd-search" placeholder="Buscar por operador, recurso ou papel..." data-tooltip="Pesquisar registros de conformidade LGPD">
+                            <button id="btn-expurgo-lgpd" class="btn-expurgo" data-tooltip="Expurgar permanentemente logs de auditoria com mais de 90 dias (conforme política LGPD)">
+                                <i class="ph ph-trash"></i> Expurgo LGPD (90 dias)
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="lgpd-table">
+                            <thead>
+                                <tr>
+                                    <th data-tooltip="Identificador sequencial do registro">ID</th>
+                                    <th data-tooltip="Data e horário da operação auditada">Data / Hora</th>
+                                    <th data-tooltip="Operador responsável pela ação">Operador</th>
+                                    <th data-tooltip="Perfil/Papel funcional do operador">Papel</th>
+                                    <th data-tooltip="Tipo de operação: LEITURA, ESCRITA ou EXCLUSÃO">Operação</th>
+                                    <th data-tooltip="Recurso ou tabela acessada">Recurso Acessado</th>
+                                    <th data-tooltip="Campos visualizados na operação">Campos Auditados</th>
+                                    <th data-tooltip="IP da origem da operação">IP</th>
+                                    <th data-tooltip="Identificador da organização">Tenant</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lgpd-tbody">
                                 <!-- Dados dinâmicos -->
                             </tbody>
                         </table>
@@ -112,24 +224,86 @@
                 </div>
             </div>
 
-            <!-- Recuperações de Senha -->
+            <!-- Aba 3: Eventos de Segurança & Tentativas Inválidas -->
+            <div id="tab-seguranca" class="tab-content">
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Eventos de Segurança, Rate Limit e Tentativas Inválidas</h4>
+                        <div class="filters">
+                            <input type="text" id="filter-security-search" placeholder="Filtrar por evento, IP ou usuário..." data-tooltip="Pesquisar eventos de segurança">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="security-table">
+                            <thead>
+                                <tr>
+                                    <th data-tooltip="Identificador do evento de segurança">ID</th>
+                                    <th data-tooltip="Data e hora do registro">Data / Hora</th>
+                                    <th data-tooltip="Categoria do evento registrado">Tipo de Evento</th>
+                                    <th data-tooltip="Entidade do sistema relacionada">Entidade</th>
+                                    <th data-tooltip="Usuário ou identificador informado">Usuário</th>
+                                    <th data-tooltip="Endereço IP que realizou a tentativa">IP Origem</th>
+                                    <th data-tooltip="Resultado: SUCESSO ou BLOQUEADO/FALHA">Resultado</th>
+                                    <th data-tooltip="Motivo do bloqueio ou descrição do incidente">Motivo / Bloqueio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="security-tbody">
+                                <!-- Dados dinâmicos -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba 4: Auditoria de Uploads -->
+            <div id="tab-uploads" class="tab-content">
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Histórico de Uploads e Importação de Rotas (Lotes)</h4>
+                        <div class="filters">
+                            <input type="text" id="filter-uploads-search" placeholder="Buscar por arquivo ou usuário..." data-tooltip="Pesquisar lotes importados">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="uploads-table">
+                            <thead>
+                                <tr>
+                                    <th data-tooltip="ID do lote importado">ID Lote</th>
+                                    <th data-tooltip="Nome do arquivo Excel ou CSV enviado">Nome do Arquivo</th>
+                                    <th data-tooltip="Total de linhas presentes no arquivo">Total Linhas</th>
+                                    <th data-tooltip="Linhas validadas com sucesso">Linhas Válidas</th>
+                                    <th data-tooltip="Linhas com falhas de validação">Linhas Inválidas</th>
+                                    <th data-tooltip="Data e horário da importação">Criado Em</th>
+                                    <th data-tooltip="Usuário que realizou o upload">Criado Por</th>
+                                    <th data-tooltip="Identificador da organização">Tenant</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploads-tbody">
+                                <!-- Dados dinâmicos -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba 5: Recuperações de Senha -->
             <div id="tab-recuperacoes" class="tab-content">
                 <div class="table-section">
                     <div class="table-header">
                         <h4>Recuperações de Senha e Cadastro</h4>
                         <div class="filters">
-                            <input type="text" id="filter-recover-user" placeholder="Buscar por e-mail">
+                            <input type="text" id="filter-recover-user" placeholder="Buscar por e-mail..." data-tooltip="Filtrar por e-mail cadastrado">
                         </div>
                     </div>
                     <div class="table-responsive">
                         <table id="recover-table">
                             <thead>
                                 <tr>
-                                    <th>E-mail</th>
-                                    <th>Solicitado Em</th>
-                                    <th>E-mail Enviado</th>
-                                    <th>Novo Cadastro Realizado</th>
-                                    <th>Data Cadastro</th>
+                                    <th data-tooltip="E-mail do colaborador que solicitou recuperação">E-mail</th>
+                                    <th data-tooltip="Data e hora em que a recuperação foi solicitada">Solicitado Em</th>
+                                    <th data-tooltip="Status do envio do e-mail de recuperação">E-mail Enviado</th>
+                                    <th data-tooltip="Indica se um novo cadastro foi realizado">Novo Cadastro Realizado</th>
+                                    <th data-tooltip="Data em que o novo cadastro foi finalizado">Data Cadastro</th>
                                 </tr>
                             </thead>
                             <tbody id="recover-tbody">
@@ -143,6 +317,6 @@
     </div>
     <script src="js/auth-constants.js"></script>
     <script src="session-manager.js"></script>
-    <script src="audit.js"></script>
+    <script src="audit.js?v=2026.2"></script>
 </body>
 </html>

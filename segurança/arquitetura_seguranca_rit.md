@@ -358,7 +358,7 @@ Os dados de geolocalização e tokens operacionais possuem tempo de vida estrita
 
 Os seguintes arquivos críticos foram modificados e requerem revisão de segurança/privacidade:
 
-* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [server.js](file:///C:/Users/fapaixao/OneDrive/Agente RIG/server/server.js) - Última modificação detectada recentemente.
+* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [server.js](server/server.js) - Última modificação detectada recentemente.
 
 > [!WARNING]
 > Modificações em arquivos críticos de autenticação, banco de dados ou geolocalização devem passar por auditoria AppSec manual antes de serem marcadas como homologadas.

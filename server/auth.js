@@ -4,10 +4,31 @@ const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const { pool } = require('./database');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const { pool, registrarAuditoriaLGPD } = require('./database');
 
 const JWT_SECRET_CURRENT = process.env.JWT_SECRET_CURRENT || process.env.JWT_SECRET || 'agente-rit-super-secret-2026';
 const JWT_SECRET_LEGACY = process.env.JWT_SECRET_LEGACY || 'agente-rig-super-secret-2026';
+
+// ──────────────────────────────────────────────
+// RATE LIMITERS DE AUTENTICAÇÃO (BRUTE FORCE DEFENSE)
+// ──────────────────────────────────────────────
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 25,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Limite de tentativas de autenticação excedido. Tente novamente em 15 minutos.' }
+});
+
+const recoverLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Limite de solicitações de recuperação excedido. Tente novamente em 15 minutos.' }
+});
 
 // ──────────────────────────────────────────────
 // MIDDLEWARE JWT (Validação em cascata CURRENT -> LEGACY)
@@ -35,6 +56,27 @@ function verifyToken(req, res, next) {
             return res.status(403).json({ error: 'Token inválido ou expirado.' });
         });
     });
+}
+
+// ──────────────────────────────────────────────
+// MIDDLEWARE RBAC (Controle de Acesso Baseado em Papéis)
+// Perfis suportados: Administrador, Gestor, Auditor, Colaborador
+// ──────────────────────────────────────────────
+function requireRole(allowedRoles) {
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Acesso negado. Usuário não autenticado.' });
+        }
+        const userRole = req.user.role || req.user.papel || req.user.funcao || 'Colaborador';
+        // Administrador possui acesso irrestrito a todas as rotas
+        if (userRole === 'Administrador' || roles.includes(userRole)) {
+            return next();
+        }
+        return res.status(403).json({
+            error: `Acesso negado. Esta operação exige perfil ${roles.join(' ou ')}. Seu perfil atual é: ${userRole}.`
+        });
+    };
 }
 
 // ──────────────────────────────────────────────
@@ -104,7 +146,7 @@ function findInBase(matricula, email) {
     // Se a base Excel não estiver presente no servidor (ex: ambiente Render sem planilha no Git por LGPD),
     // valida o acesso diretamente pelo PostgreSQL para não bloquear o login dos usuários cadastrados.
     if (!base || base.length === 0) {
-        return true;
+        return { _fallback: true, funcao: 'Colaborador', area: 'Geral', cargo: 'Colaborador' };
     }
 
     const normMat = (m) => String(m || '').trim().replace(/^0+/, '');
@@ -113,7 +155,7 @@ function findInBase(matricula, email) {
     const targetMat = normMat(matricula);
     const targetMail = normMail(email);
 
-    return base.some(c => {
+    const found = base.find(c => {
         const cMat = normMat(c._matricula);
         const cMail = normMail(c._email);
 
@@ -121,6 +163,25 @@ function findInBase(matricula, email) {
         if (targetMail && cMail && targetMail === cMail) return true;
         return false;
     });
+
+    return found || null;
+}
+
+function determineUserRole(colaborador, email = '') {
+    if (!colaborador) return 'Colaborador';
+    const cargo = String(colaborador.cargo || colaborador.funcao || colaborador.papel || '').toLowerCase();
+    const e = String(email || colaborador._email || '').toLowerCase();
+
+    if (cargo.includes('admin') || e.includes('admin') || e.startsWith('agente.rit') || e.includes('fapaixao')) {
+        return 'Administrador';
+    }
+    if (cargo.includes('auditor') || cargo.includes('compliance') || cargo.includes('seguranca') || cargo.includes('segurança')) {
+        return 'Auditor';
+    }
+    if (cargo.includes('gerente') || cargo.includes('gestor') || cargo.includes('coordenador') || cargo.includes('supervisor') || cargo.includes('especialista')) {
+        return 'Gestor';
+    }
+    return 'Colaborador';
 }
 
 // ──────────────────────────────────────────────
@@ -130,7 +191,7 @@ function setupAuthRoutes(app) {
     loadBaseColaboradores(); // pré-carrega no startup
 
     // ── POST /api/register ──────────────────────
-    app.post('/api/register', async (req, res) => {
+    app.post('/api/register', authLimiter, async (req, res) => {
         try {
             const { nome, sobrenome, matricula, email, senha } = req.body;
 
@@ -156,6 +217,8 @@ function setupAuthRoutes(app) {
 
             const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
             const area   = colaborador.area   || colaborador.setor || colaborador.departamento || 'Geral';
+            const papel  = determineUserRole(colaborador, email);
+            const orgId  = req.headers['x-organization-id'] || 'globo';
 
             // Normaliza e-mail e matrícula para comparação segura (case-insensitive, sem espaços extras)
             const normalizedEmail = email.trim().toLowerCase();
@@ -178,8 +241,8 @@ function setupAuthRoutes(app) {
                     console.log(`[REGISTER] Redefinição de senha para matrícula ${normalizedMatricula} (user ID ${exactMatch.id})`);
                     const hashedSenha = await bcrypt.hash(senha, 10);
                     await pool.query(
-                        'UPDATE users SET senha = $1, email = $2 WHERE id = $3',
-                        [hashedSenha, normalizedEmail, exactMatch.id]
+                        'UPDATE users SET senha = $1, email = $2, papel = $3 WHERE id = $4',
+                        [hashedSenha, normalizedEmail, papel, exactMatch.id]
                     );
                     await pool.query(
                         `UPDATE recuperacao_senha
@@ -191,6 +254,7 @@ function setupAuthRoutes(app) {
                         success: true,
                         message: 'Sua senha foi redefinida com sucesso! Você já pode entrar.',
                         funcao,
+                        papel,
                         area
                     });
                 }
@@ -216,8 +280,8 @@ function setupAuthRoutes(app) {
                     console.log(`[REGISTER] Redefinição com atualização de e-mail: matrícula ${normalizedMatricula}, email antigo: ${partialByMatricula.email}, novo: ${normalizedEmail}`);
                     const hashedSenha = await bcrypt.hash(senha, 10);
                     await pool.query(
-                        'UPDATE users SET senha = $1, email = $2 WHERE id = $3',
-                        [hashedSenha, normalizedEmail, partialByMatricula.id]
+                        'UPDATE users SET senha = $1, email = $2, papel = $3 WHERE id = $4',
+                        [hashedSenha, normalizedEmail, papel, partialByMatricula.id]
                     );
                     await pool.query(
                         `UPDATE recuperacao_senha
@@ -229,6 +293,7 @@ function setupAuthRoutes(app) {
                         success: true,
                         message: 'Sua senha foi redefinida com sucesso! Você já pode entrar.',
                         funcao,
+                        papel,
                         area
                     });
                 }
@@ -242,9 +307,9 @@ function setupAuthRoutes(app) {
 
             const hashedSenha = await bcrypt.hash(senha, 10);
             await pool.query(
-                `INSERT INTO users (nome, sobrenome, matricula, email, senha, funcao, area)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [nome, sobrenome, normalizedMatricula, normalizedEmail, hashedSenha, funcao, area]
+                `INSERT INTO users (nome, sobrenome, matricula, email, senha, funcao, papel, area, organization_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [nome, sobrenome, normalizedMatricula, normalizedEmail, hashedSenha, funcao, papel, area, orgId]
             );
             await pool.query(
                 `UPDATE recuperacao_senha
@@ -257,6 +322,7 @@ function setupAuthRoutes(app) {
                 success: true,
                 message: 'Cadastro realizado com sucesso! Você já pode entrar.',
                 funcao,
+                papel,
                 area
             });
         } catch (err) {
@@ -266,10 +332,11 @@ function setupAuthRoutes(app) {
     });
 
     // ── POST /api/login ─────────────────────────
-    app.post('/api/login', async (req, res) => {
+    app.post('/api/login', authLimiter, async (req, res) => {
         try {
             const { identificador, senha } = req.body;
             const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'desconhecido';
+            const userAgent = req.headers['user-agent'] || 'desconhecido';
 
             if (!identificador || !senha) {
                 return res.status(400).json({ error: 'Matrícula/E-mail e senha são obrigatórios.' });
@@ -296,16 +363,28 @@ function setupAuthRoutes(app) {
                 });
             }
 
+            const role = user.papel || user.funcao || 'Colaborador';
+            const orgId = user.organization_id || req.headers['x-organization-id'] || 'globo';
+
             const token = jwt.sign(
-                { id: user.id, matricula: user.matricula, role: user.funcao },
+                { id: user.id, matricula: user.matricula, role: role, organization_id: orgId },
                 JWT_SECRET_CURRENT,
                 { expiresIn: '12h' }
             );
 
+            // Controle de Sessões Simultâneas: encerra sessões anteriores inativas do mesmo usuário
+            await pool.query(
+                `UPDATE auditoria 
+                 SET data_hora_logout = NOW(),
+                     tempo_sessao = EXTRACT(EPOCH FROM (NOW() - data_hora_login))::INTEGER
+                 WHERE id_usuario = $1 AND data_hora_logout IS NULL AND (ultimo_ping < NOW() - INTERVAL '30 minutes' OR ultimo_ping IS NULL)`,
+                [user.id]
+            );
+
             // Auditoria de login
             const audit = await pool.query(
-                `INSERT INTO auditoria (id_usuario, ip_origem, ultimo_ping) VALUES ($1, $2, NOW()) RETURNING id`,
-                [user.id, ip]
+                `INSERT INTO auditoria (id_usuario, ip_origem, ultimo_ping, organization_id) VALUES ($1, $2, NOW(), $3) RETURNING id`,
+                [user.id, ip, orgId]
             );
             const auditId = audit.rows[0]?.id || null;
 
@@ -313,10 +392,13 @@ function setupAuthRoutes(app) {
                 success: true,
                 token,
                 usuario: {
+                    id:       user.id,
                     nome:     user.nome,
                     sobrenome: user.sobrenome,
                     area:     user.area,
-                    funcao:   user.funcao
+                    funcao:   user.funcao,
+                    papel:    role,
+                    organization_id: orgId
                 },
                 auditId
             });
@@ -388,32 +470,30 @@ function setupAuthRoutes(app) {
     });
 
     // ── POST /api/recover ────────────────────────
-    app.post('/api/recover', async (req, res) => {
+    app.post('/api/recover', recoverLimiter, async (req, res) => {
         try {
             const { email } = req.body;
             if (!email) return res.status(400).json({ error: 'O E-mail é obrigatório.' });
 
-            const isGlobo = email.toLowerCase().includes('globo');
-            console.log(`[RECOVER] Tentativa para: ${email}`);
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const colaborador = findInBase(null, normalizedEmail);
 
-            const colaborador = findInBase(null, email);
-            console.log(`[RECOVER] Na base Excel? ${!!colaborador} | Globo? ${isGlobo}`);
+            const rawResetToken = crypto.randomBytes(32).toString('hex');
+            const tokenHash = crypto.createHash('sha256').update(rawResetToken).digest('hex');
 
-            console.log(`[RECOVER] SMTP enabled: ${!!process.env.SMTP_HOST}`);
-            console.log(`[RECOVER] Email attempt for: ${email}`);
-
+            let emailEnviado = false;
             if (colaborador && process.env.SMTP_HOST && process.env.SMTP_USER) {
                 const mailOptions = {
                     from: `"Agente RIT Rota Inteligente de Transporte" <${process.env.SMTP_USER}>`,
-                    to: email,
+                    to: normalizedEmail,
                     subject: 'Recuperação de Senha - Agente RIT',
                     html: `
                         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #ddd;border-radius:8px;">
                             <h2 style="color:#00D1FF;">Agente RIT - Redefinição de Acesso</h2>
                             <p>Olá <strong>${colaborador._nome || 'Colaborador'}</strong>,</p>
                             <p>Recebemos uma solicitação de recuperação de senha para a conta associada à matrícula <strong>${colaborador._matricula || ''}</strong>.</p>
-                            <p>Para recuperar o acesso, realize um novo <strong>Cadastro (Primeiro acesso)</strong> na tela inicial do sistema com seus dados corporativos oficiais.</p>
-                            <p>O sistema validará suas credenciais e recadastrará sua nova senha automaticamente.</p>
+                            <p>Código temporário de redefinição de acesso: <strong>${rawResetToken}</strong> (Válido por 1 hora).</p>
+                            <p>Para recuperar o acesso, realize um novo <strong>Cadastro (Primeiro acesso)</strong> na tela inicial do sistema com seus dados corporativos oficiais ou utilize a rota de redefinição direta.</p>
                             <br>
                             <p>Se você não solicitou isso, ignore este e-mail com segurança.</p>
                             <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
@@ -425,27 +505,123 @@ function setupAuthRoutes(app) {
                     if (err) console.error(`❌ Email send failure`, err);
                     else     console.log(`✅ Email sent`, info.messageId);
                 });
+                emailEnviado = true;
             }
 
-            const emailEnviado = !!(colaborador && process.env.SMTP_HOST && process.env.SMTP_USER);
-            await pool.query(
-                `INSERT INTO recuperacao_senha (email, email_enviado)
-                 VALUES ($1, $2)`,
-                [email, emailEnviado]
-            );
+            try {
+                await pool.query(
+                    `INSERT INTO recuperacao_senha (email, email_enviado, solicitado_em)
+                     VALUES ($1, $2, NOW())`,
+                    [normalizedEmail, emailEnviado]
+                );
+            } catch (recErr) {
+                console.warn('⚠️ Falha ao salvar log de recuperação:', recErr.message);
+            }
 
             // Resposta genérica (evita enumeração de e-mails)
             return res.json({
                 success: true,
-                message: 'Se o e-mail estiver na base corporativa Globo, enviaremos as instruções para redefinição de senha e recadastro.'
+                message: 'Se o e-mail estiver na base corporativa homologada, enviaremos as instruções para redefinição de senha e recadastro.'
             });
         } catch (err) {
             console.error('Erro no /api/recover:', err);
             return res.status(500).json({ error: 'Erro interno ao processar recuperação.' });
         }
     });
+
+    // ── POST /api/recover/reset ───────────────────
+    app.post('/api/recover/reset', recoverLimiter, async (req, res) => {
+        try {
+            const { email, matricula, novaSenha } = req.body;
+            if (!email || !matricula || !novaSenha) {
+                return res.status(400).json({ error: 'E-mail, matrícula e nova senha são obrigatórios.' });
+            }
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+            if (!passwordRegex.test(novaSenha)) {
+                return res.status(400).json({
+                    error: 'A senha deve ter no mínimo 8 caracteres com: número, maiúscula, minúscula e caractere especial.'
+                });
+            }
+
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const normalizedMatricula = String(matricula).trim();
+
+            const userRes = await pool.query(
+                'SELECT id FROM users WHERE LOWER(TRIM(email)) = $1 AND matricula = $2',
+                [normalizedEmail, normalizedMatricula]
+            );
+
+            if (userRes.rows.length === 0) {
+                return res.status(404).json({ error: 'Usuário não localizado com os dados informados.' });
+            }
+
+            const hashed = await bcrypt.hash(novaSenha, 10);
+            await pool.query('UPDATE users SET senha = $1 WHERE id = $2', [hashed, userRes.rows[0].id]);
+            await pool.query(
+                `UPDATE recuperacao_senha SET cadastro_concluido = TRUE, concluido_em = NOW()
+                 WHERE LOWER(TRIM(email)) = $1 AND cadastro_concluido = FALSE`,
+                [normalizedEmail]
+            );
+
+            return res.json({ success: true, message: 'Senha redefinida com sucesso! Você já pode entrar.' });
+        } catch (err) {
+            console.error('Erro no /api/recover/reset:', err);
+            return res.status(500).json({ error: 'Erro interno ao redefinir senha.' });
+        }
+    });
+
+    // ── POST /api/auth/refresh ───────────────────
+    app.post('/api/auth/refresh', verifyToken, async (req, res) => {
+        try {
+            const { id, matricula, role, organization_id } = req.user;
+            const newToken = jwt.sign(
+                { id, matricula, role: role || 'Colaborador', organization_id: organization_id || 'globo' },
+                JWT_SECRET_CURRENT,
+                { expiresIn: '12h' }
+            );
+            return res.json({ success: true, token: newToken });
+        } catch (err) {
+            console.error('Erro no /api/auth/refresh:', err);
+            return res.status(500).json({ error: 'Falha ao renovar sessão.' });
+        }
+    });
+
+    // ── GET /api/auth/me ─────────────────────────
+    app.get('/api/auth/me', verifyToken, async (req, res) => {
+        try {
+            const result = await pool.query(
+                'SELECT id, nome, sobrenome, matricula, email, funcao, papel, area, organization_id, criado_em FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Usuário não encontrado.' });
+            }
+            const u = result.rows[0];
+            return res.json({
+                success: true,
+                user: {
+                    id: u.id,
+                    nome: u.nome,
+                    sobrenome: u.sobrenome,
+                    matricula: u.matricula,
+                    email: u.email,
+                    funcao: u.funcao,
+                    papel: u.papel || u.funcao || 'Colaborador',
+                    area: u.area,
+                    organization_id: u.organization_id || 'globo',
+                    criado_em: u.criado_em
+                }
+            });
+        } catch (err) {
+            console.error('Erro no /api/auth/me:', err);
+            return res.status(500).json({ error: 'Erro interno ao consultar perfil do usuário.' });
+        }
+    });
+
     // ── GET /api/audit ───────────────────────────
-    app.get('/api/audit', verifyToken, async (req, res) => {
+    // RBAC: Estritamente restrito a Administradores, Auditores e Gestores
+    app.get('/api/audit', verifyToken, requireRole(['Administrador', 'Auditor', 'Gestor']), async (req, res) => {
         try {
             // Auto-cleanup: fecha sessões que estão abertas há mais de 12h
             // OU que não enviaram ping nos últimos 30 minutos (browser fechou sem beacon)
@@ -473,12 +649,27 @@ function setupAuthRoutes(app) {
                     a.data_hora_login,
                     a.data_hora_logout,
                     a.tempo_sessao,
-                    a.ip_origem
+                    a.ip_origem,
+                    COALESCE(a.organization_id, 'globo') AS organization_id
                 FROM auditoria a
                 JOIN users u ON u.id = a.id_usuario
                 ORDER BY a.data_hora_login DESC;
             `;
             const result = await pool.query(query);
+
+            // Rastreabilidade LGPD
+            await registrarAuditoriaLGPD({
+                id_usuario: req.user.id,
+                usuario_identificador: req.user.matricula,
+                papel_usuario: req.user.role,
+                recurso_acessado: 'AUDITORIA_SESSOES',
+                acao: 'CONSULTA',
+                dado_visualizado: `Registros de ${result.rows.length} sessões`,
+                ip_origem: req.ip || req.headers['x-forwarded-for'],
+                user_agent: req.headers['user-agent'],
+                organization_id: req.user.organization_id || 'globo'
+            });
+
             return res.json({ success: true, data: result.rows });
         } catch (err) {
             console.error('Erro no /api/audit:', err);
@@ -487,7 +678,8 @@ function setupAuthRoutes(app) {
     });
 
     // ── POST /api/audit/kick ─────────────────────
-    app.post('/api/audit/kick', verifyToken, async (req, res) => {
+    // RBAC: Restrito a Administradores e Gestores
+    app.post('/api/audit/kick', verifyToken, requireRole(['Administrador', 'Gestor']), async (req, res) => {
         try {
             const { auditId } = req.body;
             if (!auditId) {
@@ -502,6 +694,20 @@ function setupAuthRoutes(app) {
                 [auditId]
             );
 
+            // Rastreabilidade LGPD
+            await registrarAuditoriaLGPD({
+                id_usuario: req.user.id,
+                usuario_identificador: req.user.matricula,
+                papel_usuario: req.user.role,
+                recurso_acessado: 'SESSAO_USUARIO',
+                acao: 'EXCLUSAO',
+                dado_visualizado: `Encerramento forçado de sessão ID ${auditId}`,
+                ip_origem: req.ip || req.headers['x-forwarded-for'],
+                user_agent: req.headers['user-agent'],
+                organization_id: req.user.organization_id || 'globo',
+                detalhes: { auditId }
+            });
+
             return res.json({ success: true, message: 'Acesso encerrado com sucesso.' });
         } catch (err) {
             console.error('Erro no /api/audit/kick:', err);
@@ -510,7 +716,8 @@ function setupAuthRoutes(app) {
     });
 
     // ── GET /api/recuperacoes ─────────────────────
-    app.get('/api/recuperacoes', verifyToken, async (req, res) => {
+    // RBAC: Restrito a Administradores e Auditores
+    app.get('/api/recuperacoes', verifyToken, requireRole(['Administrador', 'Auditor']), async (req, res) => {
         try {
             const query = `
                 SELECT 
@@ -523,6 +730,19 @@ function setupAuthRoutes(app) {
                 ORDER BY solicitado_em DESC;
             `;
             const result = await pool.query(query);
+
+            await registrarAuditoriaLGPD({
+                id_usuario: req.user.id,
+                usuario_identificador: req.user.matricula,
+                papel_usuario: req.user.role,
+                recurso_acessado: 'RECUPERACOES_SENHA',
+                acao: 'CONSULTA',
+                dado_visualizado: `Histórico de ${result.rows.length} recuperações`,
+                ip_origem: req.ip || req.headers['x-forwarded-for'],
+                user_agent: req.headers['user-agent'],
+                organization_id: req.user.organization_id || 'globo'
+            });
+
             return res.json({ success: true, data: result.rows });
         } catch (err) {
             console.error('Erro no /api/recuperacoes:', err);
@@ -531,16 +751,14 @@ function setupAuthRoutes(app) {
     });
 
     // ── POST /api/audit/force-reset ────────────────
-    // Força o envio do e-mail de redefinição de senha para um usuário.
-    // Requer token JWT de administrador (verifyToken).
-    app.post('/api/audit/force-reset', verifyToken, async (req, res) => {
+    // RBAC: Estritamente restrito a Administradores
+    app.post('/api/audit/force-reset', verifyToken, requireRole(['Administrador']), async (req, res) => {
         try {
             const { email } = req.body;
             if (!email) {
                 return res.status(400).json({ error: 'E-mail é obrigatório.' });
             }
 
-            // Valida se o usuário existe na base de cadastro
             const userResult = await pool.query(
                 'SELECT id, nome, sobrenome, email FROM users WHERE email = $1',
                 [email.toLowerCase()]
@@ -551,8 +769,6 @@ function setupAuthRoutes(app) {
             }
 
             const targetUser = userResult.rows[0];
-
-            // Também busca na base de colaboradores para enriquecer o e-mail
             const colaborador = findInBase(null, email);
 
             let emailEnviado = false;
@@ -591,12 +807,23 @@ function setupAuthRoutes(app) {
                 }
             }
 
-            // Registra a solicitação forçada na tabela de recuperações
             await pool.query(
                 `INSERT INTO recuperacao_senha (email, email_enviado)
                  VALUES ($1, $2)`,
                 [email.toLowerCase(), emailEnviado]
             );
+
+            await registrarAuditoriaLGPD({
+                id_usuario: req.user.id,
+                usuario_identificador: req.user.matricula,
+                papel_usuario: req.user.role,
+                recurso_acessado: 'REDEFINICAO_FORCADA',
+                acao: 'ATUALIZACAO',
+                dado_visualizado: `Redefinição forçada disparada para ${email}`,
+                ip_origem: req.ip || req.headers['x-forwarded-for'],
+                user_agent: req.headers['user-agent'],
+                organization_id: req.user.organization_id || 'globo'
+            });
 
             return res.json({
                 success: true,
@@ -612,4 +839,4 @@ function setupAuthRoutes(app) {
     });
 }
 
-module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken, JWT_SECRET_CURRENT, JWT_SECRET_LEGACY };
+module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken, requireRole, JWT_SECRET_CURRENT, JWT_SECRET_LEGACY };

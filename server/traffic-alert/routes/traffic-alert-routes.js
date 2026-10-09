@@ -726,7 +726,21 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
             corridors = corridors.map((c, idx) => {
                 const pin = coordsMap[c.via] || null;
                 const vLow = (c.via || '').toLowerCase().trim();
-                const geom = geomsMap[vLow] || (Array.isArray(c.coordinates) && Array.isArray(c.coordinates[0]) ? c.coordinates : null);
+                let geom = (Array.isArray(c.geometry) && Array.isArray(c.geometry[0])) ? c.geometry
+                         : (Array.isArray(c.coordinates) && Array.isArray(c.coordinates[0])) ? c.coordinates
+                         : geomsMap[vLow] || null;
+
+                if (!geom) {
+                    const norm = (str) => String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                    const normVia = norm(c.via);
+                    for (const [k, coords] of Object.entries(geomsMap)) {
+                        if (norm(k) === normVia) {
+                            geom = coords;
+                            break;
+                        }
+                    }
+                }
+
                 return {
                     ...c,
                     id: c.id || `corr-${targetRegion.toLowerCase()}-${idx + 1}`,

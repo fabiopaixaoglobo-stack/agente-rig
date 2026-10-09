@@ -94,7 +94,7 @@ function run() {
     } else {
         autoSectionContent += `Os seguintes arquivos críticos foram modificados e requerem revisão de segurança/privacidade:\n\n`;
         criticalModified.forEach(file => {
-            autoSectionContent += `* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [${path.basename(file)}](file:///${path.resolve(file).replace(/\\/g, '/')}) - Última modificação detectada recentemente.\n`;
+            autoSectionContent += `* ⚠️ **[PENDENTE DE VALIDAÇÃO]** [${path.basename(file)}](${file.replace(/\\/g, '/')}) - Última modificação detectada recentemente.\n`;
         });
         autoSectionContent += `\n> [!WARNING]\n> Modificações em arquivos críticos de autenticação, banco de dados ou geolocalização devem passar por auditoria AppSec manual antes de serem marcadas como homologadas.\n`;
     }

@@ -338,18 +338,27 @@ export class TrafficAlertMap {
             }
         };
 
+        const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim();
+        const vNorm = norm(viaName);
+
         // 1. Busca primeiro na regional ativa
         const activeDict = REGIONAL_CORRIDOR_COORDS[activeReg] || {};
-        if (activeDict[vLow]) return activeDict[vLow];
-        const matchKey = Object.keys(activeDict).find(k => vLow.includes(k) || k.includes(vLow));
-        if (matchKey) return activeDict[matchKey];
+        for (const [k, coords] of Object.entries(activeDict)) {
+            const kNorm = norm(k);
+            if (kNorm === vNorm || vNorm.includes(kNorm) || kNorm.includes(vNorm)) {
+                return coords;
+            }
+        }
 
         // 2. Busca nas outras praças se não encontrado na ativa
         for (const [rKey, dict] of Object.entries(REGIONAL_CORRIDOR_COORDS)) {
             if (rKey === activeReg) continue;
-            if (dict[vLow]) return dict[vLow];
-            const k = Object.keys(dict).find(itemKey => vLow.includes(itemKey) || itemKey.includes(vLow));
-            if (k) return dict[k];
+            for (const [k, coords] of Object.entries(dict)) {
+                const kNorm = norm(k);
+                if (kNorm === vNorm || vNorm.includes(kNorm) || kNorm.includes(vNorm)) {
+                    return coords;
+                }
+            }
         }
 
         return null;
@@ -372,22 +381,40 @@ export class TrafficAlertMap {
             return '#10b981'; // Verde fluido
         };
 
+        const regCfg = resolveRegionalConfig(this.currentRegion);
+        let validGeomCount = 0;
         let renderedCount = 0;
         this.corridorPolylines = {};
 
-        trafficData.forEach(item => {
+        trafficData.forEach((item, idx) => {
+            let isFallback = false;
             let coords = (Array.isArray(item.geometry) && Array.isArray(item.geometry[0])) ? item.geometry
                        : (Array.isArray(item.coordinates) && Array.isArray(item.coordinates[0])) ? item.coordinates : null;
             if (!coords || coords.length < 2) {
                 coords = this.getCorridorCoords(item.via || item.name, this.currentRegion);
             }
-            if (!coords || coords.length < 2) return;
+
+            if (coords && coords.length >= 2) {
+                validGeomCount++;
+            } else {
+                // Fallback visual obrigatório (Proibido mapa vazio)
+                isFallback = true;
+                const regCenter = regCfg.center || [-22.9068, -43.1729];
+                const pin = item.pinLocation || (REGIONAL_COORDINATES[this.currentRegion] && REGIONAL_COORDINATES[this.currentRegion][item.via]) || regCenter;
+                const offset = (idx - 4) * 0.005;
+                coords = [
+                    [pin[0] - 0.012 + offset, pin[1] - 0.018],
+                    [pin[0] + offset, pin[1]],
+                    [pin[0] + 0.012 + offset, pin[1] + 0.018]
+                ];
+                console.warn(`[RIT ALERTA DIAGNÓSTICO] Geometria ausente para "${item.via || item.name}". Aplicado fallback visual tracejado.`);
+            }
 
             // Validação estrita de cada par de coordenadas
             const validCoords = coords.filter(pt => Array.isArray(pt) && pt.length >= 2 && Number.isFinite(pt[0]) && Number.isFinite(pt[1]));
             if (validCoords.length < 2) return;
 
-            const color = getTrafficColor(item.status);
+            const color = isFallback ? '#94a3b8' : getTrafficColor(item.status);
             const isCrit = (item.status || '').toLowerCase().includes('crítico') || (item.status || '').toLowerCase().includes('bloqueio');
             const diffText = item.diferenca || (item.retencaoMin ? `+${item.retencaoMin} min` : '0 min');
             const velText = item.velocidadeAtualKmH ? `${item.velocidadeAtualKmH} km/h` : (item.velocidadePadraoKmH ? `${item.velocidadePadraoKmH} km/h` : '--');
@@ -412,7 +439,7 @@ export class TrafficAlertMap {
                 opacity: 0.95,
                 lineCap: 'round',
                 lineJoin: 'round',
-                dashArray: isCrit ? '8, 6' : null,
+                dashArray: isFallback ? '6, 6' : (isCrit ? '8, 6' : null),
                 interactive: true
             });
 
@@ -460,7 +487,7 @@ export class TrafficAlertMap {
                     <div style="margin-bottom:3px;"><strong>Velocidade:</strong> ${velText} (Padrão: ${item.velocidadePadraoKmH ? item.velocidadePadraoKmH + ' km/h' : '--'})</div>
                     <div style="margin-bottom:3px;"><strong>Tendência:</strong> ${this._escapeHtml(item.tendencia || 'ESTÁVEL')}</div>
                     <div style="margin-bottom:6px; font-size:10px; color:#cbd5e1;"><strong>Situação:</strong> ${this._escapeHtml(ocorrenciaText)}</div>
-                    <button onclick="window.trafficAlertView && window.trafficAlertView.drawer && window.trafficAlertView.drawer.openKpiDetail('vias', { selectedVia: '${this._escapeHtml(item.via || item.name)}' })" style="width:100%; background:var(--ta-cyan, #00d1ff); color:#000; font-weight:800; border:none; border-radius:4px; padding:5px; cursor:pointer; font-size:10px; text-transform:uppercase;">
+                    <button class="ta-btn-analyse" data-corridor-name="${this._escapeHtml(item.via || item.name)}" style="width:100%; background:var(--ta-cyan, #00d1ff); color:#000; font-weight:800; border:none; border-radius:4px; padding:5px; cursor:pointer; font-size:10px; text-transform:uppercase;">
                         Ver Detalhes do Corredor
                     </button>
                 </div>
@@ -470,11 +497,17 @@ export class TrafficAlertMap {
             this.corridorLayer.addLayer(overlay);
 
             const vKey = (item.via || item.name || '').toLowerCase().trim();
-            this.corridorPolylines[vKey] = { casing, overlay, data: item };
+            this.corridorPolylines[vKey] = { casing, overlay, data: item, coords: validCoords };
             renderedCount++;
         });
 
-        console.info(`[RIT ALERTA MAP] Regional: ${this.currentRegion} | Corredores recebidos: ${trafficData.length} | Linhas renderizadas: ${renderedCount} | Camada ativa: Sim`);
+        console.info(`[RIT ALERTA MAP] ${this.currentRegion}:\nCorredores: ${trafficData.length}\nGeometrias: ${validGeomCount}\nLinhas Renderizadas: ${renderedCount}`);
+
+        setTimeout(() => {
+            if (this.map) {
+                try { this.map.invalidateSize(); } catch (e) {}
+            }
+        }, 60);
     }
 
     /**

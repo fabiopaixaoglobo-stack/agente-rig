@@ -14,7 +14,59 @@
       "ocorrenciaAtiva": "Obras de recapeamento e retenção na altura de Ramos",
       "tempoParada": "5 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Trecho Penha - Caju sentido Centro"
+      "trechoCritico": "Trecho Penha - Caju sentido Centro",
+      "geometry": [
+        [
+          -22.898,
+          -43.21
+        ],
+        [
+          -22.875,
+          -43.245
+        ],
+        [
+          -22.855,
+          -43.28
+        ],
+        [
+          -22.845,
+          -43.3
+        ],
+        [
+          -22.83,
+          -43.36
+        ],
+        [
+          -22.85,
+          -43.54
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.898,
+          -43.21
+        ],
+        [
+          -22.875,
+          -43.245
+        ],
+        [
+          -22.855,
+          -43.28
+        ],
+        [
+          -22.845,
+          -43.3
+        ],
+        [
+          -22.83,
+          -43.36
+        ],
+        [
+          -22.85,
+          -43.54
+        ]
+      ]
     },
     {
       "via": "Presidente Dutra",
@@ -29,7 +81,51 @@
       "ocorrenciaAtiva": "Fluxo intenso na chegada a São João de Meriti",
       "tempoParada": "3 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "km 163 ao 167 sentido Rio"
+      "trechoCritico": "km 163 ao 167 sentido Rio",
+      "geometry": [
+        [
+          -22.755,
+          -43.45
+        ],
+        [
+          -22.785,
+          -43.39
+        ],
+        [
+          -22.805,
+          -43.36
+        ],
+        [
+          -22.815,
+          -43.345
+        ],
+        [
+          -22.83,
+          -43.33
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.755,
+          -43.45
+        ],
+        [
+          -22.785,
+          -43.39
+        ],
+        [
+          -22.805,
+          -43.36
+        ],
+        [
+          -22.815,
+          -43.345
+        ],
+        [
+          -22.83,
+          -43.33
+        ]
+      ]
     },
     {
       "via": "Linha Vermelha",
@@ -44,7 +140,59 @@
       "ocorrenciaAtiva": "Colisão entre dois veículos no acesso à Ilha do Fundão",
       "tempoParada": "20 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Acesso Fundão até Maré"
+      "trechoCritico": "Acesso Fundão até Maré",
+      "geometry": [
+        [
+          -22.813,
+          -43.248
+        ],
+        [
+          -22.83,
+          -43.242
+        ],
+        [
+          -22.845,
+          -43.238
+        ],
+        [
+          -22.88,
+          -43.235
+        ],
+        [
+          -22.905,
+          -43.21
+        ],
+        [
+          -22.91,
+          -43.195
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.813,
+          -43.248
+        ],
+        [
+          -22.83,
+          -43.242
+        ],
+        [
+          -22.845,
+          -43.238
+        ],
+        [
+          -22.88,
+          -43.235
+        ],
+        [
+          -22.905,
+          -43.21
+        ],
+        [
+          -22.91,
+          -43.195
+        ]
+      ]
     },
     {
       "via": "Linha Amarela",
@@ -59,7 +207,59 @@
       "ocorrenciaAtiva": "Fluxo livre em ambos os sentidos",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Fluxo desimpedido"
+      "trechoCritico": "Fluxo desimpedido",
+      "geometry": [
+        [
+          -22.86,
+          -43.238
+        ],
+        [
+          -22.875,
+          -43.248
+        ],
+        [
+          -22.885,
+          -43.26
+        ],
+        [
+          -22.898,
+          -43.265
+        ],
+        [
+          -22.93,
+          -43.32
+        ],
+        [
+          -22.98,
+          -43.365
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.86,
+          -43.238
+        ],
+        [
+          -22.875,
+          -43.248
+        ],
+        [
+          -22.885,
+          -43.26
+        ],
+        [
+          -22.898,
+          -43.265
+        ],
+        [
+          -22.93,
+          -43.32
+        ],
+        [
+          -22.98,
+          -43.365
+        ]
+      ]
     },
     {
       "via": "Transolímpica",
@@ -74,7 +274,59 @@
       "ocorrenciaAtiva": "Operação regular sem intercorrências",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Túneis liberados"
+      "trechoCritico": "Túneis liberados",
+      "geometry": [
+        [
+          -22.865,
+          -43.395
+        ],
+        [
+          -22.872,
+          -43.387
+        ],
+        [
+          -22.895,
+          -43.39
+        ],
+        [
+          -22.92,
+          -43.4
+        ],
+        [
+          -22.96,
+          -43.415
+        ],
+        [
+          -23,
+          -43.43
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.865,
+          -43.395
+        ],
+        [
+          -22.872,
+          -43.387
+        ],
+        [
+          -22.895,
+          -43.39
+        ],
+        [
+          -22.92,
+          -43.4
+        ],
+        [
+          -22.96,
+          -43.415
+        ],
+        [
+          -23,
+          -43.43
+        ]
+      ]
     },
     {
       "via": "Centro",
@@ -89,7 +341,51 @@
       "ocorrenciaAtiva": "Sinalização e adensamento na Pres. Vargas",
       "tempoParada": "4 min",
       "tendencia": "MELHORANDO",
-      "trechoCritico": "Av. Presidente Vargas cruzamento com Rio Branco"
+      "trechoCritico": "Av. Presidente Vargas cruzamento com Rio Branco",
+      "geometry": [
+        [
+          -22.903,
+          -43.178
+        ],
+        [
+          -22.905,
+          -43.185
+        ],
+        [
+          -22.908,
+          -43.192
+        ],
+        [
+          -22.91,
+          -43.205
+        ],
+        [
+          -22.912,
+          -43.215
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.903,
+          -43.178
+        ],
+        [
+          -22.905,
+          -43.185
+        ],
+        [
+          -22.908,
+          -43.192
+        ],
+        [
+          -22.91,
+          -43.205
+        ],
+        [
+          -22.912,
+          -43.215
+        ]
+      ]
     },
     {
       "via": "Barra da Tijuca",
@@ -104,7 +400,51 @@
       "ocorrenciaAtiva": "Tráfego habitual para o horário",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Av. Ayrton Senna próximo ao Alvorada"
+      "trechoCritico": "Av. Ayrton Senna próximo ao Alvorada",
+      "geometry": [
+        [
+          -22.98,
+          -43.365
+        ],
+        [
+          -22.985,
+          -43.362
+        ],
+        [
+          -22.99,
+          -43.36
+        ],
+        [
+          -23,
+          -43.33
+        ],
+        [
+          -23.008,
+          -43.31
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.98,
+          -43.365
+        ],
+        [
+          -22.985,
+          -43.362
+        ],
+        [
+          -22.99,
+          -43.36
+        ],
+        [
+          -23,
+          -43.33
+        ],
+        [
+          -23.008,
+          -43.31
+        ]
+      ]
     },
     {
       "via": "Zona Sul",
@@ -119,7 +459,51 @@
       "ocorrenciaAtiva": "Volume concentrado no Túnel Rebouças",
       "tempoParada": "2 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Túnel Rebouças sentido Lagoa"
+      "trechoCritico": "Túnel Rebouças sentido Lagoa",
+      "geometry": [
+        [
+          -22.918,
+          -43.172
+        ],
+        [
+          -22.935,
+          -43.175
+        ],
+        [
+          -22.955,
+          -43.182
+        ],
+        [
+          -22.965,
+          -43.179
+        ],
+        [
+          -22.985,
+          -43.19
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.918,
+          -43.172
+        ],
+        [
+          -22.935,
+          -43.175
+        ],
+        [
+          -22.955,
+          -43.182
+        ],
+        [
+          -22.965,
+          -43.179
+        ],
+        [
+          -22.985,
+          -43.19
+        ]
+      ]
     },
     {
       "via": "Ponte Rio-Niterói",
@@ -134,7 +518,43 @@
       "ocorrenciaAtiva": "Pane mecânica de carreta no Vão Central e reflexo nos acessos",
       "tempoParada": "32 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Vão Central sentido Niterói e Praça do Pedágio"
+      "trechoCritico": "Vão Central sentido Niterói e Praça do Pedágio",
+      "geometry": [
+        [
+          -22.875,
+          -43.11
+        ],
+        [
+          -22.88,
+          -43.135
+        ],
+        [
+          -22.885,
+          -43.16
+        ],
+        [
+          -22.89,
+          -43.2
+        ]
+      ],
+      "coordinates": [
+        [
+          -22.875,
+          -43.11
+        ],
+        [
+          -22.88,
+          -43.135
+        ],
+        [
+          -22.885,
+          -43.16
+        ],
+        [
+          -22.89,
+          -43.2
+        ]
+      ]
     }
   ],
   "SP": [
@@ -151,7 +571,59 @@
       "ocorrenciaAtiva": "Excesso de veículos e lentidão da Ponte das Bandeiras à Casa Verde",
       "tempoParada": "16 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Pista Central entre Ponte do Limão e Casa Verde"
+      "trechoCritico": "Pista Central entre Ponte do Limão e Casa Verde",
+      "geometry": [
+        [
+          -23.518,
+          -46.61
+        ],
+        [
+          -23.515,
+          -46.635
+        ],
+        [
+          -23.515,
+          -46.66
+        ],
+        [
+          -23.518,
+          -46.685
+        ],
+        [
+          -23.525,
+          -46.715
+        ],
+        [
+          -23.528,
+          -46.745
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.518,
+          -46.61
+        ],
+        [
+          -23.515,
+          -46.635
+        ],
+        [
+          -23.515,
+          -46.66
+        ],
+        [
+          -23.518,
+          -46.685
+        ],
+        [
+          -23.525,
+          -46.715
+        ],
+        [
+          -23.528,
+          -46.745
+        ]
+      ]
     },
     {
       "via": "Marginal Pinheiros",
@@ -166,7 +638,59 @@
       "ocorrenciaAtiva": "Retenção entre Ponte Eusébio Matoso e Shopping Morumbi",
       "tempoParada": "8 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Ponte Eusébio Matoso até Ponte Cidade Jardim"
+      "trechoCritico": "Ponte Eusébio Matoso até Ponte Cidade Jardim",
+      "geometry": [
+        [
+          -23.535,
+          -46.732
+        ],
+        [
+          -23.55,
+          -46.718
+        ],
+        [
+          -23.565,
+          -46.702
+        ],
+        [
+          -23.595,
+          -46.695
+        ],
+        [
+          -23.625,
+          -46.698
+        ],
+        [
+          -23.645,
+          -46.705
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.535,
+          -46.732
+        ],
+        [
+          -23.55,
+          -46.718
+        ],
+        [
+          -23.565,
+          -46.702
+        ],
+        [
+          -23.595,
+          -46.695
+        ],
+        [
+          -23.625,
+          -46.698
+        ],
+        [
+          -23.645,
+          -46.705
+        ]
+      ]
     },
     {
       "via": "Radial Leste",
@@ -181,7 +705,59 @@
       "ocorrenciaAtiva": "Adensamento no sentido Bairro próximo ao Tatuapé",
       "tempoParada": "6 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Viaduto Pacaembu até Metrô Tatuapé"
+      "trechoCritico": "Viaduto Pacaembu até Metrô Tatuapé",
+      "geometry": [
+        [
+          -23.55,
+          -46.63
+        ],
+        [
+          -23.545,
+          -46.61
+        ],
+        [
+          -23.54,
+          -46.59
+        ],
+        [
+          -23.538,
+          -46.575
+        ],
+        [
+          -23.536,
+          -46.545
+        ],
+        [
+          -23.535,
+          -46.515
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.55,
+          -46.63
+        ],
+        [
+          -23.545,
+          -46.61
+        ],
+        [
+          -23.54,
+          -46.59
+        ],
+        [
+          -23.538,
+          -46.575
+        ],
+        [
+          -23.536,
+          -46.545
+        ],
+        [
+          -23.535,
+          -46.515
+        ]
+      ]
     },
     {
       "via": "Av dos Bandeirantes",
@@ -196,7 +772,59 @@
       "ocorrenciaAtiva": "Retenção na chegada ao Aeroporto de Congonhas",
       "tempoParada": "7 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Viaduto Santo Amaro até Washington Luís"
+      "trechoCritico": "Viaduto Santo Amaro até Washington Luís",
+      "geometry": [
+        [
+          -23.595,
+          -46.685
+        ],
+        [
+          -23.602,
+          -46.675
+        ],
+        [
+          -23.608,
+          -46.665
+        ],
+        [
+          -23.615,
+          -46.64
+        ],
+        [
+          -23.612,
+          -46.625
+        ],
+        [
+          -23.61,
+          -46.615
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.595,
+          -46.685
+        ],
+        [
+          -23.602,
+          -46.675
+        ],
+        [
+          -23.608,
+          -46.665
+        ],
+        [
+          -23.615,
+          -46.64
+        ],
+        [
+          -23.612,
+          -46.625
+        ],
+        [
+          -23.61,
+          -46.615
+        ]
+      ]
     },
     {
       "via": "Rodovia Anchieta",
@@ -211,7 +839,51 @@
       "ocorrenciaAtiva": "Neblina parcial e tráfego pesado de carretas no trecho de serra",
       "tempoParada": "2 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "km 18 ao 23 sentido Baixada"
+      "trechoCritico": "km 18 ao 23 sentido Baixada",
+      "geometry": [
+        [
+          -23.605,
+          -46.605
+        ],
+        [
+          -23.618,
+          -46.6
+        ],
+        [
+          -23.625,
+          -46.595
+        ],
+        [
+          -23.655,
+          -46.58
+        ],
+        [
+          -23.685,
+          -46.565
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.605,
+          -46.605
+        ],
+        [
+          -23.618,
+          -46.6
+        ],
+        [
+          -23.625,
+          -46.595
+        ],
+        [
+          -23.655,
+          -46.58
+        ],
+        [
+          -23.685,
+          -46.565
+        ]
+      ]
     },
     {
       "via": "Rodovia Imigrantes",
@@ -226,7 +898,51 @@
       "ocorrenciaAtiva": "Operação normal com pistas livres",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Planalto sem retenções"
+      "trechoCritico": "Planalto sem retenções",
+      "geometry": [
+        [
+          -23.62,
+          -46.64
+        ],
+        [
+          -23.635,
+          -46.638
+        ],
+        [
+          -23.645,
+          -46.635
+        ],
+        [
+          -23.675,
+          -46.625
+        ],
+        [
+          -23.705,
+          -46.615
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.62,
+          -46.64
+        ],
+        [
+          -23.635,
+          -46.638
+        ],
+        [
+          -23.645,
+          -46.635
+        ],
+        [
+          -23.675,
+          -46.625
+        ],
+        [
+          -23.705,
+          -46.615
+        ]
+      ]
     },
     {
       "via": "Castelo Branco",
@@ -241,7 +957,51 @@
       "ocorrenciaAtiva": "Lentidão na chegada a Alphaville / Osasco",
       "tempoParada": "3 min",
       "tendencia": "MELHORANDO",
-      "trechoCritico": "km 19 ao 15 sentido Capital"
+      "trechoCritico": "km 19 ao 15 sentido Capital",
+      "geometry": [
+        [
+          -23.525,
+          -46.715
+        ],
+        [
+          -23.52,
+          -46.745
+        ],
+        [
+          -23.515,
+          -46.775
+        ],
+        [
+          -23.51,
+          -46.815
+        ],
+        [
+          -23.505,
+          -46.855
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.525,
+          -46.715
+        ],
+        [
+          -23.52,
+          -46.745
+        ],
+        [
+          -23.515,
+          -46.775
+        ],
+        [
+          -23.51,
+          -46.815
+        ],
+        [
+          -23.505,
+          -46.855
+        ]
+      ]
     },
     {
       "via": "Raposo Tavares",
@@ -256,7 +1016,51 @@
       "ocorrenciaAtiva": "Volume intenso na aproximação do Rodoanel",
       "tempoParada": "6 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "km 14 ao 10 sentido Butantã"
+      "trechoCritico": "km 14 ao 10 sentido Butantã",
+      "geometry": [
+        [
+          -23.57,
+          -46.715
+        ],
+        [
+          -23.572,
+          -46.74
+        ],
+        [
+          -23.575,
+          -46.765
+        ],
+        [
+          -23.58,
+          -46.8
+        ],
+        [
+          -23.585,
+          -46.835
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.57,
+          -46.715
+        ],
+        [
+          -23.572,
+          -46.74
+        ],
+        [
+          -23.575,
+          -46.765
+        ],
+        [
+          -23.58,
+          -46.8
+        ],
+        [
+          -23.585,
+          -46.835
+        ]
+      ]
     },
     {
       "via": "Ayrton Senna",
@@ -271,7 +1075,51 @@
       "ocorrenciaAtiva": "Fluxo livre no acesso ao Aeroporto de Guarulhos",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Acesso Cumbica desimpedido"
+      "trechoCritico": "Acesso Cumbica desimpedido",
+      "geometry": [
+        [
+          -23.515,
+          -46.565
+        ],
+        [
+          -23.505,
+          -46.535
+        ],
+        [
+          -23.495,
+          -46.515
+        ],
+        [
+          -23.485,
+          -46.475
+        ],
+        [
+          -23.475,
+          -46.435
+        ]
+      ],
+      "coordinates": [
+        [
+          -23.515,
+          -46.565
+        ],
+        [
+          -23.505,
+          -46.535
+        ],
+        [
+          -23.495,
+          -46.515
+        ],
+        [
+          -23.485,
+          -46.475
+        ],
+        [
+          -23.475,
+          -46.435
+        ]
+      ]
     }
   ],
   "BH": [
@@ -288,7 +1136,51 @@
       "ocorrenciaAtiva": "Retenção na altura do Túnel da Lagoinha sentido Centro",
       "tempoParada": "7 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Viaduto São Francisco até Lagoinha"
+      "trechoCritico": "Viaduto São Francisco até Lagoinha",
+      "geometry": [
+        [
+          -19.915,
+          -43.935
+        ],
+        [
+          -19.895,
+          -43.93
+        ],
+        [
+          -19.875,
+          -43.925
+        ],
+        [
+          -19.855,
+          -43.922
+        ],
+        [
+          -19.825,
+          -43.92
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.915,
+          -43.935
+        ],
+        [
+          -19.895,
+          -43.93
+        ],
+        [
+          -19.875,
+          -43.925
+        ],
+        [
+          -19.855,
+          -43.922
+        ],
+        [
+          -19.825,
+          -43.92
+        ]
+      ]
     },
     {
       "via": "Anel Rodoviário",
@@ -303,7 +1195,59 @@
       "ocorrenciaAtiva": "Colisão entre caminhão e utilitário próximo à descida do Betânia",
       "tempoParada": "18 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "km 538 ao 542 sentido Vitória"
+      "trechoCritico": "km 538 ao 542 sentido Vitória",
+      "geometry": [
+        [
+          -19.865,
+          -43.945
+        ],
+        [
+          -19.885,
+          -43.97
+        ],
+        [
+          -19.905,
+          -43.985
+        ],
+        [
+          -19.935,
+          -43.99
+        ],
+        [
+          -19.965,
+          -43.98
+        ],
+        [
+          -19.985,
+          -43.955
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.865,
+          -43.945
+        ],
+        [
+          -19.885,
+          -43.97
+        ],
+        [
+          -19.905,
+          -43.985
+        ],
+        [
+          -19.935,
+          -43.99
+        ],
+        [
+          -19.965,
+          -43.98
+        ],
+        [
+          -19.985,
+          -43.955
+        ]
+      ]
     },
     {
       "via": "Av Antônio Carlos",
@@ -318,7 +1262,51 @@
       "ocorrenciaAtiva": "Adensamento próximo ao Hospital Belo Horizonte",
       "tempoParada": "3 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Complexo da Lagoinha sentido Pampulha"
+      "trechoCritico": "Complexo da Lagoinha sentido Pampulha",
+      "geometry": [
+        [
+          -19.91,
+          -43.94
+        ],
+        [
+          -19.89,
+          -43.95
+        ],
+        [
+          -19.87,
+          -43.955
+        ],
+        [
+          -19.86,
+          -43.96
+        ],
+        [
+          -19.85,
+          -43.965
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.91,
+          -43.94
+        ],
+        [
+          -19.89,
+          -43.95
+        ],
+        [
+          -19.87,
+          -43.955
+        ],
+        [
+          -19.86,
+          -43.96
+        ],
+        [
+          -19.85,
+          -43.965
+        ]
+      ]
     },
     {
       "via": "Av Amazonas",
@@ -333,7 +1321,51 @@
       "ocorrenciaAtiva": "Semáforos em manutenção próximo à Silva Lobo",
       "tempoParada": "5 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Cruzamento com Av. Silva Lobo"
+      "trechoCritico": "Cruzamento com Av. Silva Lobo",
+      "geometry": [
+        [
+          -19.918,
+          -43.938
+        ],
+        [
+          -19.925,
+          -43.945
+        ],
+        [
+          -19.932,
+          -43.955
+        ],
+        [
+          -19.938,
+          -43.975
+        ],
+        [
+          -19.945,
+          -43.995
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.918,
+          -43.938
+        ],
+        [
+          -19.925,
+          -43.945
+        ],
+        [
+          -19.932,
+          -43.955
+        ],
+        [
+          -19.938,
+          -43.975
+        ],
+        [
+          -19.945,
+          -43.995
+        ]
+      ]
     },
     {
       "via": "Via Expressa",
@@ -348,7 +1380,51 @@
       "ocorrenciaAtiva": "Fluxo regular no trecho BH - Contagem",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Sem gargalos ativos"
+      "trechoCritico": "Sem gargalos ativos",
+      "geometry": [
+        [
+          -19.925,
+          -43.975
+        ],
+        [
+          -19.93,
+          -44
+        ],
+        [
+          -19.935,
+          -44.025
+        ],
+        [
+          -19.94,
+          -44.05
+        ],
+        [
+          -19.945,
+          -44.075
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.925,
+          -43.975
+        ],
+        [
+          -19.93,
+          -44
+        ],
+        [
+          -19.935,
+          -44.025
+        ],
+        [
+          -19.94,
+          -44.05
+        ],
+        [
+          -19.945,
+          -44.075
+        ]
+      ]
     },
     {
       "via": "BR-040",
@@ -363,7 +1439,51 @@
       "ocorrenciaAtiva": "Volume de veículos na saída para Nova Lima",
       "tempoParada": "2 min",
       "tendencia": "MELHORANDO",
-      "trechoCritico": "Trevo do BH Shopping"
+      "trechoCritico": "Trevo do BH Shopping",
+      "geometry": [
+        [
+          -19.955,
+          -43.955
+        ],
+        [
+          -19.97,
+          -43.95
+        ],
+        [
+          -19.985,
+          -43.945
+        ],
+        [
+          -20.015,
+          -43.95
+        ],
+        [
+          -20.045,
+          -43.955
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.955,
+          -43.955
+        ],
+        [
+          -19.97,
+          -43.95
+        ],
+        [
+          -19.985,
+          -43.945
+        ],
+        [
+          -20.015,
+          -43.95
+        ],
+        [
+          -20.045,
+          -43.955
+        ]
+      ]
     },
     {
       "via": "BR-381",
@@ -378,7 +1498,51 @@
       "ocorrenciaAtiva": "Obras pontuais e fluxo de caminhões sentido Betim",
       "tempoParada": "6 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Acesso a Betim / Fernão Dias"
+      "trechoCritico": "Acesso a Betim / Fernão Dias",
+      "geometry": [
+        [
+          -19.885,
+          -43.895
+        ],
+        [
+          -19.875,
+          -43.89
+        ],
+        [
+          -19.865,
+          -43.885
+        ],
+        [
+          -19.85,
+          -43.865
+        ],
+        [
+          -19.835,
+          -43.845
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.885,
+          -43.895
+        ],
+        [
+          -19.875,
+          -43.89
+        ],
+        [
+          -19.865,
+          -43.885
+        ],
+        [
+          -19.85,
+          -43.865
+        ],
+        [
+          -19.835,
+          -43.845
+        ]
+      ]
     },
     {
       "via": "Centro",
@@ -393,7 +1557,51 @@
       "ocorrenciaAtiva": "Trânsito denso no entorno da Praça Sete e Afonso Pena",
       "tempoParada": "2 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Av. Afonso Pena x Praça Sete"
+      "trechoCritico": "Av. Afonso Pena x Praça Sete",
+      "geometry": [
+        [
+          -19.921,
+          -43.94
+        ],
+        [
+          -19.918,
+          -43.935
+        ],
+        [
+          -19.922,
+          -43.932
+        ],
+        [
+          -19.925,
+          -43.93
+        ],
+        [
+          -19.928,
+          -43.938
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.921,
+          -43.94
+        ],
+        [
+          -19.918,
+          -43.935
+        ],
+        [
+          -19.922,
+          -43.932
+        ],
+        [
+          -19.925,
+          -43.93
+        ],
+        [
+          -19.928,
+          -43.938
+        ]
+      ]
     },
     {
       "via": "Pampulha",
@@ -408,7 +1616,51 @@
       "ocorrenciaAtiva": "Orla da Lagoa e Av. Fleming desimpedidas",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Entorno do Mineirão livre"
+      "trechoCritico": "Entorno do Mineirão livre",
+      "geometry": [
+        [
+          -19.86,
+          -43.98
+        ],
+        [
+          -19.855,
+          -43.975
+        ],
+        [
+          -19.85,
+          -43.97
+        ],
+        [
+          -19.848,
+          -43.968
+        ],
+        [
+          -19.845,
+          -43.965
+        ]
+      ],
+      "coordinates": [
+        [
+          -19.86,
+          -43.98
+        ],
+        [
+          -19.855,
+          -43.975
+        ],
+        [
+          -19.85,
+          -43.97
+        ],
+        [
+          -19.848,
+          -43.968
+        ],
+        [
+          -19.845,
+          -43.965
+        ]
+      ]
     }
   ],
   "BSB": [
@@ -425,7 +1677,51 @@
       "ocorrenciaAtiva": "Retenção na altura do Park Shopping sentido Asa Sul",
       "tempoParada": "6 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Viaduto do Guará ao Park Shopping"
+      "trechoCritico": "Viaduto do Guará ao Park Shopping",
+      "geometry": [
+        [
+          -15.745,
+          -47.925
+        ],
+        [
+          -15.78,
+          -47.94
+        ],
+        [
+          -15.815,
+          -47.955
+        ],
+        [
+          -15.85,
+          -47.96
+        ],
+        [
+          -15.885,
+          -47.965
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.745,
+          -47.925
+        ],
+        [
+          -15.78,
+          -47.94
+        ],
+        [
+          -15.815,
+          -47.955
+        ],
+        [
+          -15.85,
+          -47.96
+        ],
+        [
+          -15.885,
+          -47.965
+        ]
+      ]
     },
     {
       "via": "Eixo Monumental",
@@ -440,7 +1736,51 @@
       "ocorrenciaAtiva": "Fluxo livre em frente aos Ministérios e Congresso",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Esplanada fluindo perfeitamente"
+      "trechoCritico": "Esplanada fluindo perfeitamente",
+      "geometry": [
+        [
+          -15.785,
+          -47.935
+        ],
+        [
+          -15.79,
+          -47.915
+        ],
+        [
+          -15.795,
+          -47.895
+        ],
+        [
+          -15.798,
+          -47.88
+        ],
+        [
+          -15.8,
+          -47.865
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.785,
+          -47.935
+        ],
+        [
+          -15.79,
+          -47.915
+        ],
+        [
+          -15.795,
+          -47.895
+        ],
+        [
+          -15.798,
+          -47.88
+        ],
+        [
+          -15.8,
+          -47.865
+        ]
+      ]
     },
     {
       "via": "Eixão Sul",
@@ -455,7 +1795,51 @@
       "ocorrenciaAtiva": "Fluxo intenso nas tesourinhas da quadra 114 Sul",
       "tempoParada": "2 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Tesourinhas 108 a 114 Sul"
+      "trechoCritico": "Tesourinhas 108 a 114 Sul",
+      "geometry": [
+        [
+          -15.795,
+          -47.89
+        ],
+        [
+          -15.81,
+          -47.905
+        ],
+        [
+          -15.825,
+          -47.915
+        ],
+        [
+          -15.84,
+          -47.925
+        ],
+        [
+          -15.855,
+          -47.935
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.795,
+          -47.89
+        ],
+        [
+          -15.81,
+          -47.905
+        ],
+        [
+          -15.825,
+          -47.915
+        ],
+        [
+          -15.84,
+          -47.925
+        ],
+        [
+          -15.855,
+          -47.935
+        ]
+      ]
     },
     {
       "via": "Eixão Norte",
@@ -470,7 +1854,51 @@
       "ocorrenciaAtiva": "Trânsito fluido em todas as faixas",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Trecho Asa Norte sem gargalos"
+      "trechoCritico": "Trecho Asa Norte sem gargalos",
+      "geometry": [
+        [
+          -15.795,
+          -47.89
+        ],
+        [
+          -15.78,
+          -47.885
+        ],
+        [
+          -15.765,
+          -47.88
+        ],
+        [
+          -15.75,
+          -47.878
+        ],
+        [
+          -15.735,
+          -47.875
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.795,
+          -47.89
+        ],
+        [
+          -15.78,
+          -47.885
+        ],
+        [
+          -15.765,
+          -47.88
+        ],
+        [
+          -15.75,
+          -47.878
+        ],
+        [
+          -15.735,
+          -47.875
+        ]
+      ]
     },
     {
       "via": "EPIG",
@@ -485,7 +1913,43 @@
       "ocorrenciaAtiva": "Obras do corredor BRT / viaduto do Sudoeste",
       "tempoParada": "3 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Cruzamento Parque da Cidade / Sudoeste"
+      "trechoCritico": "Cruzamento Parque da Cidade / Sudoeste",
+      "geometry": [
+        [
+          -15.795,
+          -47.925
+        ],
+        [
+          -15.805,
+          -47.935
+        ],
+        [
+          -15.815,
+          -47.945
+        ],
+        [
+          -15.825,
+          -47.95
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.795,
+          -47.925
+        ],
+        [
+          -15.805,
+          -47.935
+        ],
+        [
+          -15.815,
+          -47.945
+        ],
+        [
+          -15.825,
+          -47.95
+        ]
+      ]
     },
     {
       "via": "EPDB",
@@ -500,7 +1964,43 @@
       "ocorrenciaAtiva": "Acesso às pontes do Lago Sul desimpedido",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Ponte das Garças livre"
+      "trechoCritico": "Ponte das Garças livre",
+      "geometry": [
+        [
+          -15.825,
+          -47.875
+        ],
+        [
+          -15.845,
+          -47.875
+        ],
+        [
+          -15.865,
+          -47.88
+        ],
+        [
+          -15.885,
+          -47.885
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.825,
+          -47.875
+        ],
+        [
+          -15.845,
+          -47.875
+        ],
+        [
+          -15.865,
+          -47.88
+        ],
+        [
+          -15.885,
+          -47.885
+        ]
+      ]
     },
     {
       "via": "Ponte JK",
@@ -515,7 +2015,43 @@
       "ocorrenciaAtiva": "Tráfego sem retenções em direção ao Setor de Clubes",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Extensão da ponte livre"
+      "trechoCritico": "Extensão da ponte livre",
+      "geometry": [
+        [
+          -15.82,
+          -47.835
+        ],
+        [
+          -15.824,
+          -47.829
+        ],
+        [
+          -15.826,
+          -47.825
+        ],
+        [
+          -15.828,
+          -47.82
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.82,
+          -47.835
+        ],
+        [
+          -15.824,
+          -47.829
+        ],
+        [
+          -15.826,
+          -47.825
+        ],
+        [
+          -15.828,
+          -47.82
+        ]
+      ]
     },
     {
       "via": "Estrada Parque Taguatinga",
@@ -530,7 +2066,51 @@
       "ocorrenciaAtiva": "Acidente leve e fluxo sobrecarregado no Túnel Rei Pelé",
       "tempoParada": "14 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Aproximação do Túnel Rei Pelé sentido Taguatinga"
+      "trechoCritico": "Aproximação do Túnel Rei Pelé sentido Taguatinga",
+      "geometry": [
+        [
+          -15.815,
+          -47.965
+        ],
+        [
+          -15.82,
+          -47.99
+        ],
+        [
+          -15.825,
+          -48.015
+        ],
+        [
+          -15.83,
+          -48.035
+        ],
+        [
+          -15.835,
+          -48.055
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.815,
+          -47.965
+        ],
+        [
+          -15.82,
+          -47.99
+        ],
+        [
+          -15.825,
+          -48.015
+        ],
+        [
+          -15.83,
+          -48.035
+        ],
+        [
+          -15.835,
+          -48.055
+        ]
+      ]
     },
     {
       "via": "BR-060",
@@ -545,7 +2125,51 @@
       "ocorrenciaAtiva": "Fiscalização de tráfego próximo a Samambaia",
       "tempoParada": "2 min",
       "tendencia": "MELHORANDO",
-      "trechoCritico": "km 12 ao 16 sentido Goiânia"
+      "trechoCritico": "km 12 ao 16 sentido Goiânia",
+      "geometry": [
+        [
+          -15.845,
+          -48.035
+        ],
+        [
+          -15.865,
+          -48.055
+        ],
+        [
+          -15.885,
+          -48.075
+        ],
+        [
+          -15.91,
+          -48.1
+        ],
+        [
+          -15.935,
+          -48.125
+        ]
+      ],
+      "coordinates": [
+        [
+          -15.845,
+          -48.035
+        ],
+        [
+          -15.865,
+          -48.055
+        ],
+        [
+          -15.885,
+          -48.075
+        ],
+        [
+          -15.91,
+          -48.1
+        ],
+        [
+          -15.935,
+          -48.125
+        ]
+      ]
     }
   ],
   "REC": [
@@ -562,7 +2186,51 @@
       "ocorrenciaAtiva": "Semáforos apagados no cruzamento com a Conde da Boa Vista",
       "tempoParada": "18 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Viaduto Capitão Temudo até o Derby"
+      "trechoCritico": "Viaduto Capitão Temudo até o Derby",
+      "geometry": [
+        [
+          -8.035,
+          -34.898
+        ],
+        [
+          -8.045,
+          -34.896
+        ],
+        [
+          -8.05,
+          -34.895
+        ],
+        [
+          -8.058,
+          -34.896
+        ],
+        [
+          -8.068,
+          -34.898
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.035,
+          -34.898
+        ],
+        [
+          -8.045,
+          -34.896
+        ],
+        [
+          -8.05,
+          -34.895
+        ],
+        [
+          -8.058,
+          -34.896
+        ],
+        [
+          -8.068,
+          -34.898
+        ]
+      ]
     },
     {
       "via": "Av Boa Viagem",
@@ -577,7 +2245,51 @@
       "ocorrenciaAtiva": "Fluxo denso na orla próximo ao Parque Dona Lindu",
       "tempoParada": "3 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Orla entre Pina e Parque Dona Lindu"
+      "trechoCritico": "Orla entre Pina e Parque Dona Lindu",
+      "geometry": [
+        [
+          -8.095,
+          -34.885
+        ],
+        [
+          -8.11,
+          -34.892
+        ],
+        [
+          -8.125,
+          -34.9
+        ],
+        [
+          -8.14,
+          -34.908
+        ],
+        [
+          -8.155,
+          -34.912
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.095,
+          -34.885
+        ],
+        [
+          -8.11,
+          -34.892
+        ],
+        [
+          -8.125,
+          -34.9
+        ],
+        [
+          -8.14,
+          -34.908
+        ],
+        [
+          -8.155,
+          -34.912
+        ]
+      ]
     },
     {
       "via": "BR-101",
@@ -592,7 +2304,51 @@
       "ocorrenciaAtiva": "Obras no pavimento na altura da Ceasa e Iputinga",
       "tempoParada": "9 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "km 68 ao 73 próximo à Ceasa"
+      "trechoCritico": "km 68 ao 73 próximo à Ceasa",
+      "geometry": [
+        [
+          -7.985,
+          -34.935
+        ],
+        [
+          -8.035,
+          -34.945
+        ],
+        [
+          -8.065,
+          -34.948
+        ],
+        [
+          -8.095,
+          -34.945
+        ],
+        [
+          -8.145,
+          -34.935
+        ]
+      ],
+      "coordinates": [
+        [
+          -7.985,
+          -34.935
+        ],
+        [
+          -8.035,
+          -34.945
+        ],
+        [
+          -8.065,
+          -34.948
+        ],
+        [
+          -8.095,
+          -34.945
+        ],
+        [
+          -8.145,
+          -34.935
+        ]
+      ]
     },
     {
       "via": "BR-232",
@@ -607,7 +2363,51 @@
       "ocorrenciaAtiva": "Fluxo intenso na saída do Curado sentido Gravatá",
       "tempoParada": "3 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Acesso Jardim São Paulo / Curado"
+      "trechoCritico": "Acesso Jardim São Paulo / Curado",
+      "geometry": [
+        [
+          -8.065,
+          -34.955
+        ],
+        [
+          -8.07,
+          -34.96
+        ],
+        [
+          -8.075,
+          -34.965
+        ],
+        [
+          -8.08,
+          -34.995
+        ],
+        [
+          -8.085,
+          -35.025
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.065,
+          -34.955
+        ],
+        [
+          -8.07,
+          -34.96
+        ],
+        [
+          -8.075,
+          -34.965
+        ],
+        [
+          -8.08,
+          -34.995
+        ],
+        [
+          -8.085,
+          -35.025
+        ]
+      ]
     },
     {
       "via": "Via Mangue",
@@ -622,7 +2422,51 @@
       "ocorrenciaAtiva": "Pista expressa liberada em ambos os sentidos",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Trecho expresso sem retenção"
+      "trechoCritico": "Trecho expresso sem retenção",
+      "geometry": [
+        [
+          -8.085,
+          -34.89
+        ],
+        [
+          -8.095,
+          -34.892
+        ],
+        [
+          -8.105,
+          -34.895
+        ],
+        [
+          -8.12,
+          -34.9
+        ],
+        [
+          -8.135,
+          -34.905
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.085,
+          -34.89
+        ],
+        [
+          -8.095,
+          -34.892
+        ],
+        [
+          -8.105,
+          -34.895
+        ],
+        [
+          -8.12,
+          -34.9
+        ],
+        [
+          -8.135,
+          -34.905
+        ]
+      ]
     },
     {
       "via": "PE-015",
@@ -637,7 +2481,51 @@
       "ocorrenciaAtiva": "Intervenção viária próximo ao Terminal Pelópidas Silveira",
       "tempoParada": "6 min",
       "tendencia": "AGRAVANDO",
-      "trechoCritico": "Aproximação Olinda / Paulista"
+      "trechoCritico": "Aproximação Olinda / Paulista",
+      "geometry": [
+        [
+          -7.945,
+          -34.855
+        ],
+        [
+          -7.965,
+          -34.86
+        ],
+        [
+          -7.985,
+          -34.865
+        ],
+        [
+          -8,
+          -34.875
+        ],
+        [
+          -8.015,
+          -34.885
+        ]
+      ],
+      "coordinates": [
+        [
+          -7.945,
+          -34.855
+        ],
+        [
+          -7.965,
+          -34.86
+        ],
+        [
+          -7.985,
+          -34.865
+        ],
+        [
+          -8,
+          -34.875
+        ],
+        [
+          -8.015,
+          -34.885
+        ]
+      ]
     },
     {
       "via": "Centro Recife",
@@ -652,7 +2540,43 @@
       "ocorrenciaAtiva": "Estreitamento de faixa na Ponte Duarte Coelho",
       "tempoParada": "5 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Av. Conde da Boa Vista e Cais de Santa Rita"
+      "trechoCritico": "Av. Conde da Boa Vista e Cais de Santa Rita",
+      "geometry": [
+        [
+          -8.065,
+          -34.885
+        ],
+        [
+          -8.062,
+          -34.878
+        ],
+        [
+          -8.06,
+          -34.875
+        ],
+        [
+          -8.058,
+          -34.872
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.065,
+          -34.885
+        ],
+        [
+          -8.062,
+          -34.878
+        ],
+        [
+          -8.06,
+          -34.875
+        ],
+        [
+          -8.058,
+          -34.872
+        ]
+      ]
     },
     {
       "via": "Olinda",
@@ -667,7 +2591,51 @@
       "ocorrenciaAtiva": "Volume concentrado na Av. Presidente Kennedy",
       "tempoParada": "2 min",
       "tendencia": "MELHORANDO",
-      "trechoCritico": "Av. Pan Nordestina"
+      "trechoCritico": "Av. Pan Nordestina",
+      "geometry": [
+        [
+          -8.015,
+          -34.855
+        ],
+        [
+          -8.005,
+          -34.85
+        ],
+        [
+          -7.995,
+          -34.845
+        ],
+        [
+          -7.985,
+          -34.842
+        ],
+        [
+          -7.975,
+          -34.84
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.015,
+          -34.855
+        ],
+        [
+          -8.005,
+          -34.85
+        ],
+        [
+          -7.995,
+          -34.845
+        ],
+        [
+          -7.985,
+          -34.842
+        ],
+        [
+          -7.975,
+          -34.84
+        ]
+      ]
     },
     {
       "via": "Jaboatão",
@@ -682,7 +2650,51 @@
       "ocorrenciaAtiva": "Estrada da Batalha com tráfego desembaraçado",
       "tempoParada": "0 min",
       "tendencia": "ESTAVEL",
-      "trechoCritico": "Prazeres sem retenção"
+      "trechoCritico": "Prazeres sem retenção",
+      "geometry": [
+        [
+          -8.125,
+          -34.915
+        ],
+        [
+          -8.14,
+          -34.92
+        ],
+        [
+          -8.155,
+          -34.925
+        ],
+        [
+          -8.165,
+          -34.93
+        ],
+        [
+          -8.175,
+          -34.935
+        ]
+      ],
+      "coordinates": [
+        [
+          -8.125,
+          -34.915
+        ],
+        [
+          -8.14,
+          -34.92
+        ],
+        [
+          -8.155,
+          -34.925
+        ],
+        [
+          -8.165,
+          -34.93
+        ],
+        [
+          -8.175,
+          -34.935
+        ]
+      ]
     }
   ]
 }

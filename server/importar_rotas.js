@@ -3,10 +3,35 @@ const router = express.Router();
 const multer = require('multer');
 const xlsx = require('xlsx');
 const crypto = require('crypto');
-const { pool } = require('./database');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const { pool, registrarAuditoriaLGPD } = require('./database');
 const { getGeocode } = require('./geocode');
+const { resolveTenant } = require('./tenant-config');
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Rate limiter específico para upload de lotes
+const importLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutos
+    max: 30, // 30 uploads por IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Limite de uploads excedido para este IP. Aguarde alguns minutos.' }
+});
+
+// Validação estrita de arquivo (extensão, tamanho e sanitização)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limite corporativo
+    fileFilter: (req, file, cb) => {
+        const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (!allowedExtensions.includes(ext)) {
+            return cb(new Error('Formato de arquivo inválido. Permitido apenas planilhas (.xlsx, .xls, .csv).'));
+        }
+        cb(null, true);
+    }
+});
 
 const fetchFn = typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : require('node-fetch');
 
@@ -304,25 +329,157 @@ function formatarHorarioExcel(valor) {
     return String(valor).trim() || 'Horário não informado';
 }
 
-router.post('/importar', upload.single('planilha'), async (req, res) => {
+// ── GET /api/rotas/template ──────────────────────────
+// FASE 4: Template Obrigatório com Modelo Padrão de Download
+router.get('/template', (req, res) => {
+    try {
+        const headers = [
+            'Origem',
+            'Destino',
+            'Horário',
+            'Data Hora Término',
+            'Matrícula',
+            'Nome Colaborador',
+            'Área',
+            'Programa',
+            'Motorista',
+            'Telefone Motorista',
+            'Tipo Veículo',
+            'Placa Veículo',
+            'OT',
+            'Código OT Detalhado'
+        ];
+
+        const sampleRows = [
+            {
+                'Origem': 'Estrada dos Bandeirantes, 6700 - Jacarepaguá, Rio de Janeiro - RJ',
+                'Destino': 'Av. das Américas, 5000 - Barra da Tijuca, Rio de Janeiro - RJ',
+                'Horário': '08:30',
+                'Data Hora Término': '09:30',
+                'Matrícula': '990123',
+                'Nome Colaborador': 'Exemplo Colaborador',
+                'Área': 'Operações',
+                'Programa': 'Produção RIT',
+                'Motorista': 'Condutor Padrão',
+                'Telefone Motorista': '21999998888',
+                'Tipo Veículo': 'Sedan Executivo',
+                'Placa Veículo': 'RIO2026',
+                'OT': 'OT-1001',
+                'Código OT Detalhado': 'PROD-2026-001'
+            }
+        ];
+
+        const wb = xlsx.utils.book_new();
+        const ws = xlsx.utils.json_to_sheet(sampleRows, { header: headers });
+        xlsx.utils.book_append_sheet(wb, ws, 'Modelo Importação RIT');
+        const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="template_importacao_rotas_rit.xlsx"');
+        return res.send(buffer);
+    } catch (err) {
+        console.error('Erro ao gerar template de rotas:', err);
+        return res.status(500).json({ error: 'Erro interno ao gerar modelo de importação.' });
+    }
+});
+
+router.post('/importar', importLimiter, upload.single('planilha'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
     }
 
     try {
-        const id_usuario = req.body.id_usuario || null; // Pode vir do token em prod
-
-        // Registra o lote
-        const loteResult = await pool.query(
-            'INSERT INTO lotes_importacao (id_usuario, nome_arquivo) VALUES ($1, $2) RETURNING id',
-            [id_usuario, req.file.originalname]
-        );
-        const id_lote = loteResult.rows[0].id;
+        // Resolve usuário e organização
+        let id_usuario = req.body.id_usuario || null;
+        let authMatricula = 'SISTEMA';
+        if (req.headers['authorization']) {
+            try {
+                const token = req.headers['authorization'].split(' ')[1];
+                const decoded = jwt.decode(token);
+                if (decoded && decoded.id) {
+                    id_usuario = decoded.id;
+                    authMatricula = decoded.matricula || 'SISTEMA';
+                }
+            } catch (_) {}
+        }
+        const tenant = resolveTenant(req);
+        const organization_id = tenant.organization_id || 'globo';
 
         // Lê a planilha
         const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        if (!data || data.length === 0) {
+            return res.status(400).json({ error: 'A planilha enviada está vazia ou sem registros válidos.' });
+        }
+
+        // Validação Estrita de Layout e Cabeçalhos
+        const firstRow = data[0];
+        const hasOrigem = findValueByHeader(firstRow, ['origem', 'saida', 'partida', 'endereco de origem', 'localidade1 + endereco1', 'localidade1', 'localidade + endereco']);
+        const hasDestino = findValueByHeader(firstRow, ['destino', 'chegada', 'retorno', 'endereco de destino', 'localidade2 + endereco2', 'localidade2']);
+
+        if (!hasOrigem || !hasDestino) {
+            try {
+                await pool.query(
+                    `INSERT INTO eventos_seguranca (tipo_evento, entidade, entidade_id, usuario, ip_origem, user_agent, resultado, motivo, metadados)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    [
+                        'IMPORTACAO_REJEITADA_LAYOUT',
+                        'PLANILHA',
+                        req.file.originalname,
+                        authMatricula,
+                        req.ip,
+                        req.headers['user-agent'],
+                        'BLOQUEADO',
+                        'Colunas obrigatórias Origem ou Destino ausentes',
+                        JSON.stringify({ colunasEncontradas: Object.keys(firstRow) })
+                    ]
+                );
+            } catch (_) {}
+
+            return res.status(400).json({
+                error: 'Layout inválido. A planilha deve conter obrigatoriamente colunas de Origem e Destino. Baixe o modelo padrão em /api/rotas/template.'
+            });
+        }
+
+        // Bloqueio de colunas anômalas não homologadas (proteção contra injeção e dados fora de layout)
+        const KNOWN_COLUMNS_REGEX = /(origem|destino|horario|hora|matricula|registro|id|nome|colaborador|funcionario|passageiro|area|setor|departamento|transito|trânsito|chuva|motorista|condutor|telefone|celular|veiculo|veículo|placa|programa|projeto|grupo|ot|codigo|código|localidade)/i;
+        const unknownColumns = Object.keys(firstRow).filter(k => {
+            const cleanKey = k.trim().replace(/^_+/, '');
+            return cleanKey.length > 0 && !KNOWN_COLUMNS_REGEX.test(cleanKey);
+        });
+
+        if (unknownColumns.length > 4) {
+            try {
+                await pool.query(
+                    `INSERT INTO eventos_seguranca (tipo_evento, entidade, entidade_id, usuario, ip_origem, user_agent, resultado, motivo, metadados)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    [
+                        'IMPORTACAO_REJEITADA_COLUNAS_DESCONHECIDAS',
+                        'PLANILHA',
+                        req.file.originalname,
+                        authMatricula,
+                        req.ip,
+                        req.headers['user-agent'],
+                        'BLOQUEADO',
+                        `Colunas desconhecidas detectadas: ${unknownColumns.slice(0, 5).join(', ')}`,
+                        JSON.stringify({ colunasDesconhecidas: unknownColumns })
+                    ]
+                );
+            } catch (_) {}
+
+            return res.status(400).json({
+                error: `Layout incompatível: colunas desconhecidas detectadas (${unknownColumns.slice(0, 3).join(', ')}). Utilize o modelo padrão oficial obtido em /api/rotas/template.`
+            });
+        }
+
+        // Registra o lote com organization_id
+        const loteResult = await pool.query(
+            'INSERT INTO lotes_importacao (id_usuario, nome_arquivo, organization_id) VALUES ($1, $2, $3) RETURNING id',
+            [id_usuario, req.file.originalname, organization_id]
+        );
+        const id_lote = loteResult.rows[0].id;
 
         const resultados = [];
 
@@ -573,7 +730,20 @@ router.post('/importar', upload.single('planilha'), async (req, res) => {
             } finally {
                 client.release();
             }
-        }
+        // Rastreabilidade LGPD
+        try {
+            await registrarAuditoriaLGPD({
+                id_usuario: id_usuario,
+                usuario_identificador: authMatricula,
+                recurso_acessado: 'ROTAS_IMPORTADAS',
+                acao: 'IMPORTACAO',
+                dado_visualizado: `Lote ${id_lote}: ${resultados.length} rotas importadas`,
+                ip_origem: req.ip,
+                user_agent: req.headers['user-agent'],
+                organization_id: organization_id,
+                detalhes: { arquivo: req.file.originalname, totalLinhas: data.length, totalProcessadas: resultados.length }
+            });
+        } catch (_) {}
 
         res.json({ ok: true, id_lote, resultados });
 

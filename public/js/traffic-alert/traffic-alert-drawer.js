@@ -849,7 +849,7 @@ export class TrafficAlertDrawer {
             return `
                 <div class="ta-drw-kpi-section">
                     <div class="ta-drw-kpi-banner">
-                        <strong>Integridade de Dados:</strong> O Agente RIT opera exclusivamente sobre bases públicas oficiais, sem dependência de rastreamento de veículos ou GPS individual de motoristas.
+                        <strong>Integridade de Dados:</strong> O Agente RIT opera exclusivamente sobre bases públicas oficiais, sem dependência de rastreamento de veículos ou GPS individual de condutores.
                     </div>
 
                     <div class="ta-drw-kpi-stats-grid">
