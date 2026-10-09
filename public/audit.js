@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = (typeof getAuthToken === 'function') ? getAuthToken() : (localStorage.getItem('rit_token') || localStorage.getItem('rig_token'));
     
     if (!token) {
-        window.location.href = '/login.html';
+        sessionStorage.setItem('rit_redirect', '/audit.html');
+        window.location.href = '/login.html?redirect=' + encodeURIComponent('/audit.html');
         return;
     }
 
@@ -149,8 +150,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.status === 401 || response.status === 403) {
-                window.location.href = '/login.html';
+            if (response.status === 401) {
+                if (typeof clearAuthSession === 'function') {
+                    clearAuthSession();
+                } else {
+                    localStorage.removeItem('rit_token');
+                    localStorage.removeItem('rig_token');
+                }
+                sessionStorage.setItem('rit_redirect', '/audit.html');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent('/audit.html');
+                return;
+            }
+
+            if (response.status === 403) {
+                const data = await response.json().catch(() => ({}));
+                showAccessDenied(data.error || 'Acesso restrito. Este módulo exige perfil de Administrador, Gestor ou Auditor.');
                 return;
             }
 
@@ -176,14 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 if (typeof clearAuthSession === 'function') {
                     clearAuthSession();
                 } else {
                     localStorage.removeItem('rit_token');
                     localStorage.removeItem('rig_token');
                 }
-                window.location.href = '/login.html';
+                sessionStorage.setItem('rit_redirect', '/audit.html');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent('/audit.html');
+                return;
+            }
+
+            if (response.status === 403) {
+                const data = await response.json().catch(() => ({}));
+                showAccessDenied(data.error || 'Acesso restrito. Este painel exige perfil de Administrador, Gestor ou Auditor.');
                 return;
             }
 
@@ -233,14 +254,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 if (typeof clearAuthSession === 'function') {
                     clearAuthSession();
                 } else {
                     localStorage.removeItem('rit_token');
                     localStorage.removeItem('rig_token');
                 }
-                window.location.href = '/login.html';
+                sessionStorage.setItem('rit_redirect', '/audit.html');
+                window.location.href = '/login.html?redirect=' + encodeURIComponent('/audit.html');
+                return;
+            }
+
+            if (response.status === 403) {
+                const data = await response.json().catch(() => ({}));
+                showAccessDenied(data.error || 'Acesso restrito ao histórico de recuperações.');
                 return;
             }
 
@@ -735,6 +763,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(msg) {
         if (errorMessage) {
             errorMessage.textContent = msg;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    function showAccessDenied(msg) {
+        if (errorMessage) {
+            errorMessage.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:14px 18px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <i class="ph ph-shield-warning" style="font-size:26px; color:#ef4444;"></i>
+                        <div>
+                            <strong style="display:block; font-size:13.5px; color:#ef4444; margin-bottom:3px;">Acesso Restrito ao Painel de Auditoria</strong>
+                            <span style="font-size:12.5px; color:#fca5a5;">${escapeHTML(msg)}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <a href="/dashboard.html" class="btn-nav" style="background:rgba(0,209,255,0.15); border:1px solid #00d1ff; color:#00d1ff; padding:6px 14px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="ph ph-map-trifold"></i> Command Center
+                        </a>
+                        <a href="/index.html" class="btn-nav" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                            Início
+                        </a>
+                    </div>
+                </div>
+            `;
             errorMessage.style.display = 'block';
         }
     }

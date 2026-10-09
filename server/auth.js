@@ -68,7 +68,22 @@ function requireRole(allowedRoles) {
         if (!req.user) {
             return res.status(401).json({ error: 'Acesso negado. Usuário não autenticado.' });
         }
-        const userRole = req.user.role || req.user.papel || req.user.funcao || 'Colaborador';
+        let userRole = req.user.role || req.user.papel || req.user.funcao || 'Colaborador';
+        const userMat = String(req.user.matricula || '').trim().replace(/^0+/, '');
+        const userEmail = String(req.user.email || '').trim().toLowerCase();
+
+        // Super-Administrador: Fábio Paixão e credenciais master da plataforma
+        if (
+            userMat === '68808' ||
+            userEmail.includes('fabio.paixao') ||
+            userEmail.includes('fapaixao') ||
+            userEmail.startsWith('agente.rit') ||
+            userEmail.includes('admin')
+        ) {
+            userRole = 'Administrador';
+            req.user.role = 'Administrador';
+        }
+
         // Administrador possui acesso irrestrito a todas as rotas
         if (userRole === 'Administrador' || roles.includes(userRole)) {
             return next();
@@ -167,20 +182,44 @@ function findInBase(matricula, email) {
     return found || null;
 }
 
-function determineUserRole(colaborador, email = '') {
-    if (!colaborador) return 'Colaborador';
-    const cargo = String(colaborador.cargo || colaborador.funcao || colaborador.papel || '').toLowerCase();
-    const e = String(email || colaborador._email || '').toLowerCase();
+function determineUserRole(colaborador, email = '', matricula = '') {
+    const mat = String(matricula || colaborador?._matricula || colaborador?.matricula || '').trim().replace(/^0+/, '');
+    const e = String(email || colaborador?._email || colaborador?.email || '').toLowerCase();
+    const cargo = String(colaborador?.cargo || colaborador?.funcao || colaborador?.papel || '').toLowerCase();
 
-    if (cargo.includes('admin') || e.includes('admin') || e.startsWith('agente.rit') || e.includes('fapaixao')) {
+    // Administrador Mestre (Fábio Paixão e contas administrativas)
+    if (
+        mat === '68808' ||
+        e.includes('fabio.paixao') ||
+        e.includes('fapaixao') ||
+        e.startsWith('agente.rit') ||
+        e.includes('admin') ||
+        cargo.includes('admin')
+    ) {
         return 'Administrador';
     }
-    if (cargo.includes('auditor') || cargo.includes('compliance') || cargo.includes('seguranca') || cargo.includes('segurança')) {
+
+    if (
+        cargo.includes('auditor') ||
+        cargo.includes('compliance') ||
+        cargo.includes('seguranca') ||
+        cargo.includes('segurança')
+    ) {
         return 'Auditor';
     }
-    if (cargo.includes('gerente') || cargo.includes('gestor') || cargo.includes('coordenador') || cargo.includes('supervisor') || cargo.includes('especialista')) {
+
+    if (
+        cargo.includes('gerente') ||
+        cargo.includes('gestor') ||
+        cargo.includes('coord') ||
+        cargo.includes('coordenador') ||
+        cargo.includes('supervisor') ||
+        cargo.includes('especialista') ||
+        cargo.includes('diretor')
+    ) {
         return 'Gestor';
     }
+
     return 'Colaborador';
 }
 
@@ -217,7 +256,7 @@ function setupAuthRoutes(app) {
 
             const funcao = colaborador.funcao || colaborador.cargo || 'Colaborador';
             const area   = colaborador.area   || colaborador.setor || colaborador.departamento || 'Geral';
-            const papel  = determineUserRole(colaborador, email);
+            const papel  = determineUserRole(colaborador, email, matricula);
             const orgId  = req.headers['x-organization-id'] || 'globo';
 
             // Normaliza e-mail e matrícula para comparação segura (case-insensitive, sem espaços extras)
@@ -357,17 +396,39 @@ function setupAuthRoutes(app) {
             }
 
             // Verifica se ainda consta na base Excel
-            if (!findInBase(user.matricula, user.email)) {
+            const colab = findInBase(user.matricula, user.email);
+            if (!colab) {
                 return res.status(403).json({
                     error: 'Você não possui acesso. Favor entrar em contato com a Área de Transportes Globo.'
                 });
             }
 
-            const role = user.papel || user.funcao || 'Colaborador';
+            const normMat = String(user.matricula || '').trim().replace(/^0+/, '');
+            const normMail = String(user.email || '').trim().toLowerCase();
+
+            let role = determineUserRole(colab, user.email, user.matricula);
+            if (normMat === '68808' || normMail.includes('fabio.paixao') || normMail.includes('fapaixao')) {
+                role = 'Administrador';
+            } else if (!role || role === 'Colaborador') {
+                if (user.papel && user.papel !== 'Colaborador') {
+                    role = user.papel;
+                }
+            }
+
+            // Atualiza papel no banco de dados se houver discrepância
+            if (user.papel !== role) {
+                try {
+                    await pool.query('UPDATE users SET papel = $1 WHERE id = $2', [role, user.id]);
+                    user.papel = role;
+                } catch (updateErr) {
+                    console.warn('[AUTH] Aviso ao persistir papel atualizado no DB:', updateErr.message);
+                }
+            }
+
             const orgId = user.organization_id || req.headers['x-organization-id'] || 'globo';
 
             const token = jwt.sign(
-                { id: user.id, matricula: user.matricula, role: role, organization_id: orgId },
+                { id: user.id, matricula: user.matricula, email: user.email, role: role, organization_id: orgId },
                 JWT_SECRET_CURRENT,
                 { expiresIn: '12h' }
             );
@@ -575,8 +636,14 @@ function setupAuthRoutes(app) {
     app.post('/api/auth/refresh', verifyToken, async (req, res) => {
         try {
             const { id, matricula, role, organization_id } = req.user;
+            let finalRole = role || 'Colaborador';
+            const userMat = String(matricula || '').trim().replace(/^0+/, '');
+            const userEmail = String(req.user.email || '').trim().toLowerCase();
+            if (userMat === '68808' || userEmail.includes('fabio.paixao') || userEmail.includes('fapaixao')) {
+                finalRole = 'Administrador';
+            }
             const newToken = jwt.sign(
-                { id, matricula, role: role || 'Colaborador', organization_id: organization_id || 'globo' },
+                { id, matricula, email: req.user.email, role: finalRole, organization_id: organization_id || 'globo' },
                 JWT_SECRET_CURRENT,
                 { expiresIn: '12h' }
             );
@@ -598,6 +665,12 @@ function setupAuthRoutes(app) {
                 return res.status(404).json({ error: 'Usuário não encontrado.' });
             }
             const u = result.rows[0];
+            let userRole = u.papel || u.funcao || 'Colaborador';
+            const normMat = String(u.matricula || '').trim().replace(/^0+/, '');
+            const normMail = String(u.email || '').trim().toLowerCase();
+            if (normMat === '68808' || normMail.includes('fabio.paixao') || normMail.includes('fapaixao')) {
+                userRole = 'Administrador';
+            }
             return res.json({
                 success: true,
                 user: {
@@ -607,7 +680,7 @@ function setupAuthRoutes(app) {
                     matricula: u.matricula,
                     email: u.email,
                     funcao: u.funcao,
-                    papel: u.papel || u.funcao || 'Colaborador',
+                    papel: userRole,
                     area: u.area,
                     organization_id: u.organization_id || 'globo',
                     criado_em: u.criado_em

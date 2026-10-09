@@ -44,8 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('rig_user', JSON.stringify(data.usuario));
                 }
                 
-                // Redirect to main page
-                window.location.href = '/index.html';
+                // Redirecionamento inteligente pós-login (respeita url ?redirect= ou sessionStorage)
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirectParam = urlParams.get('redirect') || sessionStorage.getItem('rit_redirect');
+
+                if (redirectParam && !redirectParam.includes('login.html')) {
+                    sessionStorage.removeItem('rit_redirect');
+                    window.location.href = redirectParam;
+                } else {
+                    window.location.href = '/index.html';
+                }
             } else {
                 showError(data.error || 'Erro ao realizar login. Verifique suas credenciais.');
             }
