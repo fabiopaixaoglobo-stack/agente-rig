@@ -730,6 +730,8 @@ router.post('/importar', importLimiter, upload.single('planilha'), async (req, r
             } finally {
                 client.release();
             }
+        }
+
         // Rastreabilidade LGPD
         try {
             await registrarAuditoriaLGPD({
