@@ -338,6 +338,83 @@ async function initDB() {
                 CREATE INDEX IF NOT EXISTS idx_eventos_seguranca_data ON eventos_seguranca(data_hora);
                 CREATE INDEX IF NOT EXISTS idx_eventos_seguranca_usuario ON eventos_seguranca(usuario);
             `);
+
+            // Módulo RIT FLY - Inteligência Aérea Corporativa (LGPD & Governança Estrita)
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS rit_fly_trips (
+                    id VARCHAR(100) PRIMARY KEY,
+                    passenger_reference_id VARCHAR(100),
+                    team_reference VARCHAR(100),
+                    operation_reference VARCHAR(100),
+                    display_label VARCHAR(150) NOT NULL,
+                    numero_voo VARCHAR(30) NOT NULL,
+                    prefixo_voo VARCHAR(20),
+                    companhia_voo VARCHAR(80),
+                    flight_date DATE,
+                    flight_key VARCHAR(120),
+                    departure_airport_iata VARCHAR(10),
+                    arrival_airport_iata VARCHAR(10),
+                    origem_transporte VARCHAR(255) NOT NULL,
+                    destino_transporte VARCHAR(255) NOT NULL,
+                    aeroporto_iata VARCHAR(10) NOT NULL,
+                    tipo_deslocamento VARCHAR(30) NOT NULL,
+                    provider_name VARCHAR(50) DEFAULT 'OPENSKY',
+                    provider_flight_id VARCHAR(150),
+                    data_mode VARCHAR(20) NOT NULL DEFAULT 'ESTIMATED',
+                    data_confidence NUMERIC(5,2) DEFAULT 0.85,
+                    last_provider_update TIMESTAMPTZ,
+                    last_successful_sync TIMESTAMPTZ,
+                    sync_status VARCHAR(30) DEFAULT 'SYNCED',
+                    sync_error_code VARCHAR(80),
+                    scheduled_departure TIMESTAMPTZ,
+                    estimated_departure_provider TIMESTAMPTZ,
+                    actual_departure TIMESTAMPTZ,
+                    scheduled_arrival TIMESTAMPTZ,
+                    estimated_arrival_provider TIMESTAMPTZ,
+                    estimated_arrival_rit TIMESTAMPTZ,
+                    actual_landing TIMESTAMPTZ,
+                    actual_gate_arrival TIMESTAMPTZ,
+                    calculated_at TIMESTAMPTZ DEFAULT NOW(),
+                    atraso_voo_minutos INTEGER NOT NULL DEFAULT 0,
+                    tempo_transporte_minutos INTEGER NOT NULL DEFAULT 45,
+                    horario_transporte_recalculado TIMESTAMPTZ,
+                    eta_final_destino TIMESTAMPTZ,
+                    economia_espera_minutos INTEGER NOT NULL DEFAULT 0,
+                    status VARCHAR(30) NOT NULL DEFAULT 'MONITORANDO',
+                    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_trips_status ON rit_fly_trips (status);
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_trips_voo ON rit_fly_trips (numero_voo);
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_trips_aeroporto ON rit_fly_trips (aeroporto_iata);
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_trips_flight_key ON rit_fly_trips (flight_key);
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_trips_data_mode ON rit_fly_trips (data_mode);
+
+                CREATE TABLE IF NOT EXISTS rit_fly_alerts (
+                    id VARCHAR(100) PRIMARY KEY,
+                    deduplication_key VARCHAR(160),
+                    titulo VARCHAR(255) NOT NULL,
+                    descricao TEXT,
+                    severidade VARCHAR(20) NOT NULL DEFAULT 'INFO',
+                    alert_type VARCHAR(50) NOT NULL DEFAULT 'ATRASO_VOO',
+                    voo VARCHAR(30),
+                    aeroporto VARCHAR(10),
+                    source VARCHAR(50) DEFAULT 'RIT_FLY_ENGINE',
+                    status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+                    acao_sugerida TEXT,
+                    first_detected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    last_detected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    acknowledged_at TIMESTAMPTZ,
+                    acknowledged_by VARCHAR(100),
+                    resolved_at TIMESTAMPTZ,
+                    trip_id VARCHAR(100),
+                    payload JSONB,
+                    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_alerts_criado_em ON rit_fly_alerts (criado_em DESC);
+                CREATE INDEX IF NOT EXISTS idx_rit_fly_alerts_status ON rit_fly_alerts (status);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_rit_fly_alerts_dedup ON rit_fly_alerts (deduplication_key) WHERE deduplication_key IS NOT NULL;
+            `);
         } catch (constErr) {
             console.warn('⚠️ [HARDENING SCHEMA] Constraints ou FKs parciais:', constErr.message);
         }

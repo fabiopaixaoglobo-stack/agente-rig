@@ -10,6 +10,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="style.css?v=50" />
   <link rel="stylesheet" href="styles/traffic-alert.css?v=53" />
+  <link rel="stylesheet" href="styles/rit-fly.css?v=1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="js/auth-constants.js"></script>
 </head>
 
@@ -52,6 +54,9 @@
     </button>
     <button class="tabBtn" data-tab="tab-caravanas" id="tab-btn-caravanas" title="Caravanas Inteligentes — Acompanhamento Tático e Projeção de Chegada aos Estúdios Globo">
       <i class="fa-solid fa-bus" style="color: #38bdf8;"></i> Caravanas Inteligentes
+    </button>
+    <button class="tabBtn" data-tab="tab-rit-fly" id="tab-btn-rit-fly" title="RIT FLY — Central de Inteligência Aérea Corporativa">
+      <i class="fa-solid fa-plane-departure" style="color: #38bdf8;"></i> RIT FLY
     </button>
     <button class="tabBtn cursor-not-allowed opacity-60" data-tab="tab-monitoramento" id="tab-btn-monitoramento" disabled title="Módulo desativado por governança e privacidade">
       Monitoramento 🔒
@@ -952,6 +957,253 @@
         </div>
         <div style="flex: 1; width: 100%; height: calc(100% - 42px); position: relative; background: #070d18;">
           <iframe id="iframe-caravanas" src="/caravanas.html" width="100%" height="100%" style="border:none; width:100%; height:100%; display:block;" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIT FLY - CENTRAL DE INTELIGÊNCIA AÉREA CORPORATIVA -->
+    <section id="tab-rit-fly" class="tabPane">
+      <!-- SUBHEADER OPERACIONAL -->
+      <div class="fly-subheader">
+        <div class="fly-brand-row">
+          <div class="fly-brand-title">
+            <i class="fa-solid fa-plane-departure" style="color: var(--fly-accent);"></i>
+            RIT FLY <span>— CENTRAL DE INTELIGÊNCIA AÉREA CORPORATIVA</span>
+          </div>
+          <span class="fly-badge fly-badge-live">ADS-B LIVE | OPENSKY</span>
+          <span class="fly-badge fly-badge-compliance">LGPD & PRIVACY COMPLIANT</span>
+          <span class="fly-badge" id="fly-count-badge" style="background: rgba(0, 209, 255, 0.15); border: 1px solid #00d1ff; color: #00d1ff;">CARREGANDO...</span>
+        </div>
+        <div class="fly-meta-telemetry">
+          <span><span class="dot" style="background:var(--good); box-shadow:0 0 6px var(--good);"></span> RADAR & METAR ATIVOS</span>
+          <span id="fly-last-sync-time">SYNC: AGUARDANDO</span>
+          <button id="fly-btn-refresh" class="btn btnSmall" style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 10px; padding: 2px 8px; cursor: pointer;">
+            <i class="fa-solid fa-rotate-right"></i> Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- GRID DE 5 CARDS EXECUTIVOS (KPIS ESTRATÉGICOS) -->
+      <div class="fly-kpi-grid">
+        <div class="fly-kpi-card" title="Total de aeronaves rastreadas em tempo real no espaço aéreo nacional">
+          <div class="fly-kpi-header">
+            <span>Voos Monitorados</span>
+            <span style="color:var(--fly-accent);">RADAR</span>
+          </div>
+          <div class="fly-kpi-value-row">
+            <span class="fly-kpi-num" id="fly-kpi-voos-num">--</span>
+            <span class="fly-kpi-subtext">em tempo real</span>
+          </div>
+          <div class="fly-kpi-footer">Malha Aérea Nacional</div>
+        </div>
+
+        <div class="fly-kpi-card" title="Aeronaves com atraso superior a 15 minutos em relação ao horário previsto">
+          <div class="fly-kpi-header">
+            <span>Atrasos Ativos</span>
+            <span style="color:var(--bad);">ATRASO</span>
+          </div>
+          <div class="fly-kpi-value-row">
+            <span class="fly-kpi-num" id="fly-kpi-atrasos-num" style="color:var(--bad);">--</span>
+            <span class="fly-kpi-subtext">voos impactados</span>
+          </div>
+          <div class="fly-kpi-footer">Desvios & Esperas</div>
+        </div>
+
+        <div class="fly-kpi-card" title="Tempo médio poupado por passageiro através da reprogramação do transporte">
+          <div class="fly-kpi-header">
+            <span>Espera Evitada</span>
+            <span style="color:var(--fly-emerald);">EFICIÊNCIA</span>
+          </div>
+          <div class="fly-kpi-value-row">
+            <span class="fly-kpi-num" id="fly-kpi-espera-num" style="color:var(--fly-emerald);">--</span>
+            <span class="fly-kpi-subtext">média/viagem</span>
+          </div>
+          <div class="fly-kpi-footer">Reprogramação Antecipada</div>
+        </div>
+
+        <div class="fly-kpi-card" title="Economia financeira gerada ao evitar tempo ocioso de vans, motoristas e diárias de estacionamento">
+          <div class="fly-kpi-header">
+            <span>Economia Gerada</span>
+            <span style="color:var(--fly-gold);">FINANCEIRO</span>
+          </div>
+          <div class="fly-kpi-value-row">
+            <span class="fly-kpi-num" id="fly-kpi-economia-num" style="color:var(--fly-gold);">--</span>
+            <span class="fly-kpi-subtext">em custos de espera</span>
+          </div>
+          <div class="fly-kpi-footer">Frota & Estacionamento</div>
+        </div>
+
+        <div class="fly-kpi-card" title="Índice de pontualidade no embarque e desembarque corporativo">
+          <div class="fly-kpi-header">
+            <span>SLA de Embarque</span>
+            <span style="color:var(--good);">PONTUALIDADE</span>
+          </div>
+          <div class="fly-kpi-value-row">
+            <span class="fly-kpi-num" id="fly-kpi-sla-num" style="color:var(--good);">--</span>
+            <span class="fly-kpi-subtext">conformidade</span>
+          </div>
+          <div class="fly-kpi-footer">Metas de Transporte RIT</div>
+        </div>
+      </div>
+
+      <!-- OPERATIONAL SPLIT (40% LATERAL / 60% MAPA) -->
+      <div class="fly-operational-split">
+        <!-- COLUNA ESQUERDA: CONTROLE OPERACIONAL -->
+        <div class="fly-sidebar-pane">
+          <div class="fly-nav-tabs">
+            <button class="fly-nav-tab active" data-fly-tab="fly-panel-aeroportos">
+              <i class="fa-solid fa-tower-broadcast"></i> Aeroportos
+            </button>
+            <button class="fly-nav-tab" data-fly-tab="fly-panel-ai">
+              <i class="fa-solid fa-robot" style="color:var(--fly-accent);"></i> RIT FLY AI
+            </button>
+            <button class="fly-nav-tab" data-fly-tab="fly-panel-transporte">
+              <i class="fa-solid fa-car-side" style="color:var(--fly-gold);"></i> Vincular RIT
+            </button>
+            <button class="fly-nav-tab" data-fly-tab="fly-panel-alertas">
+              <i class="fa-solid fa-triangle-exclamation" style="color:var(--bad);"></i> Alertas
+            </button>
+          </div>
+
+          <div class="fly-tab-content-area">
+            <!-- PAINEL 1: 8 AEROPORTOS ESTRATÉGICOS -->
+            <div id="fly-panel-aeroportos" class="fly-inner-panel active">
+              <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span>Painel de Aeroportos Estratégicos</span>
+                <span style="color: var(--fly-accent);">8 Hubs Principais</span>
+              </div>
+              <div id="fly-airports-list-container" style="flex:1; overflow-y:auto;">
+                <!-- Preenchido dinamicamente por rit-fly-view.js -->
+              </div>
+            </div>
+
+            <!-- PAINEL 2: RIT FLY AI (ASSISTENTE ESPECIALIZADO) -->
+            <div id="fly-panel-ai" class="fly-inner-panel">
+              <div class="fly-ai-container">
+                <div style="font-size: 10px; font-weight: 800; color: var(--fly-accent); text-transform: uppercase; margin-bottom: 6px;">
+                  🤖 Consultas Rápidas da Operação Aérea (1-Clique):
+                </div>
+                <div class="fly-ai-presets">
+                  <button type="button" class="fly-preset-btn" data-query="Qual a previsão de chegada do voo G3 1234?">
+                    <i class="fa-solid fa-plane-arrival" style="color:var(--fly-accent);"></i> Previsão do voo G3 1234?
+                  </button>
+                  <button type="button" class="fly-preset-btn" data-query="Há atrasos em Congonhas?">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--fly-gold);"></i> Há atrasos em Congonhas?
+                  </button>
+                  <button type="button" class="fly-preset-btn" data-query="Quais voos chegam ao Santos Dumont nas próximas 2 horas?">
+                    <i class="fa-solid fa-list-check" style="color:var(--fly-emerald);"></i> Voos no SDU nas próximas 2h?
+                  </button>
+                  <button type="button" class="fly-preset-btn" data-query="Qual o risco operacional do deslocamento aeroporto → destino?">
+                    <i class="fa-solid fa-shield-halved" style="color:#f43f5e;"></i> Risco deslocamento Aeroporto ➔ Projac?
+                  </button>
+                </div>
+
+                <div class="fly-ai-messages" id="fly-ai-messages-container">
+                  <div class="fly-ai-bubble agent">
+                    Olá! Sou o <strong>RIT FLY AI</strong>, seu especialista em inteligência de voos e logística de solo do Agente RIT. Escolha uma das perguntas táticas acima ou digite qualquer consulta operacional.
+                  </div>
+                </div>
+
+                <form class="fly-ai-input-bar" id="fly-ai-form">
+                  <input type="text" id="fly-ai-input" class="fly-ai-input" placeholder="Pergunte sobre voos, atrasos ou riscos viários..." />
+                  <button type="submit" class="fly-ai-send-btn">Enviar</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- PAINEL 3: INTEGRAÇÃO COM TRANSPORTE TERRESTRE RIT -->
+            <div id="fly-panel-transporte" class="fly-inner-panel">
+              <div class="fly-form-box">
+                <div class="fly-form-title">
+                  <i class="fa-solid fa-arrows-split-up-and-left"></i> Vincular Viagem (Voo + Rota RIT)
+                </div>
+                <form id="fly-trip-form">
+                  <div class="fly-form-grid">
+                    <div class="fly-form-group">
+                      <label>Passageiro / Equipe (LGPD)</label>
+                      <input type="text" id="fly-form-passageiro" class="fly-form-input" placeholder="Ex: Jornalismo / Produção" required />
+                    </div>
+                    <div class="fly-form-group">
+                      <label>Número do Voo</label>
+                      <input type="text" id="fly-form-voo" class="fly-form-input" placeholder="Ex: G3 1234 ou LA 3456" required />
+                    </div>
+                  </div>
+                  <div class="fly-form-grid">
+                    <div class="fly-form-group">
+                      <label>Origem Terrestre</label>
+                      <input type="text" id="fly-form-origem" class="fly-form-input" placeholder="Ex: Estúdios Globo" required />
+                    </div>
+                    <div class="fly-form-group">
+                      <label>Destino Terrestre</label>
+                      <input type="text" id="fly-form-destino" class="fly-form-input" placeholder="Ex: Aeroporto SDU" required />
+                    </div>
+                  </div>
+                  <div class="fly-form-group" style="margin-bottom: 8px;">
+                    <label>Tipo de Viagem</label>
+                    <select id="fly-form-tipo" class="fly-form-input" style="background:#000;">
+                      <option value="IDA_AEROPORTO">Embarque (Base ➔ Aeroporto)</option>
+                      <option value="CHEGADA_AEROPORTO">Desembarque (Aeroporto ➔ Base/Hotel)</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btnPrimary" style="width:100%; font-size:11px; padding:6px; font-weight:800;">
+                    + Monitorar Viagem e Sincronizar ETA
+                  </button>
+                </form>
+              </div>
+
+              <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+                Viagens Integradas Sincronizadas:
+              </div>
+              <div id="fly-trips-list-container" style="flex:1; overflow-y:auto;">
+                <!-- Preenchido dinamicamente -->
+              </div>
+            </div>
+
+            <!-- PAINEL 4: FEED DE ALERTAS OPERACIONAIS -->
+            <div id="fly-panel-alertas" class="fly-inner-panel">
+              <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+                Alertas Aéreos e Notificações de Solo:
+              </div>
+              <div id="fly-alerts-list-container" style="flex:1; overflow-y:auto;">
+                <!-- Preenchido dinamicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: MAPA NACIONAL DE VOOS -->
+        <div class="fly-map-pane">
+          <div class="fly-map-filterbar">
+            <div class="fly-cat-pills">
+              <button type="button" class="fly-cat-pill active" data-cat="todos">
+                ✈️ Todos
+              </button>
+              <button type="button" class="fly-cat-pill" data-cat="comercial">
+                🏢 Comerciais
+              </button>
+              <button type="button" class="fly-cat-pill" data-cat="helicoptero">
+                🚁 Helicópteros
+              </button>
+              <button type="button" class="fly-cat-pill" data-cat="executivo">
+                🛩️ Executivos
+              </button>
+              <button type="button" class="fly-cat-pill" data-cat="cargueiro">
+                📦 Cargueiros
+              </button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="text" id="fly-search-input" class="fly-form-input" placeholder="🔍 Prefixo, voo, rota..." style="width:170px; padding:4px 8px; font-size:10px;" />
+              <button type="button" id="fly-btn-center-br" class="btn btnSmall" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); font-size:10px; padding:4px 8px;" title="Centralizar visualização no Brasil">
+                🇧🇷 Brasil
+              </button>
+              <button type="button" id="fly-btn-center-ponte" class="btn btnSmall" style="background:rgba(56,189,248,0.15); color:var(--fly-accent); border:1px solid var(--fly-accent); font-size:10px; padding:4px 8px;" title="Focar na Ponte Aérea RJ - SP">
+                ⚡ RJ ↔ SP
+              </button>
+            </div>
+          </div>
+
+          <div id="mapRitFly" style="flex:1; width:100%; height:100%;"></div>
         </div>
       </div>
     </section>

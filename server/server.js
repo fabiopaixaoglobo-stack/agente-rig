@@ -15,6 +15,7 @@ const { getRobotStatus, triggerDiagnostics } = require('./robot');
 const { getFogoCruzadoOccurrences, getFogoCruzadoToken, categorizarOcorrenciaFogo } = require('./fogocruzado');
 const { analisarRiscoRota, haversineDistanceMeters } = require('./risk-engine');
 const trafficAlertRoutes = require('./traffic-alert/routes/traffic-alert-routes');
+const ritFlyRoutes = require('./rit-fly/routes/rit-fly-routes');
 const { tenantContextMiddleware, resolveTenant } = require('./tenant-config');
 const cameraAiService = require('./camera_analysis_service');
 
@@ -459,6 +460,9 @@ app.get('/api/cor/calor', async (req, res) => {
 
 // RIT ALERTA - Centro Integrado de Alertas de Trânsito Público (Exposição Oficial de Backend)
 app.use('/api/traffic-alert', trafficAlertRoutes);
+
+// RIT FLY - Central de Inteligência Aérea Corporativa (Exposição Oficial de Backend)
+app.use('/api/rit-fly', ritFlyRoutes);
 
 const serverGeocodeCache = new Map();
 

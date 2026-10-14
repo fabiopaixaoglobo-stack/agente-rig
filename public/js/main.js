@@ -9,6 +9,7 @@ import { CorRio } from './CorRio.js?v=4.1.1';
 import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.2.0';
 import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.2.0';
 import { TrafficAlertView } from './traffic-alert/traffic-alert-view.js';
+import { RitFlyView } from './rit-fly/rit-fly-view.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     console.info("[RIT DEBUG] build versão sidebar-click-fix carregado");
@@ -50,6 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
         window.trafficAlertView = trafficAlertView;
         ui.trafficAlertView = trafficAlertView;
         trafficAlertView.init();
+
+        const ritFlyView = new RitFlyView();
+        window.ritFlyView = ritFlyView;
+        ui.ritFlyView = ritFlyView;
+        ritFlyView.init();
 
         // Sincroniza imediatamente com a regional ativa no seletor global ou localStorage
         const activeReg = document.getElementById('seletor-regiao')?.value || localStorage.getItem('rit_selected_regional') || 'RJ';
@@ -146,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        window.AGENTE_RIT = { ui, mainMap, plannerMap, data, whatsapp, camerasRJ, corRio };
+        window.AGENTE_RIT = { ui, mainMap, plannerMap, data, whatsapp, camerasRJ, corRio, ritFly: ritFlyView };
         try {
             Object.freeze(window.AGENTE_RIT);
         } catch (e) {}
