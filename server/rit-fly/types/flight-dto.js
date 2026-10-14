@@ -39,6 +39,14 @@ class FlightDTO {
         this.onGround = Boolean(data.onGround);
         this.status = data.status || this.determinarStatus();
         this.atrasoMinutos = typeof data.atrasoMinutos === 'number' ? Math.max(0, Math.round(data.atrasoMinutos)) : 0;
+
+        // Distâncias, Progresso e Tempo Restante (FlightRadar24 Style)
+        const metrics = this.calcularMetricasProgresso(data);
+        this.distanciaTotalKm = metrics.distanciaTotalKm;
+        this.distanciaPercorridaKm = metrics.distanciaPercorridaKm;
+        this.distanciaRestanteKm = metrics.distanciaRestanteKm;
+        this.tempoRestanteMinutos = metrics.tempoRestanteMinutos;
+        this.progressoVooPct = metrics.progressoVooPct;
         
         // Governança de Modos de Dados & Confiança
         this.data_mode = data.data_mode || DATA_MODE.ESTIMATED;
@@ -135,6 +143,67 @@ class FlightDTO {
         return 'Embraer Phenom 300 / Citation';
     }
 
+    calcularMetricasProgresso(data = {}) {
+        if (typeof data.distanciaTotalKm === 'number' && typeof data.distanciaRestanteKm === 'number') {
+            return {
+                distanciaTotalKm: data.distanciaTotalKm,
+                distanciaPercorridaKm: data.distanciaPercorridaKm || 0,
+                distanciaRestanteKm: data.distanciaRestanteKm,
+                tempoRestanteMinutos: data.tempoRestanteMinutos || 0,
+                progressoVooPct: data.progressoVooPct || 50
+            };
+        }
+
+        const origMeta = this.origem ? AIRPORTS[this.origem] : null;
+        const destMeta = this.destino ? AIRPORTS[this.destino] : null;
+
+        if (origMeta && destMeta) {
+            const R = 6371; // Raio da Terra em km
+            const toRad = (deg) => (deg * Math.PI) / 180;
+
+            const calcDist = (lat1, lon1, lat2, lon2) => {
+                const dLat = toRad(lat2 - lat1);
+                const dLon = toRad(lon2 - lon1);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return Math.round(R * c);
+            };
+
+            const distTotal = calcDist(origMeta.lat, origMeta.lng, destMeta.lat, destMeta.lng);
+            const distPercorrida = (this.latitude && this.longitude)
+                ? calcDist(origMeta.lat, origMeta.lng, this.latitude, this.longitude)
+                : Math.round(distTotal * 0.5);
+            const distRestante = (this.latitude && this.longitude)
+                ? calcDist(this.latitude, this.longitude, destMeta.lat, destMeta.lng)
+                : Math.max(0, distTotal - distPercorrida);
+
+            const progressoPct = distTotal > 0
+                ? Math.min(100, Math.max(5, Math.round((distPercorrida / distTotal) * 100)))
+                : 50;
+
+            const velKmh = this.velocidadeKmh > 50 ? this.velocidadeKmh : 750;
+            const tempoRestanteMin = distRestante > 0 ? Math.round((distRestante / velKmh) * 60) : 0;
+
+            return {
+                distanciaTotalKm: distTotal,
+                distanciaPercorridaKm: distPercorrida,
+                distanciaRestanteKm: distRestante,
+                tempoRestanteMinutos: tempoRestanteMin,
+                progressoVooPct: progressoPct
+            };
+        }
+
+        return {
+            distanciaTotalKm: 360,
+            distanciaPercorridaKm: 180,
+            distanciaRestanteKm: 180,
+            tempoRestanteMinutos: 25,
+            progressoVooPct: 50
+        };
+    }
+
     calcularEta(horarioPrevisto, atrasoMin = 0) {
         if (!horarioPrevisto) return null;
         try {
@@ -180,6 +249,13 @@ class FlightDTO {
             onGround: this.onGround,
             status: this.status,
             atrasoMinutos: this.atrasoMinutos,
+
+            // Distâncias e Métricas de Progresso
+            distanciaTotalKm: this.distanciaTotalKm,
+            distanciaPercorridaKm: this.distanciaPercorridaKm,
+            distanciaRestanteKm: this.distanciaRestanteKm,
+            tempoRestanteMinutos: this.tempoRestanteMinutos,
+            progressoVooPct: this.progressoVooPct,
             
             // Tempos Segregados & Proveniência
             data_mode: this.data_mode,

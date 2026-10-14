@@ -71,8 +71,8 @@ router.get('/diagnostics', (req, res) => {
  */
 router.get('/flights', async (req, res) => {
     try {
-        const { categoria, status, search } = req.query;
-        const flights = await openSkyProvider.getFlights({ categoria, status, search });
+        const { categoria, status, search, companhia } = req.query;
+        const flights = await openSkyProvider.getFlights({ categoria, status, search, companhia });
         
         // Atualiza rastro em memória
         flights.forEach(f => flightStore.updateFlightTrack(f));

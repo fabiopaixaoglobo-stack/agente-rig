@@ -11,6 +11,7 @@ export class RitFlyService {
     async getFlights(filters = {}) {
         const params = new URLSearchParams();
         if (filters.categoria && filters.categoria !== 'todos') params.append('categoria', filters.categoria);
+        if (filters.companhia && filters.companhia !== 'todas') params.append('companhia', filters.companhia);
         if (filters.status) params.append('status', filters.status);
         if (filters.search) params.append('search', filters.search);
 

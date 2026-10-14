@@ -312,6 +312,22 @@ class OpenSkyProvider {
             res = res.filter(f => f.status.toUpperCase() === st);
         }
 
+        if (filters.companhia && filters.companhia !== 'todas' && filters.companhia !== 'TODAS') {
+            const comp = filters.companhia.trim().toUpperCase();
+            res = res.filter(f => {
+                const fComp = (f.companhia || '').toUpperCase();
+                const fCat = (f.categoria || '').toUpperCase();
+                if (comp === 'GOL') return fComp.includes('GOL') || (f.callsign && f.callsign.startsWith('GLO'));
+                if (comp === 'LATAM') return fComp.includes('LATAM') || (f.callsign && f.callsign.startsWith('TAM'));
+                if (comp === 'AZUL') return fComp.includes('AZUL') || (f.callsign && f.callsign.startsWith('AZU'));
+                if (comp === 'VOEPASS' || comp === '2Z') return fComp.includes('VOEPASS') || (f.callsign && f.callsign.startsWith('PTB'));
+                if (comp === 'ITA') return fComp.includes('ITAPEMIRIM') || (f.callsign && f.callsign.startsWith('IPM'));
+                if (comp === 'EXECUTIVOS' || comp === 'EXECUTIVO') return fCat === 'EXECUTIVO' || fComp.includes('EXECUTIV') || fComp.includes('LÍDER');
+                if (comp === 'HELICOPTEROS' || comp === 'HELICOPTERO') return fCat === 'HELICOPTERO';
+                return fComp.includes(comp);
+            });
+        }
+
         if (filters.search) {
             const q = filters.search.trim().toUpperCase();
             res = res.filter(f => 
