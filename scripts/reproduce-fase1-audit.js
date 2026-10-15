@@ -129,7 +129,7 @@ async function runAudit() {
   // Inspeções específicas do RIT FLY no DOM do navegador
   const domAudit = await page.evaluate(() => {
     // 1. Botão de mudança de camada
-    const layerControls = Array.from(document.querySelectorAll('.leaflet-control-layers, .leaflet-control-layers-toggle, [data-action="change-layer"], .map-layer-selector, #rit-fly-layer-control, .rit-fly-layer-btn, #rit-fly-layers'));
+    const layerControls = Array.from(document.querySelectorAll('#fly-select-map-layer, .leaflet-control-layers, .leaflet-control-layers-toggle, [data-action="change-layer"], .fly-layer-select'));
     
     // 2. Opções de camada
     const allTextNodes = Array.from(document.querySelectorAll('button, label, span, div, a, select, option'));
@@ -142,26 +142,26 @@ async function runAudit() {
     const allMarkers = document.querySelectorAll('.leaflet-marker-icon');
 
     // 6. Filtro por companhia
-    const airlineFilter = document.querySelector('#rit-fly-airline-filter, select[name="airline"], .airline-select, [data-filter="airline"]');
+    const airlineFilter = document.querySelector('#fly-airline-pills, .fly-airline-pill, select[name="airline"], .airline-select, [data-filter="airline"]');
     const airlineOptions = allTextNodes.filter(el => /latam|gol|azul|voepass|companhia/i.test(el.textContent));
 
     // 7. Tooltips nos controles
     const elementsWithTooltip = document.querySelectorAll('[data-tooltip], [title], .tooltip');
 
     // 8. Painel lateral / drawer de voo
-    const flightDrawer = document.querySelector('#flight-detail-drawer, .flight-drawer, .flight-sidebar, #rit-fly-flight-panel, #drawer-detalhes-voo');
+    const flightDrawer = document.querySelector('#fly-flight-drawer, #flight-detail-drawer, .flight-drawer, .flight-sidebar, #rit-fly-flight-panel');
     const flightDrawerVisible = flightDrawer ? window.getComputedStyle(flightDrawer).display !== 'none' : false;
 
     // Aeroportos e contadores
-    const airportCards = document.querySelectorAll('.airport-card, .rit-fly-hub-card, [data-iata], .rit-fly-card');
+    const airportCards = document.querySelectorAll('.fly-airport-card, .airport-card, .rit-fly-hub-card, [data-iata], .rit-fly-card');
     
     // KPIs de voo
-    const voosCounterEl = document.querySelector('#fly-kpi-voos, #fly-total-voos, .voos-monitorados-count');
+    const voosCounterEl = document.querySelector('#fly-kpi-voos-num, #fly-kpi-voos, #fly-total-voos, .voos-monitorados-count');
     const voosCounterText = voosCounterEl ? voosCounterEl.textContent.trim() : null;
 
     // RIT FLY AI Chat Input
     const aiChatInput = document.querySelector('#fly-ai-input, #rit-fly-ai-input, input[placeholder*="pergunta"], textarea[placeholder*="pergunta"]');
-    const aiChatContainer = document.querySelector('#fly-ai-messages, .rit-fly-ai-history, #painel-rit-fly-ai');
+    const aiChatContainer = document.querySelector('#fly-ai-messages-container, #fly-ai-messages, .rit-fly-ai-history, #painel-rit-fly-ai');
 
     return {
       hasLayerControl: layerControls.length > 0,
@@ -232,13 +232,17 @@ async function runAudit() {
   await page.screenshot({ path: screenshotApresentacaoPath, fullPage: false });
 
   const apresentacaoAudit = await page.evaluate(() => {
-    const textContent = document.body.innerText || '';
+    const textContent = document.body.textContent || '';
+    const slide9El = document.querySelector('[data-slide="9"]');
+    const slide9Text = slide9El ? slide9El.textContent : '';
     const hasRitFly = /RIT\s*FLY/i.test(textContent);
     const hasAviationSection = /intelig[êe]ncia a[ée]rea|monitoramento de aeronaves/i.test(textContent);
     const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, .section-title, .slide-title')).map(h => h.textContent.trim());
     return {
       hasRitFly,
       hasAviationSection,
+      hasSlide9: !!slide9El,
+      slide9Snippet: slide9Text.slice(0, 300),
       headings: headings.slice(0, 30),
       bodyLength: textContent.length
     };
