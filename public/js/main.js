@@ -113,6 +113,22 @@ document.addEventListener("DOMContentLoaded", () => {
         checkRobotHealth();
         setInterval(checkRobotHealth, 15000); // Executa a cada 15s
 
+        const loadSystemVersion = async () => {
+            try {
+                const res = await fetch('/api/version');
+                if (res.ok) {
+                    const info = await res.json();
+                    const verEl = document.getElementById('app-version-val');
+                    const buildEl = document.getElementById('app-build-val');
+                    if (verEl && info.version) verEl.textContent = info.version;
+                    if (buildEl && info.commit) buildEl.textContent = info.commit.slice(0, 7);
+                }
+            } catch (e) {
+                console.warn("[RIT] Falha ao consultar /api/version:", e);
+            }
+        };
+        loadSystemVersion();
+
         window.exibirInfoDB = async () => {
             try {
                 const res = await fetch('/api/health');

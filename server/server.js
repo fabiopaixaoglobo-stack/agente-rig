@@ -461,6 +461,24 @@ app.get('/api/cor/calor', async (req, res) => {
 // RIT ALERTA - Centro Integrado de Alertas de Trânsito Público (Exposição Oficial de Backend)
 app.use('/api/traffic-alert', trafficAlertRoutes);
 
+// Endpoint Oficial de Rastreabilidade e Versão da Aplicação (Fase 2)
+app.get('/api/version', (req, res) => {
+    let commitHash = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || '2aa5c7c';
+    try {
+        if (!process.env.RENDER_GIT_COMMIT) {
+            commitHash = require('child_process').execSync('git rev-parse --short HEAD', { timeout: 1000 }).toString().trim();
+        }
+    } catch(e) {}
+
+    res.json({
+        service: 'rit-fly-api',
+        version: '1.1.0',
+        commit: commitHash,
+        buildTime: process.env.BUILD_TIME || new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'production'
+    });
+});
+
 // RIT FLY - Central de Inteligência Aérea Corporativa (Exposição Oficial de Backend)
 app.use('/api/rit-fly', ritFlyRoutes);
 

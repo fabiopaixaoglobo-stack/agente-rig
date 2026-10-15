@@ -124,14 +124,26 @@ export class RitFlyView {
             });
         });
 
-        // 4. Seletor de Camadas de Mapa (Melhoria 02)
+        // 4. Seletor de Camadas de Mapa (Melhoria 02 & Fase 6)
         const layerSelect = document.getElementById('fly-select-map-layer');
         if (layerSelect) {
             layerSelect.addEventListener('change', (e) => {
                 const layerKey = e.target.value;
+                if (layerKey === 'transito') {
+                    alert('Camada de trânsito indisponível: provedor não configurado.');
+                    layerSelect.value = this.map.currentBaseLayerKey || 'radar';
+                    return;
+                }
                 this.map.setBaseLayer(layerKey);
             });
         }
+
+        // Fechar Drawer com tecla Esc (Fase 10)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.fecharDrawerVoo();
+            }
+        });
 
         // 5. Campo de Busca Superior
         const searchInput = document.getElementById('fly-search-input');
@@ -403,17 +415,28 @@ export class RitFlyView {
                 this.service.getAlerts()
             ]);
 
-            if (flightsRes && flightsRes.ok) {
-                this.allFlights = flightsRes.data || [];
+            if (flightsRes) {
+                const flightsList = Array.isArray(flightsRes.data) ? flightsRes.data : (Array.isArray(flightsRes.flights) ? flightsRes.flights : []);
+                this.allFlights = flightsList;
+                this.popularFiltroCompanhias();
                 this.aplicarFiltrosVoos();
 
                 const badgeLiveText = document.getElementById('fly-live-badge-text');
                 const badgeCount = document.getElementById('fly-count-badge');
-                if (this.allFlights.length === 0) {
+
+                const isRateLimited = flightsRes.meta?.dataMode === 'RATE_LIMITED' || 
+                                     flightsRes.providerStatus?.status === 'RATE_LIMITED' || 
+                                     (flightsRes.error && flightsRes.error.code === 'FLIGHT_PROVIDER_UNAVAILABLE');
+
+                if (isRateLimited && flightsList.length === 0) {
+                    if (badgeLiveText) badgeLiveText.textContent = 'Provedor Rate-Limited (HTTP 429)';
+                    if (badgeCount) badgeCount.textContent = 'ADS-B INDISPONÍVEL (429)';
+                } else if (flightsList.length === 0) {
                     if (badgeLiveText) badgeLiveText.textContent = 'Dado temporariamente indisponível';
                     if (badgeCount) badgeCount.textContent = '0 AERONAVES (AGUARDANDO PROVEDOR)';
                 } else {
                     if (badgeLiveText) badgeLiveText.textContent = 'TEMPO REAL ATIVO';
+                    if (badgeCount) badgeCount.textContent = `${flightsList.length} AERONAVES`;
                 }
             }
 
@@ -439,6 +462,115 @@ export class RitFlyView {
             this.updateLastSyncTimestamp();
         } catch (err) {
             console.error('[RitFlyView] Erro ao sincronizar dados:', err);
+        }
+    }
+
+    /**
+     * Gera dinamicamente os seletores de companhia com contadores (Fase 8)
+     */
+    popularFiltroCompanhias() {
+        const container = document.getElementById('fly-airline-pills');
+        if (!container) return;
+
+        // Contagem dinâmica por companhia e categorias
+        const counts = {
+            todas: this.allFlights.length,
+            GOL: 0,
+            LATAM: 0,
+            AZUL: 0,
+            VOEPASS: 0,
+            ITA: 0,
+            EXECUTIVOS: 0,
+            HELICOPTEROS: 0,
+            CARGUEIROS: 0,
+            NAO_IDENTIFICADA: 0
+        };
+
+        const otherAirlines = new Map();
+
+        this.allFlights.forEach(f => {
+            const comp = (f.companhia || '').toUpperCase();
+            const cat = (f.categoria || '').toUpperCase();
+            const call = (f.callsign || '').toUpperCase();
+
+            if (cat === 'EXECUTIVO' || comp.includes('EXECUTIV') || comp.includes('LÍDER')) {
+                counts.EXECUTIVOS++;
+            } else if (cat === 'HELICOPTERO') {
+                counts.HELICOPTEROS++;
+            } else if (cat === 'CARGUEIRO' || comp.includes('CARGO') || comp.includes('LOG')) {
+                counts.CARGUEIROS++;
+            } else if (comp.includes('GOL') || call.startsWith('GLO')) {
+                counts.GOL++;
+            } else if (comp.includes('LATAM') || call.startsWith('TAM')) {
+                counts.LATAM++;
+            } else if (comp.includes('AZUL') || call.startsWith('AZU')) {
+                counts.AZUL++;
+            } else if (comp.includes('VOEPASS') || call.startsWith('PTB')) {
+                counts.VOEPASS++;
+            } else if (comp.includes('ITAPEMIRIM') || call.startsWith('IPM')) {
+                counts.ITA++;
+            } else if (!f.companhia || f.companhia === 'Não Identificada' || f.companhia === 'Aviação Regular') {
+                counts.NAO_IDENTIFICADA++;
+            } else {
+                otherAirlines.set(f.companhia, (otherAirlines.get(f.companhia) || 0) + 1);
+            }
+        });
+
+        // Montar pills dinamicamente
+        const items = [
+            { key: 'todas', label: `Todas (${counts.todas})`, tooltip: 'Exibir todas as aeronaves' }
+        ];
+
+        if (counts.GOL > 0) items.push({ key: 'GOL', label: `GOL (${counts.GOL})`, tooltip: 'GOL Linhas Aéreas' });
+        if (counts.LATAM > 0) items.push({ key: 'LATAM', label: `LATAM (${counts.LATAM})`, tooltip: 'LATAM Brasil' });
+        if (counts.AZUL > 0) items.push({ key: 'AZUL', label: `AZUL (${counts.AZUL})`, tooltip: 'Azul Linhas Aéreas' });
+        if (counts.VOEPASS > 0) items.push({ key: 'VOEPASS', label: `VOEPASS (${counts.VOEPASS})`, tooltip: 'Voepass Linhas Aéreas' });
+        if (counts.ITA > 0) items.push({ key: 'ITA', label: `ITA (${counts.ITA})`, tooltip: 'Itapemirim Transportes Aéreos' });
+
+        // Adicionar companhias adicionais detectadas
+        for (const [name, count] of otherAirlines.entries()) {
+            items.push({ key: name, label: `${name} (${count})`, tooltip: name });
+        }
+
+        // Categorias independentes obrigatórias (Fase 8)
+        if (counts.EXECUTIVOS > 0) items.push({ key: 'EXECUTIVOS', label: `Executivos (${counts.EXECUTIVOS})`, tooltip: 'Aviação Executiva / Privada' });
+        if (counts.HELICOPTEROS > 0) items.push({ key: 'HELICOPTEROS', label: `Helicópteros (${counts.HELICOPTEROS})`, tooltip: 'Helicópteros operacionais' });
+        if (counts.CARGUEIROS > 0) items.push({ key: 'CARGUEIROS', label: `Cargueiros (${counts.CARGUEIROS})`, tooltip: 'Aeronaves de carga' });
+        if (counts.NAO_IDENTIFICADA > 0) items.push({ key: 'NAO_IDENTIFICADA', label: `Não identificada (${counts.NAO_IDENTIFICADA})`, tooltip: 'Aeronaves sem companhia informada' });
+
+        // Se nenhuma companhia tiver voo mas tiver voos gerais, renderiza opções padrão
+        if (items.length === 1) {
+            items.push(
+                { key: 'GOL', label: 'GOL (0)', tooltip: 'GOL Linhas Aéreas' },
+                { key: 'LATAM', label: 'LATAM (0)', tooltip: 'LATAM Brasil' },
+                { key: 'AZUL', label: 'AZUL (0)', tooltip: 'Azul Linhas Aéreas' },
+                { key: 'EXECUTIVOS', label: 'Executivos (0)', tooltip: 'Aviação Executiva' },
+                { key: 'HELICOPTEROS', label: 'Helicópteros (0)', tooltip: 'Helicópteros' }
+            );
+        }
+
+        container.innerHTML = items.map(it => {
+            const isActive = this.currentAirline === it.key ? 'active' : '';
+            return `<button type="button" class="fly-airline-pill ${isActive}" data-airline="${it.key}" data-tooltip="${it.tooltip}" title="${it.tooltip}">${it.label}</button>`;
+        }).join('') + (this.currentAirline !== 'todas' ? '<button type="button" id="fly-btn-clear-airline" class="fly-airline-pill" style="color:#f43f5e; border-color:#f43f5e;" title="Limpar filtro de companhia">✖ Limpar</button>' : '');
+
+        // Re-vincular eventos
+        container.querySelectorAll('.fly-airline-pill[data-airline]').forEach(pill => {
+            pill.addEventListener('click', () => {
+                container.querySelectorAll('.fly-airline-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                this.currentAirline = pill.getAttribute('data-airline') || 'todas';
+                this.aplicarFiltrosVoos();
+            });
+        });
+
+        const clearBtn = document.getElementById('fly-btn-clear-airline');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.currentAirline = 'todas';
+                this.popularFiltroCompanhias();
+                this.aplicarFiltrosVoos();
+            });
         }
     }
 
@@ -527,56 +659,56 @@ export class RitFlyView {
             REC: 'Recife (Gilberto Freyre)'
         };
 
-        if (elOrigCode) elOrigCode.textContent = f.origem || 'N/D';
-        if (elOrigCity) elOrigCity.textContent = cidades[f.origem] || 'Origem';
-        if (elDestCode) elDestCode.textContent = f.destino || 'N/D';
-        if (elDestCity) elDestCity.textContent = cidades[f.destino] || 'Destino';
+        if (elOrigCode) elOrigCode.textContent = f.origem || 'Não informado pelo provedor';
+        if (elOrigCity) elOrigCity.textContent = cidades[f.origem] || (f.origem ? f.origem : 'Não informado pelo provedor');
+        if (elDestCode) elDestCode.textContent = f.destino || 'Não informado pelo provedor';
+        if (elDestCity) elDestCity.textContent = cidades[f.destino] || (f.destino ? f.destino : 'Não informado pelo provedor');
 
-        // Progresso e Distâncias
+        // Progresso e Distâncias (Fase 10 - Sem dados fictícios)
         const fill = document.getElementById('fly-drawer-progress-fill');
         const elDistPerc = document.getElementById('fly-drawer-dist-percorrida');
         const elDistRest = document.getElementById('fly-drawer-dist-restante');
-        const prog = f.progressoVooPct || 50;
+        const prog = f.progressoVooPct || 0;
 
-        if (fill) fill.style.width = `${prog}%`;
-        if (elDistPerc) elDistPerc.textContent = `Percorrido: ${f.distanciaPercorridaKm || 180} km`;
-        if (elDistRest) elDistRest.textContent = `Restante: ${f.distanciaRestanteKm || 180} km (Total: ${f.distanciaTotalKm || 360} km)`;
+        if (fill) fill.style.width = prog > 0 ? `${prog}%` : '0%';
+        if (elDistPerc) elDistPerc.textContent = f.distanciaPercorridaKm ? `Percorrido: ${f.distanciaPercorridaKm} km (Calculado RIT)` : 'Distância percorrida: Não informado pelo provedor';
+        if (elDistRest) elDistRest.textContent = f.distanciaRestanteKm ? `Restante: ${f.distanciaRestanteKm} km (Calculado RIT)` : 'Distância restante: Não informado pelo provedor';
 
-        // Horários e Atraso
+        // Horários e Atraso (Fase 10)
         const elHoraPrev = document.getElementById('fly-drawer-hora-prevista');
         const elHoraEta = document.getElementById('fly-drawer-hora-eta');
         const elDelayBadge = document.getElementById('fly-drawer-delay-badge');
 
         const prevFormat = f.horarioPrevisto
-            ? new Date(f.horarioPrevisto).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            : '--:--';
+            ? `${new Date(f.horarioPrevisto).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (Programado)`
+            : 'Não informado pelo provedor';
 
         if (elHoraPrev) elHoraPrev.textContent = prevFormat;
-        if (elHoraEta) elHoraEta.textContent = f.etaFormatado || '--:--';
+        if (elHoraEta) elHoraEta.textContent = f.etaFormatado ? `${f.etaFormatado} (Calculado pelo RIT)` : 'Não informado pelo provedor';
 
-        const isDelayed = f.atrasoMinutos > 15;
+        const isDelayed = (f.atrasoMinutos || 0) > 15;
         if (elDelayBadge) {
             elDelayBadge.innerHTML = isDelayed
                 ? `<span style="background:rgba(244,63,94,0.25); color:#f43f5e; padding:3px 7px; border-radius:3px; font-weight:800; font-size:10px;">⚠️ +${f.atrasoMinutos} min atrasado</span>`
-                : `<span style="background:rgba(16,185,129,0.25); color:#10b981; padding:3px 7px; border-radius:3px; font-weight:800; font-size:10px;">✅ No Horário</span>`;
+                : (f.status ? `<span style="background:rgba(16,185,129,0.25); color:#10b981; padding:3px 7px; border-radius:3px; font-weight:800; font-size:10px;">✅ No Horário</span>` : `<span style="color:#94a3b8; font-size:10px;">Não informado</span>`);
         }
 
-        // Telemetria detalhada em Português
+        // Telemetria detalhada em Português (Fase 10)
         const setTxt = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = val;
         };
 
-        setTxt('fly-drawer-altitude', `${(f.altitudeM || 0).toLocaleString('pt-BR')} metros`);
-        setTxt('fly-drawer-altitude-ft', `${(f.altitudeFt || 0).toLocaleString('pt-BR')} pés`);
-        setTxt('fly-drawer-velocidade', `${f.velocidadeKmh || 0} km/h`);
-        setTxt('fly-drawer-velocidade-kts', `${f.velocidadeKts || 0} nós`);
-        setTxt('fly-drawer-rumo', `${f.rumo || 0}°`);
-        setTxt('fly-drawer-rumo-dir', this.obterDirecaoCardeal(f.rumo));
-        setTxt('fly-drawer-tempo-restante', `${f.tempoRestanteMinutos || 20} minutos`);
-        setTxt('fly-drawer-status', `${(f.status || 'EM ROTA').toUpperCase()} ${isDelayed ? `(+${f.atrasoMinutos} min)` : '(NO HORÁRIO)'}`);
-        setTxt('fly-drawer-modelo', f.modeloAeronave || 'Aeronave Comercial');
-        setTxt('fly-drawer-categoria', `Categoria: ${(f.categoria || 'comercial').toUpperCase()}`);
+        setTxt('fly-drawer-altitude', (f.altitudeM !== undefined && f.altitudeM !== null) ? `${f.altitudeM.toLocaleString('pt-BR')} metros` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-altitude-ft', (f.altitudeFt !== undefined && f.altitudeFt !== null) ? `${f.altitudeFt.toLocaleString('pt-BR')} pés` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-velocidade', (f.velocidadeKmh !== undefined && f.velocidadeKmh !== null) ? `${f.velocidadeKmh} km/h` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-velocidade-kts', (f.velocidadeKts !== undefined && f.velocidadeKts !== null) ? `${f.velocidadeKts} nós` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-rumo', (f.rumo !== undefined && f.rumo !== null) ? `${f.rumo}°` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-rumo-dir', (f.rumo !== undefined && f.rumo !== null) ? this.obterDirecaoCardeal(f.rumo) : 'Não informado pelo provedor');
+        setTxt('fly-drawer-tempo-restante', f.tempoRestanteMinutos ? `${f.tempoRestanteMinutos} minutos (Calculado pelo RIT)` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-status', f.status ? `${f.status.toUpperCase()} ${isDelayed ? `(+${f.atrasoMinutos} min)` : '(NO HORÁRIO)'}` : 'Não informado pelo provedor');
+        setTxt('fly-drawer-modelo', f.modeloAeronave || 'Não informado pelo provedor');
+        setTxt('fly-drawer-categoria', f.categoria ? `Categoria: ${f.categoria.toUpperCase()}` : 'Não informado pelo provedor');
 
         const modoTexto = f.data_mode === 'LIVE'
             ? '🟢 ADS-B TEMPO REAL (OPENSKY)'
@@ -768,6 +900,12 @@ export class RitFlyView {
                     <div style="font-size:10px; color:#94a3b8; margin-bottom:4px;">
                         ${a.nome}
                     </div>
+                    ${!a.programacaoOficialDisponivel ? `
+                    <div style="margin:6px 0; padding:6px 8px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:4px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="color:#fbbf24;"><i class="fa-solid fa-circle-info"></i> Programação oficial indisponível</span>
+                        <span style="color:#fff; font-size:9px;">Movimento detectado: <strong style="color:var(--fly-accent); font-size:11px;">${a.movimentoDetectado !== undefined ? a.movimentoDetectado : (a.chegadasPrevistas + a.partidasPrevistas)}</strong></span>
+                    </div>
+                    ` : `
                     <div class="fly-airport-metrics">
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Chegadas</span>
@@ -783,12 +921,13 @@ export class RitFlyView {
                         </div>
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Pontualidade</span>
-                            <span class="fly-metric-val" style="color:#38bdf8;">${a.taxaPontualidadePct}%</span>
+                            <span class="fly-metric-val" style="color:#38bdf8;">${a.taxaPontualidadePct !== null ? `${a.taxaPontualidadePct}%` : 'N/D'}</span>
                         </div>
                     </div>
-                    <div style="margin-top:6px; font-size:10px; color:#64748b; display:flex; justify-content:space-between;">
+                    `}
+                    <div style="margin-top:6px; font-size:10px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
                         <span>🌤️ METAR: ${clima.temperaturaC || 26}°C (${clima.condicoes || 'Céu Claro'})</span>
-                        <span style="color:var(--fly-accent); font-weight:800;">🛫 Ver Voos do Dia →</span>
+                        <span style="color:var(--fly-accent); font-weight:800; cursor:pointer;" title="Inspecionar movimento detectado neste aeroporto">🛫 Movimento Aéreo do Hub →</span>
                     </div>
                 </div>
             `;

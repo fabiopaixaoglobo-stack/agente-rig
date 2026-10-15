@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="style.css?v=50" />
   <link rel="stylesheet" href="styles/traffic-alert.css?v=53" />
-  <link rel="stylesheet" href="styles/rit-fly.css?v=1" />
+  <link rel="stylesheet" href="styles/rit-fly.css?v=1.1.0" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="js/auth-constants.js"></script>
 </head>
@@ -52,7 +52,7 @@
     <button class="tabBtn" data-tab="tab-traffic-alert" id="tab-btn-traffic-alert" title="RIT ALERTA — Inteligência Autônoma de Trânsito">
       <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent);"></i> RIT Alerta
     </button>
-    <button class="tabBtn" data-tab="tab-caravanas" id="tab-btn-caravanas" title="Caravanas Inteligentes — Acompanhamento Tático e Projeção de Chegada aos Estúdios Globo">
+    <button class="tabBtn" data-tab="tab-caravanas" id="tab-btn-caravanas" title="Caravanas Inteligentes — Acompanhamento Tático e Projeção de Chegada à Base Operacional">
       <i class="fa-solid fa-bus" style="color: #38bdf8;"></i> Caravanas Inteligentes
     </button>
     <button class="tabBtn" data-tab="tab-rit-fly" id="tab-btn-rit-fly" title="RIT FLY — Central de Inteligência Aérea Corporativa">
@@ -167,8 +167,8 @@
               <button type="button" class="rit-scenario-btn" data-scenario="chuva" title="Temporal no RJ: trânsito lento e dinâmica alta">
                 🌧️ Chuva Forte
               </button>
-              <button type="button" class="rit-scenario-btn" data-scenario="rockinrio" title="Simulação rota Projac ↔ Cidade do Rock">
-                🎸 Rock in Rio
+              <button type="button" class="rit-scenario-btn" data-scenario="rockinrio" title="Simulação rota Polo Empresarial ↔ Arena de Eventos">
+                🎸 Grande Evento
               </button>
               <button type="button" class="rit-scenario-btn" data-scenario="linha_amarela" title="Simula interdição da Linha Amarela e desvio alternativo">
                 🚧 Bloqueio L. Amarela
@@ -184,7 +184,7 @@
               <span>Origem (Partida)</span>
               <small style="color:var(--muted); font-size:9px;">Endereço, POI ou CEP</small>
             </label>
-            <input id="origem" class="input" placeholder="Ex: Estúdios Globo, Portaria 3..." />
+            <input id="origem" class="input" placeholder="Ex: Sede Corporativa, Portaria Principal..." />
           </div>
 
           <!-- LISTA DE PARADAS INTERMEDIÁRIAS (WAYPOINTS) -->
@@ -227,10 +227,10 @@
             </div>
           </div>
 
-          <!-- REGRAS TNO & OPERAÇÃO GLOBO -->
+          <!-- REGRAS TNO & OPERAÇÃO DE TRANSPORTE -->
           <div style="margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px;">
             <div style="font-size: 10px; font-weight: 800; color: #f5a623; margin-bottom: 6px; text-transform: uppercase;">
-              Regras Operacionais Globo & TNO
+              Regras Operacionais de Trânsito & TNO
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #ccc;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
@@ -936,7 +936,7 @@
       </div>
     </section>
 
-    <!-- CARAVANAS INTELIGENTES — CENTRO DE COMANDO E OPERAÇÕES (ESTÚDIOS GLOBO) -->
+    <!-- CARAVANAS INTELIGENTES — CENTRO DE COMANDO E OPERAÇÕES -->
     <section id="tab-caravanas" class="tabPane">
       <div style="flex: 1; height: 100%; width: 100%; display: flex; flex-direction: column; position: relative;">
         <div class="filterBar" style="background: rgba(10, 15, 28, 0.98); height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); z-index: 10;">
@@ -944,7 +944,7 @@
             <span style="font-weight: 800; font-size: 11px; color: #38bdf8; text-transform: uppercase;">
               <i class="fa-solid fa-bus"></i> Caravanas Inteligentes:
             </span>
-            <span style="font-size: 10px; color: var(--muted);">Acompanhamento Tático & Projeção de Chegada · Estúdios Globo CCO</span>
+            <span style="font-size: 10px; color: var(--muted);">Acompanhamento Tático & Projeção de Chegada · Centro de Comando Operacional</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <button type="button" class="btn btnSmall" onclick="const f=document.getElementById('iframe-caravanas'); if(f) f.src=f.src;" style="font-size: 9px; padding: 3px 8px; border: 1px solid rgba(0,209,255,0.3); color: #00d1ff; background: rgba(0,209,255,0.08); cursor: pointer;" title="Recarregar painel de caravanas">
@@ -1150,7 +1150,7 @@
                     <i class="fa-solid fa-list-check" style="color:var(--fly-emerald);"></i> Voos no SDU nas próximas 2h?
                   </button>
                   <button type="button" class="fly-preset-btn" data-query="Qual o risco operacional do deslocamento aeroporto → destino?" data-tooltip="Avaliar risco viário entre aeroporto e destino">
-                    <i class="fa-solid fa-shield-halved" style="color:#f43f5e;"></i> Risco deslocamento Aeroporto ➔ Projac?
+                    <i class="fa-solid fa-shield-halved" style="color:#f43f5e;"></i> Risco deslocamento Aeroporto ➔ Centro Empresarial?
                   </button>
                 </div>
 
@@ -1187,7 +1187,7 @@
                   <div class="fly-form-grid">
                     <div class="fly-form-group">
                       <label>Origem Terrestre</label>
-                      <input type="text" id="fly-form-origem" class="fly-form-input" placeholder="Ex: Estúdios Globo" required />
+                      <input type="text" id="fly-form-origem" class="fly-form-input" placeholder="Ex: Sede Corporativa / Hotel" required />
                     </div>
                     <div class="fly-form-group">
                       <label>Destino Terrestre</label>
@@ -1416,6 +1416,16 @@
     </section>
 
   </main>
+
+  <!-- RODAPÉ TÉCNICO DE SISTEMA -->
+  <footer id="system-tech-footer" style="padding: 4px 16px; background: rgba(7, 16, 24, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; z-index: 999; position: relative;">
+    <div>
+      <span style="font-weight: 700; color: #94a3b8;">RIT</span> — Central de Inteligência de Transportes
+    </div>
+    <div id="system-version-info" style="font-family: monospace; font-size: 11px; color: #94a3b8;">
+      Versão: <span id="app-version-val">1.1.0</span> | Build: <span id="app-build-val">2aa5c7c</span>
+    </div>
+  </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Leaflet Maps (Free, without watermark) -->
@@ -1876,6 +1886,6 @@
   </div>
 
   <script src="session-manager.js"></script>
-  <script type="module" src="js/main.js?v=53"></script>
+  <script type="module" src="js/main.js?v=1.1.0"></script>
 </body>
 </html>

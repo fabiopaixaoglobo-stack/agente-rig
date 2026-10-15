@@ -47,6 +47,22 @@ if (backgroundSyncTimer && typeof backgroundSyncTimer.unref === 'function') {
 }
 
 /**
+ * GET /api/rit-fly/status
+ * Status operacional e saúde dos provedores externos
+ */
+router.get('/status', (req, res) => {
+    res.json({
+        ok: true,
+        success: true,
+        service: 'rit-fly',
+        status: 'ONLINE',
+        provider: openSkyProvider.providerStatus,
+        allowSyntheticData: config.ALLOW_SYNTHETIC_DATA,
+        timestamp: new Date().toISOString()
+    });
+});
+
+/**
  * GET /api/rit-fly/diagnostics
  * Telemetria de conectividade e governança de dados
  */
@@ -67,7 +83,7 @@ router.get('/diagnostics', (req, res) => {
 
 /**
  * GET /api/rit-fly/flights
- * Retorna todos os voos ativos no radar com suporte a filtros e telemetria do provedor
+ * Retorna todos os voos ativos no radar com suporte a filtros e envelope canônico (Fase 7)
  */
 router.get('/flights', async (req, res) => {
     try {
@@ -77,16 +93,54 @@ router.get('/flights', async (req, res) => {
         // Atualiza rastro em memória
         flights.forEach(f => flightStore.updateFlightTrack(f));
 
-        res.json({
-            ok: true,
+        const isProviderAvailable = openSkyProvider.providerStatus.status === 'ONLINE' || flights.length > 0;
+        const sourceName = flights.length > 0 ? (flights[0].data_source || 'OPENSKY_ADS-B') : 'OPENSKY_ADS-B';
+        const dataMode = flights.length > 0 
+            ? (flights[0].data_mode === 'SYNTHETIC' ? 'SANDBOX_PROVIDER' : 'LIVE_PROVIDER')
+            : (openSkyProvider.providerStatus.status === 'RATE_LIMITED' ? 'RATE_LIMITED' : 'UNAVAILABLE');
+
+        const envelope = {
+            ok: isProviderAvailable,
+            success: isProviderAvailable,
             total: flights.length,
             providerStatus: openSkyProvider.providerStatus,
             allowSyntheticData: config.ALLOW_SYNTHETIC_DATA,
             timestamp: new Date().toISOString(),
+            meta: {
+                source: sourceName,
+                dataMode: isProviderAvailable ? dataMode : 'UNAVAILABLE',
+                updatedAt: openSkyProvider.providerStatus.lastAttempt || new Date().toISOString(),
+                stale: false,
+                count: flights.length
+            },
             data: flights
-        });
+        };
+
+        if (!isProviderAvailable) {
+            envelope.error = {
+                code: 'FLIGHT_PROVIDER_UNAVAILABLE',
+                message: openSkyProvider.providerStatus.message || 'Dados de aeronaves temporariamente indisponíveis (Provedor ADS-B em rate-limit ou indisponível).'
+            };
+        }
+
+        res.json(envelope);
     } catch (err) {
-        res.status(500).json({ ok: false, error: err.message });
+        res.status(500).json({
+            ok: false,
+            success: false,
+            error: {
+                code: 'FLIGHT_PROVIDER_ERROR',
+                message: err.message
+            },
+            meta: {
+                source: 'OPENSKY_ADS-B',
+                dataMode: 'UNAVAILABLE',
+                updatedAt: new Date().toISOString(),
+                stale: false,
+                count: 0
+            },
+            data: []
+        });
     }
 });
 

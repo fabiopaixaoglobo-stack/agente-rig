@@ -55,12 +55,14 @@ class AirportProvider {
                 regraVoo: metar.flightRule || 'VFR',
                 condicaoMeteorologicaVoo: metar.flightRule || 'VFR',
                 statusPista: 'NÃO FORNECIDO POR METAR (Consulte NOTAM / DECEA)',
+                programacaoOficialDisponivel: false,
                 painelProgramadoOficial: 'INDISPONÍVEL SEM API FIDS (Infraero/Aena)',
+                movimentoDetectado: totalMovements,
                 chegadasPrevistas: arrivals.length,
                 partidasPrevistas: departures.length,
                 voosAtrasados: delayedFlights.length,
                 voosCancelados: cancelledCount,
-                taxaPontualidadePct: Math.max(0, 100 - delayRate),
+                taxaPontualidadePct: totalMovements > 0 ? Math.max(0, 100 - delayRate) : null,
                 tempoMedioAtrasoMin: avgDelayMin,
                 clima: metar
             });
