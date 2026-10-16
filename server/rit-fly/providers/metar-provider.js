@@ -106,8 +106,11 @@ class MetarProvider {
 
         // Se dados sintéticos estiverem proibidos, retorna estado UNAVAILABLE
         if (!config.ALLOW_SYNTHETIC_DATA) {
+            const airportMeta = Object.values(AIRPORTS).find(a => a.icao === icao) || { iata: icao, nome: icao };
             const unavail = {
                 icao,
+                iata: airportMeta.iata || icao,
+                nome: airportMeta.nome || icao,
                 data_mode: 'UNAVAILABLE',
                 data_source: 'METAR_FEED_UNAVAILABLE',
                 statusOperacional: 'METAR_INDISPONIVEL',

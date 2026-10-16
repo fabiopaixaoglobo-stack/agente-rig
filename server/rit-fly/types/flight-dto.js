@@ -24,8 +24,8 @@ class FlightDTO {
         this.origin_source = data.origem ? (data.origin_source || 'FLIGHT_PLAN') : 'UNKNOWN';
         
         // Cinemática e Telemetria ADS-B
-        this.latitude = typeof data.latitude === 'number' ? Number(data.latitude.toFixed(5)) : 0;
-        this.longitude = typeof data.longitude === 'number' ? Number(data.longitude.toFixed(5)) : 0;
+        this.latitude = typeof data.latitude === 'number' ? Number(data.latitude.toFixed(6)) : 0;
+        this.longitude = typeof data.longitude === 'number' ? Number(data.longitude.toFixed(6)) : 0;
         
         this.altitudeFt = Math.round(Number(data.altitudeFt) || 0);
         this.altitudeM = Math.round(this.altitudeFt * 0.3048);

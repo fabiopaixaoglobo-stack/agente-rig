@@ -13,7 +13,8 @@ const config = {
 
     // Provedores Homologados
     OPENSKY: {
-        ENABLED: true,
+        ENABLED: process.env.OPENSKY_COMMERCIAL_ENABLED === 'false' ? false : (process.env.OPENSKY_ENABLED !== 'false'),
+        COMMERCIAL_ENABLED: process.env.OPENSKY_COMMERCIAL_ENABLED === 'true',
         BASE_URL: process.env.OPENSKY_API_URL || 'https://opensky-network.org/api/states/all',
         USERNAME: process.env.OPENSKY_USERNAME || '',
         PASSWORD: process.env.OPENSKY_PASSWORD || '',
@@ -49,7 +50,10 @@ const config = {
         'opensky-network.org',
         'aviationweather.gov',
         'api.redemet.decea.mil.br',
-        'router.project-osrm.org'
+        'router.project-osrm.org',
+        'api.adsb.lol',
+        'api.aviationstack.com',
+        'aerodatabox.p.rapidapi.com'
     ]
 };
 

@@ -6,6 +6,8 @@
 const express = require('express');
 const router = express.Router();
 
+const { FlightProviderGateway } = require('../providers/provider-gateway');
+const { CommercialAdsbProvider } = require('../providers/commercial-adsb-provider');
 const { OpenSkyProvider } = require('../providers/opensky-provider');
 const { MetarProvider } = require('../providers/metar-provider');
 const { AirportProvider } = require('../providers/airport-provider');
@@ -15,14 +17,19 @@ const { RitFlyAI } = require('../engine/rit-fly-ai');
 
 const { config } = require('../config');
 
-// Instâncias dos Componentes
+// Instâncias dos Componentes com Gateway Canônico
 const flightStore = new FlightStore();
+const commercialAdsbProvider = new CommercialAdsbProvider();
 const openSkyProvider = new OpenSkyProvider();
+const flightGateway = new FlightProviderGateway({
+    commercialProvider: commercialAdsbProvider,
+    openSkyProvider
+});
 const metarProvider = new MetarProvider();
 const airportProvider = new AirportProvider(metarProvider);
-const logisticsSyncEngine = new LogisticsSyncEngine(flightStore, openSkyProvider);
+const logisticsSyncEngine = new LogisticsSyncEngine(flightStore, flightGateway);
 const ritFlyAI = new RitFlyAI({
-    openSkyProvider,
+    openSkyProvider: flightGateway,
     airportProvider,
     metarProvider,
     flightStore
@@ -32,7 +39,7 @@ const ritFlyAI = new RitFlyAI({
 let lastBackgroundSync = Date.now();
 const backgroundSyncTimer = setInterval(async () => {
     try {
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
         // Atualiza rastros das aeronaves
         flights.forEach(f => flightStore.updateFlightTrack(f));
         // Sincroniza viagens e recalcula atrasos
@@ -50,13 +57,18 @@ if (backgroundSyncTimer && typeof backgroundSyncTimer.unref === 'function') {
  * GET /api/rit-fly/status
  * Status operacional e saúde dos provedores externos
  */
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
+    const health = await flightGateway.healthCheck();
+    const meta = flightGateway.getProviderMetadata();
     res.json({
-        ok: true,
-        success: true,
+        ok: health.healthy,
+        success: health.healthy,
         service: 'rit-fly',
-        status: 'ONLINE',
-        provider: openSkyProvider.providerStatus,
+        status: health.status,
+        provider: flightGateway.providerStatus,
+        activeProvider: flightGateway.getActiveProviderName(),
+        providerMetadata: meta,
+        rateLimit: flightGateway.getRateLimitStatus(),
         allowSyntheticData: config.ALLOW_SYNTHETIC_DATA,
         timestamp: new Date().toISOString()
     });
@@ -70,7 +82,9 @@ router.get('/diagnostics', (req, res) => {
     res.json({
         ok: true,
         allowSyntheticData: config.ALLOW_SYNTHETIC_DATA,
-        openSky: openSkyProvider.providerStatus,
+        activeProvider: flightGateway.getActiveProviderName(),
+        rateLimit: flightGateway.getRateLimitStatus(),
+        providerMetadata: flightGateway.getProviderMetadata(),
         metar: {
             enabled: config.METAR.ENABLED,
             cacheEntries: metarProvider.cache.size
@@ -88,29 +102,28 @@ router.get('/diagnostics', (req, res) => {
 router.get('/flights', async (req, res) => {
     try {
         const { categoria, status, search, companhia } = req.query;
-        const flights = await openSkyProvider.getFlights({ categoria, status, search, companhia });
+        const flights = await flightGateway.getCurrentFlights({}, { categoria, status, search, companhia });
         
         // Atualiza rastro em memória
         flights.forEach(f => flightStore.updateFlightTrack(f));
 
-        const isProviderAvailable = openSkyProvider.providerStatus.status === 'ONLINE' || flights.length > 0;
-        const sourceName = flights.length > 0 ? (flights[0].data_source || 'OPENSKY_ADS-B') : 'OPENSKY_ADS-B';
-        const dataMode = flights.length > 0 
-            ? (flights[0].data_mode === 'SYNTHETIC' ? 'SANDBOX_PROVIDER' : 'LIVE_PROVIDER')
-            : (openSkyProvider.providerStatus.status === 'RATE_LIMITED' ? 'RATE_LIMITED' : 'UNAVAILABLE');
+        const isProviderAvailable = flights.length > 0;
+        const sourceName = flights.length > 0 ? (flights[0].data_source || flightGateway.getActiveProviderName()) : flightGateway.getActiveProviderName();
+        const dataMode = flightGateway.getDataMode();
 
         const envelope = {
             ok: isProviderAvailable,
             success: isProviderAvailable,
             total: flights.length,
-            providerStatus: openSkyProvider.providerStatus,
+            providerStatus: flightGateway.providerStatus,
+            providerMetadata: flightGateway.getProviderMetadata(),
             allowSyntheticData: config.ALLOW_SYNTHETIC_DATA,
             timestamp: new Date().toISOString(),
             meta: {
                 source: sourceName,
                 dataMode: isProviderAvailable ? dataMode : 'UNAVAILABLE',
-                updatedAt: openSkyProvider.providerStatus.lastAttempt || new Date().toISOString(),
-                stale: false,
+                updatedAt: new Date().toISOString(),
+                stale: dataMode === 'CACHED_PROVIDER',
                 count: flights.length
             },
             data: flights
@@ -119,7 +132,7 @@ router.get('/flights', async (req, res) => {
         if (!isProviderAvailable) {
             envelope.error = {
                 code: 'FLIGHT_PROVIDER_UNAVAILABLE',
-                message: openSkyProvider.providerStatus.message || 'Dados de aeronaves temporariamente indisponíveis (Provedor ADS-B em rate-limit ou indisponível).'
+                message: flightGateway.lastSyncError || 'Dados de aeronaves temporariamente indisponíveis no setor monitorado.'
             };
         }
 
@@ -133,7 +146,7 @@ router.get('/flights', async (req, res) => {
                 message: err.message
             },
             meta: {
-                source: 'OPENSKY_ADS-B',
+                source: flightGateway.getActiveProviderName(),
                 dataMode: 'UNAVAILABLE',
                 updatedAt: new Date().toISOString(),
                 stale: false,
@@ -151,14 +164,14 @@ router.get('/flights', async (req, res) => {
 router.get('/flights/:identifier', async (req, res) => {
     try {
         const identifier = (req.params.identifier || '').trim().toUpperCase();
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
 
         const flight = flights.find(f => 
             f.id === req.params.identifier ||
-            f.icao24.toUpperCase() === identifier ||
-            f.callsign.toUpperCase() === identifier ||
-            f.numeroVoo.replace(/\s+/g, '').toUpperCase() === identifier.replace(/\s+/g, '') ||
-            f.prefixo.replace(/[\s-]/g, '').toUpperCase() === identifier.replace(/[\s-]/g, '')
+            (f.icao24 && f.icao24.toUpperCase() === identifier) ||
+            (f.callsign && f.callsign.toUpperCase() === identifier) ||
+            (f.numeroVoo && f.numeroVoo.replace(/\s+/g, '').toUpperCase() === identifier.replace(/\s+/g, '')) ||
+            (f.prefixo && f.prefixo.replace(/[\s-]/g, '').toUpperCase() === identifier.replace(/[\s-]/g, ''))
         );
 
         if (!flight) {
@@ -186,7 +199,7 @@ router.get('/flights/:identifier', async (req, res) => {
  */
 router.get('/airports', async (req, res) => {
     try {
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
         const airports = await airportProvider.getAllAirportsOverview(flights);
 
         res.json({
@@ -205,7 +218,7 @@ router.get('/airports', async (req, res) => {
  */
 router.get('/airports/:code', async (req, res) => {
     try {
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
         const details = await airportProvider.getAirportDetails(req.params.code, flights);
 
         if (!details) {
@@ -227,7 +240,7 @@ router.get('/airports/:code', async (req, res) => {
  */
 router.get('/kpis', async (req, res) => {
     try {
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
         const kpis = flightStore.calculateKpis(flights);
 
         res.json({
@@ -333,7 +346,7 @@ router.post('/ai/query', async (req, res) => {
  */
 router.post('/sync', async (req, res) => {
     try {
-        const flights = await openSkyProvider.getFlights();
+        const flights = await flightGateway.getCurrentFlights();
         flights.forEach(f => flightStore.updateFlightTrack(f));
         await logisticsSyncEngine.syncActiveTrips(flights);
         
@@ -349,8 +362,11 @@ router.post('/sync', async (req, res) => {
 
 module.exports = router;
 module.exports.flightStore = flightStore;
+module.exports.flightGateway = flightGateway;
+module.exports.commercialAdsbProvider = commercialAdsbProvider;
 module.exports.openSkyProvider = openSkyProvider;
 module.exports.metarProvider = metarProvider;
 module.exports.airportProvider = airportProvider;
 module.exports.logisticsSyncEngine = logisticsSyncEngine;
 module.exports.ritFlyAI = ritFlyAI;
+

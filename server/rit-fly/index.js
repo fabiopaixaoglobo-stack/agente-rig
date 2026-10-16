@@ -6,6 +6,9 @@
 const { config } = require('./config');
 const constants = require('./constants');
 const { FlightDTO } = require('./types/flight-dto');
+const { FlightPositionProvider } = require('./providers/flight-position-provider');
+const { CommercialAdsbProvider } = require('./providers/commercial-adsb-provider');
+const { FlightProviderGateway } = require('./providers/provider-gateway');
 const { OpenSkyProvider } = require('./providers/opensky-provider');
 const { MetarProvider } = require('./providers/metar-provider');
 const { AirportProvider } = require('./providers/airport-provider');
@@ -18,6 +21,9 @@ module.exports = {
     config,
     constants,
     FlightDTO,
+    FlightPositionProvider,
+    CommercialAdsbProvider,
+    FlightProviderGateway,
     OpenSkyProvider,
     MetarProvider,
     AirportProvider,

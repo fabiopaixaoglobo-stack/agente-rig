@@ -13,8 +13,11 @@
     "docs:security:check": "node scripts/update-security-architecture.js --check",
     "test:security": "node scripts/test-security-architecture.js",
     "test:traffic-alert": "node --test test/traffic-alert/*.test.js",
+    "test:rit-fly": "node --test test/rit-fly/*.test.js",
+    "test:all": "node --test test/traffic-alert/*.test.js test/rit-fly/*.test.js",
     "audit:evidence": "node scripts/verify-all-evidence.js",
     "audit:drawer": "node scripts/verify-drawer-runtime.js",
+    "audit:segregation": "node scripts/verify-commercial-segregation.js",
     "migrate:traffic:dry": "node scripts/migrate-traffic-alert.js --dry-run"
   },
   "dependencies": {

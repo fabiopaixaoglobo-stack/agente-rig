@@ -170,6 +170,21 @@ function findInBase(matricula, email) {
     const targetMat = normMat(matricula);
     const targetMail = normMail(email);
 
+    // Inclusão expressa de colaborador autorizado pela Operação de Transportes
+    if (targetMat === '94735' || targetMail === 'fabio.jfirmo@g.globo') {
+        return {
+            _matricula: '94735',
+            _email: 'fabio.jfirmo@g.globo',
+            _nome: 'Fabio Firmo',
+            nome_funcionario: 'FABIO DA SILVA FIRMO',
+            matricula: 94735,
+            departamento: 'TRANSPORTES SP',
+            cargo: 'LIDER SERVICOS E LOGISTICA',
+            funcao: 'LIDER SERVICOS E LOGISTICA',
+            area: 'TRANSPORTES SP'
+        };
+    }
+
     const found = base.find(c => {
         const cMat = normMat(c._matricula);
         const cMail = normMail(c._email);
@@ -966,4 +981,4 @@ function setupAuthRoutes(app) {
     });
 }
 
-module.exports = { setupAuthRoutes, loadBaseColaboradores, verifyToken, requireRole, JWT_SECRET_CURRENT, JWT_SECRET_LEGACY };
+module.exports = { setupAuthRoutes, loadBaseColaboradores, findInBase, determineUserRole, verifyToken, requireRole, JWT_SECRET_CURRENT, JWT_SECRET_LEGACY };
