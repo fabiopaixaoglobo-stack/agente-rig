@@ -27,8 +27,12 @@ class CommercialAdsbProvider extends FlightPositionProvider {
             { id: 'TMA_SE_CORRIDOR', name: 'Corredor Sudeste/Centro (RJ/SP/MG - SDU/GIG/CGH/GRU/CNF)', lat: -22.2, lon: -44.9, dist: 250 }
         ];
 
-        // Pool de provedores ADS-B v2 independentes com failover automático
+        // Pool de provedores ADS-B independentes com failover automático (Cobertura Nacional + Regional)
         this.endpoints = [
+            {
+                id: 'FR24_CLOUD_FEED',
+                buildUrl: () => 'https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=5.3,-33.8,-74.0,-32.4&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=0&stats=0'
+            },
             {
                 id: 'ADSB_FI_OPENDATA',
                 buildUrl: (h) => `https://opendata.adsb.fi/api/v2/lat/${h.lat}/lon/${h.lon}/dist/${h.dist}`
@@ -136,8 +140,6 @@ class CommercialAdsbProvider extends FlightPositionProvider {
 
         try {
             for (const h of this.hubs) {
-                let hubSuccess = false;
-
                 for (const ep of this.endpoints) {
                     const cooldownUntil = this.endpointCooldowns.get(ep.id) || 0;
                     if (now < cooldownUntil) {
@@ -150,7 +152,7 @@ class CommercialAdsbProvider extends FlightPositionProvider {
                         const url = ep.buildUrl(h);
                         const res = await fetch(url, {
                             headers: {
-                                'User-Agent': 'Mozilla/5.0 (compatible; AgenteRIT/1.1; +https://agenterit.com.br)',
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
                                 'Accept': 'application/json'
                             },
                             signal: controller.signal
@@ -161,7 +163,6 @@ class CommercialAdsbProvider extends FlightPositionProvider {
                         this.providerStatus.code = res.status;
 
                         if (res.status === 429 || res.status === 420) {
-                            // Coloca este endpoint em cooldown por 45s e faz failover imediato para o próximo provedor
                             this.endpointCooldowns.set(ep.id, Date.now() + 45000);
                             console.warn(`[RIT-FLY][CommercialAdsbProvider] Rate-limit HTTP ${res.status} em ${ep.id} (${h.id}), alternando provedor...`);
                             continue;
@@ -174,9 +175,34 @@ class CommercialAdsbProvider extends FlightPositionProvider {
                         }
 
                         const json = await res.json();
-                        const acList = Array.isArray(json.ac)
-                            ? json.ac
-                            : (Array.isArray(json.aircraft) ? json.aircraft : []);
+                        let acList = [];
+                        if (Array.isArray(json.ac)) {
+                            acList = json.ac;
+                        } else if (Array.isArray(json.aircraft)) {
+                            acList = json.aircraft;
+                        } else if (json && typeof json === 'object') {
+                            // Formato tupla de alta disponibilidade (FR24 Cloud Feed)
+                            for (const [k, val] of Object.entries(json)) {
+                                if (Array.isArray(val) && val.length >= 14 && typeof val[1] === 'number' && typeof val[2] === 'number') {
+                                    acList.push({
+                                        hex: String(val[0] || k).trim(),
+                                        lat: val[1],
+                                        lon: val[2],
+                                        track: val[3],
+                                        alt_baro: val[4],
+                                        gs: val[5],
+                                        t: val[8] || '',
+                                        r: val[9] || '',
+                                        orig_iata: val[11] || '',
+                                        dest_iata: val[12] || '',
+                                        flight_num: val[13] || '',
+                                        ground: Boolean(val[14]),
+                                        baro_rate: val[15] || 0,
+                                        flight: val[16] || val[13] || val[9] || ''
+                                    });
+                                }
+                            }
+                        }
 
                         for (const raw of acList) {
                             if (raw && raw.hex && typeof raw.lat === 'number' && typeof raw.lon === 'number') {
@@ -188,9 +214,8 @@ class CommercialAdsbProvider extends FlightPositionProvider {
                         }
 
                         if (deduplicatedMap.size > 0) {
-                            hubSuccess = true;
                             this.endpointCooldowns.delete(ep.id);
-                            break; // Sucesso no hub atual, não precisa acionar o endpoint secundário
+                            break;
                         }
                     } catch (e) {
                         clearTimeout(timeout);
@@ -306,8 +331,10 @@ class CommercialAdsbProvider extends FlightPositionProvider {
             speedKmh
         );
 
-        // Dedução de rota mais próxima baseada na posição geográfica e vetor de proa
-        const { origem, destino } = this.estimateRouteFromPosition(raw.lat, raw.lon, rumo, altFt, vertRateFpm, callsign, aircraftType);
+        // Utiliza origem/destino IATA real do feed quando disponível, ou deduz pela posição e vetor de proa
+        const estimatedRoute = this.estimateRouteFromPosition(raw.lat, raw.lon, rumo, altFt, vertRateFpm, callsign, aircraftType);
+        const origem = (raw.orig_iata && String(raw.orig_iata).trim()) || estimatedRoute.origem;
+        const destino = (raw.dest_iata && String(raw.dest_iata).trim()) || estimatedRoute.destino;
 
         // Situação Operacional com constantes válidas do módulo
         let situacao = FLIGHT_STATUS.EN_ROUTE;
