@@ -119,6 +119,53 @@
       font-size: 11px !important;
       margin-bottom: 4px !important;
     }
+    /* Marcador de Ônibus das Caravanas (Pré-Cadastro e Grade Ativa) */
+    .bus-map-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
+    .bus-map-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    .bus-map-badge:hover {
+      transform: scale(1.18);
+    }
+    .bus-map-badge.is-selected {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #ffffff;
+      animation: pulseBusPin 1.8s infinite;
+    }
+    @keyframes pulseBusPin {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.85), 0 4px 14px rgba(0,0,0,0.8); }
+      70% { transform: scale(1.12); box-shadow: 0 0 0 12px rgba(245, 166, 35, 0), 0 6px 18px rgba(0,0,0,0.8); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 166, 35, 0), 0 4px 14px rgba(0,0,0,0.8); }
+    }
+    .bus-map-label {
+      margin-top: 2px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(7, 13, 24, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+      letter-spacing: 0.02em;
+    }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col text-xs select-none">
@@ -296,39 +343,77 @@
           <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
 
-        <!-- FILTROS ESPECÍFICOS DE CARAVANAS -->
-        <div id="filters-caravanas" class="flex flex-wrap gap-1.5 items-center">
-          <div class="flex-1 min-w-[95px]">
-            <select id="filter-program" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
-              <option value="">Todos os Programas</option>
-              <option value="Domingão com Huck">Domingão com Huck</option>
-              <option value="Caldeirão com Mion">Caldeirão com Mion</option>
-              <option value="Altas Horas">Altas Horas</option>
-              <option value="Conversa com Bial">Conversa com Bial</option>
+        <!-- FILTROS E ABA DE SELEÇÃO DE CARAVANAS (GRADE ATIVA + PRÉ-CADASTRO RJ 49) -->
+        <div id="filters-caravanas" class="space-y-2">
+          <!-- ABAS INTERNAS: GRADE DO DIA vs PRÉ-CADASTRO RJ (49 CARAVANAS) -->
+          <div class="grid grid-cols-2 gap-1 bg-[#040812] p-1 rounded-lg border border-[#1e2c4f]">
+            <button type="button" id="btn-subtab-grade" onclick="switchCaravanSubTab('grade')" class="py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition bg-cyan-950 text-cyan-300 border border-cyan-700 shadow">
+              <i class="fa-solid fa-route"></i>
+              <span>Grade Ativa</span>
+              <span id="badge-subtab-grade" class="px-1.5 py-0.2 rounded-full bg-cyan-900/80 text-cyan-200 text-[9px] font-mono">4</span>
+            </button>
+            <button type="button" id="btn-subtab-precadastro" onclick="switchCaravanSubTab('precadastro')" class="py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition text-slate-400 hover:text-white">
+              <i class="fa-solid fa-bus text-amber-400"></i>
+              <span>Pré-Cadastro RJ</span>
+              <span id="badge-subtab-precadastro" class="px-1.5 py-0.2 rounded-full bg-amber-950/90 text-amber-300 border border-amber-700/60 text-[9px] font-mono">49</span>
+            </button>
+          </div>
+
+          <!-- CAIXA DE SELEÇÃO RÁPIDA: ESCOLHER CARAVANA DO RJ E PLOTAR ÔNIBUS NO MAPA -->
+          <div id="precadastro-rj-bar" class="bg-[#060c1a] border border-amber-500/30 rounded-lg p-2 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label for="select-precadastro-caravana" class="text-[9.5px] font-bold text-amber-300 uppercase flex items-center gap-1">
+                <i class="fa-solid fa-bus text-amber-400"></i>
+                <span>Selecionar Caravana RJ (Plotar no Mapa)</span>
+              </label>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="plotAllPreRegisteredCaravans()" class="px-1.5 py-0.5 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 text-[8.5px] font-bold transition" title="Plotar todas as 49 caravanas pré-cadastradas do RJ no mapa">
+                  Plotar 49 🚌
+                </button>
+                <button type="button" onclick="clearPreRegisteredCaravansMap()" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 text-[8.5px] font-semibold transition" title="Limpar marcadores de pré-cadastro do mapa">
+                  Limpar
+                </button>
+              </div>
+            </div>
+            <select id="select-precadastro-caravana" onchange="onSelectPreRegisteredCaravan(this.value)" class="w-full bg-[#040812] border border-amber-600/40 focus:border-amber-400 rounded text-[10.5px] text-white py-1.5 px-2 outline-none font-medium">
+              <option value="">🚌 Escolha uma Caravana do RJ para plotar o endereço no mapa...</option>
             </select>
           </div>
-          <div class="flex-1 min-w-[85px]">
-            <select id="filter-region-caravanas" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
-              <option value="">Todas Regiões</option>
-              <option value="Niterói">Niterói / Leste</option>
-              <option value="Nova Iguaçu">Baixada Fluminense</option>
-              <option value="Madureira">Zona Norte</option>
-              <option value="Campo Grande">Zona Oeste</option>
-              <option value="Barra da Tijuca">Barra da Tijuca</option>
-              <option value="Centro">Centro / Zona Sul</option>
-            </select>
+
+          <!-- FILTROS DE PROGRAMA, REGIÃO E SITUAÇÃO -->
+          <div class="flex flex-wrap gap-1.5 items-center">
+            <div class="flex-1 min-w-[95px]" id="filter-program-wrap">
+              <select id="filter-program" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
+                <option value="">Todos os Programas</option>
+                <option value="Domingão com Huck">Domingão com Huck</option>
+                <option value="Caldeirão com Mion">Caldeirão com Mion</option>
+                <option value="Altas Horas">Altas Horas</option>
+                <option value="Conversa com Bial">Conversa com Bial</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[85px]">
+              <select id="filter-region-caravanas" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
+                <option value="">Todas Regiões</option>
+                <option value="Niterói">Niterói / Leste</option>
+                <option value="Nova Iguaçu">Baixada Fluminense</option>
+                <option value="Madureira">Zona Norte</option>
+                <option value="Campo Grande">Zona Oeste</option>
+                <option value="Barra da Tijuca">Barra da Tijuca</option>
+                <option value="Centro">Centro / Zona Sul</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[85px]" id="filter-status-wrap">
+              <select id="filter-status" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
+                <option value="">Todas Situações</option>
+                <option value="DENTRO DA JANELA">Dentro da Janela</option>
+                <option value="ATENÇÃO">Atenção</option>
+                <option value="RISCO DE ATRASO">Risco de Atraso</option>
+              </select>
+            </div>
+            <button id="btn-show-all-routes" onclick="toggleAllRoutesMode(true)" class="px-2 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 text-[10px] font-semibold" title="Mostrar todas as rotas no mapa">
+              Todas Rotas
+            </button>
           </div>
-          <div class="flex-1 min-w-[85px]">
-            <select id="filter-status" onchange="applyCaravanFilters()" class="w-full bg-[#050914] border border-[#1e2c4f] rounded text-[10px] text-slate-300 py-1 px-1.5 outline-none">
-              <option value="">Todas Situações</option>
-              <option value="DENTRO DA JANELA">Dentro da Janela</option>
-              <option value="ATENÇÃO">Atenção</option>
-              <option value="RISCO DE ATRASO">Risco de Atraso</option>
-            </select>
-          </div>
-          <button id="btn-show-all-routes" onclick="toggleAllRoutesMode(true)" class="px-2 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 text-[10px] font-semibold" title="Mostrar todas as rotas no mapa">
-            Todas Rotas
-          </button>
         </div>
 
         <!-- FILTROS ESPECÍFICOS DE ALERTA DE TRÂNSITO (9 CORREDORES & REGIÕES) -->
@@ -521,6 +606,18 @@
       </div>
 
       <form id="form-caravan" onsubmit="handleCaravanSubmit(event)" class="p-4 space-y-3 overflow-y-auto max-h-[75vh] custom-scroll">
+
+        <!-- SELETOR DO CATÁLOGO DE CARAVANAS PRÉ-CADASTRADAS DO RJ (49 OPÇÕES) -->
+        <div class="bg-[#060c1a] border border-amber-500/40 rounded-lg p-2.5 space-y-1.5">
+          <label for="form-precadastro-rj" class="block text-[10px] font-bold text-amber-300 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-bus text-amber-400"></i>
+            <span>Carregar Caravana Pré-Cadastrada do RJ (49 locais)</span>
+          </label>
+          <select id="form-precadastro-rj" onchange="applyPreRegisteredToForm(this.value)" class="w-full bg-[#040812] border border-amber-600/40 focus:border-amber-400 rounded p-1.5 text-xs text-white outline-none">
+            <option value="">-- Selecionar do Pré-Cadastro RJ (Preenchimento Automático) --</option>
+          </select>
+          <p class="text-[9px] text-slate-400">Ao selecionar, o Nome, Bairro, Ponto de Referência e Coordenadas no mapa são preenchidos automaticamente.</p>
+        </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -805,7 +902,66 @@
     let camerasLayerGroup = null;
     let trafficFlowLayerGroup = null;
     let caravanRoutesLayerGroup = null;
+    let preRegisteredBusLayerGroup = null;
     let destinationMarkerLayer = null;
+
+    // ESTADO DO PRÉ-CADASTRO DE CARAVANAS RJ (49 CARAVANAS)
+    let currentCaravanSubTab = 'grade'; // 'grade' | 'precadastro'
+    let selectedPreRegisteredId = null;
+    let selectedFormPreRegCoords = null;
+
+    // CATÁLOGO OFICIAL DAS 49 CARAVANAS PRÉ-CADASTRADAS DO RIO DE JANEIRO (RJ)
+    const PRE_REGISTERED_CARAVANS_RJ = [
+      { id: 'CRV-RJ-01', caravana: 'ALCÂNTARA', bairro: 'Alcântara', pontoReferencia: 'TRADE CENTER ALCÂNTARA (PRÉDIO DO RELÓGIO)', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.8169, -43.0036], baseDistanceKm: 46.5, baseDurationMinutes: 64 },
+      { id: 'CRV-RJ-02', caravana: 'AUSTIN', bairro: 'Austin', pontoReferencia: 'PRAÇA DO BATUTA', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7114, -43.5218], baseDistanceKm: 39.2, baseDurationMinutes: 54 },
+      { id: 'CRV-RJ-03', caravana: 'BANGU', bairro: 'Bangu', pontoReferencia: 'CARAV DE BANGU - Rua Boiobi, 683, Banguposto ml e hiper tinta', regiao: 'Campo Grande', corridor: 'Av. Brasil / Transolímpica', coords: [-22.8794, -43.4658], baseDistanceKm: 18.4, baseDurationMinutes: 29 },
+      { id: 'CRV-RJ-04', caravana: 'BELFORD ROXO', bairro: 'Belford Roxo', pontoReferencia: 'NOVA NET E LANCHONETE MONTE SINAI', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Linha Amarela', coords: [-22.7642, -43.3996], baseDistanceKm: 33.8, baseDurationMinutes: 48 },
+      { id: 'CRV-RJ-05', caravana: 'BELFORD ROXO', bairro: 'Belford Roxo', pontoReferencia: 'CONDOMÍNIO RESIDENCIAL BOTAFOGO (PARAR NA ENTRADA – PÁTIO)', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Linha Amarela', coords: [-22.7580, -43.3910], baseDistanceKm: 34.5, baseDurationMinutes: 49 },
+      { id: 'CRV-RJ-06', caravana: 'CAMPO GRANDE', bairro: 'Campo Grande', pontoReferencia: 'Camelódromo de Campo Grande', regiao: 'Campo Grande', corridor: 'Av. Brasil / Transolímpica', coords: [-22.9028, -43.5594], baseDistanceKm: 26.8, baseDurationMinutes: 39 },
+      { id: 'CRV-RJ-07', caravana: 'CAMPO GRANDE', bairro: 'Campo Grande', pontoReferencia: 'EM FRENTE A PIZZARIO RIO SUL GOURMET', regiao: 'Campo Grande', corridor: 'Av. Cesário de Melo / Transolímpica', coords: [-22.9075, -43.5642], baseDistanceKm: 27.4, baseDurationMinutes: 41 },
+      { id: 'CRV-RJ-08', caravana: 'CAMPO GRANDE', bairro: 'Campo Grande', pontoReferencia: 'CAMELÓDROMO DE CAMPO GRANDE – NA FRENTE DA IGREJA UNIVERSAL', regiao: 'Campo Grande', corridor: 'Av. Brasil / Transolímpica', coords: [-22.9019, -43.5582], baseDistanceKm: 26.6, baseDurationMinutes: 39 },
+      { id: 'CRV-RJ-09', caravana: 'CASCADURA', bairro: 'Cascadura', pontoReferencia: 'PRÓXIMO DA FEIRA MIX DE CASCADURA', regiao: 'Madureira', corridor: 'Av. Ernani Cardoso / Jacarepaguá', coords: [-22.8825, -43.3278], baseDistanceKm: 14.8, baseDurationMinutes: 26 },
+      { id: 'CRV-RJ-10', caravana: 'COMENDADOR SOARES', bairro: 'Nova Iguaçu', pontoReferencia: 'AO LADO DA IGREJA CATÓLICA SÃO JOÃO BATISTA', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7356, -43.4892], baseDistanceKm: 36.5, baseDurationMinutes: 51 },
+      { id: 'CRV-RJ-11', caravana: 'CORDOVIL', bairro: 'Cordovil', pontoReferencia: 'Em frente ao ARES Casa do Marinheiro, próximo à estação Lobo Júnior do BRT', regiao: 'Madureira', corridor: 'Av. Brasil / Linha Amarela', coords: [-22.8306, -43.2856], baseDistanceKm: 25.4, baseDurationMinutes: 38 },
+      { id: 'CRV-RJ-12', caravana: 'COSMOS', bairro: 'Cosmos', pontoReferencia: 'PRAÇA DA ARAGUAINHA', regiao: 'Campo Grande', corridor: 'Av. Cesário de Melo / Transolímpica', coords: [-22.9125, -43.6158], baseDistanceKm: 32.1, baseDurationMinutes: 46 },
+      { id: 'CRV-RJ-13', caravana: 'DEL CASTILHO', bairro: 'Del Castilho', pontoReferencia: 'SHOPPING NOVA AMÉRICA', regiao: 'Madureira', corridor: 'Linha Amarela / Estr. dos Bandeirantes', coords: [-22.8781, -43.2725], baseDistanceKm: 21.0, baseDurationMinutes: 32 },
+      { id: 'CRV-RJ-14', caravana: 'DUQUE DE CAXIAS', bairro: 'Duque de Caxias', pontoReferencia: 'EM FRENTE AO SALÃO DE FESTAS M5R (PRAÇA DO RODO)', regiao: 'Nova Iguaçu', corridor: 'Linha Vermelha / Linha Amarela', coords: [-22.7858, -43.3119], baseDistanceKm: 31.2, baseDurationMinutes: 45 },
+      { id: 'CRV-RJ-15', caravana: 'ENGENHO PEQUENO', bairro: 'Nova Iguaçu', pontoReferencia: 'RESIDENCIAL PORTAL DO SOL', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7420, -43.4350], baseDistanceKm: 37.0, baseDurationMinutes: 52 },
+      { id: 'CRV-RJ-16', caravana: 'ESPAÇO UNIVERSITÁRIO DE ITABORAÍ', bairro: 'Itaboraí', pontoReferencia: 'EM FRENTE AO ESPAÇO UNIVERSITÁRIO - PREFEITURA DE ITABORAÍ', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.7444, -42.8594], baseDistanceKm: 64.5, baseDurationMinutes: 82 },
+      { id: 'CRV-RJ-17', caravana: 'FRAGOSO', bairro: 'Magé', pontoReferencia: 'PRAÇA DA FAZENDA - FRAGOSO/MAGÉ', regiao: 'Nova Iguaçu', corridor: 'BR-040 / Linha Vermelha / Linha Amarela', coords: [-22.6085, -43.1755], baseDistanceKm: 54.0, baseDurationMinutes: 70 },
+      { id: 'CRV-RJ-18', caravana: 'IMBARIÊ', bairro: 'Imbariê', pontoReferencia: 'Próximo ao Colégio Portugal Neves', regiao: 'Nova Iguaçu', corridor: 'BR-040 / Linha Vermelha / Linha Amarela', coords: [-22.6364, -43.2186], baseDistanceKm: 49.5, baseDurationMinutes: 65 },
+      { id: 'CRV-RJ-19', caravana: 'IMBARIÊ', bairro: 'Imbariê', pontoReferencia: 'PRAÇA DA VILA COCOTÁ – IMBARIÊ – DUQUE DE CAXIAS', regiao: 'Nova Iguaçu', corridor: 'BR-040 / Linha Vermelha / Linha Amarela', coords: [-22.6410, -43.2230], baseDistanceKm: 48.8, baseDurationMinutes: 64 },
+      { id: 'CRV-RJ-20', caravana: 'IRAJÁ', bairro: 'Irajá', pontoReferencia: 'Próximo a PRAÇA DA LIGHT', regiao: 'Madureira', corridor: 'Av. Brasil / Linha Amarela', coords: [-22.8361, -43.3268], baseDistanceKm: 22.5, baseDurationMinutes: 34 },
+      { id: 'CRV-RJ-21', caravana: 'ITABORAÍ', bairro: 'Itaboraí', pontoReferencia: 'Centro de Itaboraí - em frente a casa e vídeo no centro de Itaboraí', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.7465, -42.8578], baseDistanceKm: 64.8, baseDurationMinutes: 83 },
+      { id: 'CRV-RJ-22', caravana: 'JAPERI', bairro: 'Japeri', pontoReferencia: 'CENTRO DE TREINAMENTO KRATOS NO SALÃO DA CARINE', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.6433, -43.6536], baseDistanceKm: 52.0, baseDurationMinutes: 68 },
+      { id: 'CRV-RJ-23', caravana: 'JARDIM AMÉRICA', bairro: 'Jardim América', pontoReferencia: 'PERTO DO PONTO FINAL DO ÔNIBUS, 774', regiao: 'Madureira', corridor: 'Presidente Dutra / Av. Brasil / Linha Amarela', coords: [-22.8115, -43.3235], baseDistanceKm: 26.2, baseDurationMinutes: 39 },
+      { id: 'CRV-RJ-24', caravana: 'JARDIM SULACAP', bairro: 'Jardim Sulacap', pontoReferencia: 'SHOPPING JARDIM SULACAP', regiao: 'Campo Grande', corridor: 'Transolímpica / Estr. dos Bandeirantes', coords: [-22.8856, -43.3978], baseDistanceKm: 11.2, baseDurationMinutes: 19 },
+      { id: 'CRV-RJ-25', caravana: 'MARECHAL HERMES', bairro: 'Marechal Hermes', pontoReferencia: 'PRÓXIMO AO ESPAÇO BRONZE OÁSIS', regiao: 'Madureira', corridor: 'Estr. Intendente Magalhães / Transolímpica', coords: [-22.8639, -43.3722], baseDistanceKm: 15.6, baseDurationMinutes: 25 },
+      { id: 'CRV-RJ-26', caravana: 'MONTE LÍBANO', bairro: 'Nova Iguaçu', pontoReferencia: 'REF. APÓS POSTO 13 NA DUTRA ENTRAR NA HONDA.', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7618, -43.4425], baseDistanceKm: 34.0, baseDurationMinutes: 48 },
+      { id: 'CRV-RJ-27', caravana: 'NILÓPOLIS', bairro: 'Nilópolis', pontoReferencia: 'REFERÊNCIA: RODOVIÁRIA DE NILÓPOLIS', regiao: 'Nova Iguaçu', corridor: 'Via Light / Transolímpica', coords: [-22.8083, -43.4147], baseDistanceKm: 24.5, baseDurationMinutes: 36 },
+      { id: 'CRV-RJ-28', caravana: 'NITERÓI', bairro: 'Niterói', pontoReferencia: 'ATRÁS DO TERMINAL DE NITERÓI NO ESTACIONAMENTO', regiao: 'Niterói', corridor: 'Ponte Rio-Niterói / Linha Vermelha / Linha Amarela', coords: [-22.8894, -43.1242], baseDistanceKm: 36.5, baseDurationMinutes: 52 },
+      { id: 'CRV-RJ-29', caravana: 'NOVA IGUAÇU', bairro: 'Nova Iguaçu', pontoReferencia: 'MERCADO MARINGÁ DA PALHADA / RESTAURANTE LILICA / POSTO DE COMBUSTÍVEL CONFIANÇA', regiao: 'Nova Iguaçu', corridor: 'Estr. de Madureira / Presidente Dutra / Transolímpica', coords: [-22.7850, -43.5080], baseDistanceKm: 33.4, baseDurationMinutes: 47 },
+      { id: 'CRV-RJ-30', caravana: 'NOVA IGUAÇU', bairro: 'Nova Iguaçu', pontoReferencia: 'Rua em frente mercado vianense da Luiz de Lemos', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7395, -43.4495], baseDistanceKm: 36.8, baseDurationMinutes: 51 },
+      { id: 'CRV-RJ-31', caravana: 'PADRE MIGUEL', bairro: 'Padre Miguel', pontoReferencia: 'EM FRENTE AO MURO DA ESTAÇÃO DE TREM DE PADRE MIGUEL', regiao: 'Campo Grande', corridor: 'Transolímpica / Estr. dos Bandeirantes', coords: [-22.8744, -43.4478], baseDistanceKm: 16.2, baseDurationMinutes: 26 },
+      { id: 'CRV-RJ-32', caravana: 'PENHA', bairro: 'Penha', pontoReferencia: 'CONDOMÍNIO VIVENDAS DA PENHA', regiao: 'Madureira', corridor: 'Av. Brasil / Linha Amarela', coords: [-22.8422, -43.2783], baseDistanceKm: 24.0, baseDurationMinutes: 36 },
+      { id: 'CRV-RJ-33', caravana: 'POSSE', bairro: 'Nova Iguaçu', pontoReferencia: 'RUA EM FRENTE AO MERCADO VIANENSE DA LUIZ DE LEMOS', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7368, -43.4512], baseDistanceKm: 37.1, baseDurationMinutes: 52 },
+      { id: 'CRV-RJ-34', caravana: 'QUEIMADOS', bairro: 'Queimados', pontoReferencia: 'COLÉGIO SÃO JOÃO - RUA ALEGRIA, S/Nº', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7156, -43.5558], baseDistanceKm: 42.5, baseDurationMinutes: 58 },
+      { id: 'CRV-RJ-35', caravana: 'RICARDO DE ALBUQUERQUE', bairro: 'Ricardo de Albuquerque', pontoReferencia: 'Ponto referência: em frente a estação de trem Ricardo de Albuquerque', regiao: 'Madureira', corridor: 'Estr. Marechal Alencastro / Transolímpica', coords: [-22.8397, -43.3958], baseDistanceKm: 19.8, baseDurationMinutes: 30 },
+      { id: 'CRV-RJ-36', caravana: 'RICARDO DE ALBUQUERQUE', bairro: 'Ricardo de Albuquerque', pontoReferencia: 'EM FRENTE A ESTAÇÃO DE RICARDO DE ALBUQUERQUE', regiao: 'Madureira', corridor: 'Estr. Marechal Alencastro / Transolímpica', coords: [-22.8405, -43.3965], baseDistanceKm: 19.6, baseDurationMinutes: 30 },
+      { id: 'CRV-RJ-37', caravana: 'ROSA DOS VENTOS', bairro: 'Nova Iguaçu', pontoReferencia: 'Próx ao colégio João do Vale.', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7689, -43.4792], baseDistanceKm: 34.8, baseDurationMinutes: 49 },
+      { id: 'CRV-RJ-38', caravana: 'ROSA DOS VENTOS', bairro: 'Nova Iguaçu', pontoReferencia: 'MERCADO MARINGÁ DA PALHADA / RESTAURANTE LILICA / POSTO DE COMBUSTÍVEL CONFIANÇA', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Transolímpica', coords: [-22.7745, -43.4920], baseDistanceKm: 34.2, baseDurationMinutes: 48 },
+      { id: 'CRV-RJ-39', caravana: 'SÃO GONÇALO', bairro: 'São Gonçalo', pontoReferencia: 'Clube Tamoio (referência)', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.8286, -43.0628], baseDistanceKm: 42.0, baseDurationMinutes: 58 },
+      { id: 'CRV-RJ-40', caravana: 'SÃO GONÇALO', bairro: 'São Gonçalo', pontoReferencia: 'PRAÇA ZÉ GAROTO – SÃO GONÇALO - Próximo a ESCULTURA ROSA DOS VENTOS', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.8247, -43.0519], baseDistanceKm: 43.2, baseDurationMinutes: 60 },
+      { id: 'CRV-RJ-41', caravana: 'SÃO JOÃO DE MERITI', bairro: 'São João de Meriti', pontoReferencia: 'COLÉGIO ESTADUAL RUBENS FARRULA', regiao: 'Nova Iguaçu', corridor: 'Presidente Dutra / Linha Amarela', coords: [-22.8042, -43.3731], baseDistanceKm: 28.4, baseDurationMinutes: 41 },
+      { id: 'CRV-RJ-42', caravana: 'SEPETIBA', bairro: 'Sepetiba', pontoReferencia: 'Clube Recôncavo e mercado Supermarket', regiao: 'Campo Grande', corridor: 'Av. Brasil / Transolímpica', coords: [-22.9694, -43.6967], baseDistanceKm: 38.5, baseDurationMinutes: 53 },
+      { id: 'CRV-RJ-43', caravana: 'SEROPÉDICA', bairro: 'Seropédica', pontoReferencia: 'EM FRENTE A ACADEMIA LIFEFIT', regiao: 'Nova Iguaçu', corridor: 'BR-465 / Av. Brasil / Transolímpica', coords: [-22.7461, -43.7089], baseDistanceKm: 48.0, baseDurationMinutes: 63 },
+      { id: 'CRV-RJ-44', caravana: 'SEROPÉDICA', bairro: 'Seropédica', pontoReferencia: 'EM FRENTE A PRIMEIRA IGREJA BATISTA DE SEROPEDICA/ DO LADO DA FARMÁCIA UNIVERSITÁRIA', regiao: 'Nova Iguaçu', corridor: 'BR-465 / Av. Brasil / Transolímpica', coords: [-22.7439, -43.7064], baseDistanceKm: 48.2, baseDurationMinutes: 64 },
+      { id: 'CRV-RJ-45', caravana: 'TANQUE', bairro: 'Tanque', pontoReferencia: 'PRAÇA PADRE AMBRÓSIO', regiao: 'Barra da Tijuca', corridor: 'Av. Geremário Dantas / Estr. dos Bandeirantes', coords: [-22.9194, -43.3569], baseDistanceKm: 8.2, baseDurationMinutes: 15 },
+      { id: 'CRV-RJ-46', caravana: 'TAQUARA', bairro: 'Taquara', pontoReferencia: 'POSTO AMIZADE - SHELL (EM FRENTE A ESTAÇÃO DE BRT SANTA EFIGÊNIA)', regiao: 'Barra da Tijuca', corridor: 'Estr. dos Bandeirantes / Curicica', coords: [-22.9297, -43.3772], baseDistanceKm: 5.4, baseDurationMinutes: 11 },
+      { id: 'CRV-RJ-47', caravana: 'TAQUARA', bairro: 'Taquara', pontoReferencia: 'POSTO Mirante da Taquara ( Condomínio Merck )', regiao: 'Barra da Tijuca', corridor: 'Estr. dos Bandeirantes / Curicica', coords: [-22.9367, -43.3858], baseDistanceKm: 4.1, baseDurationMinutes: 9 },
+      { id: 'CRV-RJ-48', caravana: 'VICENTE DE CARVALHO / VAZ LOBO', bairro: 'Vaz Lobo', pontoReferencia: 'supermercado Mundial', regiao: 'Madureira', corridor: 'Av. Monsenhor Félix / Madureira / Jacarepaguá', coords: [-22.8578, -43.3256], baseDistanceKm: 18.0, baseDurationMinutes: 29 },
+      { id: 'CRV-RJ-49', caravana: 'ZÉ GAROTO', bairro: 'São Gonçalo', pontoReferencia: 'Próximo o Hospital Infantil Darcy Sarmanho Vargas // ESCULTURA ROSA DOS VENTOS', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.8256, -43.0531], baseDistanceKm: 43.0, baseDurationMinutes: 59 }
+    ];
 
     let layerVisibility = {
       ott: true,
@@ -979,6 +1135,7 @@
 
       document.getElementById('termo-data').value = new Date().toLocaleDateString('pt-BR');
       initLeafletMap();
+      initPreRegisteredSelectors();
       renderCTScenarios();
       await loadInitialData();
       await loadTrafficConditions();
@@ -1134,6 +1291,7 @@
 
       // Camadas Operacionais Independentes
       caravanRoutesLayerGroup = L.layerGroup().addTo(leafletMap);
+      preRegisteredBusLayerGroup = L.layerGroup().addTo(leafletMap);
       trafficFlowLayerGroup = L.layerGroup().addTo(leafletMap);
       trafficIncidentsLayerGroup = L.layerGroup().addTo(leafletMap);
       ottLayerGroup = L.layerGroup().addTo(leafletMap);
@@ -1505,9 +1663,357 @@
     }
 
     // =========================================================================
+    // ÍCONE DE ÔNIBUS VETORIAL PARA PLOTAGEM DE CARAVANAS NO MAPA LEAFLET
+    // =========================================================================
+    function createBusMapIcon(color = '#f5a623', labelText = '', isSelected = false) {
+      const shortLabel = String(labelText || '').length > 18
+        ? String(labelText).substring(0, 17) + '…'
+        : String(labelText || '');
+      const size = isSelected ? 40 : 34;
+      const anchorY = labelText ? size + 8 : Math.round(size / 2);
+
+      return L.divIcon({
+        className: 'bus-map-marker',
+        html: `
+          <div class="bus-map-badge ${isSelected ? 'is-selected' : ''}" style="background: linear-gradient(135deg, ${color}, #0b1324); border-color: ${isSelected ? '#ffffff' : color};">
+            <svg viewBox="0 0 24 24" width="${isSelected ? 20 : 17}" height="${isSelected ? 20 : 17}" fill="#ffffff" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.85));">
+              <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
+            </svg>
+          </div>
+          ${shortLabel ? `<span class="bus-map-label" style="border-color:${color};">${escapeHtml(shortLabel)}</span>` : ''}
+        `,
+        iconSize: [110, size + 20],
+        iconAnchor: [55, anchorY],
+        popupAnchor: [0, -anchorY + 6]
+      });
+    }
+
+    // =========================================================================
+    // PRÉ-CADASTRO DAS 49 CARAVANAS DO RJ: SELETORES, ABA E PLOTAGEM NO MAPA
+    // =========================================================================
+    function initPreRegisteredSelectors() {
+      const sideSelect = document.getElementById('select-precadastro-caravana');
+      const formSelect = document.getElementById('form-precadastro-rj');
+
+      const optionsHtml = PRE_REGISTERED_CARAVANS_RJ.map((item, idx) => {
+        const num = String(idx + 1).padStart(2, '0');
+        const label = `${num}. ${item.caravana} (${item.bairro}) — ${item.pontoReferencia}`;
+        return `<option value="${item.id}">${escapeHtml(label)}</option>`;
+      }).join('');
+
+      if (sideSelect) {
+        sideSelect.innerHTML = `<option value="">🚌 Escolha uma Caravana do RJ para plotar o endereço no mapa (${PRE_REGISTERED_CARAVANS_RJ.length})...</option>` + optionsHtml;
+      }
+      if (formSelect) {
+        formSelect.innerHTML = `<option value="">-- Selecionar do Pré-Cadastro RJ (${PRE_REGISTERED_CARAVANS_RJ.length} Caravanas) --</option>` + optionsHtml;
+      }
+      const badgePre = document.getElementById('badge-subtab-precadastro');
+      if (badgePre) badgePre.innerText = String(PRE_REGISTERED_CARAVANS_RJ.length);
+    }
+
+    function switchCaravanSubTab(subTab) {
+      currentCaravanSubTab = subTab === 'precadastro' ? 'precadastro' : 'grade';
+      const btnGrade = document.getElementById('btn-subtab-grade');
+      const btnPre = document.getElementById('btn-subtab-precadastro');
+      const progWrap = document.getElementById('filter-program-wrap');
+      const statusWrap = document.getElementById('filter-status-wrap');
+
+      if (currentCaravanSubTab === 'precadastro') {
+        if (btnPre) btnPre.className = "py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition bg-amber-950 text-amber-300 border border-amber-600 shadow";
+        if (btnGrade) btnGrade.className = "py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition text-slate-400 hover:text-white";
+        if (progWrap) progWrap.classList.add('hidden');
+        if (statusWrap) statusWrap.classList.add('hidden');
+      } else {
+        if (btnGrade) btnGrade.className = "py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition bg-cyan-950 text-cyan-300 border border-cyan-700 shadow";
+        if (btnPre) btnPre.className = "py-1.5 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1.5 transition text-slate-400 hover:text-white";
+        if (progWrap) progWrap.classList.remove('hidden');
+        if (statusWrap) statusWrap.classList.remove('hidden');
+      }
+      renderCaravanFeed();
+    }
+
+    function onSelectPreRegisteredCaravan(preRegId, openDrawer = true) {
+      if (!preRegId) {
+        selectedPreRegisteredId = null;
+        if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
+        if (currentCaravanSubTab === 'precadastro') renderPreRegisteredCaravansFeed();
+        return;
+      }
+
+      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      if (!item) return;
+
+      selectedPreRegisteredId = item.id;
+      const sideSelect = document.getElementById('select-precadastro-caravana');
+      if (sideSelect && sideSelect.value !== item.id) {
+        sideSelect.value = item.id;
+      }
+
+      if (currentRegion !== 'RJ') {
+        switchRegion('RJ');
+      }
+
+      plotPreRegisteredCaravanOnMap(item, {
+        clearPrevious: true,
+        zoomTo: true,
+        openPopup: true,
+        drawRoute: true
+      });
+
+      if (currentCaravanSubTab === 'precadastro') {
+        renderPreRegisteredCaravansFeed();
+      }
+      if (openDrawer) {
+        renderPreRegisteredDrawer(item);
+      }
+      showToast(`🚌 Caravana ${item.caravana} (${item.bairro}) plotada no mapa!`, 'info');
+    }
+
+    function plotPreRegisteredCaravanOnMap(item, opts = {}) {
+      if (!leafletMap || !preRegisteredBusLayerGroup || !item || !Array.isArray(item.coords)) return;
+      const { clearPrevious = true, zoomTo = true, openPopup = true, drawRoute = true, color = '#f5a623' } = opts;
+
+      if (clearPrevious) {
+        preRegisteredBusLayerGroup.clearLayers();
+      }
+
+      const destCoords = REGIONAL_CONFIG.RJ.coords;
+
+      // Se solicitado, traça rota projetada do endereço da caravana até os Estúdios Globo
+      if (drawRoute) {
+        const midLat = Number(((item.coords[0] + destCoords[0]) / 2).toFixed(4));
+        const midLng = Number(((item.coords[1] + destCoords[1]) / 2).toFixed(4));
+        const routePts = [item.coords, [midLat, midLng], destCoords];
+
+        L.polyline(routePts, {
+          color: color,
+          weight: 4,
+          dashArray: '8, 6',
+          opacity: 0.9
+        }).addTo(preRegisteredBusLayerGroup);
+      }
+
+      const busIcon = createBusMapIcon(color, item.caravana, clearPrevious);
+      const marker = L.marker(item.coords, { icon: busIcon, zIndexOffset: 900 })
+        .addTo(preRegisteredBusLayerGroup)
+        .bindPopup(`
+          <div style="font-family:sans-serif; font-size:11px; line-height:1.45; min-width:220px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <span style="background:#f5a623; color:#000; font-weight:900; padding:2px 6px; border-radius:4px; font-size:10px;">🚌 CARAVANA RJ</span>
+              <span style="font-size:10px; color:#38bdf8; font-weight:bold;">${escapeHtml(item.id)}</span>
+            </div>
+            <strong style="font-size:12px; color:#0f172a;">${escapeHtml(item.caravana)}</strong><br>
+            <strong>Bairro:</strong> ${escapeHtml(item.bairro)}<br>
+            <strong>Ponto de Referência / Endereço:</strong><br>
+            <span style="color:#334155; font-weight:600;">${escapeHtml(item.pontoReferencia)}</span><br>
+            <strong>Corredor Principal:</strong> ${escapeHtml(item.corridor)}<br>
+            <strong>Distância até Estúdios Globo:</strong> <strong style="color:#d97706;">${item.baseDistanceKm} km (~${item.baseDurationMinutes} min)</strong>
+            <div style="margin-top:8px; display:flex; gap:6px;">
+              <button onclick="quickAddPreRegisteredToGrade('${item.id}')" style="flex:1; background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">
+                + Incluir na Grade
+              </button>
+              <button onclick="openCaravanModalWithPreReg('${item.id}')" style="background:#0f172a; color:#38bdf8; border:1px solid #0284c7; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">
+                Editar ↗
+              </button>
+            </div>
+          </div>
+        `);
+
+      marker.on('click', () => {
+        selectedPreRegisteredId = item.id;
+        renderPreRegisteredDrawer(item);
+      });
+
+      if (zoomTo) {
+        leafletMap.setView(item.coords, 14, { animate: true });
+      }
+      if (openPopup) {
+        setTimeout(() => marker.openPopup(), 250);
+      }
+    }
+
+    function plotAllPreRegisteredCaravans() {
+      if (!leafletMap || !preRegisteredBusLayerGroup) return;
+      if (currentRegion !== 'RJ') switchRegion('RJ');
+
+      preRegisteredBusLayerGroup.clearLayers();
+      const bounds = [REGIONAL_CONFIG.RJ.coords];
+
+      PRE_REGISTERED_CARAVANS_RJ.forEach((item, idx) => {
+        const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
+        plotPreRegisteredCaravanOnMap(item, {
+          clearPrevious: false,
+          zoomTo: false,
+          openPopup: false,
+          drawRoute: false,
+          color
+        });
+        bounds.push(item.coords);
+      });
+
+      leafletMap.fitBounds(bounds, { padding: [35, 35] });
+      showToast(`🚌 Todas as ${PRE_REGISTERED_CARAVANS_RJ.length} Caravanas Pré-Cadastradas do RJ foram plotadas no mapa!`, 'success');
+    }
+
+    function clearPreRegisteredCaravansMap() {
+      if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
+      selectedPreRegisteredId = null;
+      const sideSelect = document.getElementById('select-precadastro-caravana');
+      if (sideSelect) sideSelect.value = '';
+      if (currentCaravanSubTab === 'precadastro') renderPreRegisteredCaravansFeed();
+      showToast('Marcadores de pré-cadastro removidos do mapa.', 'info');
+    }
+
+    function renderPreRegisteredDrawer(item) {
+      const drawer = document.getElementById('tactical-drawer');
+      const title = document.getElementById('drawer-title');
+      const tag = document.getElementById('drawer-tag');
+      const body = document.getElementById('drawer-body');
+
+      tag.innerText = `🚌 Caravana Pré-Cadastrada RJ • ${item.id}`;
+      tag.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-950 text-amber-300 border border-amber-700";
+      title.innerText = `Caravana ${item.caravana} — ${item.bairro}`;
+
+      body.innerHTML = `
+        <div class="bg-[#070b14] border border-amber-500/30 rounded-lg p-3 space-y-2.5">
+          <div class="flex items-center justify-between border-b border-white/10 pb-2">
+            <div>
+              <span class="text-[9px] text-slate-400 block uppercase">Caravana Oficial RJ</span>
+              <strong class="text-amber-300 text-xs flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> ${escapeHtml(item.caravana)}</strong>
+            </div>
+            <div class="text-right">
+              <span class="text-[9px] text-slate-400 block uppercase">Bairro / Município</span>
+              <strong class="text-white text-xs">${escapeHtml(item.bairro)}</strong>
+            </div>
+          </div>
+
+          <div class="bg-[#0b1324] border border-white/10 rounded p-2.5 space-y-1">
+            <span class="text-[9px] text-cyan-400 font-bold uppercase block">📍 Ponto de Referência / Endereço de Embarque</span>
+            <p class="text-xs text-white font-semibold leading-snug">${escapeHtml(item.pontoReferencia)}</p>
+            <span class="text-[9.5px] text-slate-400 block font-mono">Coordenadas: ${item.coords[0].toFixed(4)}, ${item.coords[1].toFixed(4)}</span>
+          </div>
+
+          <div class="text-[10px] text-slate-300">
+            <span class="text-slate-500">Corredor Viário Principal:</span> <strong class="text-cyan-300">${escapeHtml(item.corridor)}</strong>
+          </div>
+          <div class="text-[10px] text-slate-300">
+            <span class="text-slate-500">Destino Padrão:</span> <strong class="text-white">ESTÚDIOS GLOBO (Curicica / Jacarepaguá)</strong>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1 text-center text-[10px]">
+            <div class="bg-black/40 p-2 rounded border border-white/5">
+              <span class="text-[8.5px] text-slate-400 block uppercase">Distância Estimada</span>
+              <strong class="text-amber-400 font-mono text-xs">${item.baseDistanceKm} km</strong>
+            </div>
+            <div class="bg-black/40 p-2 rounded border border-white/5">
+              <span class="text-[8.5px] text-slate-400 block uppercase">Tempo Base S/ Trânsito</span>
+              <strong class="text-cyan-300 font-mono text-xs">~${item.baseDurationMinutes} min</strong>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-col gap-2">
+            <button onclick="quickAddPreRegisteredToGrade('${item.id}')" class="w-full py-2 rounded bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs transition flex items-center justify-center gap-1.5 shadow">
+              <i class="fa-solid fa-plus"></i> Incluir Imediatamente na Grade do Dia
+            </button>
+            <div class="flex gap-2">
+              <button onclick="openCaravanModalWithPreReg('${item.id}')" class="flex-1 py-1.5 rounded bg-[#111c35] hover:bg-[#1a2b52] text-cyan-300 border border-cyan-700/60 font-semibold text-xs transition">
+                Personalizar Horário / Programa
+              </button>
+              <button onclick="leafletMap.fitBounds([[${item.coords[0]}, ${item.coords[1]}], [-22.9550, -43.4100]], { padding: [50, 50] })" class="px-3 py-1.5 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-semibold text-xs transition">
+                Ver Rota Inteira
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      drawer.classList.remove('hidden');
+    }
+
+    function renderPreRegisteredCaravansFeed() {
+      const feed = document.getElementById('feed-container');
+      const search = (document.getElementById('filter-search').value || '').trim().toLowerCase();
+      const region = document.getElementById('filter-region-caravanas')?.value || '';
+
+      const filtered = PRE_REGISTERED_CARAVANS_RJ.filter(item => {
+        if (region) {
+          const rLow = region.toLowerCase();
+          const itemReg = `${item.regiao} ${item.bairro} ${item.corridor}`.toLowerCase();
+          if (!itemReg.includes(rLow)) return false;
+        }
+        if (search) {
+          const full = `${item.caravana} ${item.bairro} ${item.pontoReferencia} ${item.corridor} ${item.regiao}`.toLowerCase();
+          if (!full.includes(search)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('feed-count-badge').innerText = `${filtered.length} de ${PRE_REGISTERED_CARAVANS_RJ.length} pré-cadastradas`;
+
+      if (filtered.length === 0) {
+        feed.innerHTML = `
+          <div class="p-6 text-center text-slate-500 space-y-2">
+            <div class="font-bold text-xs text-slate-400">Nenhuma caravana pré-cadastrada encontrada</div>
+            <div class="text-[10px]">Tente buscar por nome, bairro ou ponto de referência (Ex: Alcântara, Bangu, Campo Grande, Taquara, Niterói).</div>
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = filtered.map((item, idx) => {
+        const isSelected = selectedPreRegisteredId === item.id;
+        return `
+          <div onclick="onSelectPreRegisteredCaravan('${item.id}', true)" class="p-2.5 rounded-lg border transition cursor-pointer ${isSelected ? 'bg-[#1b180c] border-amber-400 shadow-md ring-1 ring-amber-400/50' : 'bg-[#0b1324] border-white/10 hover:border-amber-500/40'}">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 flex items-center justify-center shrink-0 text-xs font-bold">
+                  <i class="fa-solid fa-bus"></i>
+                </span>
+                <div>
+                  <h4 class="font-bold text-white text-xs leading-snug">${escapeHtml(item.caravana)}</h4>
+                  <div class="text-[10px] text-amber-300 font-semibold">Bairro: ${escapeHtml(item.bairro)}</div>
+                </div>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-300 font-mono shrink-0">
+                ${item.baseDistanceKm} km • ~${item.baseDurationMinutes}m
+              </span>
+            </div>
+
+            <div class="bg-[#060a14] p-1.5 rounded border border-white/5 text-[10px] text-slate-300 mb-1.5">
+              <span class="text-[8.5px] text-slate-500 uppercase block">Ponto de Referência / Endereço:</span>
+              <strong class="text-slate-100 leading-tight block">${escapeHtml(item.pontoReferencia)}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-slate-400 truncate max-w-[175px]" title="${escapeHtml(item.corridor)}">
+                🛣️ ${escapeHtml(item.corridor)}
+              </span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="event.stopPropagation(); onSelectPreRegisteredCaravan('${item.id}', true)" class="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[9.5px] flex items-center gap-1">
+                  <i class="fa-solid fa-location-dot"></i> Plotar 🚌
+                </button>
+                <button type="button" onclick="event.stopPropagation(); quickAddPreRegisteredToGrade('${item.id}')" class="px-2 py-0.5 rounded bg-cyan-950 hover:bg-cyan-800 text-cyan-300 border border-cyan-700 font-bold text-[9.5px]" title="Incluir na Grade Ativa do Dia">
+                  + Grade
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
     // RENDERIZAÇÃO: RIT CARAVANAS (FEED COM DISTÂNCIA EM KM E BUSCA POR BAIRRO)
     // =========================================================================
     function renderCaravanFeed() {
+      const badgeGrade = document.getElementById('badge-subtab-grade');
+      if (badgeGrade) badgeGrade.innerText = String(caravansData.length);
+
+      if (currentCaravanSubTab === 'precadastro') {
+        renderPreRegisteredCaravansFeed();
+        return;
+      }
+
       const feed = document.getElementById('feed-container');
       const search = (document.getElementById('filter-search').value || '').trim().toLowerCase();
       const prog = document.getElementById('filter-program').value;
@@ -1578,7 +2084,7 @@
           <div onclick="selectCaravan('${c.caravanId}')" class="caravan-card p-2.5 rounded-lg border transition cursor-pointer ${isSelected ? 'bg-[#132244] border-cyan-400 shadow-md ring-1 ring-cyan-400/50' : 'bg-[#0b1324] border-white/10 hover:border-white/20'}">
             <div class="flex items-start justify-between gap-2 mb-1.5">
               <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${color};"></span>
+                <span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] text-black font-bold" style="background-color: ${color};"><i class="fa-solid fa-bus"></i></span>
                 <div>
                   <h4 class="font-bold text-white text-xs leading-snug">${escapeHtml(c.caravanName)}</h4>
                   <div class="text-[10px] text-slate-400">${escapeHtml(c.programName)} • <span class="text-cyan-300">${escapeHtml(c.companyName || 'Log Rio')}</span></div>
@@ -1656,20 +2162,16 @@
 
           c.routeGeometry.forEach(pt => bounds.push(pt));
 
-          // Ponto de Origem
+          // Ponto de Origem com Ícone de Ônibus respectivo
           const originCoords = c.originCoords || c.routeGeometry[0];
-          const originIcon = L.divIcon({
-            className: 'origin-marker',
-            html: `<div style="background:${color}; color:#000; font-weight:900; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; font-size:10px; box-shadow:0 0 10px ${color}; cursor:pointer;">${idx + 1}</div>`,
-            iconSize: [22, 22],
-            iconAnchor: [11, 11]
-          });
+          const shortBusLabel = c.neighborhood || c.caravanName.replace(/^Caravana\s+/i, '');
+          const originIcon = createBusMapIcon(color, shortBusLabel, isSelected);
 
-          const originMarker = L.marker(originCoords, { icon: originIcon, opacity: isHighlighted ? 1 : 0.4 })
+          const originMarker = L.marker(originCoords, { icon: originIcon, opacity: isHighlighted ? 1 : 0.45 })
             .addTo(caravanRoutesLayerGroup)
             .bindPopup(`
               <div style="font-family:sans-serif; font-size:11px;">
-                <strong style="color:#00d1ff;">${escapeHtml(c.caravanName)}</strong><br>
+                <strong style="color:#00d1ff;">🚌 ${escapeHtml(c.caravanName)}</strong><br>
                 <strong>Origem:</strong> ${escapeHtml(c.originAddress)}<br>
                 <strong>Distância:</strong> <strong style="color:#f5a623;">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + ' km' : '--'}</strong><br>
                 <strong>Duração:</strong> ${c.projectedDurationMinutes || c.baseDurationMinutes} min<br>
@@ -2660,11 +3162,113 @@
     }
 
     // =========================================================================
-    // INCLUSÃO DE CARAVANA (MODAL + GEOCODIFICAÇÃO)
+    // =========================================================================
+    // INCLUSÃO DE CARAVANA (MODAL + PRÉ-CADASTRO RJ + GEOCODIFICAÇÃO)
     // =========================================================================
     function openCaravanModal() {
+      selectedFormPreRegCoords = null;
+      const preSel = document.getElementById('form-precadastro-rj');
+      if (preSel) preSel.value = '';
       document.getElementById('form-data').value = new Date().toISOString().split('T')[0];
       document.getElementById('modal-caravan-form').classList.remove('hidden');
+    }
+
+    function openCaravanModalWithPreReg(preRegId) {
+      openCaravanModal();
+      const preSel = document.getElementById('form-precadastro-rj');
+      if (preSel) {
+        preSel.value = preRegId;
+        applyPreRegisteredToForm(preRegId);
+      }
+    }
+
+    function applyPreRegisteredToForm(preRegId) {
+      if (!preRegId) {
+        selectedFormPreRegCoords = null;
+        return;
+      }
+      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      if (!item) return;
+
+      selectedFormPreRegCoords = item.coords;
+      document.getElementById('form-nome').value = `Caravana ${item.caravana}`;
+      document.getElementById('form-endereco').value = `${item.pontoReferencia} — ${item.bairro}, RJ`;
+      if (!document.getElementById('form-empresa').value) {
+        document.getElementById('form-empresa').value = 'Log Rio';
+      }
+      if (!document.getElementById('form-saida').value) {
+        document.getElementById('form-saida').value = '13:30';
+      }
+      if (!document.getElementById('form-limite').value) {
+        document.getElementById('form-limite').value = '15:15';
+      }
+      document.getElementById('form-obs').value = `Bairro: ${item.bairro} | Corredor: ${item.corridor}`;
+
+      // Também plota imediatamente o ônibus no mapa
+      plotPreRegisteredCaravanOnMap(item, { clearPrevious: true, zoomTo: true, openPopup: true, drawRoute: true });
+    }
+
+    async function quickAddPreRegisteredToGrade(preRegId) {
+      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      if (!item) return;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const departureIso = `${todayStr}T13:30:00.000Z`;
+      const windowEndIso = `${todayStr}T15:15:00.000Z`;
+      const progSelect = document.getElementById('filter-program')?.value || 'Domingão com Huck';
+
+      const payload = {
+        caravanName: `Caravana ${item.caravana} — ${item.bairro}`,
+        programName: progSelect,
+        companyName: 'Log Rio',
+        originAddress: `${item.pontoReferencia} — ${item.bairro}, RJ`,
+        originCoords: item.coords,
+        plannedDepartureAt: departureIso,
+        operationalWindowEnd: windowEndIso,
+        operationalNotes: `Pré-Cadastro Oficial RJ (${item.id}) • ${item.corridor}`
+      };
+
+      try {
+        const res = await fetch('/api/traffic-alert/caravans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const resJson = await res.json();
+          caravansData.unshift(resJson.data);
+          updateCaravanKpis({ totalPlanned: caravansData.length });
+          switchCaravanSubTab('grade');
+          renderCaravanRoutesOnMap();
+          selectCaravan(resJson.data.caravanId, true);
+          plotPreRegisteredCaravanOnMap(item, { clearPrevious: true, zoomTo: true, openPopup: true, drawRoute: false });
+          showToast(`🚌 Caravana ${item.caravana} incluída na Grade Ativa e plotada no mapa!`, 'success');
+          return;
+        }
+      } catch (e) {}
+
+      // Fallback local
+      const destCoords = REGIONAL_CONFIG.RJ.coords;
+      const localCaravan = {
+        caravanId: 'crv-' + Date.now().toString(36),
+        ...payload,
+        neighborhood: item.bairro,
+        corridor: item.corridor,
+        destinationLabel: REGIONAL_CONFIG.RJ.label,
+        baseDistanceKm: item.baseDistanceKm,
+        baseDurationMinutes: item.baseDurationMinutes,
+        projectedDurationMinutes: item.baseDurationMinutes,
+        projectedArrivalAt: new Date(new Date(departureIso).getTime() + item.baseDurationMinutes * 60000).toISOString(),
+        projectedStatus: 'DENTRO DA JANELA',
+        incidents: [],
+        routeGeometry: [item.coords, [Number(((item.coords[0] + destCoords[0]) / 2).toFixed(4)), Number(((item.coords[1] + destCoords[1]) / 2).toFixed(4))], destCoords]
+      };
+      caravansData.unshift(localCaravan);
+      updateCaravanKpis({ totalPlanned: caravansData.length });
+      switchCaravanSubTab('grade');
+      renderCaravanRoutesOnMap();
+      selectCaravan(localCaravan.caravanId, true);
+      showToast(`🚌 Caravana ${item.caravana} incluída na Grade Ativa!`, 'success');
     }
 
     function closeCaravanModal() {
@@ -2688,15 +3292,17 @@
         return;
       }
 
-      // 1. Geocodificação Automática
-      let coords = [-22.8000, -43.3500];
-      try {
-        const geoRes = await fetch(`/api/traffic-alert/geocode?q=${encodeURIComponent(endereco)}`);
-        if (geoRes.ok) {
-          const geoJson = await geoRes.json();
-          if (geoJson.coords) coords = geoJson.coords;
-        }
-      } catch (err) {}
+      // 1. Coordenada do Pré-Cadastro RJ ou Geocodificação Automática
+      let coords = Array.isArray(selectedFormPreRegCoords) ? selectedFormPreRegCoords : [-22.8000, -43.3500];
+      if (!Array.isArray(selectedFormPreRegCoords)) {
+        try {
+          const geoRes = await fetch(`/api/traffic-alert/geocode?q=${encodeURIComponent(endereco)}`);
+          if (geoRes.ok) {
+            const geoJson = await geoRes.json();
+            if (geoJson.coords) coords = geoJson.coords;
+          }
+        } catch (err) {}
+      }
 
       const departureIso = `${data}T${saida}:00.000Z`;
       const windowEndIso = limite ? `${data}T${limite}:00.000Z` : null;
@@ -2723,15 +3329,17 @@
           const resJson = await res.json();
           caravansData.unshift(resJson.data);
           closeCaravanModal();
+          switchCaravanSubTab('grade');
           renderCaravanFeed();
           renderCaravanRoutesOnMap();
           selectCaravan(resJson.data.caravanId, true);
-          alert('Caravana cadastrada e rota projetada com sucesso!');
+          showToast('🚌 Caravana cadastrada e rota com ícone de ônibus plotada no mapa!', 'success');
         } else {
           alert('Falha ao cadastrar caravana no servidor local.');
         }
       } catch (err) {
         // Fallback em memória caso offline
+        const destCoords = (REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ).coords;
         const localCaravan = {
           caravanId: 'crv-' + Date.now().toString(36),
           ...payload,
@@ -2741,10 +3349,11 @@
           projectedArrivalAt: new Date(new Date(departureIso).getTime() + 50 * 60000).toISOString(),
           projectedStatus: 'DENTRO DA JANELA',
           incidents: [],
-          routeGeometry: [coords, [-22.8800, -43.3000], DESTINATION_COORDS]
+          routeGeometry: [coords, [-22.8800, -43.3000], destCoords]
         };
         caravansData.unshift(localCaravan);
         closeCaravanModal();
+        switchCaravanSubTab('grade');
         renderCaravanFeed();
         renderCaravanRoutesOnMap();
         selectCaravan(localCaravan.caravanId, true);

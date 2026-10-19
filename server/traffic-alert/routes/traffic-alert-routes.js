@@ -16,6 +16,7 @@ const { CetSpTrafficProvider } = require('../providers/cet-sp-traffic-provider')
 const { calculateHaversineDistance } = require('../db/geo-fallback');
 const {
     caravanStore,
+    PRE_REGISTERED_CARAVANS_RJ,
     DESTINATION_HOMOLOG_COORDS,
     DESTINATION_HOMOLOG_LABEL,
     DESTINATION_SP_COORDS,
@@ -652,6 +653,27 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
     });
 
     /**
+     * GET /caravans/pre-registered
+     * Retorna o catálogo de 49 caravanas pré-cadastradas do RJ com pontos de referência e coordenadas.
+     */
+    router.get('/caravans/pre-registered', (req, res) => {
+        try {
+            res.json({
+                ok: true,
+                region: 'RJ',
+                count: PRE_REGISTERED_CARAVANS_RJ.length,
+                data: PRE_REGISTERED_CARAVANS_RJ,
+                destination: {
+                    label: DESTINATION_HOMOLOG_LABEL,
+                    coords: DESTINATION_HOMOLOG_COORDS
+                }
+            });
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
      * GET /security-occurrences
      * Retorna ocorrências georreferenciadas normalizadas de OTT e Fogo Cruzado.
      * Suporta filtro regional (?region=RJ|SP) e deduplica ocorrências equivalentes.
@@ -1164,11 +1186,22 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
 
     /**
      * GET /geocode
-     * Endpoint auxiliar de geocodificação para bairros e endereços sintéticos do RJ.
+     * Endpoint auxiliar de geocodificação para bairros, pontos de referência e endereços sintéticos do RJ.
      */
     router.get('/geocode', (req, res) => {
         try {
             const q = String(req.query.q || '').trim().toLowerCase();
+            if (Array.isArray(PRE_REGISTERED_CARAVANS_RJ)) {
+                for (const item of PRE_REGISTERED_CARAVANS_RJ) {
+                    const ref = (item.pontoReferencia || '').toLowerCase();
+                    const crv = (item.caravana || '').toLowerCase();
+                    const brr = (item.bairro || '').toLowerCase();
+                    if ((ref && q.includes(ref)) || (crv && q.includes(crv)) || (brr && q.includes(brr))) {
+                        return res.json({ ok: true, query: q, coords: item.coords, matchedKey: item.caravana });
+                    }
+                }
+            }
+
             const GEO_LOOKUP = {
                 'são joão de meriti': [-22.8038, -43.3725],
                 'sao joao de meriti': [-22.8038, -43.3725],
