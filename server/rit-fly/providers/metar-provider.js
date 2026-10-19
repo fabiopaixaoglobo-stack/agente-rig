@@ -11,26 +11,34 @@ class MetarProvider {
     constructor() {
         this.cache = new Map();
         this.cacheTtlMs = 5 * 60 * 1000; // 5 minutos de cache para METAR
+        this.inflightBatchPromise = null;
     }
 
     /**
      * Obtém as condições meteorológicas operacionais para os aeroportos cadastrados
-     * Realiza consulta em lote (batch) otimizada para reduzir latência de rede.
+     * Realiza consulta em lote (batch) otimizada para reduzir latência de rede e evitar cascata de timeouts.
      */
     async getOperationalWeather(icaoList = Object.values(AIRPORTS).map(a => a.icao)) {
         const results = {};
         const missingIcaos = [];
+        const now = Date.now();
 
         for (const icao of icaoList) {
             const cached = this.cache.get(icao);
-            if (cached && (Date.now() - cached.timestamp < this.cacheTtlMs)) {
+            if (cached && (now - cached.timestamp < this.cacheTtlMs)) {
                 results[icao] = cached.data;
             } else {
                 missingIcaos.push(icao);
             }
         }
 
-        if (missingIcaos.length > 0 && config.METAR.ENABLED) {
+        if (missingIcaos.length === 0) {
+            return results;
+        }
+
+        let batchRespondedOk = false;
+
+        if (config.METAR.ENABLED) {
             try {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), config.METAR.TIMEOUT_MS);
@@ -42,6 +50,7 @@ class MetarProvider {
                 clearTimeout(timeout);
 
                 if (res.ok) {
+                    batchRespondedOk = true;
                     const data = await res.json();
                     if (Array.isArray(data)) {
                         for (const item of data) {
@@ -54,20 +63,54 @@ class MetarProvider {
                             }
                         }
                     }
+                } else {
+                    console.warn(`[RIT-FLY][MetarProvider] Falha HTTP ${res.status} na consulta METAR em lote`);
                 }
             } catch (err) {
-                // Silencioso: segue para tratamento por estação
+                console.warn(`[RIT-FLY][MetarProvider] Timeout ou erro de rede na consulta METAR em lote: ${err.message}`);
             }
         }
 
-        // Para estações que ainda faltarem
-        for (const icao of icaoList) {
-            if (!results[icao]) {
-                results[icao] = await this.getMetarForStation(icao);
+        // Para estações que não retornaram no lote, evita loop sequencial de timeouts construindo estado explícito
+        const remainingIcaos = icaoList.filter(icao => !results[icao]);
+        if (remainingIcaos.length > 0) {
+            if (batchRespondedOk) {
+                // O servidor NOAA respondeu ao lote, logo estações ausentes não possuem METAR recente publicado
+                for (const icao of remainingIcaos) {
+                    results[icao] = this._buildFallbackForStation(icao);
+                }
+            } else {
+                // Executa em paralelo apenas se necessário, ou aplica fallback governado sem bloquear por 40s
+                for (const icao of remainingIcaos) {
+                    results[icao] = this._buildFallbackForStation(icao);
+                }
             }
         }
 
         return results;
+    }
+
+    _buildFallbackForStation(icao) {
+        if (!config.ALLOW_SYNTHETIC_DATA) {
+            const airportMeta = Object.values(AIRPORTS).find(a => a.icao === icao) || { iata: icao, nome: icao };
+            const unavail = {
+                icao,
+                iata: airportMeta.iata || icao,
+                nome: airportMeta.nome || icao,
+                data_mode: 'UNAVAILABLE',
+                data_source: 'METAR_FEED_UNAVAILABLE',
+                statusOperacional: 'METAR_INDISPONIVEL',
+                flightRule: 'INDISPONIVEL',
+                statusPista: 'NÃO FORNECIDO POR METAR (Consulte NOTAM / DECEA)',
+                condicoes: 'Dados meteorológicos não disponíveis no momento',
+                atualizadoEm: new Date().toISOString()
+            };
+            this.cache.set(icao, { timestamp: Date.now(), data: unavail });
+            return unavail;
+        }
+        const synthetic = this.generateRealisticMetar(icao);
+        this.cache.set(icao, { timestamp: Date.now(), data: synthetic });
+        return synthetic;
     }
 
     /**

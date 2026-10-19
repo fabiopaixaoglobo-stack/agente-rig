@@ -240,4 +240,59 @@ test('✈️ RIT FLY v1.1 — EVOLUÇÃO UX & CENTRAL DE INTELIGÊNCIA AÉREA', 
         assert.ok(css.includes('.fly-map-legend'), 'CSS deve estilizar legenda tática');
         assert.ok(css.includes('.fly-flight-drawer'), 'CSS deve estilizar drawer lateral');
     });
+
+    // =========================================================================
+    // MELHORIA 11: SILHUETA FLIGHTAWARE & PAINEL DE OCORRÊNCIAS CONSOLIDADAS
+    // =========================================================================
+    await suite.test('11. Melhoria 11: Silhueta de Aeronave Estilo FlightAware e Painel de Ocorrências Consolidadas', () => {
+        const dashHtml = fs.readFileSync(path.join(__dirname, '../../public/dashboard.html'), 'utf8');
+        const mapJs = fs.readFileSync(path.join(__dirname, '../../public/js/rit-fly/rit-fly-map.js'), 'utf8');
+        const viewJs = fs.readFileSync(path.join(__dirname, '../../public/js/rit-fly/rit-fly-view.js'), 'utf8');
+        const css = fs.readFileSync(path.join(__dirname, '../../public/styles/rit-fly.css'), 'utf8');
+        const { FlightStore } = require('../../server/rit-fly/store/flight-store');
+
+        // 1. Verifica que o ícone antigo "estrela do mar" foi substituído pela silhueta FlightAware com contorno nítido
+        assert.ok(!mapJs.includes('M12 2L9 9H2L4 12H9L7 19L9 20L12 15L15 20L17 19L15 12H20L22 9H15L12 2Z'), 'Não deve usar o path antigo que parecia estrela do mar');
+        assert.ok(mapJs.includes('stroke="#090d16"'), 'Ícone de avião deve ter contorno escuro estilo FlightAware');
+
+        // 2. Verifica presença do Painel de Ocorrências Consolidadas no HTML e View
+        assert.ok(dashHtml.includes('id="fly-consolidated-occurrences-box"'), 'HTML deve conter o Painel de Ocorrências Consolidadas na visão geral');
+        assert.ok(dashHtml.includes('Painel de Ocorrências Consolidadas'), 'HTML deve exibir título Painel de Ocorrências Consolidadas');
+        assert.ok(viewJs.includes('renderConsolidatedOccurrences'), 'RitFlyView deve renderizar ocorrências consolidadas');
+        assert.ok(css.includes('.fly-occurrences-panel-box'), 'CSS deve estilizar o Painel de Ocorrências Consolidadas');
+
+        // 3. Verifica consolidação no backend (FlightStore.buildConsolidatedOccurrences)
+        const store = new FlightStore();
+        const mockFlights = [
+            { id: 'f1', numeroVoo: 'G3 1450', companhia: 'GOL', prefixo: 'PR-GXJ', origem: 'SDU', destino: 'CGH', atrasoMinutos: 28, etaFormatado: '18:40' }
+        ];
+        const mockAirports = [
+            {
+                iata: 'GRU',
+                icao: 'SBGR',
+                nome: 'Aeroporto Internacional de Guarulhos',
+                cidade: 'São Paulo',
+                statusOperacional: 'ATENÇÃO',
+                regraVoo: 'MVFR',
+                metarDisponivel: true,
+                chegadasPrevistas: 14,
+                partidasPrevistas: 11,
+                voosAtrasados: 2,
+                taxaPontualidadePct: 88,
+                clima: {
+                    disponivel: true,
+                    flightRule: 'MVFR',
+                    condicoes: 'Névoa Úmida (BR)',
+                    temperaturaC: 19,
+                    vento: { velocidadeKt: 12, descricao: '140° a 12 kt' },
+                    visibilidade: { descricao: '4500m' }
+                }
+            }
+        ];
+        const consolidated = store.buildConsolidatedOccurrences(mockFlights, mockAirports, 20);
+        assert.ok(consolidated.occurrences.length >= 3, 'Deve consolidar ocorrências de clima METAR, atrasos e fluxo de hub');
+        assert.ok(consolidated.summary.porCategoria.clima >= 1, 'Deve contabilizar ocorrência de clima/METAR');
+        assert.ok(consolidated.summary.porCategoria.atrasos >= 1, 'Deve contabilizar ocorrência de atraso');
+        assert.ok(consolidated.summary.porCategoria.hubs >= 1, 'Deve contabilizar ocorrência de fluxo no hub');
+    });
 });

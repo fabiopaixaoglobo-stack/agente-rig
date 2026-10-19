@@ -135,22 +135,27 @@ export class RitFlyMap {
             const marker = L.marker([a.lat, a.lng], { icon: customIcon });
             
             const metar = a.clima || {};
+            const metarAvailable = a.metarDisponivel !== false && metar.disponivel !== false && metar.condicoes && metar.condicoes !== 'METAR_INDISPONIVEL';
+            const metarHtml = metarAvailable
+                ? `🌤️ ${metar.condicoes}, ${metar.temperaturaC !== null && metar.temperaturaC !== undefined ? `${metar.temperaturaC}°C` : 'Temp. N/D'}<br/>
+                   💨 Vento: ${metar.vento ? metar.vento.descricao : 'N/D'}<br/>
+                   👁️ Visibilidade: ${metar.visibilidade ? metar.visibilidade.descricao : 'N/D'}`
+                : `⚠️ <strong>METAR:</strong> Fonte meteorológica temporariamente indisponível para ${a.icao}`;
+
             const popupContent = `
                 <div style="font-family:sans-serif; min-width:210px; color:#fff; font-size:11px;">
                     <div style="font-size:12px; font-weight:900; color:#38bdf8; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:6px;">
                         ${a.nome} (${a.iata}/${a.icao})
                     </div>
                     <div>• <strong>Situação Operacional:</strong> <span class="fly-airport-status-pill ${statusClass}">${a.statusOperacional}</span> (${a.regraVoo})</div>
-                    <div>• <strong>Chegadas Previstas:</strong> ${a.chegadasPrevistas} | <strong>Partidas:</strong> ${a.partidasPrevistas}</div>
-                    <div>• <strong>Voos Atrasados:</strong> ${a.voosAtrasados} | <strong>Pontualidade:</strong> ${a.taxaPontualidadePct}%</div>
+                    <div>• <strong>Chegadas Detectadas:</strong> ${a.chegadasPrevistas} | <strong>Partidas:</strong> ${a.partidasPrevistas}</div>
+                    <div>• <strong>Voos Atrasados:</strong> ${a.voosAtrasados} | <strong>Pontualidade:</strong> ${a.taxaPontualidadePct !== null && a.taxaPontualidadePct !== undefined ? `${a.taxaPontualidadePct}%` : 'N/D'}</div>
                     <div style="margin-top:6px; padding-top:4px; border-top:1px solid rgba(255,255,255,0.05); color:#94a3b8; font-size:10px;">
-                        🌤️ ${metar.condicoes || 'Céu Claro'}, ${metar.temperaturaC || 26}°C<br/>
-                        💨 Vento: ${metar.vento ? metar.vento.descricao : 'Calmo'}<br/>
-                        👁️ Visibilidade: ${metar.visibilidade ? metar.visibilidade.descricao : '> 10 km'}
+                        ${metarHtml}
                     </div>
                     <div style="margin-top:8px;">
                         <button onclick="window.ritFlyView && window.ritFlyView.abrirVoosAeroporto('${a.iata}')" style="background:#38bdf8; color:#000; border:none; padding:4px 8px; border-radius:3px; font-size:10px; font-weight:bold; cursor:pointer; width:100%;">
-                            🛫 Ver Voos do Dia
+                            🛫 Ver Informes e Voos
                         </button>
                     </div>
                 </div>
@@ -173,18 +178,24 @@ export class RitFlyMap {
         this.flightsLayer.clearLayers();
         this.flightMarkers.clear();
 
+        let skippedInvalidCoords = 0;
         flights.forEach(f => {
-            if (!f.latitude || !f.longitude) return;
+            const lat = Number(f.latitude);
+            const lng = Number(f.longitude);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                skippedInvalidCoords++;
+                return;
+            }
 
             const iconHtml = this.createAirplaneIconSvg(f);
             const customIcon = L.divIcon({
                 className: 'fly-plane-marker',
                 html: iconHtml,
-                iconSize: [28, 28],
-                iconAnchor: [14, 14]
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
             });
 
-            const marker = L.marker([f.latitude, f.longitude], { icon: customIcon });
+            const marker = L.marker([lat, lng], { icon: customIcon });
             
             const popupContent = this.createFlightPopupHtml(f);
             marker.bindPopup(popupContent, { className: 'fly-dark-popup' });
@@ -199,46 +210,67 @@ export class RitFlyMap {
             this.flightsLayer.addLayer(marker);
             this.flightMarkers.set(f.id, marker);
         });
+
+        if (skippedInvalidCoords > 0) {
+            console.warn(`[RitFlyMap] ${skippedInvalidCoords} registro(s) ignorado(s) por coordenadas inválidas.`);
+        }
     }
 
     createAirplaneIconSvg(flight) {
         const cat = (flight.categoria || 'comercial').toLowerCase();
         const callsign = (flight.callsign || '').toUpperCase();
         const comp = (flight.companhia || '').toUpperCase();
+        const voo = (flight.numeroVoo || '').toUpperCase();
 
-        let color = '#38bdf8'; // Azul neon padrão
-        let svgPath = 'M12 2L9 9H2L4 12H9L7 19L9 20L12 15L15 20L17 19L15 12H20L22 9H15L12 2Z'; // Avião clássico
+        let color = '#38bdf8'; // Azul padrão aviação comercial
+        let svgInner = '';
 
         if (cat === 'helicoptero') {
             color = '#10b981'; // Verde Rotor
-            svgPath = 'M12 3C7 3 3 5 3 5L5 7H11V11H7L5 13H11V17L7 19H17L13 17V13H19L17 11H13V7H19L21 5C21 5 17 3 12 3Z';
+            svgInner = `
+                <circle cx="12" cy="9.5" r="7.4" fill="none" stroke="${color}" stroke-width="0.85" stroke-dasharray="2 2" opacity="0.6" />
+                <path d="M12 4.0 C13.7 4.0 14.7 5.8 14.7 8.6 C14.7 11.0 13.7 12.6 12.7 13.5 L12.5 19.4 L15.2 20.1 L15.2 21.1 L12.4 20.7 L12 22.4 L11.6 20.7 L8.8 21.1 L8.8 20.1 L11.5 19.4 L11.3 13.5 C10.3 12.6 9.3 11.0 9.3 8.6 C9.3 5.8 10.3 4.0 12 4.0 Z" fill="${color}" stroke="#090d16" stroke-width="1.05" stroke-linejoin="round" />
+                <path d="M5.6 3.1 L18.4 15.9 M18.4 3.1 L5.6 15.9" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" opacity="0.92" />
+                <circle cx="12" cy="9.5" r="1.35" fill="#090d16" stroke="${color}" stroke-width="0.8" />
+            `;
         } else if (cat === 'executivo') {
-            color = '#a855f7'; // Roxo Executivo
-            svgPath = 'M12 1L8 8H3L5 11H8L6 18L9 19L12 13L15 19L18 18L16 11H19L21 8H16L12 1Z';
+            color = '#a855f7'; // Roxo Executivo (Jato Corporativo T-Tail c/ motores traseiros)
+            svgInner = `
+                <path d="M12 1.0 C12.5 1.0 12.9 2.5 12.9 4.5 L12.9 9.2 L21.8 14.5 L21.8 15.7 L12.9 13.3 L12.9 14.5 L14.3 14.7 L14.3 17.1 L12.8 17.3 L12.7 18.6 L16.3 20.8 L16.3 21.8 L12.4 20.7 L12 22.6 L11.6 20.7 L7.7 21.8 L7.7 20.8 L11.3 18.6 L11.2 17.3 L9.7 17.1 L9.7 14.7 L11.1 14.5 L11.1 13.3 L2.2 15.7 L2.2 14.5 L11.1 9.2 L11.1 4.5 C11.1 2.5 11.5 1.0 12 1.0 Z" fill="${color}" stroke="#090d16" stroke-width="1.05" stroke-linejoin="round" />
+                <path d="M11.3 3.9 C11.7 3.4 12.3 3.4 12.7 3.9 L12.8 4.7 C12.3 4.4 11.7 4.4 11.2 4.7 Z" fill="#090d16" opacity="0.7" />
+            `;
         } else if (cat === 'cargueiro') {
-            color = '#f59e0b'; // Laranja Cargo
-            svgPath = 'M12 2L8 9H1L3 13H8L6 20L9 21L12 16L15 21L18 20L16 13H21L23 9H16L12 2Z';
+            color = '#f59e0b'; // Laranja Cargo (Quadrimotor Wide-body)
+            svgInner = `
+                <path d="M12 1.0 C12.9 1.0 13.5 2.3 13.5 4.2 L13.5 7.8 L16.4 9.5 L16.4 8.3 L17.8 8.3 L17.8 10.3 L19.6 11.4 L19.6 10.3 L20.9 10.3 L20.9 12.1 L23.2 13.6 L23.2 15.1 L13.4 12.5 L13.1 18.0 L17.4 20.4 L17.4 21.7 L12.6 20.4 L12 22.8 L11.4 20.4 L6.6 21.7 L6.6 20.4 L10.9 18.0 L10.6 12.5 L0.8 15.1 L0.8 13.6 L3.1 12.1 L3.1 10.3 L4.4 10.3 L4.4 11.4 L6.2 10.3 L6.2 8.3 L7.6 8.3 L7.6 9.5 L10.5 7.8 L10.5 4.2 C10.5 2.3 11.1 1.0 12 1.0 Z" fill="${color}" stroke="#090d16" stroke-width="1.05" stroke-linejoin="round" />
+                <path d="M11.0 3.6 C11.5 3.0 12.5 3.0 13.0 3.6 L13.2 4.5 C12.5 4.2 11.5 4.2 10.8 4.5 Z" fill="#090d16" opacity="0.7" />
+            `;
         } else {
-            // Diferenciação de Companhia Aérea Comercial
-            if (comp.includes('GOL') || callsign.startsWith('GLO')) {
+            // Diferenciação de Companhia Aérea Comercial (Silhueta Airliner estilo FlightAware)
+            if (comp.includes('GOL') || callsign.startsWith('GLO') || voo.startsWith('G3')) {
                 color = '#f97316'; // Laranja GOL
-            } else if (comp.includes('LATAM') || callsign.startsWith('TAM')) {
+            } else if (comp.includes('LATAM') || comp.includes('TAM') || callsign.startsWith('TAM') || callsign.startsWith('LAN') || callsign.startsWith('LPE') || voo.startsWith('LA') || voo.startsWith('JJ')) {
                 color = '#f43f5e'; // Magenta LATAM
-            } else if (comp.includes('AZUL') || callsign.startsWith('AZU')) {
+            } else if (comp.includes('AZUL') || callsign.startsWith('AZU') || callsign.startsWith('ACN') || voo.startsWith('AD')) {
                 color = '#38bdf8'; // Azul Claro AZUL
-            } else if (comp.includes('VOEPASS') || callsign.startsWith('PTB')) {
+            } else if (comp.includes('VOEPASS') || comp.includes('PASSAREDO') || callsign.startsWith('PTB') || voo.startsWith('2Z')) {
                 color = '#10b981'; // Verde VOEPASS
             } else if (comp.includes('ITAPEMIRIM') || callsign.startsWith('IPM')) {
                 color = '#facc15'; // Amarelo ITA
             }
+
+            svgInner = `
+                <path d="M12 1.1 C12.75 1.1 13.25 2.3 13.25 4.1 L13.25 8.1 L16.2 10.0 L16.2 8.8 C16.2 8.4 16.5 8.1 16.95 8.1 C17.4 8.1 17.7 8.4 17.7 8.8 L17.7 10.95 L22.7 14.1 L22.7 15.5 L13.15 12.75 L12.9 18.1 L16.9 20.4 L16.9 21.6 L12.5 20.35 L12 22.65 L11.5 20.35 L7.1 21.6 L7.1 20.4 L11.1 18.1 L10.85 12.75 L1.3 15.5 L1.3 14.1 L6.3 10.95 L6.3 8.8 C6.3 8.4 6.6 8.1 7.05 8.1 C7.5 8.1 7.8 8.4 7.8 8.8 L7.8 10.0 L10.75 8.1 L10.75 4.1 C10.75 2.3 11.25 1.1 12 1.1 Z" fill="${color}" stroke="#090d16" stroke-width="1.05" stroke-linejoin="round" />
+                <path d="M11.15 3.7 C11.6 3.1 12.4 3.1 12.85 3.7 L13.0 4.55 C12.4 4.25 11.6 4.25 11.0 4.55 Z" fill="#090d16" opacity="0.7" />
+            `;
         }
 
-        const rotation = flight.rumo || 0;
+        const rotation = Number.isFinite(Number(flight.rumo)) ? Number(flight.rumo) : 0;
 
         return `
-            <div class="fly-plane-wrapper" style="transform: rotate(${rotation}deg); transform-origin: center; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 5px ${color});">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg">
-                    <path d="${svgPath}" />
+            <div class="fly-plane-wrapper" style="transform: rotate(${rotation}deg); transform-origin: center; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.88));">
+                <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    ${svgInner}
                 </svg>
             </div>
         `;
@@ -325,11 +357,11 @@ export class RitFlyMap {
     }
 
     centerBrazil() {
-        if (this.map) this.map.setView([-15.7801, -47.9292], 5);
+        if (this.map) this.map.setView([-15.7801, -47.9292], 5, { animate: false });
     }
 
     centerPonteAerea() {
-        if (this.map) this.map.setView([-23.2, -44.9], 8);
+        if (this.map) this.map.setView([-23.2, -44.9], 8, { animate: false });
     }
 
     centerAirport(code) {

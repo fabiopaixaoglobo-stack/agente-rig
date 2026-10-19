@@ -1064,16 +1064,50 @@
               <i class="fa-solid fa-car-side" style="color:var(--fly-gold);"></i> Vincular RIT
             </button>
             <button class="fly-nav-tab" data-fly-tab="fly-panel-alertas" data-tooltip="Mostra eventos e alertas operacionais ativos">
-              <i class="fa-solid fa-triangle-exclamation" style="color:var(--bad);"></i> Alertas
+              <i class="fa-solid fa-triangle-exclamation" style="color:var(--bad);"></i> Ocorrências <span id="fly-nav-alerts-badge" class="fly-tab-count-badge">0</span>
             </button>
           </div>
 
           <div class="fly-tab-content-area">
             <!-- PAINEL 1: 8 AEROPORTOS ESTRATÉGICOS & VOOS DO DIA -->
             <div id="fly-panel-aeroportos" class="fly-inner-panel active">
-              <!-- SUB-VISÃO A: LISTA DOS 8 HUBS -->
+              <!-- SUB-VISÃO A: PAINEL DE OCORRÊNCIAS CONSOLIDADAS + LISTA DOS 8 HUBS -->
               <div id="fly-airports-overview-view">
-                <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <!-- PAINEL DE OCORRÊNCIAS CONSOLIDADAS (VISÃO EXECUTIVA INTEGRADA) -->
+                <div id="fly-consolidated-occurrences-box" class="fly-occurrences-panel-box">
+                  <div class="fly-occurrences-header">
+                    <div class="fly-occurrences-title">
+                      <i class="fa-solid fa-bolt-lightning" style="color:#f59e0b;"></i>
+                      <span>Painel de Ocorrências Consolidadas</span>
+                    </div>
+                    <button type="button" id="fly-btn-open-all-occurrences" class="fly-occurrences-link-btn" title="Abrir painel completo de ocorrências consolidadas">
+                      Ver Todas (<span id="fly-occ-overview-count">0</span>) →
+                    </button>
+                  </div>
+                  <div class="fly-occurrences-kpi-strip">
+                    <div class="fly-occ-mini-card" data-occ-quick-filter="TODAS" title="Total de ocorrências consolidadas ativas">
+                      <span class="fly-occ-mini-val" id="fly-occ-mini-total">--</span>
+                      <span class="fly-occ-mini-lbl">Total</span>
+                    </div>
+                    <div class="fly-occ-mini-card" data-occ-quick-filter="CLIMA_METAR" title="Ocorrências meteorológicas METAR (IFR, MVFR, névoa, vento)">
+                      <span class="fly-occ-mini-val" id="fly-occ-mini-clima" style="color:#f59e0b;">--</span>
+                      <span class="fly-occ-mini-lbl">Clima/METAR</span>
+                    </div>
+                    <div class="fly-occ-mini-card" data-occ-quick-filter="ATRASOS_MALHA" title="Voos atrasados (> 15 min) e retenções de malha">
+                      <span class="fly-occ-mini-val" id="fly-occ-mini-atrasos" style="color:#f43f5e;">--</span>
+                      <span class="fly-occ-mini-lbl">Atrasos</span>
+                    </div>
+                    <div class="fly-occ-mini-card" data-occ-quick-filter="FLUXO_HUB" title="Hubs com movimentação ativa de chegadas e partidas">
+                      <span class="fly-occ-mini-val" id="fly-occ-mini-hubs" style="color:#38bdf8;">--</span>
+                      <span class="fly-occ-mini-lbl">Fluxo Hubs</span>
+                    </div>
+                  </div>
+                  <div id="fly-occ-overview-list" class="fly-occurrences-compact-list">
+                    <!-- Preenchido dinamicamente por rit-fly-view.js -->
+                  </div>
+                </div>
+
+                <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 8px 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
                   <span>Painel de Aeroportos Estratégicos</span>
                   <span style="color: var(--fly-accent);">8 Hubs Principais</span>
                 </div>
@@ -1096,8 +1130,9 @@
                     <span id="fly-board-weather-badge" class="fly-airport-status-pill fly-status-normal">VFR</span>
                   </div>
                   <div id="fly-board-metar-text" style="font-size:10px; color:#64748b; margin-top:4px;">
-                    🌤️ Clima: Céu Claro, 26°C | Vento: 12 kts | Visibilidade: > 10 km
+                    🌤️ Clima: Carregando boletim meteorológico...
                   </div>
+                  <div id="fly-board-informes-container" class="fly-board-informes" style="margin-top:6px;"></div>
                 </div>
 
                 <!-- TABS DO PAINEL DO AEROPORTO -->
@@ -1140,6 +1175,9 @@
                   🤖 Consultas Rápidas da Operação Aérea (1-Clique):
                 </div>
                 <div class="fly-ai-presets">
+                  <button type="button" class="fly-preset-btn" data-query="quais os voos da TAM programados para chegar no galeão na próxima hora?" data-tooltip="Consultar chegadas da TAM/LATAM no Galeão (GIG) na próxima hora">
+                    <i class="fa-solid fa-plane-arrival" style="color:#f43f5e;"></i> Voos da TAM chegando no Galeão na próxima hora?
+                  </button>
                   <button type="button" class="fly-preset-btn" data-query="Qual a previsão de chegada do voo G3 1234?" data-tooltip="Consultar estimativa de pouso do voo G3 1234">
                     <i class="fa-solid fa-plane-arrival" style="color:var(--fly-accent);"></i> Previsão do voo G3 1234?
                   </button>
@@ -1215,11 +1253,47 @@
               </div>
             </div>
 
-            <!-- PAINEL 4: FEED DE ALERTAS OPERACIONAIS -->
+            <!-- PAINEL 4: PAINEL DE OCORRÊNCIAS CONSOLIDADAS (MALHA AÉREA, METAR & SOLO) -->
             <div id="fly-panel-alertas" class="fly-inner-panel">
-              <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
-                Alertas Aéreos e Notificações de Solo:
+              <div class="fly-occ-full-header">
+                <div>
+                  <div style="font-size: 11px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.4px;">
+                    🚨 Painel de Ocorrências Consolidadas
+                  </div>
+                  <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">
+                    Monitoramento unificado de restrições METAR, atrasos na malha, fluxo nos 8 hubs e transfers.
+                  </div>
+                </div>
+                <span id="fly-occ-tab-status" class="fly-airport-status-pill fly-status-normal">ATIVO</span>
               </div>
+
+              <div class="fly-occ-summary-grid">
+                <div class="fly-occ-summary-card">
+                  <span class="fly-occ-sum-lbl">Críticas / Alerta</span>
+                  <span class="fly-occ-sum-val" id="fly-occ-card-criticos" style="color:#f43f5e;">0</span>
+                </div>
+                <div class="fly-occ-summary-card">
+                  <span class="fly-occ-sum-lbl">Clima / METAR</span>
+                  <span class="fly-occ-sum-val" id="fly-occ-card-clima" style="color:#f59e0b;">0</span>
+                </div>
+                <div class="fly-occ-summary-card">
+                  <span class="fly-occ-sum-lbl">Atrasos / Voos</span>
+                  <span class="fly-occ-sum-val" id="fly-occ-card-atrasos" style="color:#fb923c;">0</span>
+                </div>
+                <div class="fly-occ-summary-card">
+                  <span class="fly-occ-sum-lbl">Hubs & Solo</span>
+                  <span class="fly-occ-sum-val" id="fly-occ-card-hubs" style="color:#38bdf8;">0</span>
+                </div>
+              </div>
+
+              <div class="fly-occ-filter-bar" id="fly-occ-filter-bar">
+                <button type="button" class="fly-occ-filter-pill active" data-occ-filter="TODAS">Todas</button>
+                <button type="button" class="fly-occ-filter-pill" data-occ-filter="CLIMA_METAR">🌤️ Clima/METAR</button>
+                <button type="button" class="fly-occ-filter-pill" data-occ-filter="ATRASOS_MALHA">⚠️ Atrasos</button>
+                <button type="button" class="fly-occ-filter-pill" data-occ-filter="FLUXO_HUB">📡 Fluxo Hubs</button>
+                <button type="button" class="fly-occ-filter-pill" data-occ-filter="SOLO_TRANSFERS">🚗 Solo/RIT</button>
+              </div>
+
               <div id="fly-alerts-list-container" style="flex:1; overflow-y:auto;">
                 <!-- Preenchido dinamicamente -->
               </div>

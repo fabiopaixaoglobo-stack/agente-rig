@@ -23,6 +23,9 @@ export class RitFlyView {
         // Dados em memória para alta performance
         this.allFlights = [];
         this.allAirports = [];
+        this.allTrips = [];
+        this.allAlerts = [];
+        this.occurrenceFilter = 'TODAS';
         this.selectedFlight = null;
 
         // Estado do Painel "Voos do Dia por Aeroporto" (Melhoria 06)
@@ -102,24 +105,28 @@ export class RitFlyView {
             });
         });
 
-        // 2. Filtros de Categoria de Aeronave
+        // 2. Filtros de Categoria de Aeronave (sincronizados com barra unificada)
         const catPills = document.querySelectorAll('.fly-cat-pill');
         catPills.forEach(pill => {
             pill.addEventListener('click', () => {
-                catPills.forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.fly-cat-pill, .fly-airline-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
-                this.currentFilter = pill.getAttribute('data-cat') || 'todos';
+                const catVal = pill.getAttribute('data-cat') || 'todos';
+                const airlineVal = pill.getAttribute('data-airline');
+                this.currentFilter = catVal;
+                this.currentAirline = airlineVal || (catVal === 'todos' ? 'todas' : catVal.toUpperCase());
                 this.aplicarFiltrosVoos();
             });
         });
 
-        // 3. Filtros de Companhia Aérea (Melhoria 07)
+        // 3. Filtros de Companhia Aérea e Categoria Unificados (Melhoria 07)
         const airlinePills = document.querySelectorAll('.fly-airline-pill');
         airlinePills.forEach(pill => {
             pill.addEventListener('click', () => {
-                airlinePills.forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.fly-airline-pill, .fly-cat-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 this.currentAirline = pill.getAttribute('data-airline') || 'todas';
+                this.currentFilter = pill.getAttribute('data-cat') || 'todos';
                 this.aplicarFiltrosVoos();
             });
         });
@@ -296,6 +303,44 @@ export class RitFlyView {
                 await this.handleTripFormSubmit();
             });
         }
+
+        // 14. Painel de Ocorrências Consolidadas (Atalhos e Filtros por Categoria)
+        const btnOpenAllOcc = document.getElementById('fly-btn-open-all-occurrences');
+        if (btnOpenAllOcc) {
+            btnOpenAllOcc.addEventListener('click', () => {
+                this.abrirAbaOcorrencias('TODAS');
+            });
+        }
+
+        const quickOccCards = document.querySelectorAll('.fly-occ-mini-card[data-occ-quick-filter]');
+        quickOccCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const cat = card.getAttribute('data-occ-quick-filter') || 'TODAS';
+                this.abrirAbaOcorrencias(cat);
+            });
+        });
+
+        const occFilterPills = document.querySelectorAll('.fly-occ-filter-pill[data-occ-filter]');
+        occFilterPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                occFilterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                this.occurrenceFilter = pill.getAttribute('data-occ-filter') || 'TODAS';
+                this.renderConsolidatedOccurrences();
+            });
+        });
+    }
+
+    abrirAbaOcorrencias(filterCat = 'TODAS') {
+        this.occurrenceFilter = filterCat || 'TODAS';
+        const occFilterPills = document.querySelectorAll('.fly-occ-filter-pill[data-occ-filter]');
+        occFilterPills.forEach(p => {
+            p.classList.toggle('active', p.getAttribute('data-occ-filter') === this.occurrenceFilter);
+        });
+
+        const tabAlertsBtn = document.querySelector('.fly-nav-tab[data-fly-tab="fly-panel-alertas"]');
+        if (tabAlertsBtn) tabAlertsBtn.click();
+        this.renderConsolidatedOccurrences();
     }
 
     /* ========================================================================= */
@@ -406,8 +451,17 @@ export class RitFlyView {
     /* SINCRONIZAÇÃO E DADOS PRINCIPAIS                                          */
     /* ========================================================================= */
     async fetchData() {
+        const airportsContainer = document.getElementById('fly-airports-list-container');
+        if (airportsContainer && (!this.allAirports || this.allAirports.length === 0)) {
+            airportsContainer.innerHTML = `
+                <div class="fly-state-box fly-state-loading">
+                    <span>⏳ Carregando informes operacionais, METAR e telemetria dos aeroportos...</span>
+                </div>
+            `;
+        }
+
         try {
-            const [flightsRes, kpisRes, airportsRes, tripsRes, alertsRes] = await Promise.all([
+            const results = await Promise.allSettled([
                 this.service.getFlights(),
                 this.service.getKpis(),
                 this.service.getAirports(),
@@ -415,9 +469,21 @@ export class RitFlyView {
                 this.service.getAlerts()
             ]);
 
-            if (flightsRes) {
-                const flightsList = Array.isArray(flightsRes.data) ? flightsRes.data : (Array.isArray(flightsRes.flights) ? flightsRes.flights : []);
-                this.allFlights = flightsList;
+            const [flightsSet, kpisSet, airportsSet, tripsSet, alertsSet] = results;
+
+            // 1. Aeronaves e Contadores
+            if (flightsSet.status === 'fulfilled' && flightsSet.value) {
+                const flightsRes = flightsSet.value;
+                const rawList = Array.isArray(flightsRes.data)
+                    ? flightsRes.data
+                    : (Array.isArray(flightsRes.flights) ? flightsRes.flights : []);
+
+                // Garante que contadores e markers usem exatamente o mesmo conjunto com coordenadas válidas
+                const validFlights = rawList.filter(f =>
+                    f && Number.isFinite(Number(f.latitude)) && Number.isFinite(Number(f.longitude))
+                );
+
+                this.allFlights = validFlights;
                 this.popularFiltroCompanhias();
                 this.aplicarFiltrosVoos();
 
@@ -428,131 +494,176 @@ export class RitFlyView {
                                      flightsRes.providerStatus?.status === 'RATE_LIMITED' || 
                                      (flightsRes.error && flightsRes.error.code === 'FLIGHT_PROVIDER_UNAVAILABLE');
 
-                if (isRateLimited && flightsList.length === 0) {
+                if (isRateLimited && validFlights.length === 0) {
                     if (badgeLiveText) badgeLiveText.textContent = 'Provedor Rate-Limited (HTTP 429)';
                     if (badgeCount) badgeCount.textContent = 'ADS-B INDISPONÍVEL (429)';
-                } else if (flightsList.length === 0) {
+                } else if (validFlights.length === 0) {
                     if (badgeLiveText) badgeLiveText.textContent = 'Dado temporariamente indisponível';
                     if (badgeCount) badgeCount.textContent = '0 AERONAVES (AGUARDANDO PROVEDOR)';
-                } else {
-                    if (badgeLiveText) badgeLiveText.textContent = 'TEMPO REAL ATIVO';
-                    if (badgeCount) badgeCount.textContent = `${flightsList.length} AERONAVES`;
+                }
+            } else {
+                const errReason = flightsSet.status === 'rejected' ? flightsSet.reason?.message : 'Resposta vazia';
+                console.error('[RitFlyView] Falha ao adquirir voos da API:', errReason);
+                const badgeLiveText = document.getElementById('fly-live-badge-text');
+                const badgeCount = document.getElementById('fly-count-badge');
+                if (this.allFlights.length === 0) {
+                    this.popularFiltroCompanhias();
+                    if (badgeLiveText) badgeLiveText.textContent = 'Fonte ADS-B indisponível';
+                    if (badgeCount) badgeCount.textContent = 'FONTE INDISPONÍVEL';
                 }
             }
 
-            if (airportsRes && airportsRes.ok) {
-                this.allAirports = airportsRes.data || [];
+            // 2. Aeroportos e Informes Operacionais
+            if (airportsSet.status === 'fulfilled' && airportsSet.value && airportsSet.value.ok) {
+                this.allAirports = Array.isArray(airportsSet.value.data) ? airportsSet.value.data : [];
                 this.map.renderAirports(this.allAirports);
                 this.renderAirportsList(this.allAirports);
+            } else {
+                const errReason = airportsSet.status === 'rejected'
+                    ? (airportsSet.reason?.message || 'Erro de rede na consulta de aeroportos')
+                    : (airportsSet.value?.error || 'Fonte de aeroportos indisponível');
+                console.error('[RitFlyView] Falha ao carregar aeroportos/informes:', errReason);
+                if (!this.allAirports || this.allAirports.length === 0) {
+                    this.renderAirportsErrorState(errReason);
+                }
             }
 
-            if (kpisRes && kpisRes.ok) {
-                this.renderKpis(kpisRes.data);
+            // 3. KPIs
+            if (kpisSet.status === 'fulfilled' && kpisSet.value && kpisSet.value.ok) {
+                this.renderKpis(kpisSet.value.data);
+            } else if (kpisSet.status === 'rejected') {
+                console.warn('[RitFlyView] Falha ao carregar KPIs:', kpisSet.reason?.message);
             }
 
-            if (tripsRes && tripsRes.ok) {
-                this.renderTripsList(tripsRes.data);
+            // 4. Viagens Integradas
+            if (tripsSet.status === 'fulfilled' && tripsSet.value && tripsSet.value.ok) {
+                this.allTrips = Array.isArray(tripsSet.value.data) ? tripsSet.value.data : [];
+                this.renderTripsList(this.allTrips);
+            } else if (tripsSet.status === 'rejected') {
+                console.warn('[RitFlyView] Falha ao carregar viagens:', tripsSet.reason?.message);
             }
 
-            if (alertsRes && alertsRes.ok) {
-                this.renderAlertsList(alertsRes.data);
+            // 5. Alertas e Ocorrências Consolidadas
+            if (alertsSet.status === 'fulfilled' && alertsSet.value && alertsSet.value.ok) {
+                this.allAlerts = Array.isArray(alertsSet.value.data) ? alertsSet.value.data : [];
+            } else if (alertsSet.status === 'rejected') {
+                console.warn('[RitFlyView] Falha ao carregar alertas:', alertsSet.reason?.message);
             }
+            this.renderConsolidatedOccurrences();
 
             this.lastSyncTimestamp = Date.now();
             this.updateLastSyncTimestamp();
         } catch (err) {
-            console.error('[RitFlyView] Erro ao sincronizar dados:', err);
+            console.error('[RitFlyView] Erro inesperado ao sincronizar dados:', err);
         }
     }
 
     /**
-     * Gera dinamicamente os seletores de companhia com contadores (Fase 8)
+     * Predicado único e normalizado para filtros e contadores (Seções 4 e 5).
+     * Garante 100% de consistência entre o número exibido no botão e os markers no mapa.
+     */
+    matchesFilterKey(f, rawKey) {
+        if (!f) return false;
+        const key = String(rawKey || 'todas').trim().toUpperCase();
+        if (key === 'TODAS' || key === 'TODOS' || key === '') return true;
+
+        const comp = String(f.companhia || '').trim().toUpperCase();
+        const cat = String(f.categoria || '').trim().toUpperCase();
+        const call = String(f.callsign || '').trim().toUpperCase();
+        const voo = String(f.numeroVoo || '').trim().toUpperCase();
+
+        switch (key) {
+            case 'GOL':
+                return comp.includes('GOL') || call.startsWith('GLO') || /^G3\d/.test(voo);
+            case 'LATAM':
+            case 'TAM':
+                return comp.includes('LATAM') || comp.includes('TAM') ||
+                       call.startsWith('TAM') || call.startsWith('LAN') || call.startsWith('LPE') ||
+                       /^(LA|JJ)\d/.test(voo);
+            case 'AZUL':
+                return comp.includes('AZUL') || call.startsWith('AZU') || call.startsWith('ACN') || /^AD\d/.test(voo);
+            case 'VOEPASS':
+                return comp.includes('VOEPASS') || comp.includes('PASSAREDO') || call.startsWith('PTB') || /^2Z\d/.test(voo);
+            case 'ITA':
+                return comp.includes('ITAPEMIRIM') || call.startsWith('IPM');
+            case 'HELICOPTEROS':
+            case 'HELICOPTERO':
+                return cat === 'HELICOPTERO' || comp.includes('HELICÓPTERO') || comp.includes('HELICOPTERO') || comp.includes('OMNI');
+            case 'EXECUTIVOS':
+            case 'EXECUTIVO':
+                return cat === 'EXECUTIVO' || comp.includes('EXECUTIV') || comp.includes('LÍDER') || comp.includes('LIDER') || comp.includes('TÁXI AÉREO') || comp.includes('TAXI AEREO');
+            case 'CARGUEIROS':
+            case 'CARGUEIRO':
+                return cat === 'CARGUEIRO' || comp.includes('CARGO') || comp.includes('CARGUEIR') || comp.includes('LOG') || comp.includes('SIDERAL') || comp.includes('MODERN');
+            case 'COMERCIAIS':
+            case 'COMERCIAL':
+                return cat === 'COMERCIAL' ||
+                       this.matchesFilterKey(f, 'GOL') ||
+                       this.matchesFilterKey(f, 'LATAM') ||
+                       this.matchesFilterKey(f, 'AZUL') ||
+                       this.matchesFilterKey(f, 'VOEPASS');
+            case 'NAO_IDENTIFICADA':
+                return !f.companhia || comp === 'NÃO IDENTIFICADA' || comp === 'NAO IDENTIFICADA' || comp === 'AVIAÇÃO REGULAR';
+            default:
+                return comp.includes(key) || cat === key;
+        }
+    }
+
+    /**
+     * Gera dinamicamente a barra unificada de filtros por companhia e categoria
+     * utilizando a mesma função matchesFilterKey(f, key) para contadores e markers.
      */
     popularFiltroCompanhias() {
         const container = document.getElementById('fly-airline-pills');
         if (!container) return;
 
-        // Contagem dinâmica por companhia e categorias
+        // Oculta a barra redundante .fly-cat-pills para manter linha única compacta no desktop
+        const legacyCatContainer = document.querySelector('.fly-cat-pills');
+        if (legacyCatContainer) {
+            legacyCatContainer.innerHTML = '';
+            legacyCatContainer.style.display = 'none';
+        }
+
+        const countFor = (k) => this.allFlights.filter(f => this.matchesFilterKey(f, k)).length;
+
         const counts = {
             todas: this.allFlights.length,
-            GOL: 0,
-            LATAM: 0,
-            AZUL: 0,
-            VOEPASS: 0,
-            ITA: 0,
-            EXECUTIVOS: 0,
-            HELICOPTEROS: 0,
-            CARGUEIROS: 0,
-            NAO_IDENTIFICADA: 0
+            COMERCIAIS: countFor('COMERCIAIS'),
+            GOL: countFor('GOL'),
+            LATAM: countFor('LATAM'),
+            AZUL: countFor('AZUL'),
+            VOEPASS: countFor('VOEPASS'),
+            ITA: countFor('ITA'),
+            EXECUTIVOS: countFor('EXECUTIVOS'),
+            HELICOPTEROS: countFor('HELICOPTEROS'),
+            CARGUEIROS: countFor('CARGUEIROS')
         };
 
-        const otherAirlines = new Map();
-
-        this.allFlights.forEach(f => {
-            const comp = (f.companhia || '').toUpperCase();
-            const cat = (f.categoria || '').toUpperCase();
-            const call = (f.callsign || '').toUpperCase();
-
-            if (cat === 'EXECUTIVO' || comp.includes('EXECUTIV') || comp.includes('LÍDER')) {
-                counts.EXECUTIVOS++;
-            } else if (cat === 'HELICOPTERO') {
-                counts.HELICOPTEROS++;
-            } else if (cat === 'CARGUEIRO' || comp.includes('CARGO') || comp.includes('LOG')) {
-                counts.CARGUEIROS++;
-            } else if (comp.includes('GOL') || call.startsWith('GLO')) {
-                counts.GOL++;
-            } else if (comp.includes('LATAM') || call.startsWith('TAM')) {
-                counts.LATAM++;
-            } else if (comp.includes('AZUL') || call.startsWith('AZU')) {
-                counts.AZUL++;
-            } else if (comp.includes('VOEPASS') || call.startsWith('PTB')) {
-                counts.VOEPASS++;
-            } else if (comp.includes('ITAPEMIRIM') || call.startsWith('IPM')) {
-                counts.ITA++;
-            } else if (!f.companhia || f.companhia === 'Não Identificada' || f.companhia === 'Aviação Regular') {
-                counts.NAO_IDENTIFICADA++;
-            } else {
-                otherAirlines.set(f.companhia, (otherAirlines.get(f.companhia) || 0) + 1);
-            }
-        });
-
-        // Montar pills dinamicamente
+        // Lista unificada com todos os filtros exigidos nas Seções 5 e 11
         const items = [
-            { key: 'todas', label: `Todas (${counts.todas})`, tooltip: 'Exibir todas as aeronaves' }
+            { key: 'todas', cat: 'todos', label: `Todas (${counts.todas})`, tooltip: 'Exibir todas as aeronaves no radar' },
+            { key: 'COMERCIAIS', cat: 'comercial', label: `Comerciais (${counts.COMERCIAIS})`, tooltip: 'Filtrar aviação comercial de carreira' },
+            { key: 'GOL', cat: 'comercial', label: `GOL (${counts.GOL})`, tooltip: 'Filtrar voos da GOL Linhas Aéreas' },
+            { key: 'LATAM', cat: 'comercial', label: `LATAM (${counts.LATAM})`, tooltip: 'Filtrar voos da LATAM Brasil (inclui TAM)' },
+            { key: 'AZUL', cat: 'comercial', label: `AZUL (${counts.AZUL})`, tooltip: 'Filtrar voos da Azul Linhas Aéreas' },
+            { key: 'EXECUTIVOS', cat: 'executivo', label: `Executivos (${counts.EXECUTIVOS})`, tooltip: 'Filtrar aviação executiva e táxi aéreo' },
+            { key: 'HELICOPTEROS', cat: 'helicoptero', label: `Helicópteros (${counts.HELICOPTEROS})`, tooltip: 'Filtrar helicópteros operacionais' },
+            { key: 'CARGUEIROS', cat: 'cargueiro', label: `Cargueiros (${counts.CARGUEIROS})`, tooltip: 'Filtrar aeronaves de carga e logística' }
         ];
 
-        if (counts.GOL > 0) items.push({ key: 'GOL', label: `GOL (${counts.GOL})`, tooltip: 'GOL Linhas Aéreas' });
-        if (counts.LATAM > 0) items.push({ key: 'LATAM', label: `LATAM (${counts.LATAM})`, tooltip: 'LATAM Brasil' });
-        if (counts.AZUL > 0) items.push({ key: 'AZUL', label: `AZUL (${counts.AZUL})`, tooltip: 'Azul Linhas Aéreas' });
-        if (counts.VOEPASS > 0) items.push({ key: 'VOEPASS', label: `VOEPASS (${counts.VOEPASS})`, tooltip: 'Voepass Linhas Aéreas' });
-        if (counts.ITA > 0) items.push({ key: 'ITA', label: `ITA (${counts.ITA})`, tooltip: 'Itapemirim Transportes Aéreos' });
-
-        // Adicionar companhias adicionais detectadas
-        for (const [name, count] of otherAirlines.entries()) {
-            items.push({ key: name, label: `${name} (${count})`, tooltip: name });
+        if (counts.VOEPASS > 0) {
+            items.splice(5, 0, { key: 'VOEPASS', cat: 'comercial', label: `VOEPASS (${counts.VOEPASS})`, tooltip: 'Filtrar Voepass Linhas Aéreas' });
+        }
+        if (counts.ITA > 0) {
+            items.splice(5, 0, { key: 'ITA', cat: 'comercial', label: `ITA (${counts.ITA})`, tooltip: 'Filtrar Itapemirim Transportes Aéreos' });
         }
 
-        // Categorias independentes obrigatórias (Fase 8)
-        if (counts.EXECUTIVOS > 0) items.push({ key: 'EXECUTIVOS', label: `Executivos (${counts.EXECUTIVOS})`, tooltip: 'Aviação Executiva / Privada' });
-        if (counts.HELICOPTEROS > 0) items.push({ key: 'HELICOPTEROS', label: `Helicópteros (${counts.HELICOPTEROS})`, tooltip: 'Helicópteros operacionais' });
-        if (counts.CARGUEIROS > 0) items.push({ key: 'CARGUEIROS', label: `Cargueiros (${counts.CARGUEIROS})`, tooltip: 'Aeronaves de carga' });
-        if (counts.NAO_IDENTIFICADA > 0) items.push({ key: 'NAO_IDENTIFICADA', label: `Não identificada (${counts.NAO_IDENTIFICADA})`, tooltip: 'Aeronaves sem companhia informada' });
-
-        // Se nenhuma companhia tiver voo mas tiver voos gerais, renderiza opções padrão
-        if (items.length === 1) {
-            items.push(
-                { key: 'GOL', label: 'GOL (0)', tooltip: 'GOL Linhas Aéreas' },
-                { key: 'LATAM', label: 'LATAM (0)', tooltip: 'LATAM Brasil' },
-                { key: 'AZUL', label: 'AZUL (0)', tooltip: 'Azul Linhas Aéreas' },
-                { key: 'EXECUTIVOS', label: 'Executivos (0)', tooltip: 'Aviação Executiva' },
-                { key: 'HELICOPTEROS', label: 'Helicópteros (0)', tooltip: 'Helicópteros' }
-            );
-        }
+        const activeKeyUpper = String(this.currentAirline || 'todas').toUpperCase();
 
         container.innerHTML = items.map(it => {
-            const isActive = this.currentAirline === it.key ? 'active' : '';
-            return `<button type="button" class="fly-airline-pill ${isActive}" data-airline="${it.key}" data-tooltip="${it.tooltip}" title="${it.tooltip}">${it.label}</button>`;
-        }).join('') + (this.currentAirline !== 'todas' ? '<button type="button" id="fly-btn-clear-airline" class="fly-airline-pill" style="color:#f43f5e; border-color:#f43f5e;" title="Limpar filtro de companhia">✖ Limpar</button>' : '');
+            const isActive = activeKeyUpper === it.key.toUpperCase() ? 'active' : '';
+            return `<button type="button" class="fly-airline-pill fly-cat-pill ${isActive}" data-airline="${it.key}" data-cat="${it.cat}" data-tooltip="${it.tooltip}" title="${it.tooltip}">${it.label}</button>`;
+        }).join('');
 
         // Re-vincular eventos
         container.querySelectorAll('.fly-airline-pill[data-airline]').forEach(pill => {
@@ -560,58 +671,34 @@ export class RitFlyView {
                 container.querySelectorAll('.fly-airline-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 this.currentAirline = pill.getAttribute('data-airline') || 'todas';
+                this.currentFilter = 'todos';
                 this.aplicarFiltrosVoos();
             });
         });
-
-        const clearBtn = document.getElementById('fly-btn-clear-airline');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                this.currentAirline = 'todas';
-                this.popularFiltroCompanhias();
-                this.aplicarFiltrosVoos();
-            });
-        }
     }
 
     aplicarFiltrosVoos() {
         let filtrados = this.allFlights;
 
-        // Filtro de Categoria
-        if (this.currentFilter !== 'todos') {
-            const cat = this.currentFilter.toLowerCase();
-            filtrados = filtrados.filter(f => (f.categoria || '').toLowerCase() === cat);
-        }
+        // Seleciona a chave ativa unificada (companhia ou categoria)
+        const activeKey = (this.currentAirline && this.currentAirline !== 'todas')
+            ? this.currentAirline
+            : (this.currentFilter && this.currentFilter !== 'todos' ? this.currentFilter : 'todas');
 
-        // Filtro de Companhia Aérea (Melhoria 07)
-        if (this.currentAirline !== 'todas') {
-            const targetComp = this.currentAirline.toUpperCase();
-            filtrados = filtrados.filter(f => {
-                const fComp = (f.companhia || '').toUpperCase();
-                const fCat = (f.categoria || '').toUpperCase();
-                const fCall = (f.callsign || '').toUpperCase();
-
-                if (targetComp === 'GOL') return fComp.includes('GOL') || fCall.startsWith('GLO');
-                if (targetComp === 'LATAM') return fComp.includes('LATAM') || fCall.startsWith('TAM');
-                if (targetComp === 'AZUL') return fComp.includes('AZUL') || fCall.startsWith('AZU');
-                if (targetComp === 'VOEPASS') return fComp.includes('VOEPASS') || fCall.startsWith('PTB');
-                if (targetComp === 'ITA') return fComp.includes('ITAPEMIRIM') || fCall.startsWith('IPM');
-                if (targetComp === 'EXECUTIVOS') return fCat === 'EXECUTIVO' || fComp.includes('EXECUTIV') || fComp.includes('LÍDER');
-                if (targetComp === 'HELICOPTEROS') return fCat === 'HELICOPTERO';
-                return fComp.includes(targetComp);
-            });
+        if (activeKey !== 'todas' && activeKey !== 'todos') {
+            filtrados = filtrados.filter(f => this.matchesFilterKey(f, activeKey));
         }
 
         // Filtro de Busca Textual
         if (this.searchQuery) {
             const q = this.searchQuery.toUpperCase();
             filtrados = filtrados.filter(f =>
-                (f.callsign && f.callsign.includes(q)) ||
-                (f.prefixo && f.prefixo.includes(q)) ||
-                (f.numeroVoo && f.numeroVoo.includes(q)) ||
+                (f.callsign && f.callsign.toUpperCase().includes(q)) ||
+                (f.prefixo && f.prefixo.toUpperCase().includes(q)) ||
+                (f.numeroVoo && f.numeroVoo.toUpperCase().includes(q)) ||
                 (f.companhia && f.companhia.toUpperCase().includes(q)) ||
-                (f.origem && f.origem.includes(q)) ||
-                (f.destino && f.destino.includes(q))
+                (f.origem && f.origem.toUpperCase().includes(q)) ||
+                (f.destino && f.destino.toUpperCase().includes(q))
             );
         }
 
@@ -735,12 +822,14 @@ export class RitFlyView {
     }
 
     /* ========================================================================= */
-    /* MELHORIA 06: VOOS POR AEROPORTO ("VOOS DO DIA")                           */
+    /* MELHORIA 06 & SEÇÃO 7: AEROPORTOS, INFORMES E VOOS DO DIA                 */
     /* ========================================================================= */
     async abrirVoosAeroporto(iata) {
         this.selectedAirportIata = iata;
         const overviewView = document.getElementById('fly-airports-overview-view');
         const boardView = document.getElementById('fly-airport-board-view');
+        const flightsContainer = document.getElementById('fly-airport-flights-list');
+        const informesContainer = document.getElementById('fly-board-informes-container');
 
         if (overviewView) overviewView.style.display = 'none';
         if (boardView) boardView.style.display = 'flex';
@@ -749,15 +838,43 @@ export class RitFlyView {
         const tabAirportBtn = document.querySelector('.fly-nav-tab[data-fly-tab="fly-panel-aeroportos"]');
         if (tabAirportBtn) tabAirportBtn.click();
 
+        // Estado explícito de Carregando
+        if (informesContainer) {
+            informesContainer.innerHTML = `<div class="fly-state-box fly-state-loading">⏳ Carregando informes operacionais de ${iata}...</div>`;
+        }
+        if (flightsContainer) {
+            flightsContainer.innerHTML = `<div class="fly-state-box fly-state-loading">⏳ Consultando malha e tráfego aéreo de ${iata}...</div>`;
+        }
+
         try {
             const res = await this.service.getAirportDetails(iata);
-            if (res && res.ok) {
+            if (res && res.ok && res.data) {
                 this.activeAirportDetails = res.data;
                 this.atualizarCabecalhoQuadroAeroporto(res.data);
                 this.renderizarVoosDoQuadroAeroporto();
+            } else {
+                const errMsg = res?.error || 'Não foi possível obter os informes e voos deste aeroporto.';
+                console.error(`[RitFlyView] Resposta inválida ao consultar ${iata}:`, errMsg);
+                if (informesContainer) {
+                    informesContainer.innerHTML = `<div class="fly-state-box fly-state-error">⚠️ Erro ao consultar informes de ${iata}: ${errMsg}</div>`;
+                }
+                if (flightsContainer) {
+                    flightsContainer.innerHTML = `<div class="fly-state-box fly-state-error">⚠️ Fonte de voos indisponível para ${iata}.</div>`;
+                }
             }
         } catch (err) {
-            console.error('[RitFlyView] Erro ao carregar detalhes do aeroporto:', err);
+            console.error('[RitFlyView] Erro ao carregar detalhes do aeroporto:', iata, err);
+            if (informesContainer) {
+                informesContainer.innerHTML = `
+                    <div class="fly-state-box fly-state-error">
+                        <div>❌ Falha na consulta dos informes de ${iata}: ${err.message}</div>
+                        <button type="button" class="fly-retry-btn" onclick="window.ritFlyView && window.ritFlyView.abrirVoosAeroporto('${iata}')">↻ Tentar novamente</button>
+                    </div>
+                `;
+            }
+            if (flightsContainer) {
+                flightsContainer.innerHTML = `<div class="fly-state-box fly-state-error">Não foi possível carregar os voos devido a erro na requisição.</div>`;
+            }
         }
     }
 
@@ -771,23 +888,82 @@ export class RitFlyView {
         this.activeAirportDetails = null;
     }
 
+    renderInformesSectionHtml(a, compact = false) {
+        const informes = Array.isArray(a?.informes) ? a.informes : [];
+        if (a?.fonteStatus === 'FONTE_INDISPONIVEL' || a?.fonteStatus === 'INDISPONIVEL') {
+            return `
+                <div class="fly-airport-informes-box">
+                    <div class="fly-informe-item fly-informe-warn">
+                        <strong>⚠️ Fonte Indisponível:</strong> Telemetria ADS-B e boletim METAR sem retorno no momento para ${a.iata}.
+                    </div>
+                </div>
+            `;
+        }
+
+        if (informes.length === 0) {
+            return `
+                <div class="fly-airport-informes-box">
+                    <div class="fly-informe-empty">📭 Nenhum informe operacional disponível para ${a?.iata || 'este aeródromo'}.</div>
+                </div>
+            `;
+        }
+
+        const listToRender = compact ? informes.slice(0, 2) : informes;
+        return `
+            <div class="fly-airport-informes-box" data-airport-informes="${a.iata}">
+                <div class="fly-informes-header">
+                    <span>📋 INFORMES OPERACIONAIS (${informes.length})</span>
+                    <span class="fly-informes-source-badge">${a.metarDisponivel !== false ? 'METAR + ADS-B ATIVO' : 'ADS-B ATIVO (METAR S/D)'}</span>
+                </div>
+                ${listToRender.map(inf => {
+                    const isWarn = inf.severidade === 'ATENCAO' || inf.disponivel === false || inf.status === 'ATENÇÃO' || inf.status === 'INDISPONIVEL';
+                    const isCrit = inf.severidade === 'CRITICO' || inf.status === 'CRÍTICO';
+                    const sevClass = isCrit
+                        ? 'fly-informe-crit'
+                        : (isWarn ? 'fly-informe-warn' : 'fly-informe-info');
+                    const icon = inf.tipo === 'METAR' ? '🌤️' : (inf.tipo === 'TRAFEGO_ADSB' ? '📡' : '🛫');
+                    const textoInforme = inf.resumo || inf.descricao || 'Informe registrado.';
+                    return `
+                        <div class="fly-informe-item ${sevClass}">
+                            <div class="fly-informe-title">${icon} <strong>${inf.titulo}:</strong></div>
+                            <div class="fly-informe-desc">${textoInforme}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
     atualizarCabecalhoQuadroAeroporto(a) {
         const elTitle = document.getElementById('fly-board-airport-title');
         const elSub = document.getElementById('fly-board-airport-sub');
         const elBadge = document.getElementById('fly-board-weather-badge');
         const elMetar = document.getElementById('fly-board-metar-text');
+        const elInformes = document.getElementById('fly-board-informes-container');
 
         if (elTitle) elTitle.textContent = `${a.iata} — ${a.nome}`;
         if (elSub) elSub.textContent = `${a.cidade} - ${a.uf} | Concessionária: ${a.concessionaria}`;
 
         const clima = a.clima || {};
+        const metarOk = a.metarDisponivel !== false && clima.disponivel !== false && clima.condicoes && clima.condicoes !== 'METAR_INDISPONIVEL';
+
         if (elBadge) {
-            elBadge.textContent = `${clima.flightRule || 'VFR'} (${clima.statusOperacional || 'ABERTO'})`;
-            elBadge.className = `fly-airport-status-pill ${clima.flightRule === 'IFR' ? 'fly-status-atencao' : 'fly-status-normal'}`;
+            const ruleLabel = metarOk ? (clima.flightRule || a.regraVoo || 'VFR') : 'METAR S/D';
+            elBadge.textContent = `${ruleLabel} (${a.statusOperacional || clima.statusOperacional || 'NORMAL'})`;
+            elBadge.className = `fly-airport-status-pill ${a.statusOperacional === 'CRÍTICO' ? 'fly-status-critico' : (a.statusOperacional === 'ATENÇÃO' || clima.flightRule === 'IFR' ? 'fly-status-atencao' : 'fly-status-normal')}`;
         }
 
         if (elMetar) {
-            elMetar.textContent = `🌤️ Clima: ${clima.condicoes || 'Céu Claro'}, ${clima.temperaturaC || 26}°C | Vento: ${clima.vento ? clima.vento.descricao : 'Calmo'} | Visibilidade: ${clima.visibilidade ? clima.visibilidade.descricao : '> 10 km'}`;
+            if (metarOk) {
+                const tempTxt = clima.temperaturaC !== null && clima.temperaturaC !== undefined ? `${clima.temperaturaC}°C` : 'Temp. N/D';
+                elMetar.textContent = `🌤️ Clima (${a.icao}): ${clima.condicoes}, ${tempTxt} | Vento: ${clima.vento ? clima.vento.descricao : 'N/D'} | Visibilidade: ${clima.visibilidade ? clima.visibilidade.descricao : 'N/D'}`;
+            } else {
+                elMetar.textContent = `⚠️ Boletim METAR oficial temporariamente indisponível na fonte para ${a.icao}. Operação monitorada via telemetria ADS-B.`;
+            }
+        }
+
+        if (elInformes) {
+            elInformes.innerHTML = this.renderInformesSectionHtml(a, false);
         }
 
         const countPartidas = document.getElementById('fly-board-partidas-count');
@@ -804,29 +980,54 @@ export class RitFlyView {
         const container = document.getElementById('fly-airport-flights-list');
         if (!container) return;
 
+        if (this.activeTimeSlice === 'amanha') {
+            container.innerHTML = `
+                <div class="fly-state-box fly-state-empty">
+                    📅 Programação do dia seguinte indisponível na fonte ADS-B em tempo real. Selecione "Hoje" ou janelas de curto prazo (Agora, 1h a 6h).
+                </div>
+            `;
+            return;
+        }
+
         let lista = [];
         if (this.activeBoardTab === 'partidas') {
-            lista = this.activeAirportDetails.partidas || [];
+            lista = [...(this.activeAirportDetails.partidas || [])];
         } else if (this.activeBoardTab === 'chegadas') {
-            lista = this.activeAirportDetails.chegadas || [];
+            lista = [...(this.activeAirportDetails.chegadas || [])];
         } else if (this.activeBoardTab === 'atrasados') {
             const all = [...(this.activeAirportDetails.chegadas || []), ...(this.activeAirportDetails.partidas || [])];
             lista = all.filter(f => f.atrasoMinutos > 15);
         }
 
+        // Filtro por janela temporal (activeTimeSlice)
+        const sliceHoursMap = { agora: 0.5, '1h': 1, '2h': 2, '2h_futuras': 2, '4h': 4, '6h': 6, '6h_futuras': 6 };
+        if (sliceHoursMap[this.activeTimeSlice]) {
+            const maxMin = sliceHoursMap[this.activeTimeSlice] * 60;
+            lista = lista.filter(f => {
+                if (typeof f.tempoRestanteMinutos === 'number') {
+                    return f.tempoRestanteMinutos <= maxMin;
+                }
+                return true;
+            });
+        }
+
         // Filtro de Busca Textual interna do quadro
         if (this.boardSearchQuery) {
             lista = lista.filter(f =>
-                (f.voo && f.voo.includes(this.boardSearchQuery)) ||
-                (f.prefixo && f.prefixo.includes(this.boardSearchQuery)) ||
+                (f.voo && f.voo.toUpperCase().includes(this.boardSearchQuery)) ||
+                (f.prefixo && f.prefixo.toUpperCase().includes(this.boardSearchQuery)) ||
                 (f.companhia && f.companhia.toUpperCase().includes(this.boardSearchQuery)) ||
-                (f.origem && f.origem.includes(this.boardSearchQuery)) ||
-                (f.destino && f.destino.includes(this.boardSearchQuery))
+                (f.origem && f.origem.toUpperCase().includes(this.boardSearchQuery)) ||
+                (f.destino && f.destino.toUpperCase().includes(this.boardSearchQuery))
             );
         }
 
         if (lista.length === 0) {
-            container.innerHTML = '<div style="color:#64748b; font-size:11px; text-align:center; padding:20px;">Nenhum voo correspondente aos filtros selecionados.</div>';
+            container.innerHTML = `
+                <div class="fly-state-box fly-state-empty">
+                    📭 Nenhum voo encontrado em ${this.selectedAirportIata} para a aba "${this.activeBoardTab.toUpperCase()}" na janela selecionada.
+                </div>
+            `;
             return;
         }
 
@@ -835,6 +1036,11 @@ export class RitFlyView {
             const delayTag = isDelayed
                 ? `<span style="color:#f43f5e; font-weight:800; font-size:10px;">⚠️ +${f.atrasoMinutos}m</span>`
                 : `<span style="color:#10b981; font-weight:800; font-size:10px;">No Horário</span>`;
+
+            const etaLabel = f.etaFormatado || 'N/D';
+            const extraMin = (f.tempoRestanteMinutos && !String(etaLabel).includes('m'))
+                ? ` (~${f.tempoRestanteMinutos}m)`
+                : '';
 
             return `
                 <div class="fly-airport-flight-card" onclick="window.ritFlyView && window.ritFlyView.focarVooNoMapaEDrawer('${f.id || f.voo}')">
@@ -846,7 +1052,7 @@ export class RitFlyView {
                         ${f.companhia} | Rota: <strong>${f.origem || this.selectedAirportIata} ➔ ${f.destino || this.selectedAirportIata}</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-top:4px; padding-top:4px; border-top:1px solid rgba(255,255,255,0.04);">
-                        <span>ETA: <strong style="color:#fff;">${f.etaFormatado || '--:--'}</strong></span>
+                        <span>ETA: <strong style="color:#fff;">${etaLabel}</strong>${extraMin}</span>
                         <span style="color:var(--fly-accent); font-weight:bold;">🔍 Ver no Radar</span>
                     </div>
                 </div>
@@ -878,60 +1084,90 @@ export class RitFlyView {
         setVal('fly-kpi-sla-num', `${kpis.slaEmbarquePct || 96}%`);
     }
 
+    renderAirportsErrorState(reason = 'Erro ao consultar serviço de aeroportos.') {
+        const container = document.getElementById('fly-airports-list-container');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="fly-state-box fly-state-error">
+                <div style="font-weight:800; margin-bottom:4px;">❌ Erro na consulta de informes aeroportuários</div>
+                <div style="font-size:10px; color:#cbd5e1; margin-bottom:8px;">${reason}</div>
+                <button type="button" class="fly-retry-btn" onclick="window.ritFlyView && window.ritFlyView.fetchData()">↻ Tentar novamente</button>
+            </div>
+        `;
+    }
+
     renderAirportsList(airports = []) {
         const container = document.getElementById('fly-airports-list-container');
         if (!container) return;
+
+        if (!Array.isArray(airports) || airports.length === 0) {
+            container.innerHTML = `
+                <div class="fly-state-box fly-state-empty">
+                    📭 Nenhum informe de aeroporto encontrado no momento.
+                </div>
+            `;
+            return;
+        }
 
         container.innerHTML = airports.map(a => {
             const statusClass = a.statusOperacional === 'NORMAL'
                 ? 'fly-status-normal'
                 : (a.statusOperacional === 'ATENÇÃO' ? 'fly-status-atencao' : 'fly-status-critico');
             const clima = a.clima || {};
+            const metarOk = a.metarDisponivel !== false && clima.disponivel !== false && clima.condicoes && clima.condicoes !== 'METAR_INDISPONIVEL';
+            const metarLine = metarOk
+                ? `🌤️ METAR (${a.icao}): ${clima.temperaturaC !== null && clima.temperaturaC !== undefined ? `${clima.temperaturaC}°C` : 'Temp. N/D'} (${clima.condicoes})`
+                : `⚠️ METAR (${a.icao}): Fonte meteorológica indisponível`;
 
             return `
-                <div class="fly-airport-card" onclick="window.ritFlyView && window.ritFlyView.abrirVoosAeroporto('${a.iata}')" data-tooltip="Clique para ver o quadro de voos do dia em ${a.iata}">
+                <div class="fly-airport-card" data-airport-card="${a.iata}" onclick="window.ritFlyView && window.ritFlyView.abrirVoosAeroporto('${a.iata}')" data-tooltip="Clique para abrir informes detalhados e voos de ${a.iata}">
                     <div class="fly-airport-header">
                         <div>
                             <span class="fly-airport-code">${a.iata}</span>
                             <span style="font-size:11px; color:#cbd5e1; margin-left:4px;">${a.cidade} - ${a.uf}</span>
                         </div>
-                        <span class="fly-airport-status-pill ${statusClass}">${a.statusOperacional} (${a.regraVoo})</span>
+                        <span class="fly-airport-status-pill ${statusClass}">${a.statusOperacional} (${metarOk ? a.regraVoo : 'ADS-B'})</span>
                     </div>
                     <div style="font-size:10px; color:#94a3b8; margin-bottom:4px;">
                         ${a.nome}
                     </div>
-                    ${!a.programacaoOficialDisponivel ? `
-                    <div style="margin:6px 0; padding:6px 8px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:4px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:#fbbf24;"><i class="fa-solid fa-circle-info"></i> Programação oficial indisponível</span>
-                        <span style="color:#fff; font-size:9px;">Movimento detectado: <strong style="color:var(--fly-accent); font-size:11px;">${a.movimentoDetectado !== undefined ? a.movimentoDetectado : (a.chegadasPrevistas + a.partidasPrevistas)}</strong></span>
-                    </div>
-                    ` : `
                     <div class="fly-airport-metrics">
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Chegadas</span>
-                            <span class="fly-metric-val">${a.chegadasPrevistas}</span>
+                            <span class="fly-metric-val">${a.chegadasPrevistas ?? 0}</span>
                         </div>
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Partidas</span>
-                            <span class="fly-metric-val">${a.partidasPrevistas}</span>
+                            <span class="fly-metric-val">${a.partidasPrevistas ?? 0}</span>
                         </div>
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Atrasos</span>
-                            <span class="fly-metric-val" style="color:${a.voosAtrasados > 0 ? '#f59e0b' : '#10b981'};">${a.voosAtrasados}</span>
+                            <span class="fly-metric-val" style="color:${a.voosAtrasados > 0 ? '#f59e0b' : '#10b981'};">${a.voosAtrasados ?? 0}</span>
                         </div>
                         <div class="fly-metric-item">
                             <span class="fly-metric-label">Pontualidade</span>
-                            <span class="fly-metric-val" style="color:#38bdf8;">${a.taxaPontualidadePct !== null ? `${a.taxaPontualidadePct}%` : 'N/D'}</span>
+                            <span class="fly-metric-val" style="color:#38bdf8;">${a.taxaPontualidadePct !== null && a.taxaPontualidadePct !== undefined ? `${a.taxaPontualidadePct}%` : 'N/D'}</span>
                         </div>
                     </div>
-                    `}
+                    ${this.renderInformesSectionHtml(a, true)}
                     <div style="margin-top:6px; font-size:10px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
-                        <span>🌤️ METAR: ${clima.temperaturaC || 26}°C (${clima.condicoes || 'Céu Claro'})</span>
-                        <span style="color:var(--fly-accent); font-weight:800; cursor:pointer;" title="Inspecionar movimento detectado neste aeroporto">🛫 Movimento Aéreo do Hub →</span>
+                        <span>${metarLine}</span>
+                        <span style="color:var(--fly-accent); font-weight:800; cursor:pointer;" title="Inspecionar informes e voos deste aeroporto">🛫 Ver Informes e Voos →</span>
                     </div>
                 </div>
             `;
         }).join('');
+
+        // Se um aeroporto estiver aberto no quadro detalhado, sincroniza também
+        if (this.selectedAirportIata) {
+            const updatedCurrent = airports.find(x => x.iata === this.selectedAirportIata);
+            if (updatedCurrent && this.activeAirportDetails) {
+                this.activeAirportDetails.informes = updatedCurrent.informes;
+                this.activeAirportDetails.clima = updatedCurrent.clima;
+                this.activeAirportDetails.metarDisponivel = updatedCurrent.metarDisponivel;
+                this.atualizarCabecalhoQuadroAeroporto(this.activeAirportDetails);
+            }
+        }
     }
 
     renderTripsList(trips = []) {
@@ -984,39 +1220,285 @@ export class RitFlyView {
         }).join('');
     }
 
-    renderAlertsList(alerts = []) {
-        const container = document.getElementById('fly-alerts-list-container');
-        if (!container) return;
+    buildConsolidatedOccurrencesList() {
+        const nowIso = new Date().toISOString();
+        const occurrences = [];
+        const seen = new Set();
 
-        if (alerts.length === 0) {
-            container.innerHTML = '<div style="color:#64748b; font-size:11px; text-align:center; padding:15px;">Nenhum alerta crítico ativo.</div>';
+        const pushOcc = (item) => {
+            if (!item || !item.titulo) return;
+            const key = item.deduplication_key || item.id || `${item.categoria}-${item.aeroporto || ''}-${item.voo || ''}-${item.titulo}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            occurrences.push({
+                id: item.id || `occ-${occurrences.length + 1}`,
+                categoria: item.categoria || 'OPERACIONAL',
+                severidade: item.severidade || 'INFO',
+                titulo: item.titulo,
+                descricao: item.descricao || '',
+                acaoSugerida: item.acaoSugerida || null,
+                aeroporto: item.aeroporto || null,
+                voo: item.voo || null,
+                idVoo: item.idVoo || null,
+                timestamp: item.timestamp || nowIso
+            });
+        };
+
+        // 1. Ocorrências retornadas pela API /api/rit-fly/alerts
+        if (Array.isArray(this.allAlerts)) {
+            this.allAlerts.forEach(a => {
+                const isClima = a.categoria === 'CLIMA_METAR' || a.alert_type === 'CLIMA_METAR' || /METAR|IFR|MVFR|Clima|Meteorol/i.test(a.titulo || '');
+                const cat = a.categoria || (isClima ? 'CLIMA_METAR' : (a.voo ? 'ATRASOS_MALHA' : 'SOLO_TRANSFERS'));
+                pushOcc({ ...a, categoria: cat });
+            });
+        }
+
+        // 2. Consolidação ao vivo dos 8 Aeroportos Estratégicos (METAR + Atrasos + Fluxo)
+        if (Array.isArray(this.allAirports)) {
+            this.allAirports.forEach(a => {
+                if (!a || !a.iata) return;
+                const clima = a.clima || {};
+                const metarOk = a.metarDisponivel !== false && clima.disponivel !== false && clima.condicoes && clima.condicoes !== 'METAR_INDISPONIVEL';
+                const regra = clima.flightRule || a.regraVoo || 'VFR';
+                const condStr = String(clima.condicoes || '');
+                const ventoKt = Number(clima.vento?.velocidadeKt || 0);
+
+                if (metarOk) {
+                    const hasPhenom = /Névoa|Nevoeiro|Chuva|Trovoada|Tempestade|Pancadas/i.test(condStr);
+                    if (regra === 'IFR' || regra === 'LIFR' || a.statusOperacional === 'CRÍTICO') {
+                        pushOcc({
+                            id: `occ-metar-ifr-${a.iata}`,
+                            deduplication_key: `occ-metar-${a.iata}`,
+                            categoria: 'CLIMA_METAR',
+                            severidade: 'CRITICO',
+                            titulo: `Operação por Instrumentos (${regra}) em ${a.iata} — ${a.cidade}`,
+                            descricao: `METAR ${a.icao}: ${condStr}, ${clima.temperaturaC ?? '--'}°C | Vento: ${clima.vento?.descricao || 'N/D'} | Visib.: ${clima.visibilidade?.descricao || 'N/D'}.`,
+                            acaoSugerida: `Considerar margem adicional de 20 a 30 min para pousos e receptivo terrestre em ${a.iata}.`,
+                            aeroporto: a.iata,
+                            timestamp: clima.atualizadoEm || nowIso
+                        });
+                    } else if (regra === 'MVFR' || a.statusOperacional === 'ATENÇÃO' || hasPhenom || ventoKt >= 14) {
+                        pushOcc({
+                            id: `occ-metar-mvfr-${a.iata}`,
+                            deduplication_key: `occ-metar-${a.iata}`,
+                            categoria: 'CLIMA_METAR',
+                            severidade: 'ALTO',
+                            titulo: `Atenção Meteorológica (${regra}) em ${a.iata} — ${condStr}`,
+                            descricao: `METAR ${a.icao}: ${condStr}, ${clima.temperaturaC ?? '--'}°C | Vento: ${clima.vento?.descricao || 'N/D'} | Visib.: ${clima.visibilidade?.descricao || 'N/D'}.`,
+                            acaoSugerida: `Acompanhar evolução de teto/visibilidade e janelas de aproximação em ${a.iata}.`,
+                            aeroporto: a.iata,
+                            timestamp: clima.atualizadoEm || nowIso
+                        });
+                    }
+                }
+
+                if ((a.voosAtrasados || 0) > 0) {
+                    pushOcc({
+                        id: `occ-hub-delay-${a.iata}`,
+                        deduplication_key: `occ-hub-delay-${a.iata}`,
+                        categoria: 'ATRASOS_MALHA',
+                        severidade: a.voosAtrasados >= 3 ? 'CRITICO' : 'ALTO',
+                        titulo: `Retenção de Malha em ${a.iata}: ${a.voosAtrasados} voo(s) com atraso`,
+                        descricao: `Terminal ${a.nome} apresenta ${a.voosAtrasados} aeronave(s) com atraso > 15 min (Pontualidade: ${a.taxaPontualidadePct ?? 100}%).`,
+                        acaoSugerida: `Verificar impacto nos desembarques corporativos em ${a.iata}.`,
+                        aeroporto: a.iata,
+                        timestamp: nowIso
+                    });
+                }
+
+                const movTotal = (a.chegadasPrevistas || 0) + (a.partidasPrevistas || 0);
+                if (movTotal > 0) {
+                    pushOcc({
+                        id: `occ-fluxo-${a.iata}`,
+                        deduplication_key: `occ-fluxo-${a.iata}`,
+                        categoria: 'FLUXO_HUB',
+                        severidade: movTotal >= 10 ? 'MEDIO' : 'INFO',
+                        titulo: `Fluxo Ativo em ${a.iata} (${a.cidade}): ${movTotal} aeronave(s) no setor`,
+                        descricao: `${a.chegadasPrevistas || 0} chegada(s) / aproximação e ${a.partidasPrevistas || 0} partida(s) via ADS-B (${metarOk ? regra : 'ADS-B'}).`,
+                        acaoSugerida: `Clique para abrir o quadro de voos e informes de ${a.iata}.`,
+                        aeroporto: a.iata,
+                        timestamp: nowIso
+                    });
+                }
+            });
+        }
+
+        // 3. Aeronaves com atraso (> 15 min) na malha aérea
+        if (Array.isArray(this.allFlights)) {
+            const delayed = this.allFlights.filter(f => f && (f.atrasoMinutos || 0) > 15);
+            delayed.slice(0, 10).forEach(f => {
+                const numVoo = f.numeroVoo || f.callsign || f.prefixo || f.id;
+                pushOcc({
+                    id: `occ-flight-delay-${f.id || numVoo}`,
+                    deduplication_key: `alt-${numVoo}-${f.severidade || 'ALTO'}`,
+                    categoria: 'ATRASOS_MALHA',
+                    severidade: f.atrasoMinutos >= 35 ? 'CRITICO' : 'ALTO',
+                    titulo: `Atraso de Voo: ${numVoo} (+${f.atrasoMinutos} min)`,
+                    descricao: `${f.companhia || 'Operador'} (${f.prefixo || f.icao24 || 'S/P'}) na rota ${f.origem || 'N/D'} ➔ ${f.destino || 'N/D'} | ETA: ${f.etaFormatado || '--:--'}.`,
+                    acaoSugerida: `Clique para focar a aeronave no radar e sincronizar transfer.`,
+                    aeroporto: f.destino || f.origem || null,
+                    voo: numVoo,
+                    idVoo: f.id,
+                    timestamp: nowIso
+                });
+            });
+        }
+
+        const rank = { CRITICO: 4, ALTO: 3, MEDIO: 2, INFO: 1 };
+        occurrences.sort((a, b) => (rank[b.severidade] || 0) - (rank[a.severidade] || 0));
+        return occurrences;
+    }
+
+    renderConsolidatedOccurrences() {
+        const allOccs = this.buildConsolidatedOccurrencesList();
+
+        const countClima = allOccs.filter(o => o.categoria === 'CLIMA_METAR').length;
+        const countAtrasos = allOccs.filter(o => o.categoria === 'ATRASOS_MALHA').length;
+        const countHubs = allOccs.filter(o => o.categoria === 'FLUXO_HUB').length;
+        const countSolo = allOccs.filter(o => o.categoria === 'SOLO_TRANSFERS').length;
+        const countCriticos = allOccs.filter(o => o.severidade === 'CRITICO' || o.severidade === 'ALTO').length;
+
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        // Atualiza contadores no Painel Compacto (Visão Geral da Lateral)
+        setTxt('fly-occ-overview-count', allOccs.length);
+        setTxt('fly-occ-mini-total', allOccs.length);
+        setTxt('fly-occ-mini-clima', countClima);
+        setTxt('fly-occ-mini-atrasos', countAtrasos);
+        setTxt('fly-occ-mini-hubs', countHubs);
+
+        // Atualiza badge da aba Ocorrências e cards da aba dedicada
+        setTxt('fly-nav-alerts-badge', allOccs.length);
+        setTxt('fly-occ-card-criticos', countCriticos);
+        setTxt('fly-occ-card-clima', countClima);
+        setTxt('fly-occ-card-atrasos', countAtrasos);
+        setTxt('fly-occ-card-hubs', countHubs + countSolo);
+
+        const tabStatus = document.getElementById('fly-occ-tab-status');
+        if (tabStatus) {
+            if (allOccs.some(o => o.severidade === 'CRITICO')) {
+                tabStatus.textContent = 'CRÍTICO';
+                tabStatus.className = 'fly-airport-status-pill fly-status-critico';
+            } else if (countCriticos > 0) {
+                tabStatus.textContent = `${countCriticos} EM ATENÇÃO`;
+                tabStatus.className = 'fly-airport-status-pill fly-status-atencao';
+            } else {
+                tabStatus.textContent = 'NORMAL';
+                tabStatus.className = 'fly-airport-status-pill fly-status-normal';
+            }
+        }
+
+        // Renderiza lista compacta (Top 3 ocorrências prioritárias) no topo do painel lateral
+        const compactContainer = document.getElementById('fly-occ-overview-list');
+        if (compactContainer) {
+            if (allOccs.length === 0) {
+                compactContainer.innerHTML = `
+                    <div class="fly-occ-empty-inline">
+                        ✅ Operação normal nos 8 hubs — nenhuma restrição crítica ativa no momento.
+                    </div>
+                `;
+            } else {
+                const topOccs = allOccs.slice(0, 3);
+                compactContainer.innerHTML = topOccs.map(occ => {
+                    const sevColor = occ.severidade === 'CRITICO' ? '#f43f5e' : (occ.severidade === 'ALTO' ? '#f59e0b' : (occ.severidade === 'MEDIO' ? '#38bdf8' : '#10b981'));
+                    const catIcon = occ.categoria === 'CLIMA_METAR' ? '🌤️' : (occ.categoria === 'ATRASOS_MALHA' ? '⚠️' : (occ.categoria === 'SOLO_TRANSFERS' ? '🚗' : '📡'));
+                    const targetAttr = occ.idVoo || occ.voo
+                        ? `onclick="window.ritFlyView && window.ritFlyView.focarVooNoMapaEDrawer('${occ.idVoo || occ.voo}')"`
+                        : (occ.aeroporto ? `onclick="window.ritFlyView && window.ritFlyView.focarAeroporto('${occ.aeroporto}')"` : `onclick="window.ritFlyView && window.ritFlyView.abrirAbaOcorrencias('TODAS')"`);
+                    const tagBadge = occ.aeroporto
+                        ? `<span class="fly-occ-tag-pill">${occ.aeroporto}</span>`
+                        : (occ.voo ? `<span class="fly-occ-tag-pill">${occ.voo}</span>` : '');
+
+                    return `
+                        <div class="fly-occ-compact-item" style="border-left-color:${sevColor};" ${targetAttr} title="Clique para inspecionar no radar">
+                            <div class="fly-occ-compact-top">
+                                <span class="fly-occ-compact-title">${catIcon} ${occ.titulo}</span>
+                                ${tagBadge}
+                            </div>
+                            <div class="fly-occ-compact-desc">${occ.descricao}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Renderiza lista completa na aba dedicada (#fly-alerts-list-container)
+        const fullContainer = document.getElementById('fly-alerts-list-container');
+        if (!fullContainer) return;
+
+        const filtered = (this.occurrenceFilter && this.occurrenceFilter !== 'TODAS')
+            ? allOccs.filter(o => o.categoria === this.occurrenceFilter)
+            : allOccs;
+
+        if (filtered.length === 0) {
+            fullContainer.innerHTML = `
+                <div class="fly-state-box fly-state-empty" style="margin-top:8px;">
+                    ✅ Nenhuma ocorrência registrada para o filtro "${this.occurrenceFilter}" no momento.
+                </div>
+            `;
             return;
         }
 
-        container.innerHTML = alerts.map(alt => {
+        fullContainer.innerHTML = filtered.map(alt => {
             let badgeColor = '#38bdf8';
-            if (alt.severidade === 'CRITICO') { badgeColor = '#f43f5e'; }
-            else if (alt.severidade === 'ALTO') { badgeColor = '#f59e0b'; }
+            let sevLabel = 'OPERACIONAL';
+            if (alt.severidade === 'CRITICO') { badgeColor = '#f43f5e'; sevLabel = 'CRÍTICO'; }
+            else if (alt.severidade === 'ALTO') { badgeColor = '#f59e0b'; sevLabel = 'ATENÇÃO'; }
+            else if (alt.severidade === 'MEDIO') { badgeColor = '#38bdf8'; sevLabel = 'MODERADO'; }
+            else { badgeColor = '#10b981'; sevLabel = 'NORMAL / FLUXO'; }
 
-            const horaFormatada = alt.timestamp ? new Date(alt.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+            const catMap = {
+                CLIMA_METAR: '🌤️ Clima / METAR',
+                ATRASOS_MALHA: '⚠️ Atraso / Voo',
+                FLUXO_HUB: '📡 Fluxo Hub',
+                SOLO_TRANSFERS: '🚗 Solo / Transfer'
+            };
+            const catLabel = catMap[alt.categoria] || '📋 Operacional';
+
+            let horaFormatada = '';
+            if (alt.timestamp) {
+                const dt = new Date(alt.timestamp);
+                if (!Number.isNaN(dt.getTime())) {
+                    horaFormatada = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                }
+            }
+
+            const clickAction = alt.idVoo || alt.voo
+                ? `onclick="window.ritFlyView && window.ritFlyView.focarVooNoMapaEDrawer('${alt.idVoo || alt.voo}')"`
+                : (alt.aeroporto ? `onclick="window.ritFlyView && window.ritFlyView.focarAeroporto('${alt.aeroporto}')"` : '');
 
             return `
-                <div style="background:rgba(255,255,255,0.02); border-left:3px solid ${badgeColor}; border-radius:0 6px 6px 0; padding:8px 10px; margin-bottom:6px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="color:#fff; font-size:11px;">${alt.titulo}</strong>
-                        <span style="font-size:9px; color:#64748b;">${horaFormatada}</span>
+                <div class="fly-occ-full-card" style="border-left:3px solid ${badgeColor};" ${clickAction}>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:4px;">
+                        <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                            <span style="font-size:9px; font-weight:800; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.06); color:${badgeColor}; border:1px solid ${badgeColor};">${sevLabel}</span>
+                            <span style="font-size:9px; font-weight:700; color:#94a3b8;">${catLabel}</span>
+                            ${alt.aeroporto ? `<span class="fly-occ-tag-pill">${alt.aeroporto}</span>` : ''}
+                            ${alt.voo ? `<span class="fly-occ-tag-pill">${alt.voo}</span>` : ''}
+                        </div>
+                        <span style="font-size:9px; color:#64748b; white-space:nowrap;">${horaFormatada}</span>
                     </div>
+                    <div style="color:#fff; font-size:11px; font-weight:800; line-height:1.3;">${alt.titulo}</div>
                     <div style="font-size:10px; color:#cbd5e1; margin-top:3px; line-height:1.4;">
                         ${alt.descricao}
                     </div>
                     ${alt.acaoSugerida ? `
-                        <div style="font-size:9px; color:#38bdf8; margin-top:4px; font-weight:bold;">
-                            👉 Ação: ${alt.acaoSugerida}
+                        <div style="font-size:9px; color:#38bdf8; margin-top:5px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                            <span>👉 ${alt.acaoSugerida}</span>
+                            ${(alt.aeroporto || alt.voo) ? `<span style="color:#f59e0b; white-space:nowrap; margin-left:6px;">Ver no Radar →</span>` : ''}
                         </div>
                     ` : ''}
                 </div>
             `;
         }).join('');
+    }
+
+    renderAlertsList(alerts = []) {
+        this.allAlerts = Array.isArray(alerts) ? alerts : [];
+        this.renderConsolidatedOccurrences();
     }
 
     /* ========================================================================= */

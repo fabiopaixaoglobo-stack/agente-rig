@@ -14,6 +14,7 @@ class OpenSkyProvider {
         this.lastFetchTime = 0;
         this.cacheTtlMs = config.CACHE_TTL_MS || 25000;
         this.syntheticSeedTime = Date.now();
+        this.inflightPromise = null;
         this.providerStatus = {
             status: 'INITIALIZING',
             code: null,
@@ -23,14 +24,29 @@ class OpenSkyProvider {
     }
 
     /**
-     * Retorna a lista de voos ativos no espaço aéreo nacional
+     * Retorna a lista de voos ativos no espaço aéreo nacional com deduplicação singleflight
      */
     async getFlights(filters = {}) {
         const now = Date.now();
-        if (this.cache && (now - this.lastFetchTime < this.cacheTtlMs)) {
+        if (this.cache && (now - this.lastFetchTime < this.cacheTtlMs && !config.ALLOW_SYNTHETIC_DATA)) {
             return this.applyFilters(this.cache, filters);
         }
 
+        if (this.inflightPromise) {
+            const shared = await this.inflightPromise;
+            return this.applyFilters(shared, filters);
+        }
+
+        this.inflightPromise = this._fetchUnfilteredFlights();
+        try {
+            const flights = await this.inflightPromise;
+            return this.applyFilters(flights, filters);
+        } finally {
+            this.inflightPromise = null;
+        }
+    }
+
+    async _fetchUnfilteredFlights() {
         let rawFlights = [];
         try {
             if (config.OPENSKY.ENABLED) {
@@ -68,32 +84,37 @@ class OpenSkyProvider {
                 } else if (res.status === 429) {
                     this.providerStatus.status = 'RATE_LIMITED';
                     this.providerStatus.message = 'OpenSky Network Rate Limit (HTTP 429) - Acesso anônimo esgotado neste IP';
+                    console.warn('[RIT-FLY][OpenSkyProvider] Rate limit HTTP 429 atingido');
                 } else {
                     this.providerStatus.status = 'ERROR';
                     this.providerStatus.message = `Falha OpenSky HTTP ${res.status}`;
+                    console.warn(`[RIT-FLY][OpenSkyProvider] Falha HTTP ${res.status}`);
                 }
             }
         } catch (err) {
             this.providerStatus.status = 'UNAVAILABLE';
             this.providerStatus.message = `Falha de conexão com OpenSky: ${err.message}`;
+            console.warn(`[RIT-FLY][OpenSkyProvider] Falha na requisição: ${err.message}`);
         }
 
         // Governança Estrita: Só injeta voos sintéticos se RIT_FLY_ALLOW_SYNTHETIC_DATA for explicitamente true
         if (config.ALLOW_SYNTHETIC_DATA) {
             const fallbackMesh = this.generateRealisticBrazilianAirMesh();
-            const existingIds = new Set(rawFlights.map(f => (f.icao24 || f.callsign || '').toUpperCase()));
+            const existingCallsigns = new Set(rawFlights.map(f => (f.numeroVoo || f.callsign || '').toUpperCase()));
             for (const synth of fallbackMesh) {
-                const key = (synth.icao24 || synth.callsign || '').toUpperCase();
-                if (!existingIds.has(key)) {
+                const key = (synth.numeroVoo || synth.callsign || '').toUpperCase();
+                if (!existingCallsigns.has(key)) {
                     rawFlights.push(synth);
                 }
             }
         }
 
-        this.cache = rawFlights;
-        this.lastFetchTime = now;
+        if (rawFlights.length > 0 || !this.cache) {
+            this.cache = rawFlights;
+            this.lastFetchTime = Date.now();
+        }
 
-        return this.applyFilters(rawFlights, filters);
+        return this.cache || [];
     }
 
     /**
@@ -105,10 +126,10 @@ class OpenSkyProvider {
         //  5: longitude, 6: latitude, 7: baro_altitude, 8: on_ground, 9: velocity,
         //  10: true_track, 11: vertical_rate, 12: sensors, 13: geo_altitude, 14: squawk, 15: spi, 16: position_source]
         const icao24 = st[0];
-        const callsign = (st[1] || '').trim();
+        const callsign = (st[1] || '').trim().toUpperCase();
         const lng = st[5];
         const lat = st[6];
-        const altM = st[7] || 0;
+        const altM = st[7] || st[13] || 0;
         const altFt = Math.round(altM * 3.28084);
         const onGround = Boolean(st[8]);
         const velMs = st[9] || 0;
@@ -118,7 +139,7 @@ class OpenSkyProvider {
         const vertRateFpm = Math.round(vertRateMs * 196.85);
 
         // Dedução aproximada de pares de aeroportos brasileiros mais comuns
-        const { origem, destino } = this.estimateRouteFromHeadingAndPosition(lat, lng, heading, callsign);
+        const { origem, destino } = this.estimateRouteFromHeadingAndPosition(lat, lng, heading, callsign, altFt, vertRateFpm);
 
         return new FlightDTO({
             id: `os-${icao24}`,
@@ -205,15 +226,15 @@ class OpenSkyProvider {
 
             // HELICÓPTEROS CORPORATIVOS & OPERACIONAIS
             {
-                icao24: 'e48020', prefixo: 'PR-GBO', callsign: 'GLOBOCOP-RJ', numeroVoo: 'GLOBOCOP RJ',
-                categoria: FLIGHT_CATEGORIES.HELICOPTERO, companhia: 'Globo Jornalismo / RIT Air',
+                icao24: 'e48020', prefixo: 'PR-HRO', callsign: 'HELICORP-RJ', numeroVoo: 'HELI RJ',
+                categoria: FLIGHT_CATEGORIES.HELICOPTERO, companhia: 'Operação Aérea Corporativa RJ',
                 origem: 'JACAREPAGUÁ (SBJR)', destino: 'SDU / ZONA SUL',
                 baseLat: -22.9875, baseLng: -43.3703, targetLat: -22.9105, targetLng: -43.1631,
                 altitudeFt: 1200, velocidadeKts: 110, rumo: 75, atrasoMinutos: 0, modeloAeronave: 'Eurocopter AS350 B3 Esquilo'
             },
             {
-                icao24: 'e48021', prefixo: 'PP-EGL', callsign: 'GLOBOCOP-SP', numeroVoo: 'GLOBOCOP SP',
-                categoria: FLIGHT_CATEGORIES.HELICOPTERO, companhia: 'Globo Jornalismo SP',
+                icao24: 'e48021', prefixo: 'PP-HSP', callsign: 'HELICORP-SP', numeroVoo: 'HELI SP',
+                categoria: FLIGHT_CATEGORIES.HELICOPTERO, companhia: 'Operação Aérea Corporativa SP',
                 origem: 'CAMPO DE MARTE (SBMT)', destino: 'BERRINI / PAULISTA',
                 baseLat: -23.5089, baseLng: -46.6375, targetLat: -23.6015, targetLng: -46.6965,
                 altitudeFt: 1500, velocidadeKts: 115, rumo: 195, atrasoMinutos: 0, modeloAeronave: 'Eurocopter AS350 B3'
@@ -228,7 +249,7 @@ class OpenSkyProvider {
 
             // AERONAVES EXECUTIVAS
             {
-                icao24: 'e48030', prefixo: 'PP-GLB', callsign: 'CORP-01', numeroVoo: 'CORP 01',
+                icao24: 'e48030', prefixo: 'PP-EXE', callsign: 'CORP-01', numeroVoo: 'CORP 01',
                 categoria: FLIGHT_CATEGORIES.EXECUTIVO, companhia: 'Frota Executiva Corporativa',
                 origem: 'GIG', destino: 'CGH',
                 baseLat: -22.8089, baseLng: -43.2436, targetLat: -23.6261, targetLng: -46.6564,
@@ -300,16 +321,20 @@ class OpenSkyProvider {
     }
 
     applyFilters(flights, filters = {}) {
-        let res = flights;
+        let res = Array.isArray(flights) ? flights : [];
 
-        if (filters.categoria) {
-            const cat = filters.categoria.toLowerCase();
-            res = res.filter(f => f.categoria.toLowerCase() === cat);
+        if (filters.categoria && !['todos', 'todas'].includes(filters.categoria.toLowerCase())) {
+            const cat = filters.categoria.trim().toLowerCase()
+                .replace(/^comerciais$/, 'comercial')
+                .replace(/^helicopteros$/, 'helicoptero')
+                .replace(/^executivos$/, 'executivo')
+                .replace(/^cargueiros$/, 'cargueiro');
+            res = res.filter(f => (f.categoria || '').toLowerCase() === cat);
         }
 
         if (filters.status) {
             const st = filters.status.toUpperCase();
-            res = res.filter(f => f.status.toUpperCase() === st);
+            res = res.filter(f => (f.status || '').toUpperCase() === st);
         }
 
         if (filters.companhia && filters.companhia !== 'todas' && filters.companhia !== 'TODAS') {
@@ -317,13 +342,17 @@ class OpenSkyProvider {
             res = res.filter(f => {
                 const fComp = (f.companhia || '').toUpperCase();
                 const fCat = (f.categoria || '').toUpperCase();
-                if (comp === 'GOL') return fComp.includes('GOL') || (f.callsign && f.callsign.startsWith('GLO'));
-                if (comp === 'LATAM') return fComp.includes('LATAM') || (f.callsign && f.callsign.startsWith('TAM'));
-                if (comp === 'AZUL') return fComp.includes('AZUL') || (f.callsign && f.callsign.startsWith('AZU'));
-                if (comp === 'VOEPASS' || comp === '2Z') return fComp.includes('VOEPASS') || (f.callsign && f.callsign.startsWith('PTB'));
-                if (comp === 'ITA') return fComp.includes('ITAPEMIRIM') || (f.callsign && f.callsign.startsWith('IPM'));
+                const fCs = (f.callsign || '').toUpperCase();
+                const fNum = (f.numeroVoo || '').toUpperCase();
+                if (comp === 'GOL' || comp === 'GLO' || comp === 'G3') return fComp.includes('GOL') || fCs.startsWith('GLO') || fNum.startsWith('G3');
+                if (comp === 'LATAM' || comp === 'TAM' || comp === 'LA' || comp === 'JJ') return fComp.includes('LATAM') || fComp.includes('TAM') || fCs.startsWith('TAM') || fCs.startsWith('LAN') || fCs.startsWith('LPE') || fNum.startsWith('LA ');
+                if (comp === 'AZUL' || comp === 'AZU' || comp === 'AD') return fComp.includes('AZUL') || fCs.startsWith('AZU') || fCs.startsWith('ACN') || fNum.startsWith('AD ');
+                if (comp === 'VOEPASS' || comp === '2Z') return fComp.includes('VOEPASS') || fCs.startsWith('PTB') || fNum.startsWith('2Z ');
+                if (comp === 'ITA') return fComp.includes('ITAPEMIRIM') || fCs.startsWith('IPM');
                 if (comp === 'EXECUTIVOS' || comp === 'EXECUTIVO') return fCat === 'EXECUTIVO' || fComp.includes('EXECUTIV') || fComp.includes('LÍDER');
                 if (comp === 'HELICOPTEROS' || comp === 'HELICOPTERO') return fCat === 'HELICOPTERO';
+                if (comp === 'CARGUEIROS' || comp === 'CARGUEIRO') return fCat === 'CARGUEIRO';
+                if (comp === 'COMERCIAIS' || comp === 'COMERCIAL') return fCat === 'COMERCIAL';
                 return fComp.includes(comp);
             });
         }
@@ -344,34 +373,60 @@ class OpenSkyProvider {
     }
 
     formatPrefixo(icao24, callsign) {
-        if (callsign && (callsign.startsWith('PR-') || callsign.startsWith('PP-') || callsign.startsWith('PT-') || callsign.startsWith('PS-'))) {
-            return callsign;
+        const cs = (callsign || '').trim().toUpperCase();
+        if (cs.startsWith('PR-') || cs.startsWith('PP-') || cs.startsWith('PT-') || cs.startsWith('PS-')) {
+            return cs;
+        }
+        if (/^(PR|PP|PT|PS)[A-Z]{3}$/.test(cs)) {
+            return `${cs.slice(0, 2)}-${cs.slice(2)}`;
         }
         return `PR-${(icao24 || 'XYZ').slice(-3).toUpperCase()}`;
     }
 
-    estimateRouteFromHeadingAndPosition(lat, lng, heading, callsign) {
-        // Encontra o aeroporto mais próximo para origem ou destino
-        const airports = Object.values(AIRPORTS);
-        let closest = airports[0];
-        let minDist = 999999;
+    estimateRouteFromHeadingAndPosition(lat, lng, heading = 0, callsign = '', altFt = 10000, vertRateFpm = 0) {
+        const airports = Object.entries(AIRPORTS).map(([code, info]) => {
+            const dLat = info.lat - lat;
+            const dLon = info.lng - lng;
+            const distKm = Math.round(Math.hypot(dLat, dLon) * 111);
+            const bearing = (Math.atan2(dLon, dLat) * 180 / Math.PI + 360) % 360;
+            const angleDiff = Math.abs(((heading - bearing + 540) % 360) - 180);
+            return { code, info, distKm, bearing, angleDiff };
+        });
 
-        for (const a of airports) {
-            const d = Math.hypot(a.lat - lat, a.lng - lng);
-            if (d < minDist) {
-                minDist = d;
-                closest = a;
+        airports.sort((a, b) => a.distKm - b.distKm);
+        const closest = airports[0];
+
+        if (closest && closest.distKm < 28 && (vertRateFpm < -150 || altFt < 4000)) {
+            const behind = airports.filter(a => a.code !== closest.code && a.angleDiff > 100);
+            return {
+                origem: behind.length > 0 ? behind[0].code : (closest.code === 'GIG' || closest.code === 'SDU' ? 'GRU' : 'GIG'),
+                destino: closest.code
+            };
+        }
+
+        const ahead = airports
+            .filter(a => a.distKm >= 15 && a.angleDiff <= 75)
+            .sort((a, b) => (a.distKm * (1 + a.angleDiff / 35)) - (b.distKm * (1 + b.angleDiff / 35)));
+
+        const behind = airports
+            .filter(a => a.angleDiff >= 105)
+            .sort((a, b) => a.distKm - b.distKm);
+
+        let destino = ahead.length > 0 ? ahead[0].code : (closest.code === 'SDU' || closest.code === 'GIG' ? 'CGH' : 'GIG');
+        let origem = behind.length > 0 ? behind[0].code : closest.code;
+
+        if (destino === 'SDU' || destino === 'GIG') {
+            const numMatch = (callsign || '').match(/\d+/);
+            const flightNum = numMatch ? parseInt(numMatch[0], 10) : 0;
+            if (lat > -22.85 || (flightNum >= 3000 && flightNum % 2 === 1)) {
+                destino = 'GIG';
             }
         }
+        if (origem === destino) {
+            origem = destino === 'GIG' || destino === 'SDU' ? 'GRU' : 'GIG';
+        }
 
-        // Estimativa plausível de rota para voos sem plano IFR conhecido
-        if (closest.iata === 'SDU' || closest.iata === 'GIG') {
-            return { origem: closest.iata, destino: heading > 180 && heading < 300 ? 'CGH' : 'BSB' };
-        }
-        if (closest.iata === 'CGH' || closest.iata === 'GRU') {
-            return { origem: closest.iata, destino: heading < 90 || heading > 340 ? 'SDU' : 'BSB' };
-        }
-        return { origem: closest.iata, destino: 'GIG' };
+        return { origem, destino };
     }
 }
 

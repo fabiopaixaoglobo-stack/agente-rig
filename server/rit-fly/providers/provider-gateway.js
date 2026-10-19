@@ -20,6 +20,7 @@ class FlightProviderGateway extends FlightPositionProvider {
         this.cache = null;
         this.lastFetchTime = 0;
         this.cacheTtlMs = options.cacheTtlMs || config.CACHE_TTL_MS || 25000;
+        this.inflightPromise = null;
         
         // Estado do provedor ativo: 'LIVE_PROVIDER' | 'CACHED_PROVIDER' | 'UNAVAILABLE'
         this.currentDataMode = 'UNAVAILABLE';
@@ -28,6 +29,12 @@ class FlightProviderGateway extends FlightPositionProvider {
     }
 
     get providerStatus() {
+        if (this.commercialAdsbProvider && this.commercialAdsbProvider.providerStatus && this.commercialAdsbProvider.providerStatus.status === 'ONLINE') {
+            return this.commercialAdsbProvider.providerStatus;
+        }
+        if (this.openSkyProvider && this.openSkyProvider.providerStatus && this.openSkyProvider.providerStatus.status === 'ONLINE') {
+            return this.openSkyProvider.providerStatus;
+        }
         return this.commercialAdsbProvider.providerStatus;
     }
 
@@ -68,9 +75,9 @@ class FlightProviderGateway extends FlightPositionProvider {
         if (this.openSkyProvider) {
             const openSkyStatus = this.openSkyProvider.providerStatus;
             return {
-                healthy: commHealth.healthy,
-                activeProvider: this.commercialAdsbProvider.getProviderMetadata().id,
-                status: commHealth.status,
+                healthy: commHealth.healthy || openSkyStatus.status === 'ONLINE',
+                activeProvider: openSkyStatus.status === 'ONLINE' ? 'OPENSKY_NETWORK' : this.commercialAdsbProvider.getProviderMetadata().id,
+                status: openSkyStatus.status === 'ONLINE' ? 'ONLINE' : commHealth.status,
                 latencyMs: commHealth.latencyMs,
                 message: `Provedor primário: ${commHealth.message} | Secundário: ${openSkyStatus.status}`
             };
@@ -79,58 +86,96 @@ class FlightProviderGateway extends FlightPositionProvider {
     }
 
     /**
-     * Consulta os voos ativos com priorização do feed comercial real
+     * Consulta os voos ativos com priorização do feed comercial real e deduplicação singleflight
      */
     async getCurrentFlights(bounds = {}, filters = {}) {
         const now = Date.now();
 
-        // 1. Verificar Cache Válido
+        // 1. Verificar Cache Válido (sempre armazena lista integral não filtrada)
         if (this.cache && (now - this.lastFetchTime < this.cacheTtlMs)) {
             this.currentDataMode = 'CACHED_PROVIDER';
             return this.applyFilters(this.cache, filters);
         }
 
-        // 2. Consulta Provedor Comercial Primário (ADS-B Real Brasil)
+        if (this.inflightPromise) {
+            const shared = await this.inflightPromise;
+            return this.applyFilters(shared, filters);
+        }
+
+        this.inflightPromise = this._acquireUnfilteredFlights(bounds, now);
         try {
-            const flights = await this.commercialAdsbProvider.getCurrentFlights(bounds, filters);
-            if (flights && flights.length > 0) {
-                this.cache = flights;
-                this.lastFetchTime = now;
-                this.currentDataMode = 'LIVE_PROVIDER';
-                this.activeProviderName = this.commercialAdsbProvider.getProviderMetadata().id;
-                this.lastSyncError = null;
-                return flights;
-            }
-        } catch (err) {
-            this.lastSyncError = err.message;
+            const flights = await this.inflightPromise;
+            return this.applyFilters(flights, filters);
+        } finally {
+            this.inflightPromise = null;
         }
+    }
 
-        // 3. Fallback Secundário: OpenSky (se configurado, injetado e permitido)
-        if (this.openSkyProvider && config.OPENSKY && config.OPENSKY.ENABLED) {
+    async _acquireUnfilteredFlights(bounds = {}, now = Date.now()) {
+        let commFlights = [];
+        let openSkyFlights = [];
+        let commError = null;
+
+        const hasOpenSky = Boolean(this.openSkyProvider && config.OPENSKY && config.OPENSKY.ENABLED);
+
+        if (hasOpenSky) {
+            const [commRes, osRes] = await Promise.allSettled([
+                this.commercialAdsbProvider.getCurrentFlights(bounds, {}),
+                this.openSkyProvider.getFlights({})
+            ]);
+            if (commRes.status === 'fulfilled' && Array.isArray(commRes.value)) {
+                commFlights = commRes.value;
+            } else if (commRes.status === 'rejected') {
+                commError = commRes.reason?.message || 'Erro no provedor comercial';
+            }
+            if (osRes.status === 'fulfilled' && Array.isArray(osRes.value)) {
+                openSkyFlights = osRes.value;
+            }
+        } else {
             try {
-                const openSkyFlights = await this.openSkyProvider.getFlights(filters);
-                if (openSkyFlights && openSkyFlights.length > 0) {
-                    this.cache = openSkyFlights;
-                    this.lastFetchTime = now;
-                    this.currentDataMode = 'LIVE_PROVIDER';
-                    this.activeProviderName = 'OPENSKY_NETWORK';
-                    this.lastSyncError = null;
-                    return openSkyFlights;
-                }
+                commFlights = await this.commercialAdsbProvider.getCurrentFlights(bounds, {});
             } catch (err) {
-                // Silencioso
+                commError = err.message;
             }
         }
 
-        // 4. Se falhou mas temos cache anterior ainda recente (< 60s), serve cache em modo degradado
+        if (commFlights.length > 0 || openSkyFlights.length > 0) {
+            const mergedMap = new Map();
+            for (const cf of commFlights) {
+                const key = (cf.icao24 || cf.id || '').toLowerCase();
+                if (key) mergedMap.set(key, cf);
+            }
+            for (const oflight of openSkyFlights) {
+                const key = (oflight.icao24 || oflight.id || '').toLowerCase();
+                if (key && !mergedMap.has(key)) {
+                    mergedMap.set(key, oflight);
+                }
+            }
+
+            const merged = Array.from(mergedMap.values());
+            this.cache = merged;
+            this.lastFetchTime = Date.now();
+            this.currentDataMode = 'LIVE_PROVIDER';
+            this.activeProviderName = commFlights.length > 0
+                ? this.commercialAdsbProvider.getProviderMetadata().id
+                : 'OPENSKY_NETWORK';
+            this.lastSyncError = null;
+            return merged;
+        }
+
+        if (commError) {
+            this.lastSyncError = commError;
+        }
+
+        // Fallback para cache recente (< 60s) em modo degradado
         if (this.cache && (now - this.lastFetchTime < 60000)) {
             this.currentDataMode = 'CACHED_PROVIDER';
-            return this.applyFilters(this.cache, filters);
+            return this.cache;
         }
 
-        // 5. Provedores indisponíveis
+        // Provedores indisponíveis
         this.currentDataMode = 'UNAVAILABLE';
-        this.lastSyncError = 'Provedores aéreos temporariamente indisponíveis ou sem aeronaves observadas no setor';
+        this.lastSyncError = commError || 'Provedores aéreos temporariamente indisponíveis ou sem aeronaves observadas no setor';
         return [];
     }
 

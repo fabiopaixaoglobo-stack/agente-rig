@@ -13,7 +13,7 @@ const config = {
 
     // Provedores Homologados
     OPENSKY: {
-        ENABLED: process.env.OPENSKY_COMMERCIAL_ENABLED === 'false' ? false : (process.env.OPENSKY_ENABLED !== 'false'),
+        ENABLED: process.env.OPENSKY_ENABLED !== 'false',
         COMMERCIAL_ENABLED: process.env.OPENSKY_COMMERCIAL_ENABLED === 'true',
         BASE_URL: process.env.OPENSKY_API_URL || 'https://opensky-network.org/api/states/all',
         USERNAME: process.env.OPENSKY_USERNAME || '',

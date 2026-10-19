@@ -95,6 +95,185 @@ class FlightStore {
     }
 
     /**
+     * Constrói o Painel de Ocorrências Consolidadas cruzando:
+     * 1. Alertas ativos e viagens integradas em solo/transfer
+     * 2. Condições meteorológicas METAR (IFR, MVFR, névoa/chuva/vento) nos 8 hubs
+     * 3. Voos atrasados (> 15 min) detectados na malha ativa
+     * 4. Movimentação operacional e densidade de tráfego nos hubs
+     */
+    buildConsolidatedOccurrences(flights = [], airports = [], limit = 30) {
+        const nowIso = new Date().toISOString();
+        const occurrences = [];
+        const seenKeys = new Set();
+
+        const addOcc = (occ) => {
+            const key = occ.deduplication_key || occ.id;
+            if (key && seenKeys.has(key)) return;
+            if (key) seenKeys.add(key);
+            occurrences.push({
+                id: occ.id || `occ-${occurrences.length + 1}`,
+                deduplication_key: key || null,
+                categoria: occ.categoria || 'OPERACIONAL',
+                severidade: occ.severidade || SEVERITY_LEVELS.INFO,
+                titulo: occ.titulo || 'Ocorrência Operacional',
+                descricao: occ.descricao || '',
+                acaoSugerida: occ.acaoSugerida || null,
+                aeroporto: occ.aeroporto || null,
+                voo: occ.voo || null,
+                idVoo: occ.idVoo || null,
+                source: occ.source || 'RIT_FLY_CONSOLIDATED',
+                status: 'OPEN',
+                timestamp: occ.timestamp || nowIso
+            });
+        };
+
+        // 1. Alertas persistidos no store (ex: reprogramações de viagens e alertas registrados)
+        for (const a of this.alerts) {
+            if (a.status && a.status !== 'OPEN') continue;
+            const isClima = a.alert_type === 'CLIMA_METAR' || /METAR|IFR|MVFR|Clima|Teto|Nevoeiro/i.test(a.titulo || '');
+            const cat = isClima ? 'CLIMA_METAR' : (a.voo ? 'ATRASOS_MALHA' : 'SOLO_TRANSFERS');
+            addOcc({
+                ...a,
+                categoria: cat
+            });
+        }
+
+        // 2. Viagens terrestres vinculadas ativas
+        for (const t of this.getAllTrips()) {
+            const isDelayed = (t.atrasoVooMinutos || 0) > 0;
+            addOcc({
+                id: `occ-trip-${t.id}`,
+                deduplication_key: `occ-trip-${t.id}`,
+                categoria: 'SOLO_TRANSFERS',
+                severidade: isDelayed ? (t.atrasoVooMinutos >= 30 ? SEVERITY_LEVELS.CRITICO : SEVERITY_LEVELS.ALTO) : SEVERITY_LEVELS.INFO,
+                titulo: isDelayed
+                    ? `Transfer Reprogramado: Voo ${t.numeroVoo} (+${t.atrasoVooMinutos} min)`
+                    : `Transfer Sincronizado: Voo ${t.numeroVoo} (${t.aeroportoIata || 'Hub'})`,
+                descricao: `${t.passageiro || 'Equipe Corporativa'} — ${t.origemTransporte} ➔ ${t.destinoTransporte}.`,
+                acaoSugerida: isDelayed
+                    ? `Saída do veículo ajustada automaticamente (${t.economiaEsperaMinutos || t.atrasoVooMinutos} min de espera evitada).`
+                    : 'Monitoramento ativo de ETA entre aeronave e frota terrestre.',
+                aeroporto: t.aeroportoIata || null,
+                voo: t.numeroVoo || null,
+                timestamp: t.atualizadoEm || nowIso
+            });
+        }
+
+        // 3. Ocorrências Meteorológicas (METAR) e Operacionais por Aeroporto (8 Hubs)
+        if (Array.isArray(airports)) {
+            for (const a of airports) {
+                if (!a || !a.iata) continue;
+                const clima = a.clima || {};
+                const metarOk = a.metarDisponivel !== false && clima.disponivel !== false && clima.condicoes && clima.condicoes !== 'METAR_INDISPONIVEL';
+                const regra = clima.flightRule || a.regraVoo || 'VFR';
+                const condStr = String(clima.condicoes || '');
+                const ventoKt = Number(clima.vento?.velocidadeKt || 0);
+
+                if (metarOk) {
+                    const hasWeatherPhenomenon = /Névoa|Nevoeiro|Chuva|Trovoada|Tempestade| Pancadas/i.test(condStr);
+                    if (regra === 'IFR' || regra === 'LIFR' || a.statusOperacional === 'CRÍTICO') {
+                        addOcc({
+                            id: `occ-metar-ifr-${a.iata}`,
+                            deduplication_key: `occ-metar-${a.iata}`,
+                            categoria: 'CLIMA_METAR',
+                            severidade: SEVERITY_LEVELS.CRITICO,
+                            titulo: `Operação por Instrumentos (${regra}) em ${a.iata} — ${a.cidade}`,
+                            descricao: `METAR ${a.icao}: ${condStr}, ${clima.temperaturaC ?? '--'}°C | Vento: ${clima.vento?.descricao || 'N/D'} | Visib.: ${clima.visibilidade?.descricao || 'N/D'}.`,
+                            acaoSugerida: `Considerar margem adicional de 20 a 30 min para pousos e receptivo terrestre em ${a.iata}.`,
+                            aeroporto: a.iata,
+                            timestamp: clima.atualizadoEm || nowIso
+                        });
+                    } else if (regra === 'MVFR' || a.statusOperacional === 'ATENÇÃO' || hasWeatherPhenomenon || ventoKt >= 14) {
+                        addOcc({
+                            id: `occ-metar-mvfr-${a.iata}`,
+                            deduplication_key: `occ-metar-${a.iata}`,
+                            categoria: 'CLIMA_METAR',
+                            severidade: SEVERITY_LEVELS.ALTO,
+                            titulo: `Atenção Meteorológica (${regra}) em ${a.iata} — ${condStr}`,
+                            descricao: `METAR ${a.icao}: ${condStr}, ${clima.temperaturaC ?? '--'}°C | Vento: ${clima.vento?.descricao || 'N/D'} | Visib.: ${clima.visibilidade?.descricao || 'N/D'}.`,
+                            acaoSugerida: `Acompanhar evolução de teto/visibilidade e janelas de aproximação em ${a.iata}.`,
+                            aeroporto: a.iata,
+                            timestamp: clima.atualizadoEm || nowIso
+                        });
+                    }
+                }
+
+                // Atrasos consolidados no aeroporto
+                if ((a.voosAtrasados || 0) > 0) {
+                    addOcc({
+                        id: `occ-hub-delay-${a.iata}`,
+                        deduplication_key: `occ-hub-delay-${a.iata}`,
+                        categoria: 'ATRASOS_MALHA',
+                        severidade: a.voosAtrasados >= 3 ? SEVERITY_LEVELS.CRITICO : SEVERITY_LEVELS.ALTO,
+                        titulo: `Retenção de Malha em ${a.iata}: ${a.voosAtrasados} voo(s) com atraso`,
+                        descricao: `Terminal ${a.nome} apresenta ${a.voosAtrasados} aeronave(s) com desvio > 15 min (Pontualidade atual: ${a.taxaPontualidadePct ?? 100}%).`,
+                        acaoSugerida: `Verificar impacto nos desembarques corporativos em ${a.iata}.`,
+                        aeroporto: a.iata,
+                        timestamp: nowIso
+                    });
+                }
+
+                // Fluxo operacional relevante nos hubs (movimentação ativa ADS-B)
+                const movTotal = (a.chegadasPrevistas || 0) + (a.partidasPrevistas || 0);
+                if (movTotal > 0) {
+                    addOcc({
+                        id: `occ-fluxo-${a.iata}`,
+                        deduplication_key: `occ-fluxo-${a.iata}`,
+                        categoria: 'FLUXO_HUB',
+                        severidade: movTotal >= 10 ? SEVERITY_LEVELS.MEDIO : SEVERITY_LEVELS.INFO,
+                        titulo: `Fluxo Ativo em ${a.iata} (${a.cidade}): ${movTotal} aeronave(s) no setor`,
+                        descricao: `${a.chegadasPrevistas || 0} chegada(s) / aproximação e ${a.partidasPrevistas || 0} partida(s) monitoradas via ADS-B (${metarOk ? regra : 'ADS-B'}).`,
+                        acaoSugerida: `Inspecionar quadro de voos de ${a.iata} para acompanhamento de embarques/desembarques.`,
+                        aeroporto: a.iata,
+                        timestamp: nowIso
+                    });
+                }
+            }
+        }
+
+        // 4. Voos individuais com atraso (> 15 min) na malha aérea
+        if (Array.isArray(flights)) {
+            const delayedFlights = flights.filter(f => f && (f.atrasoMinutos || 0) > 15);
+            for (const f of delayedFlights.slice(0, 10)) {
+                const numVoo = f.numeroVoo || f.callsign || f.prefixo || f.id;
+                addOcc({
+                    id: `occ-flight-delay-${f.id || numVoo}`,
+                    deduplication_key: `alt-${numVoo}-${f.severidade || 'ALTO'}`,
+                    categoria: 'ATRASOS_MALHA',
+                    severidade: f.atrasoMinutos >= 35 ? SEVERITY_LEVELS.CRITICO : SEVERITY_LEVELS.ALTO,
+                    titulo: `Atraso de Voo: ${numVoo} (+${f.atrasoMinutos} min)`,
+                    descricao: `${f.companhia || 'Operador'} (${f.prefixo || f.icao24 || 'S/P'}) na rota ${f.origem || 'N/D'} ➔ ${f.destino || 'N/D'} | ETA: ${f.etaFormatado || '--:--'}.`,
+                    acaoSugerida: `Postergar acionamento de transfer terrestre vinculado ao voo ${numVoo}.`,
+                    aeroporto: f.destino || f.origem || null,
+                    voo: numVoo,
+                    idVoo: f.id,
+                    timestamp: nowIso
+                });
+            }
+        }
+
+        // Ordenação por prioridade operacional (CRITICO -> ALTO -> MEDIO -> INFO)
+        const rank = { CRITICO: 4, ALTO: 3, MEDIO: 2, INFO: 1 };
+        occurrences.sort((a, b) => (rank[b.severidade] || 0) - (rank[a.severidade] || 0));
+
+        const sliced = occurrences.slice(0, limit);
+        const summary = {
+            total: sliced.length,
+            criticos: sliced.filter(o => o.severidade === 'CRITICO').length,
+            atencao: sliced.filter(o => o.severidade === 'ALTO' || o.severidade === 'MEDIO').length,
+            informativos: sliced.filter(o => o.severidade === 'INFO').length,
+            porCategoria: {
+                clima: sliced.filter(o => o.categoria === 'CLIMA_METAR').length,
+                atrasos: sliced.filter(o => o.categoria === 'ATRASOS_MALHA').length,
+                hubs: sliced.filter(o => o.categoria === 'FLUXO_HUB').length,
+                solo: sliced.filter(o => o.categoria === 'SOLO_TRANSFERS').length
+            }
+        };
+
+        return { occurrences: sliced, summary };
+    }
+
+    /**
      * Gestão de Viagens Integradas (Passageiro + Voo + Rota Terrestre)
      */
     saveTrip(trip) {

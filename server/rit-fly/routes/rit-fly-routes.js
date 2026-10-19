@@ -254,16 +254,25 @@ router.get('/kpis', async (req, res) => {
 
 /**
  * GET /api/rit-fly/alerts
- * Feed de alertas operacionais da inteligência aérea
+ * Feed consolidado de ocorrências e alertas operacionais da inteligência aérea
  */
-router.get('/alerts', (req, res) => {
+router.get('/alerts', async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit, 10) || 20;
-        const alerts = flightStore.getAlerts(limit);
+        const limit = parseInt(req.query.limit, 10) || 30;
+        let flights = [];
+        let airports = [];
+        try {
+            flights = await flightGateway.getCurrentFlights();
+            airports = await airportProvider.getAllAirportsOverview(flights);
+        } catch (innerErr) {
+            // Fallback seguro para alertas em memória caso provedor oscile
+        }
+        const { occurrences, summary } = flightStore.buildConsolidatedOccurrences(flights, airports, limit);
         res.json({
             ok: true,
-            total: alerts.length,
-            data: alerts
+            total: occurrences.length,
+            summary,
+            data: occurrences
         });
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });

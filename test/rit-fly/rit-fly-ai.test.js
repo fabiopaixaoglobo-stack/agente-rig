@@ -56,4 +56,18 @@ test('🤖 AGENTE INTELIGENTE RIT FLY AI', async (t) => {
         assert.ok(resp.texto.includes('Linha Vermelha') || resp.texto.includes('Linha Amarela') || resp.texto.includes('Washington Luís'));
         assert.equal(resp.intencao, 'RISCO_OPERACIONAL');
     });
+
+    await t.test('Deve rotear "quais os voos da TAM programados para chegar no galeão na próxima hora?" para CONSULTA_DE_VOOS com resolução TAM->LATAM e GIG/SBGL sem boletim METAR', async () => {
+        const resp = await ritFlyAI.answer('quais os voos da TAM programados para chegar no galeão na próxima hora?');
+        assert.ok(resp.texto, 'Deveria retornar texto');
+        assert.equal(resp.intencao, 'VOOS_CHEGADA');
+        assert.ok(resp.classificacao, 'Deveria incluir metadados estruturados de classificação');
+        assert.equal(resp.classificacao.intencao, 'CONSULTA_DE_VOOS');
+        assert.equal(resp.classificacao.tipo, 'chegada');
+        assert.equal(resp.classificacao.aeroporto_destino, 'GIG/SBGL');
+        assert.equal(resp.classificacao.companhia, 'TAM/LATAM');
+        assert.ok(resp.classificacao.janela.includes('próxima hora'));
+        assert.ok(!resp.texto.includes('METAR_INDISPONIVEL'), 'Não deve substituir resposta de consulta de voos por boletim METAR');
+        assert.ok(resp.texto.includes('GIG') && (resp.texto.includes('TAM') || resp.texto.includes('LATAM')));
+    });
 });
