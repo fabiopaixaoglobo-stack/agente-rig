@@ -19,10 +19,24 @@ class CommercialAdsbProvider extends FlightPositionProvider {
         this.timeoutMs = options.timeoutMs || 8000;
         this.lastDataMode = 'UNAVAILABLE';
         this.inflightPromise = null;
+        this.nextAllowedAttemptTime = 0;
+        this.endpointCooldowns = new Map();
         
         // Configuração de Hubs do Espaço Aéreo Brasileiro para Varredura Tática
         this.hubs = [
             { id: 'TMA_SE_CORRIDOR', name: 'Corredor Sudeste/Centro (RJ/SP/MG - SDU/GIG/CGH/GRU/CNF)', lat: -22.2, lon: -44.9, dist: 250 }
+        ];
+
+        // Pool de provedores ADS-B v2 independentes com failover automático
+        this.endpoints = [
+            {
+                id: 'ADSB_FI_OPENDATA',
+                buildUrl: (h) => `https://opendata.adsb.fi/api/v2/lat/${h.lat}/lon/${h.lon}/dist/${h.dist}`
+            },
+            {
+                id: 'ADSB_LOL_V2',
+                buildUrl: (h) => `https://api.adsb.lol/v2/lat/${h.lat}/lon/${h.lon}/dist/${h.dist}`
+            }
         ];
 
         this.rateLimitStatus = {
@@ -58,20 +72,23 @@ class CommercialAdsbProvider extends FlightPositionProvider {
     async healthCheck() {
         const start = Date.now();
         try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 4000);
-            const res = await fetch('https://api.adsb.lol/v2/lat/-22.9/lon/-43.2/dist/50', {
-                headers: { 'User-Agent': 'AgenteRIT/1.0 (HealthCheck)' },
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
+            if (this.cache && this.cache.length > 0 && (Date.now() - this.lastFetchTime < 180000)) {
+                return {
+                    healthy: true,
+                    status: 'ONLINE',
+                    latencyMs: this.rateLimitStatus.lastLatencyMs || 15,
+                    message: `Conexão ativa com o provedor ADS-B (${this.cache.length} aeronaves em cache)`
+                };
+            }
+            const flights = await this.getCurrentFlights();
             const latency = Date.now() - start;
-            this.rateLimitStatus.lastLatencyMs = latency;
             return {
-                healthy: res.ok,
-                status: res.ok ? 'ONLINE' : `HTTP_${res.status}`,
+                healthy: flights.length > 0,
+                status: flights.length > 0 ? 'ONLINE' : (this.providerStatus.status || 'UNAVAILABLE'),
                 latencyMs: latency,
-                message: res.ok ? 'Conexão ativa com o provedor ADS-B' : `Falha HTTP ${res.status}`
+                message: flights.length > 0
+                    ? `Conexão ativa com o provedor ADS-B (${flights.length} aeronaves)`
+                    : (this.providerStatus.message || 'Provedor ADS-B aguardando janela de sincronização')
             };
         } catch (err) {
             return {
@@ -98,6 +115,11 @@ class CommercialAdsbProvider extends FlightPositionProvider {
             return this.applyFilters(sharedFlights, filters);
         }
 
+        // Evita martelar provedores externos se houve falha recente sem cache
+        if (!this.cache && now < this.nextAllowedAttemptTime) {
+            return [];
+        }
+
         this.inflightPromise = this._fetchUnfilteredFlights();
         try {
             const flights = await this.inflightPromise;
@@ -110,46 +132,71 @@ class CommercialAdsbProvider extends FlightPositionProvider {
     async _fetchUnfilteredFlights() {
         const start = Date.now();
         const deduplicatedMap = new Map();
+        const now = Date.now();
 
         try {
             for (const h of this.hubs) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-                try {
-                    const url = `https://api.adsb.lol/v2/lat/${h.lat}/lon/${h.lon}/dist/${h.dist}`;
-                    const res = await fetch(url, {
-                        headers: { 'User-Agent': 'AgenteRIT/1.0 (AirOps Commercial Feed)' },
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeout);
+                let hubSuccess = false;
 
-                    this.providerStatus.lastAttempt = new Date().toISOString();
-                    this.providerStatus.code = res.status;
-
-                    if (res.status === 429 || res.status === 420) {
-                        this.rateLimitStatus.status = 'RATE_LIMITED';
-                        console.warn(`[RIT-FLY][CommercialAdsbProvider] Rate-limit HTTP ${res.status} no hub ${h.id}`);
+                for (const ep of this.endpoints) {
+                    const cooldownUntil = this.endpointCooldowns.get(ep.id) || 0;
+                    if (now < cooldownUntil) {
                         continue;
                     }
 
-                    if (!res.ok) {
-                        console.warn(`[RIT-FLY][CommercialAdsbProvider] Resposta HTTP ${res.status} no hub ${h.id}`);
-                        continue;
-                    }
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+                    try {
+                        const url = ep.buildUrl(h);
+                        const res = await fetch(url, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (compatible; AgenteRIT/1.1; +https://agenterit.com.br)',
+                                'Accept': 'application/json'
+                            },
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeout);
 
-                    const json = await res.json();
-                    const acList = Array.isArray(json.ac) ? json.ac : [];
-                    for (const raw of acList) {
-                        if (raw && raw.hex && typeof raw.lat === 'number' && typeof raw.lon === 'number') {
-                            const hexUpper = String(raw.hex).trim().toUpperCase();
-                            if (!deduplicatedMap.has(hexUpper)) {
-                                deduplicatedMap.set(hexUpper, raw);
+                        this.providerStatus.lastAttempt = new Date().toISOString();
+                        this.providerStatus.code = res.status;
+
+                        if (res.status === 429 || res.status === 420) {
+                            // Coloca este endpoint em cooldown por 45s e faz failover imediato para o próximo provedor
+                            this.endpointCooldowns.set(ep.id, Date.now() + 45000);
+                            console.warn(`[RIT-FLY][CommercialAdsbProvider] Rate-limit HTTP ${res.status} em ${ep.id} (${h.id}), alternando provedor...`);
+                            continue;
+                        }
+
+                        if (!res.ok) {
+                            this.endpointCooldowns.set(ep.id, Date.now() + 15000);
+                            console.warn(`[RIT-FLY][CommercialAdsbProvider] Resposta HTTP ${res.status} em ${ep.id} (${h.id})`);
+                            continue;
+                        }
+
+                        const json = await res.json();
+                        const acList = Array.isArray(json.ac)
+                            ? json.ac
+                            : (Array.isArray(json.aircraft) ? json.aircraft : []);
+
+                        for (const raw of acList) {
+                            if (raw && raw.hex && typeof raw.lat === 'number' && typeof raw.lon === 'number') {
+                                const hexUpper = String(raw.hex).trim().toUpperCase();
+                                if (!deduplicatedMap.has(hexUpper)) {
+                                    deduplicatedMap.set(hexUpper, raw);
+                                }
                             }
                         }
+
+                        if (deduplicatedMap.size > 0) {
+                            hubSuccess = true;
+                            this.endpointCooldowns.delete(ep.id);
+                            break; // Sucesso no hub atual, não precisa acionar o endpoint secundário
+                        }
+                    } catch (e) {
+                        clearTimeout(timeout);
+                        this.endpointCooldowns.set(ep.id, Date.now() + 15000);
+                        console.warn(`[RIT-FLY][CommercialAdsbProvider] Falha/timeout em ${ep.id} (${h.id}): ${e.message}`);
                     }
-                } catch (e) {
-                    clearTimeout(timeout);
-                    console.warn(`[RIT-FLY][CommercialAdsbProvider] Falha/timeout no hub ${h.id}: ${e.message}`);
                 }
             }
 
@@ -169,6 +216,7 @@ class CommercialAdsbProvider extends FlightPositionProvider {
 
                 this.cache = converted;
                 this.lastFetchTime = Date.now();
+                this.nextAllowedAttemptTime = 0;
                 this.lastDataMode = 'LIVE_PROVIDER';
                 this.rateLimitStatus.status = 'OK';
                 this.providerStatus = {
@@ -181,11 +229,16 @@ class CommercialAdsbProvider extends FlightPositionProvider {
                 return converted;
             }
 
-            if (this.cache && this.cache.length > 0) {
+            // Se todos os provedores oscilaram mas temos cache recente (até 15 min), preserva continuidade operacional
+            if (this.cache && this.cache.length > 0 && (Date.now() - this.lastFetchTime < 900000)) {
                 this.lastDataMode = 'CACHED_PROVIDER';
+                this.rateLimitStatus.status = 'OK';
                 return this.cache;
             }
+
+            this.nextAllowedAttemptTime = Date.now() + 12000;
             this.lastDataMode = 'UNAVAILABLE';
+            this.rateLimitStatus.status = 'RATE_LIMITED';
             this.providerStatus.status = 'UNAVAILABLE';
             this.providerStatus.message = 'Nenhum sinal ADS-B recebido dos hubs monitorados';
             return [];

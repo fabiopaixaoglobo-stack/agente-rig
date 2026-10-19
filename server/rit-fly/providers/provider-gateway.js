@@ -167,8 +167,8 @@ class FlightProviderGateway extends FlightPositionProvider {
             this.lastSyncError = commError;
         }
 
-        // Fallback para cache recente (< 60s) em modo degradado
-        if (this.cache && (now - this.lastFetchTime < 60000)) {
+        // Fallback para cache em modo degradado (até 15 min) para garantir continuidade contra HTTP 429 transitório
+        if (this.cache && this.cache.length > 0 && (now - this.lastFetchTime < 900000)) {
             this.currentDataMode = 'CACHED_PROVIDER';
             return this.cache;
         }

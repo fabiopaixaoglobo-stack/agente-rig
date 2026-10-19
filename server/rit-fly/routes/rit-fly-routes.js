@@ -48,7 +48,7 @@ const backgroundSyncTimer = setInterval(async () => {
     } catch (e) {
         // Silencioso para manter estabilidade do servidor
     }
-}, 30000); // 30 segundos (atende critério < 60s)
+}, 45000); // 45 segundos (atende critério < 60s sem colidir com o cache TTL)
 if (backgroundSyncTimer && typeof backgroundSyncTimer.unref === 'function') {
     backgroundSyncTimer.unref();
 }
