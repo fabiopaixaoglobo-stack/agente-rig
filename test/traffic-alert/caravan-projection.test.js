@@ -281,4 +281,48 @@ describe('🔒 SEGURANÇA, ESCOPO E PRESERVAÇÃO DO MONITORAMENTO', () => {
         assert.ok(caravanasHtml.includes('chk-top-occurrences') && caravanasHtml.includes('chk-top-cameras'));
         assert.ok(caravanasHtml.includes('gmaps-traffic-bar') && caravanasHtml.includes('buildDetailedCorridorGeometry'));
     });
+
+    it('5. Sincronização de horário de saída entre seletor e resumo com cálculo de chegada considerando trânsito', () => {
+        const testService = new CaravanRouteProjectionService();
+        const baseCaravan = {
+            caravanId: 'caravan-sync-test',
+            caravanName: 'Caravana Belford Roxo',
+            programName: 'Domingão',
+            originAddress: 'Belford Roxo, RJ',
+            originCoords: [-22.7642, -43.3996],
+            baseDistanceKm: 33.8,
+            baseDurationMinutes: 48,
+            plannedDepartureAt: '2026-10-20T11:30:00-03:00',
+            departureTimeStr: '11:30',
+            tripDirection: 'TO_GLOBO',
+            enableScheduleTrafficCalc: true
+        };
+
+        const projection = testService.calculateProjection(baseCaravan, []);
+        assert.strictEqual(projection.departureTimeStr, '11:30', 'Horário de saída deve ser exatamente 11:30 sem distorção UTC');
+        assert.ok(projection.projectedDurationMinutes >= 48, 'Duração projetada deve ser >= duração base');
+        // Chegada deve ser calculada a partir de 11:30 + duração com trânsito
+        const [depH, depM] = projection.departureTimeStr.split(':').map(Number);
+        const [arrH, arrM] = projection.arrivalTimeStr.split(':').map(Number);
+        const calculatedArrMinutes = (arrH * 60 + arrM) - (depH * 60 + depM);
+        assert.strictEqual(calculatedArrMinutes, projection.projectedDurationMinutes, 'Horário de chegada deve ser exatamente partida + duração');
+
+        // Teste de atualização no caravanStore
+        const added = caravanStore.addCaravan(baseCaravan);
+        const updated = caravanStore.updateCaravan(added.caravanId, {
+            plannedDepartureAt: '2026-10-20T13:30:00-03:00',
+            departureTimeStr: '13:30'
+        });
+        assert.strictEqual(updated.departureTimeStr, '13:30', 'Atualização deve sincronizar horário de partida para 13:30');
+
+        // Verificação dos métodos de sincronização no frontend caravanas.html
+        const caravanasHtml = fs.readFileSync(path.join(__dirname, '../../public/caravanas.html'), 'utf8');
+        assert.ok(caravanasHtml.includes('onQuickDepartureTimeChange'), 'Deve conter onQuickDepartureTimeChange');
+        assert.ok(caravanasHtml.includes('onQuickTripDirectionChange'), 'Deve conter onQuickTripDirectionChange');
+        assert.ok(caravanasHtml.includes('syncTopSelectorWithCaravan'), 'Deve conter syncTopSelectorWithCaravan');
+        assert.ok(caravanasHtml.includes('recalculateCaravanWithTraffic'), 'Deve conter recalculateCaravanWithTraffic');
+        assert.ok(caravanasHtml.includes('getCaravanDepartureTimeString'), 'Deve conter getCaravanDepartureTimeString');
+        assert.ok(caravanasHtml.includes('getCaravanArrivalTimeString'), 'Deve conter getCaravanArrivalTimeString');
+        assert.ok(caravanasHtml.includes('computeCaravanCorridorDelay'), 'Deve conter computeCaravanCorridorDelay');
+    });
 });

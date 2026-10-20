@@ -75,22 +75,33 @@ function minDistanceToRouteMeters(occurrenceLat, occurrenceLon, routeCoords) {
 }
 
 /**
+ * Extrai hora e minuto de strings nos formatos HH:mm, ISO com ou sem Z/offset.
+ */
+function extractHourAndMinute(plannedDepartureAt) {
+    if (!plannedDepartureAt) return { hour: 13, min: 30 };
+    const str = String(plannedDepartureAt).trim();
+    const hmMatch = str.match(/^(\d{1,2}):(\d{2})/);
+    if (hmMatch && !str.includes('T')) {
+        return { hour: parseInt(hmMatch[1], 10), min: parseInt(hmMatch[2], 10) };
+    }
+    const isoMatch = str.match(/T(\d{2}):(\d{2})/);
+    if (isoMatch) {
+        return { hour: parseInt(isoMatch[1], 10), min: parseInt(isoMatch[2], 10) };
+    }
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        return { hour: d.getHours(), min: d.getMinutes() };
+    }
+    return { hour: 13, min: 30 };
+}
+
+/**
  * Calcula ajuste dinâmico de trânsito considerando o horário planejado de saída e o sentido do trajeto
  * (TO_GLOBO: Origem da Caravana -> Globo | FROM_GLOBO: Globo -> Local de Origem da Caravana).
  */
 function computeScheduleAndDirectionTrafficMinutes(plannedDepartureAt, tripDirection = 'TO_GLOBO', baseDurationMinutes = 0) {
     if (!plannedDepartureAt || !baseDurationMinutes) return 0;
-    const d = new Date(plannedDepartureAt);
-    if (isNaN(d.getTime())) return 0;
-
-    // Extrai hora da string ISO (se contiver T13:30) ou UTC/local
-    let hour = d.getUTCHours();
-    let min = d.getUTCMinutes();
-    const isoMatch = String(plannedDepartureAt).match(/T(\d{2}):(\d{2})/);
-    if (isoMatch) {
-        hour = parseInt(isoMatch[1], 10);
-        min = parseInt(isoMatch[2], 10);
-    }
+    const { hour, min } = extractHourAndMinute(plannedDepartureAt);
     const timeDecimal = hour + min / 60;
     const isFromGlobo = tripDirection === 'FROM_GLOBO';
 
@@ -257,11 +268,23 @@ class CaravanRouteProjectionService {
             ? computeScheduleAndDirectionTrafficMinutes(plannedDepartureAt, normDirection, baseDurationMinutes)
             : (Number(scheduleTrafficAdjustmentMinutes) || 0);
 
-        const departureTime = new Date(plannedDepartureAt).getTime();
+        let departureTime = new Date(plannedDepartureAt).getTime();
+        if (isNaN(departureTime)) {
+            const today = new Date();
+            const { hour: depH, min: depM } = extractHourAndMinute(plannedDepartureAt);
+            departureTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), depH, depM, 0, 0).getTime();
+        }
         const totalDelayMinutes = totalIncidentImpactMinutes + computedScheduleAdj;
         const projectedDurationMinutes = Math.max(1, baseDurationMinutes + totalDelayMinutes);
         const projectedArrivalTime = departureTime + projectedDurationMinutes * 60 * 1000;
         const projectedArrivalDate = new Date(projectedArrivalTime);
+
+        const depTimeInfo = extractHourAndMinute(plannedDepartureAt);
+        const depTimeStr = caravanPlan.departureTimeStr || `${String(depTimeInfo.hour).padStart(2, '0')}:${String(depTimeInfo.min).padStart(2, '0')}`;
+        const arrTotalMin = depTimeInfo.hour * 60 + depTimeInfo.min + projectedDurationMinutes;
+        const arrH = Math.floor(arrTotalMin / 60) % 24;
+        const arrM = arrTotalMin % 60;
+        const arrTimeStr = caravanPlan.arrivalTimeStr || `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
 
         let marginToWindowMinutes = null;
         let projectedStatus = CARAVAN_PROJECTED_STATUS.DENTRO_DA_JANELA;
@@ -445,6 +468,8 @@ class CaravanRouteProjectionService {
             unquantifiedIncidentsCount,
             projectedDurationMinutes,
             projectedArrivalAt: projectedArrivalDate.toISOString(),
+            departureTimeStr: depTimeStr,
+            arrivalTimeStr: arrTimeStr,
             operationalWindowStart,
             operationalWindowEnd,
             marginToWindowMinutes,
@@ -689,6 +714,7 @@ module.exports = {
     pointToSegmentDistanceMeters,
     minDistanceToRouteMeters,
     computeScheduleAndDirectionTrafficMinutes,
+    extractHourAndMinute,
     COR_RIO_CAMERAS_CATALOG,
     CET_SP_CAMERAS_CATALOG
 };

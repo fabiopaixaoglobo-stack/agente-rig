@@ -439,11 +439,11 @@
               </div>
               <div class="col-span-3">
                 <label class="block text-[8.5px] text-slate-400 uppercase font-bold mb-0.5">Hora Saída</label>
-                <input type="time" id="quick-departure-time" value="13:30" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[10px] text-white py-0.5 px-1 outline-none font-mono" title="Horário de saída planejado para cálculo de trânsito e ocorrências" />
+                <input type="time" id="quick-departure-time" value="13:30" oninput="onQuickDepartureTimeChange(this.value)" onchange="onQuickDepartureTimeChange(this.value)" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[10px] text-white py-0.5 px-1 outline-none font-mono" title="Horário de saída planejado para cálculo de trânsito e ocorrências" />
               </div>
               <div class="col-span-4">
                 <label class="block text-[8.5px] text-slate-400 uppercase font-bold mb-0.5">Destino / Trajeto</label>
-                <select id="quick-trip-direction" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[9.5px] text-amber-200 py-1 px-1 outline-none cursor-pointer" title="Sentido do trajeto: da Origem da Caravana para a Globo ou da Globo para o Local de Origem da Caravana">
+                <select id="quick-trip-direction" onchange="onQuickTripDirectionChange(this.value)" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[9.5px] text-amber-200 py-1 px-1 outline-none cursor-pointer" title="Sentido do trajeto: da Origem da Caravana para a Globo ou da Globo para o Local de Origem da Caravana">
                   <option value="TO_GLOBO">➔ Destino: Globo</option>
                   <option value="FROM_GLOBO">↩ Globo ➔ Origem</option>
                 </select>
@@ -2169,6 +2169,12 @@
         fetchIncidents(region)
       ]);
 
+      caravansData.forEach(c => recalculateCaravanWithTraffic(c));
+      if (caravansData.length > 0) {
+        const sel = selectedCaravanId ? caravansData.find(c => c.caravanId === selectedCaravanId) : caravansData[0];
+        if (sel) syncTopSelectorWithCaravan(sel);
+      }
+
       renderCaravanFeed();
       renderCaravanRoutesOnMap();
       renderTrafficConditionsOnMap();
@@ -2566,10 +2572,11 @@
     function focusSingleCaravan(caravanId) {
       selectedCaravanId = caravanId;
       isAllRoutesMode = true; // Mantém todas as caravanas ativas visíveis no mesmo plano
+      const c = caravansData.find(item => item.caravanId === caravanId);
+      if (c) syncTopSelectorWithCaravan(c);
       renderCaravanFeed();
       renderCaravanRoutesOnMap();
 
-      const c = caravansData.find(item => item.caravanId === caravanId);
       if (c && leafletMap) {
         const origin = c.originCoords || (Array.isArray(c.routeGeometry) && c.routeGeometry[0]);
         if (Array.isArray(origin)) {
@@ -2849,8 +2856,8 @@
           shortStatus = "ATRASO";
         }
 
-        const depTime = c.plannedDepartureAt ? new Date(c.plannedDepartureAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-        const arrTime = c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+        const depTime = getCaravanDepartureTimeString(c);
+        const arrTime = getCaravanArrivalTimeString(c);
         const distKm = c.baseDistanceKm ? `${Number(c.baseDistanceKm).toFixed(1)} km` : '--';
         const durMin = `${c.projectedDurationMinutes || c.baseDurationMinutes || '--'} min`;
         const incCount = c.incidents ? c.incidents.length : 0;
@@ -2976,8 +2983,8 @@
             : (c.neighborhood || 'Caravana');
           const originIcon = createBusMapIcon(color, shortBusLabel, isSelected);
 
-          const depTime = c.plannedDepartureAt ? new Date(c.plannedDepartureAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-          const arrTime = c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+          const depTime = getCaravanDepartureTimeString(c);
+          const arrTime = getCaravanArrivalTimeString(c);
           const isFromGlobo = c.tripDirection === 'FROM_GLOBO';
           const dirPopupLabel = isFromGlobo
             ? '↩ Retorno: Globo ➔ Endereço da Caravana'
@@ -3324,12 +3331,13 @@
     function selectCaravan(caravanId, openDrawer = true) {
       selectedCaravanId = caravanId;
       isAllRoutesMode = true; // Preserva todas as caravanas ativas visíveis no mesmo plano de vídeo
+      const c = caravansData.find(item => item.caravanId === caravanId);
+      if (c) syncTopSelectorWithCaravan(c);
       renderCaravanFeed();
       renderCaravanRoutesOnMap();
 
-      if (openDrawer) {
-        const c = caravansData.find(item => item.caravanId === caravanId);
-        if (c) renderCaravanDrawer(c);
+      if (openDrawer && c) {
+        renderCaravanDrawer(c);
       }
     }
 
@@ -3349,8 +3357,8 @@
       tag.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-cyan-950 text-cyan-300 border border-cyan-800";
       title.innerText = c.caravanName;
 
-      const depTime = c.plannedDepartureAt ? new Date(c.plannedDepartureAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-      const arrTime = c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      const depTime = getCaravanDepartureTimeString(c);
+      const arrTime = getCaravanArrivalTimeString(c);
       const margin = c.marginToWindowMinutes !== null && c.marginToWindowMinutes !== undefined ? `${c.marginToWindowMinutes} min` : 'N/A';
       const distKm = c.baseDistanceKm ? `${Number(c.baseDistanceKm).toFixed(1)} km` : '32.5 km';
       const isFromGlobo = c.tripDirection === 'FROM_GLOBO';
@@ -3699,7 +3707,7 @@
                 </span>
               </div>
               <div class="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
-                <span class="text-slate-400">Horário Chegada Proj: <strong class="text-white font-mono">${c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</strong></span>
+                <span class="text-slate-400">Horário Chegada Proj: <strong class="text-white font-mono">${getCaravanArrivalTimeString(c)}</strong></span>
                 <button onclick="selectCaravan('${c.caravanId}', true)" class="px-2 py-0.5 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-[10px] flex items-center gap-1">
                   Focar na Caravana ↗
                 </button>
@@ -4047,27 +4055,265 @@
     }
 
     // =========================================================================
-    // INCLUSÃO DE CARAVANA (PAINEL RÁPIDO + MODAL + PRÉ-CADASTRO RJ/SP + HORÁRIO E DESTINO)
+    // UTILITÁRIOS DE HORÁRIO, SINCRONIZAÇÃO E CÁLCULO DE TRÂNSITO EM TEMPO REAL
     // =========================================================================
-    function computeClientScheduleTrafficDelta(departureIso, tripDirection, baseDuration) {
-      if (!departureIso) return 0;
-      const dt = new Date(departureIso);
-      if (isNaN(dt.getTime())) return 0;
-      const h = dt.getUTCHours();
-      const base = Math.max(10, Number(baseDuration) || 40);
-      const dir = String(tripDirection || 'TO_GLOBO').toUpperCase();
+    function extractTimeComponents(timeOrIso) {
+      if (!timeOrIso) return { hour: 13, min: 30 };
+      const s = String(timeOrIso).trim();
+      const hmMatch = s.match(/^(\d{1,2}):(\d{2})/);
+      if (hmMatch && !s.includes('T')) {
+        return { hour: parseInt(hmMatch[1], 10), min: parseInt(hmMatch[2], 10) };
+      }
+      const isoMatch = s.match(/T(\d{2}):(\d{2})/);
+      if (isoMatch) {
+        return { hour: parseInt(isoMatch[1], 10), min: parseInt(isoMatch[2], 10) };
+      }
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        return { hour: d.getHours(), min: d.getMinutes() };
+      }
+      return { hour: 13, min: 30 };
+    }
 
-      let factor = 0.08;
-      if (dir === 'FROM_GLOBO') {
-        if (h >= 17 && h <= 20) factor = 0.30;
-        else if (h >= 21 && h <= 23) factor = 0.12;
-        else if (h >= 14 && h <= 16) factor = 0.16;
+    function getCaravanDepartureTimeString(c) {
+      if (!c) return '13:30';
+      if (c.departureTimeStr) return c.departureTimeStr;
+      if (c.plannedDepartureAt) {
+        const s = String(c.plannedDepartureAt).trim();
+        const hmMatch = s.match(/^(\d{1,2}):(\d{2})$/);
+        if (hmMatch && !s.includes('T')) return `${hmMatch[1].padStart(2, '0')}:${hmMatch[2]}`;
+        const isoMatch = s.match(/T(\d{2}):(\d{2})/);
+        if (isoMatch) return `${isoMatch[1]}:${isoMatch[2]}`;
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+      return '13:30';
+    }
+
+    function getCaravanArrivalTimeString(c) {
+      if (!c) return '--:--';
+      if (c.arrivalTimeStr) return c.arrivalTimeStr;
+      const depStr = getCaravanDepartureTimeString(c);
+      if (depStr && depStr.includes(':')) {
+        const [depH, depM] = depStr.split(':').map(v => parseInt(v, 10));
+        const durMin = Number(c.projectedDurationMinutes || c.baseDurationMinutes || 40);
+        const totalMin = (depH || 0) * 60 + (depM || 0) + durMin;
+        const arrH = Math.floor(totalMin / 60) % 24;
+        const arrM = totalMin % 60;
+        return `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
+      }
+      if (c.projectedArrivalAt) {
+        const s = String(c.projectedArrivalAt).trim();
+        const isoMatch = s.match(/T(\d{2}):(\d{2})/);
+        if (isoMatch) return `${isoMatch[1]}:${isoMatch[2]}`;
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+      return '--:--';
+    }
+
+    function computeCaravanCorridorDelay(caravan) {
+      if (!Array.isArray(trafficConditionsData) || trafficConditionsData.length === 0) return 0;
+      const corrText = `${caravan.corridor || ''} ${caravan.originAddress || ''} ${caravan.caravanName || ''} ${caravan.neighborhood || ''}`.toLowerCase();
+      const normText = corrText.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      let totalDelay = 0;
+      const matchedVias = new Set();
+
+      trafficConditionsData.forEach(item => {
+        if (!item.via) return;
+        const viaNorm = item.via.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        if (viaNorm && normText.includes(viaNorm)) {
+          if (!matchedVias.has(viaNorm)) {
+            matchedVias.add(viaNorm);
+            const ret = Number(item.retencaoMin) || (item.tempoAtual && item.tempoReferencia ? Math.max(0, item.tempoAtual - item.tempoReferencia) : 0);
+            if (ret > 0) totalDelay += ret;
+            else if (item.status === 'Crítico' || item.status === 'Lento') totalDelay += 10;
+          }
+        }
+      });
+
+      return Math.min(totalDelay, 45);
+    }
+
+    function computeClientScheduleTrafficDelta(departureTimeOrIso, tripDirection, baseDuration) {
+      const { hour, min } = extractTimeComponents(departureTimeOrIso);
+      const timeDecimal = hour + min / 60;
+      const base = Math.max(10, Number(baseDuration) || 40);
+      const isFromGlobo = String(tripDirection || 'TO_GLOBO').toUpperCase() === 'FROM_GLOBO';
+
+      let factor = 0.05;
+      if (isFromGlobo) {
+        if (timeDecimal >= 16.5 && timeDecimal <= 20.0) factor = 0.28;
+        else if (timeDecimal > 20.0 && timeDecimal <= 22.5) factor = 0.12;
+        else if (timeDecimal >= 13.5 && timeDecimal < 16.5) factor = 0.15;
+        else if (timeDecimal >= 6.5 && timeDecimal <= 9.5) factor = 0.10;
       } else {
-        if (h >= 6 && h <= 9) factor = 0.28;
-        else if (h >= 11 && h <= 14) factor = 0.18;
-        else if (h >= 16 && h <= 19) factor = 0.32;
+        if (timeDecimal >= 6.5 && timeDecimal <= 9.5) factor = 0.28;
+        else if (timeDecimal >= 11.5 && timeDecimal <= 14.0) factor = 0.18;
+        else if (timeDecimal >= 16.5 && timeDecimal <= 19.5) factor = 0.26;
       }
       return Math.max(2, Math.round(base * factor));
+    }
+
+    function recalculateCaravanWithTraffic(caravan) {
+      if (!caravan) return caravan;
+      const depTimeStr = getCaravanDepartureTimeString(caravan);
+      const baseDur = Number(caravan.baseDurationMinutes || 40);
+      const schedAdj = computeClientScheduleTrafficDelta(depTimeStr, caravan.tripDirection, baseDur);
+      const corrDelay = computeCaravanCorridorDelay(caravan);
+      const incDelay = (Array.isArray(caravan.incidents) ? caravan.incidents : []).reduce(
+        (acc, inc) => acc + (Number(inc.impactMinutes || inc.estimatedDelayMinutes) || 0), 0
+      );
+
+      const totalDelay = schedAdj + corrDelay + incDelay;
+      const totalDuration = Math.max(1, baseDur + totalDelay);
+      caravan.projectedDurationMinutes = totalDuration;
+      caravan.departureTimeStr = depTimeStr;
+
+      const { hour: depH, min: depM } = extractTimeComponents(depTimeStr);
+      const arrTotalMin = depH * 60 + depM + totalDuration;
+      const arrH = Math.floor(arrTotalMin / 60) % 24;
+      const arrM = arrTotalMin % 60;
+      const arrTimeStr = `${String(arrH).padStart(2, '0')}:${String(arrM).padStart(2, '0')}`;
+      caravan.arrivalTimeStr = arrTimeStr;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      caravan.plannedDepartureAt = `${todayStr}T${depTimeStr}:00-03:00`;
+      caravan.projectedArrivalAt = `${todayStr}T${arrTimeStr}:00-03:00`;
+
+      if (totalDelay >= 24) {
+        caravan.projectedStatus = 'RISCO DE ATRASO';
+      } else if (totalDelay >= 10 || incDelay > 0 || corrDelay >= 8) {
+        caravan.projectedStatus = 'ATENÇÃO';
+      } else {
+        caravan.projectedStatus = 'DENTRO DA JANELA';
+      }
+
+      if (caravan.operationalWindowEnd) {
+        const { hour: winH, min: winM } = extractTimeComponents(caravan.operationalWindowEnd);
+        const winTotalMin = winH * 60 + winM;
+        caravan.marginToWindowMinutes = winTotalMin - arrTotalMin;
+        if (arrTotalMin > winTotalMin) {
+          caravan.projectedStatus = 'RISCO DE ATRASO';
+        } else if (caravan.marginToWindowMinutes < 15) {
+          caravan.projectedStatus = 'ATENÇÃO';
+        }
+      }
+
+      return caravan;
+    }
+
+    function syncTopSelectorWithCaravan(c) {
+      if (!c) return;
+      const timeInput = document.getElementById('quick-departure-time');
+      const dirSelect = document.getElementById('quick-trip-direction');
+      const progSelect = document.getElementById('quick-program-select');
+
+      if (timeInput) {
+        timeInput.value = getCaravanDepartureTimeString(c);
+      }
+      if (dirSelect && c.tripDirection) {
+        dirSelect.value = c.tripDirection;
+      }
+      if (progSelect && c.programName) {
+        let exists = false;
+        for (let i = 0; i < progSelect.options.length; i++) {
+          if (progSelect.options[i].value === c.programName) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          const opt = document.createElement('option');
+          opt.value = c.programName;
+          opt.textContent = c.programName;
+          progSelect.insertBefore(opt, progSelect.lastElementChild);
+        }
+        progSelect.value = c.programName;
+      }
+    }
+
+    async function onQuickDepartureTimeChange(newTime) {
+      if (!newTime || !newTime.includes(':')) return;
+      const val = newTime.trim();
+
+      let target = null;
+      if (selectedCaravanId) {
+        target = caravansData.find(c => c.caravanId === selectedCaravanId);
+      }
+      if (!target && caravansData.length > 0) {
+        target = caravansData[0];
+        selectedCaravanId = target.caravanId;
+      }
+
+      if (target) {
+        target.departureTimeStr = val;
+        recalculateCaravanWithTraffic(target);
+        renderCaravanFeed();
+        renderCaravanRoutesOnMap();
+        if (document.getElementById('tactical-drawer') && !document.getElementById('tactical-drawer').classList.contains('hidden')) {
+          renderCaravanDrawer(target);
+        }
+
+        try {
+          await fetch(`/api/traffic-alert/caravans/${target.caravanId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              plannedDepartureAt: target.plannedDepartureAt,
+              tripDirection: target.tripDirection,
+              departureTimeStr: val
+            })
+          });
+        } catch (e) {}
+      }
+    }
+
+    async function onQuickTripDirectionChange(newDir) {
+      let target = null;
+      if (selectedCaravanId) {
+        target = caravansData.find(c => c.caravanId === selectedCaravanId);
+      }
+      if (!target && caravansData.length > 0) {
+        target = caravansData[0];
+        selectedCaravanId = target.caravanId;
+      }
+
+      if (target) {
+        target.tripDirection = newDir;
+        const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
+        if (Array.isArray(target.routeGeometry) && target.routeGeometry.length >= 2) {
+          target.routeGeometry = buildDetailedCorridorGeometry(
+            target.originCoords || target.routeGeometry[0],
+            regConf.coords,
+            newDir,
+            `${target.corridor || ''} ${target.neighborhood || ''}`
+          );
+        }
+        recalculateCaravanWithTraffic(target);
+        renderCaravanFeed();
+        renderCaravanRoutesOnMap();
+        if (document.getElementById('tactical-drawer') && !document.getElementById('tactical-drawer').classList.contains('hidden')) {
+          renderCaravanDrawer(target);
+        }
+
+        try {
+          await fetch(`/api/traffic-alert/caravans/${target.caravanId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tripDirection: newDir,
+              plannedDepartureAt: target.plannedDepartureAt,
+              departureTimeStr: target.departureTimeStr
+            })
+          });
+        } catch (e) {}
+      }
     }
 
     function openCaravanModal() {
@@ -4131,11 +4377,13 @@
       const chosenDirection = document.getElementById('quick-trip-direction')?.value || 'TO_GLOBO';
       const chosenProgram = getSelectedQuickProgram();
 
-      const departureIso = `${todayStr}T${chosenTime}:00.000Z`;
-      const depMs = new Date(departureIso).getTime();
-      const windowEndIso = !isNaN(depMs)
-        ? new Date(depMs + (item.baseDurationMinutes + 45) * 60000).toISOString()
-        : `${todayStr}T15:15:00.000Z`;
+      const departureIso = `${todayStr}T${chosenTime}:00-03:00`;
+      const [chH, chM] = chosenTime.split(':').map(v => parseInt(v, 10));
+      const depMin = (chH || 13) * 60 + (chM || 30);
+      const winEndMin = depMin + item.baseDurationMinutes + 45;
+      const winEndH = Math.floor(winEndMin / 60) % 24;
+      const winEndM = winEndMin % 60;
+      const windowEndIso = `${todayStr}T${String(winEndH).padStart(2, '0')}:${String(winEndM).padStart(2, '0')}:00-03:00`;
 
       const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
       const fullOriginAddr = `${item.pontoReferencia} — ${item.bairro}, ${currentRegion}`;
@@ -4146,13 +4394,14 @@
       // Se já estiver ativa no plano com o mesmo sentido e horário, apenas destaca; se mudou horário/programa/destino, remove a anterior para substituir com novo cálculo
       const existing = isPreRegisteredCaravanActive(item.id);
       if (existing) {
-        const existingTime = existing.plannedDepartureAt ? new Date(existing.plannedDepartureAt).toISOString().substring(11, 16) : '';
+        const existingTime = getCaravanDepartureTimeString(existing);
         const sameConfig = existing.programName === chosenProgram &&
                            (existing.tripDirection || 'TO_GLOBO') === chosenDirection &&
                            existingTime === chosenTime;
         if (sameConfig) {
           existing.visibleOnMap = true;
           selectedCaravanId = existing.caravanId;
+          syncTopSelectorWithCaravan(existing);
           if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
           switchCaravanSubTab('grade');
           renderCaravanFeed();
@@ -4181,6 +4430,7 @@
         baseDistanceKm: item.baseDistanceKm,
         baseDurationMinutes: item.baseDurationMinutes,
         plannedDepartureAt: departureIso,
+        departureTimeStr: chosenTime,
         operationalWindowEnd: windowEndIso,
         operationalNotes: `Pré-Cadastro Oficial ${currentRegion} (${item.id}) • ${item.corridor}`
       };
@@ -4199,14 +4449,17 @@
             neighborhood: resJson.data.neighborhood || item.bairro,
             corridor: resJson.data.corridor || item.corridor,
             tripDirection: resJson.data.tripDirection || chosenDirection,
+            departureTimeStr: chosenTime,
             visibleOnMap: true
           };
+          recalculateCaravanWithTraffic(created);
           if (!Array.isArray(created.routeGeometry) || created.routeGeometry.length < 6) {
             created.routeGeometry = buildDetailedCorridorGeometry(item.coords, regConf.coords, chosenDirection, `${item.corridor || ''} ${item.bairro || ''}`);
           }
           caravansData.unshift(created);
           enrichCaravanWithRealRoadGeometry(created);
           selectedCaravanId = created.caravanId;
+          syncTopSelectorWithCaravan(created);
           if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
           recomputeLocalCaravanKpis();
           switchCaravanSubTab('grade');
@@ -4214,14 +4467,14 @@
           renderCaravanRoutesOnMap();
           if (keepInSameFrame) fitAllActiveCaravansInView(created.caravanId);
           if (openDrawer) renderCaravanDrawer(created);
-          showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime}) plotada no endereço de saída!`, 'success');
+          showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime} • Chegada ${getCaravanArrivalTimeString(created)}) plotada no endereço de saída!`, 'success');
           return;
         }
       } catch (e) {}
 
       // Fallback local considerando horário de saída, sentido do trajeto e geometria viária real por corredor
       const destCoords = regConf.coords;
-      const schedDelta = computeClientScheduleTrafficDelta(departureIso, chosenDirection, item.baseDurationMinutes);
+      const schedDelta = computeClientScheduleTrafficDelta(chosenTime, chosenDirection, item.baseDurationMinutes);
       const projDur = item.baseDurationMinutes + schedDelta;
       const routeGeom = buildDetailedCorridorGeometry(item.coords, destCoords, chosenDirection, `${item.corridor || ''} ${item.bairro || ''}`);
 
@@ -4229,16 +4482,16 @@
         caravanId: 'crv-' + Date.now().toString(36),
         preRegId: item.id,
         ...payload,
+        departureTimeStr: chosenTime,
         projectedDurationMinutes: projDur,
-        projectedArrivalAt: new Date(new Date(departureIso).getTime() + projDur * 60000).toISOString(),
-        projectedStatus: 'DENTRO DA JANELA',
-        incidents: [],
         visibleOnMap: true,
         routeGeometry: routeGeom
       };
+      recalculateCaravanWithTraffic(localCaravan);
       caravansData.unshift(localCaravan);
       enrichCaravanWithRealRoadGeometry(localCaravan);
       selectedCaravanId = localCaravan.caravanId;
+      syncTopSelectorWithCaravan(localCaravan);
       if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
       recomputeLocalCaravanKpis();
       switchCaravanSubTab('grade');
@@ -4246,7 +4499,7 @@
       renderCaravanRoutesOnMap();
       if (keepInSameFrame) fitAllActiveCaravansInView(localCaravan.caravanId);
       if (openDrawer) renderCaravanDrawer(localCaravan);
-      showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime}) plotada no endereço de saída!`, 'success');
+      showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime} • Chegada ${getCaravanArrivalTimeString(localCaravan)}) plotada no endereço de saída!`, 'success');
     }
 
     function closeCaravanModal() {
@@ -4291,8 +4544,18 @@
         } catch (err) {}
       }
 
-      const departureIso = `${data}T${saida}:00.000Z`;
-      const windowEndIso = limite ? `${data}T${limite}:00.000Z` : null;
+      const departureIso = `${data}T${saida}:00-03:00`;
+      const [shH, shM] = saida.split(':').map(v => parseInt(v, 10));
+      const sTotalMin = (shH || 13) * 60 + (shM || 30);
+      let windowEndIso = null;
+      if (limite) {
+        windowEndIso = `${data}T${limite}:00-03:00`;
+      } else {
+        const wMin = sTotalMin + 90;
+        const wH = Math.floor(wMin / 60) % 24;
+        const wM = wMin % 60;
+        windowEndIso = `${data}T${String(wH).padStart(2, '0')}:${String(wM).padStart(2, '0')}:00-03:00`;
+      }
       const destLabel = tripDirection === 'FROM_GLOBO'
         ? `${endereco} (Retorno da Globo)`
         : `${regConf.label} (${currentRegion})`;
@@ -4308,6 +4571,7 @@
         tripDirection: tripDirection,
         enableScheduleTrafficCalc: true,
         plannedDepartureAt: departureIso,
+        departureTimeStr: saida,
         operationalWindowEnd: windowEndIso,
         operationalNotes: obs
       };
@@ -4324,8 +4588,10 @@
           const createdModalCaravan = {
             ...resJson.data,
             tripDirection: resJson.data.tripDirection || tripDirection,
+            departureTimeStr: saida,
             visibleOnMap: true
           };
+          recalculateCaravanWithTraffic(createdModalCaravan);
           if (!Array.isArray(createdModalCaravan.routeGeometry) || createdModalCaravan.routeGeometry.length < 6) {
             createdModalCaravan.routeGeometry = buildDetailedCorridorGeometry(coords, regConf.coords, tripDirection, endereco);
           }
@@ -4337,27 +4603,25 @@
           renderCaravanFeed();
           renderCaravanRoutesOnMap();
           selectCaravan(resJson.data.caravanId, true);
-          showToast(`🚌 Caravana cadastrada (${programa} • Saída ${saida}) e plotada no endereço!`, 'success');
+          showToast(`🚌 Caravana cadastrada (${programa} • Saída ${saida} • Chegada ${getCaravanArrivalTimeString(createdModalCaravan)}) e plotada no endereço!`, 'success');
         } else {
           alert('Falha ao cadastrar caravana no servidor local.');
         }
       } catch (err) {
         // Fallback em memória caso offline
         const destCoords = regConf.coords;
-        const schedDelta = computeClientScheduleTrafficDelta(departureIso, tripDirection, 48);
+        const schedDelta = computeClientScheduleTrafficDelta(saida, tripDirection, 48);
         const projDur = 48 + schedDelta;
         const localCaravan = {
           caravanId: 'crv-' + Date.now().toString(36),
           ...payload,
+          departureTimeStr: saida,
           baseDistanceKm: 34.0,
           baseDurationMinutes: 48,
-          projectedDurationMinutes: projDur,
-          projectedArrivalAt: new Date(new Date(departureIso).getTime() + projDur * 60000).toISOString(),
-          projectedStatus: 'DENTRO DA JANELA',
-          incidents: [],
           visibleOnMap: true,
           routeGeometry: buildDetailedCorridorGeometry(coords, destCoords, tripDirection, endereco)
         };
+        recalculateCaravanWithTraffic(localCaravan);
         caravansData.unshift(localCaravan);
         enrichCaravanWithRealRoadGeometry(localCaravan);
         closeCaravanModal();
@@ -4366,6 +4630,7 @@
         renderCaravanFeed();
         renderCaravanRoutesOnMap();
         selectCaravan(localCaravan.caravanId, true);
+        showToast(`🚌 Caravana cadastrada (${programa} • Saída ${saida} • Chegada ${getCaravanArrivalTimeString(localCaravan)}) e plotada no endereço!`, 'success');
       }
     }
 

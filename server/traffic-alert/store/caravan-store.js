@@ -637,6 +637,7 @@ class CaravanStore {
             corridor: data.corridor || '',
             originCoords,
             plannedDepartureAt: plannedDep,
+            departureTimeStr: data.departureTimeStr || null,
             destinationLabel: effectiveDestLabel,
             destinationAddress: data.destinationAddress || (isSp ? 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP' : 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ'),
             destinationCoords: targetDestCoords,
@@ -665,6 +666,16 @@ class CaravanStore {
         if (!existing) return null;
 
         const updatedPlan = { ...existing, ...updateData };
+        if (updateData.departureTimeStr) {
+            updatedPlan.departureTimeStr = updateData.departureTimeStr;
+        }
+        if (updateData.plannedDepartureAt && !updateData.operationalWindowEnd) {
+            const depMs = new Date(updateData.plannedDepartureAt).getTime();
+            if (!isNaN(depMs)) {
+                const baseDur = updatedPlan.baseDurationMinutes || 45;
+                updatedPlan.operationalWindowEnd = new Date(depMs + (baseDur + 35) * 60 * 1000).toISOString();
+            }
+        }
         const dir = updatedPlan.tripDirection || 'TO_GLOBO';
         if ((updateData.originCoords || updateData.tripDirection) && (!updateData.routeGeometry || updateData.routeGeometry.length < 2)) {
             updatedPlan.routeGeometry = this.generateRealisticRouteGeometry(updatedPlan.originCoords, updatedPlan.destinationCoords, dir);
