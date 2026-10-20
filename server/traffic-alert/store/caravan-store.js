@@ -20,7 +20,7 @@ const DESTINATION_SP_COORDS = [-23.6186, -46.6974];
 const DESTINATION_SP_LABEL = 'Edifício Jornalista Roberto Marinho - São Paulo (SP)';
 
 /**
- * Rotas Rio de Janeiro
+ * Rotas Rio de Janeiro (Traçados Viários Reais pelos Corredores Expressos)
  */
 const ROUTE_NORTE_COORDS = [
     [-22.8090, -43.3640], // Pavuna
@@ -28,34 +28,58 @@ const ROUTE_NORTE_COORDS = [
     [-22.8450, -43.3000], // Irajá / Av. Brasil
     [-22.8600, -43.2600], // Ramos / Linha Vermelha
     [-22.8800, -43.2350], // Fundão / Linha Vermelha Km 12
-    [-22.9050, -43.2700], // Linha Amarela Saída 7
-    [-22.9300, -43.3400], // Linha Amarela / Barra
+    [-22.8805, -43.2740], // Linha Amarela - Del Castilho
+    [-22.9050, -43.2950], // Linha Amarela - Engenho de Dentro
+    [-22.9180, -43.3210], // Linha Amarela - Água Santa / Covanca
+    [-22.9325, -43.3435], // Linha Amarela - Pechincha
+    [-22.9465, -43.3615], // Linha Amarela - Cidade de Deus
+    [-22.9520, -43.3880], // Estr. dos Bandeirantes / Curicica
     [-22.9550, -43.4100]  // Destino Homologação RJ
 ];
 
 const ROUTE_BAIXADA_COORDS = [
-    [-22.7560, -43.4600], // Nova Iguaçu
-    [-22.7950, -43.4100], // Dutra / Mesquita
-    [-22.8350, -43.3700], // Dutra / Trevo Pavuna
-    [-22.8700, -43.3850], // Deodoro / Transolímpica
-    [-22.9200, -43.4000], // Magalhães Bastos
+    [-22.7560, -43.4600], // Nova Iguaçu Centro
+    [-22.7750, -43.4320], // Via Light / Mesquita
+    [-22.7950, -43.4100], // Dutra / Nilópolis
+    [-22.8200, -43.3880], // Anchieta / Ricardo de Albuquerque
+    [-22.8350, -43.3700], // Trevo Deodoro / Guadalupe
+    [-22.8620, -43.3880], // Av. Brasil / Entrada Transolímpica
+    [-22.8720, -43.3885], // Transolímpica - Magalhães Bastos
+    [-22.8860, -43.3965], // Transolímpica - Sulacap
+    [-22.9120, -43.4015], // Transolímpica - Túnel
+    [-22.9330, -43.4035], // Transolímpica - Boiúna / Taquara
+    [-22.9480, -43.4060], // Transolímpica - Saída Curicica
     [-22.9550, -43.4100]  // Destino Homologação RJ
 ];
 
 const ROUTE_LESTE_COORDS = [
     [-22.8900, -43.1200], // Niterói Centro
-    [-22.8850, -43.1600], // Vão Central da Ponte
-    [-22.8800, -43.2100], // Acesso Rio / Caju
-    [-22.9050, -43.2700], // Linha Amarela Norte
-    [-22.9300, -43.3400], // Linha Amarela
+    [-22.8745, -43.1120], // Acesso Ponte Rio-Niterói
+    [-22.8712, -43.1380], // Ponte Rio-Niterói - Mocanguê
+    [-22.8718, -43.1650], // Vão Central da Ponte
+    [-22.8758, -43.1920], // Descida Ponte / Caju
+    [-22.8775, -43.2140], // Acesso Rio / Caju / Av. Brasil
+    [-22.8695, -43.2375], // Linha Vermelha / Maré
+    [-22.8805, -43.2740], // Linha Amarela - Del Castilho
+    [-22.9050, -43.2950], // Linha Amarela Norte
+    [-22.9180, -43.3210], // Linha Amarela - Água Santa
+    [-22.9325, -43.3435], // Linha Amarela - Pechincha
+    [-22.9465, -43.3615], // Linha Amarela - Cidade de Deus
+    [-22.9520, -43.3880], // Estr. dos Bandeirantes
     [-22.9550, -43.4100]  // Destino Homologação RJ
 ];
 
 const ROUTE_OESTE_COORDS = [
     [-22.9030, -43.5590], // Campo Grande
-    [-22.8850, -43.5000], // Bangu
+    [-22.8910, -43.5320], // Santíssimo / Av. Brasil
+    [-22.8780, -43.4950], // Senador Camará / Bangu
+    [-22.8720, -43.4620], // Bangu / Padre Miguel
     [-22.8700, -43.4300], // Realengo
-    [-22.9100, -43.4100], // Transolímpica Sul
+    [-22.8650, -43.3980], // Deodoro / Acesso Transolímpica
+    [-22.8860, -43.3965], // Transolímpica - Sulacap
+    [-22.9120, -43.4015], // Transolímpica Sul
+    [-22.9330, -43.4035], // Transolímpica - Boiúna
+    [-22.9480, -43.4060], // Saída Curicica
     [-22.9550, -43.4100]  // Destino Homologação RJ
 ];
 
@@ -64,32 +88,44 @@ const ROUTE_OESTE_COORDS = [
  */
 const ROUTE_SP_OSASCO_COORDS = [
     [-23.5325, -46.7917], // Osasco Centro
-    [-23.5510, -46.7450], // Jaguaré
+    [-23.5340, -46.7650], // Av. dos Autonomistas
+    [-23.5450, -46.7420], // Ponte dos Remédios / Jaguaré
+    [-23.5580, -46.7250], // Marginal Pinheiros - Cidade Universitária
     [-23.5780, -46.7050], // Marginal Pinheiros / Ponte Eusébio Matoso
-    [-23.6020, -46.6990], // Berrini Norte
+    [-23.5920, -46.6960], // Marginal Pinheiros - Vila Olímpia
+    [-23.6050, -46.6980], // Berrini Norte
     [-23.6186, -46.6974]  // Edifício Jornalista Roberto Marinho
 ];
 
 const ROUTE_SP_GUARULHOS_COORDS = [
     [-23.4628, -46.5333], // Guarulhos
-    [-23.5180, -46.6100], // Tietê / Ponte das Bandeiras
-    [-23.5600, -46.6450], // 23 de Maio / Paraíso
+    [-23.4920, -46.5650], // Rod. Pres. Dutra / Vila Maria
+    [-23.5180, -46.6100], // Marginal Tietê / Ponte das Bandeiras
+    [-23.5380, -46.6320], // Tiradentes / Corredor Norte-Sul
+    [-23.5600, -46.6450], // Av. 23 de Maio / Paraíso
+    [-23.5880, -46.6520], // Ibirapuera / Rubem Berta
     [-23.6050, -46.6750], // Av. dos Bandeirantes
     [-23.6186, -46.6974]  // Edifício Jornalista Roberto Marinho
 ];
 
 const ROUTE_SP_ABC_COORDS = [
     [-23.6558, -46.5337], // Santo André
-    [-23.6350, -46.6000], // São Caetano / Acesso Bandeirantes
-    [-23.6100, -46.6600], // Aeroporto Congonhas
+    [-23.6380, -46.5680], // Av. do Estado / São Caetano
+    [-23.6280, -46.5980], // Acesso Rod. Anchieta / Sacomã
+    [-23.6180, -46.6320], // Av. Abraão de Morais / Saúde
+    [-23.6100, -46.6600], // Av. dos Bandeirantes / Congonhas
+    [-23.6140, -46.6820], // Av. Jornalista Roberto Marinho
     [-23.6186, -46.6974]  // Edifício Jornalista Roberto Marinho
 ];
 
 const ROUTE_SP_BARUERI_COORDS = [
     [-23.4985, -46.8520], // Barueri / Alphaville
-    [-23.5350, -46.7700], // Castelo Branco
-    [-23.5780, -46.7050], // Marginal Pinheiros
-    [-23.6050, -46.6990], // Chucri Zaidan
+    [-23.5080, -46.8150], // Rod. Castello Branco - Tamboré
+    [-23.5180, -46.7750], // Rod. Castello Branco - Osasco
+    [-23.5260, -46.7420], // Cebolão / Entrada Marginal Pinheiros
+    [-23.5550, -46.7220], // Marginal Pinheiros - Jaguaré
+    [-23.5780, -46.7050], // Marginal Pinheiros - Pinheiros
+    [-23.6050, -46.6990], // Av. Eng. Luís Carlos Berrini / Chucri Zaidan
     [-23.6186, -46.6974]  // Edifício Jornalista Roberto Marinho
 ];
 
@@ -115,6 +151,7 @@ function buildBaseSyntheticCaravans() {
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
             destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 32.5,
             baseDurationMinutes: 48,
             operationalWindowStart: `${dateStr}T14:40:00.000Z`,
@@ -139,6 +176,7 @@ function buildBaseSyntheticCaravans() {
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
             destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 38.0,
             baseDurationMinutes: 55,
             operationalWindowStart: `${dateStr}T14:15:00.000Z`,
@@ -163,6 +201,7 @@ function buildBaseSyntheticCaravans() {
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
             destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 42.0,
             baseDurationMinutes: 62,
             operationalWindowStart: `${dateStr}T15:40:00.000Z`,
@@ -174,8 +213,8 @@ function buildBaseSyntheticCaravans() {
             caravanId: 'caravan-04',
             region: 'RJ',
             routeColor: '#d946ef',
-            caravanName: 'Caravana Conversa com Bial — Zona Oeste & Campo Grande',
-            programName: 'Conversa com Bial',
+            caravanName: 'Caravana Angélica — Zona Oeste & Campo Grande',
+            programName: 'Angélica',
             companyName: 'Viação União',
             operationalNotes: 'Plateia Auditório - Portão 4',
             originLabel: 'Praça Raul Boaventura — Campo Grande',
@@ -187,6 +226,7 @@ function buildBaseSyntheticCaravans() {
             destinationLabel: DESTINATION_HOMOLOG_LABEL,
             destinationAddress: 'Acesso Portaria Principal Estúdios Globo — Curicica / Jacarepaguá, Rio de Janeiro - RJ',
             destinationCoords: DESTINATION_HOMOLOG_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 27.0,
             baseDurationMinutes: 40,
             operationalWindowStart: `${dateStr}T15:00:00.000Z`,
@@ -219,6 +259,7 @@ function buildBaseSpCaravans() {
             destinationLabel: DESTINATION_SP_LABEL,
             destinationAddress: 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP',
             destinationCoords: DESTINATION_SP_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 24.5,
             baseDurationMinutes: 38,
             operationalWindowStart: `${dateStr}T07:30:00.000Z`,
@@ -243,6 +284,7 @@ function buildBaseSpCaravans() {
             destinationLabel: DESTINATION_SP_LABEL,
             destinationAddress: 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP',
             destinationCoords: DESTINATION_SP_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 36.0,
             baseDurationMinutes: 52,
             operationalWindowStart: `${dateStr}T07:25:00.000Z`,
@@ -267,6 +309,7 @@ function buildBaseSpCaravans() {
             destinationLabel: DESTINATION_SP_LABEL,
             destinationAddress: 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP',
             destinationCoords: DESTINATION_SP_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 28.0,
             baseDurationMinutes: 44,
             operationalWindowStart: `${dateStr}T14:20:00.000Z`,
@@ -278,8 +321,8 @@ function buildBaseSpCaravans() {
             caravanId: 'sp-caravan-04',
             region: 'SP',
             routeColor: '#d946ef',
-            caravanName: 'Caravana Caldeirão com Mion SP — Barueri & Alphaville',
-            programName: 'Caldeirão com Mion',
+            caravanName: 'Caravana Altas Horas SP — Barueri & Alphaville',
+            programName: 'Altas Horas',
             companyName: 'Viação Castelo Branco',
             operationalNotes: 'Setor Plateia VIP · Entrada Roberto Marinho',
             originLabel: 'Alameda Rio Negro — Alphaville',
@@ -291,6 +334,7 @@ function buildBaseSpCaravans() {
             destinationLabel: DESTINATION_SP_LABEL,
             destinationAddress: 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP',
             destinationCoords: DESTINATION_SP_COORDS,
+            tripDirection: 'TO_GLOBO',
             baseDistanceKm: 32.0,
             baseDurationMinutes: 46,
             operationalWindowStart: `${dateStr}T12:50:00.000Z`,
@@ -327,27 +371,218 @@ class CaravanStore {
     }
 
     /**
-     * Interpola uma geometria viária realista de uma origem até o destino regional.
+     * Constrói uma geometria viária fiel seguindo os corredores expressos reais de RJ e SP (sem linhas retas sobre baía ou maciços).
      */
-    generateRealisticRouteGeometry(originCoords, destCoords = null) {
+    generateRealisticRouteGeometry(originCoords, destCoords = null, tripDirection = 'TO_GLOBO', corridorHint = '') {
         if (!originCoords || !Array.isArray(originCoords)) return [DESTINATION_HOMOLOG_COORDS];
         const isSp = originCoords[0] < -23.4;
         const targetDest = destCoords || (isSp ? DESTINATION_SP_COORDS : DESTINATION_HOMOLOG_COORDS);
         const [oLat, oLon] = originCoords;
         const [dLat, dLon] = targetDest;
+        const hint = String(corridorHint || '').toLowerCase();
 
-        const midLat1 = (oLat * 0.65 + dLat * 0.35);
-        const midLon1 = (oLon * 0.65 + dLon * 0.35) + (oLon < dLon ? 0.015 : -0.015);
-        const midLat2 = (oLat * 0.3 + dLat * 0.7);
-        const midLon2 = (oLon * 0.3 + dLon * 0.7);
+        const startPt = [Number(oLat.toFixed(4)), Number(oLon.toFixed(4))];
+        const endPt = [Number(dLat.toFixed(4)), Number(dLon.toFixed(4))];
+        let basePts = [];
 
-        return [
-            [Number(oLat.toFixed(4)), Number(oLon.toFixed(4))],
-            [Number(midLat1.toFixed(4)), Number(midLon1.toFixed(4))],
-            [Number(((oLat + dLat) / 2).toFixed(4)), Number(((oLon + dLon) / 2).toFixed(4))],
-            [Number(midLat2.toFixed(4)), Number(midLon2.toFixed(4))],
-            [Number(dLat.toFixed(4)), Number(dLon.toFixed(4))]
-        ];
+        if (!isSp) {
+            if (oLon > -43.18 || hint.includes('ponte') || hint.includes('niterói') || hint.includes('gonçalo') || hint.includes('itaboraí') || hint.includes('alcântara')) {
+                // 1. Eixo Leste Fluminense (Itaboraí / Alcântara / São Gonçalo / Niterói) -> BR-101 -> Ponte Rio-Niterói -> Linha Vermelha -> Linha Amarela -> Curicica
+                basePts.push(startPt);
+                if (oLon > -42.96) {
+                    basePts.push([-22.7750, -42.9300]); // BR-101 Manilha
+                    basePts.push([-22.8169, -43.0036]); // BR-101 Alcântara
+                    basePts.push([-22.8286, -43.0530]); // BR-101 São Gonçalo
+                } else if (oLon > -43.08) {
+                    basePts.push([-22.8450, -43.0820]); // BR-101 Neves / Barreto
+                }
+                basePts.push(
+                    [-22.8745, -43.1095], // Acesso Ponte Rio-Niterói (Ilha da Conceição)
+                    [-22.8712, -43.1380], // Ponte Rio-Niterói (Mocanguê)
+                    [-22.8718, -43.1650], // Ponte Rio-Niterói (Vão Central)
+                    [-22.8758, -43.1920], // Descida Ponte / Caju
+                    [-22.8775, -43.2140], // Av. Brasil / Manguinhos
+                    [-22.8695, -43.2375], // Linha Vermelha / Maré
+                    [-22.8755, -43.2550], // Acesso Linha Amarela (Bonsucesso)
+                    [-22.8805, -43.2740], // Linha Amarela (Del Castilho)
+                    [-22.8935, -43.2950], // Linha Amarela (Engenho de Dentro)
+                    [-22.9125, -43.3185], // Linha Amarela (Túnel da Covanca / Água Santa)
+                    [-22.9325, -43.3435], // Linha Amarela (Pechincha / Freguesia)
+                    [-22.9465, -43.3615], // Linha Amarela (Cidade de Deus)
+                    [-22.9520, -43.3880], // Estr. dos Bandeirantes / Curicica
+                    endPt
+                );
+            } else if (
+                (oLat > -22.845 && oLon < -43.395 && !(oLat > -22.76 && oLon < -43.62)) ||
+                (hint.includes('transolímpica') && (hint.includes('dutra') || hint.includes('light') || hint.includes('alencastro')))
+            ) {
+                // 2. Eixo Baixada Ocidental (Japeri / Queimados / Austin / Nova Iguaçu / Mesquita / Nilópolis / Ricardo de Albuquerque)
+                // Contorna o Maciço do Gericinó pela Rod. Presidente Dutra / Via Light até Deodoro e desce pela Via Expressa Transolímpica
+                basePts.push(startPt);
+                if (oLon < -43.58) {
+                    basePts.push([-22.6850, -43.5950]); // Dutra Japeri / Eng. Pedreira
+                    basePts.push([-22.7120, -43.5450]); // Dutra Queimados
+                }
+                if (oLon < -43.48) {
+                    basePts.push([-22.7320, -43.4950]); // Dutra Austin / Comendador Soares
+                }
+                if (oLat > -22.77) {
+                    basePts.push([-22.7580, -43.4510]); // Dutra Nova Iguaçu / Califórnia
+                    basePts.push([-22.7850, -43.4220]); // Via Light / Mesquita
+                }
+                if (oLat > -22.82) {
+                    basePts.push([-22.8080, -43.4120]); // Nilópolis / Édson Passos
+                    basePts.push([-22.8380, -43.3955]); // Ricardo de Albuquerque / Anchieta
+                }
+                basePts.push(
+                    [-22.8585, -43.3925], // Deodoro / Entroncamento Av. Brasil
+                    [-22.8720, -43.3885], // Transolímpica - Magalhães Bastos
+                    [-22.8860, -43.3965], // Transolímpica - Jardim Sulacap
+                    [-22.9120, -43.4015], // Transolímpica - Túnel da Transolímpica
+                    [-22.9330, -43.4035], // Transolímpica - Boiúna / Taquara
+                    [-22.9480, -43.4060], // Transolímpica - Saída Estr. dos Bandeirantes
+                    endPt
+                );
+            } else if (oLon < -43.43) {
+                // 3. Eixo Zona Oeste (Seropédica / Sepetiba / Cosmos / Campo Grande / Bangu / Padre Miguel) -> Av. Brasil / Cesário de Melo -> Transolímpica -> Curicica
+                basePts.push(startPt);
+                if (oLat > -22.80 && oLon < -43.62) {
+                    basePts.push([-22.7950, -43.6550]); // BR-465 Seropédica
+                    basePts.push([-22.8550, -43.5950]); // Av. Brasil Km 42
+                } else if (oLat <= -22.91 && oLon < -43.58) {
+                    basePts.push([-22.9350, -43.6350]); // Estr. de Sepetiba / Santa Cruz
+                    basePts.push([-22.9080, -43.5750]); // Av. Cesário de Melo / Cosmos
+                }
+                if (oLon < -43.51) {
+                    basePts.push([-22.8850, -43.5420]); // Av. Brasil - Campo Grande / Santíssimo
+                    basePts.push([-22.8720, -43.4980]); // Av. Brasil - Senador Camará
+                }
+                if (oLon < -43.44) {
+                    basePts.push([-22.8680, -43.4620]); // Av. Brasil - Bangu
+                    basePts.push([-22.8660, -43.4320]); // Av. Brasil - Realengo / Padre Miguel
+                }
+                basePts.push(
+                    [-22.8630, -43.3980], // Deodoro / Acesso Transolímpica
+                    [-22.8720, -43.3885], // Transolímpica - Magalhães Bastos
+                    [-22.8860, -43.3965], // Transolímpica - Sulacap
+                    [-22.9120, -43.4015], // Transolímpica - Túnel
+                    [-22.9330, -43.4035], // Transolímpica - Boiúna
+                    [-22.9480, -43.4060], // Saída Curicica
+                    endPt
+                );
+            } else if (oLat > -22.805) {
+                // 4. Eixo Baixada Oriental / BR-040 / Dutra (Magé / Fragoso / Imbariê / Duque de Caxias / Belford Roxo / São João de Meriti / Jardim América)
+                basePts.push(startPt);
+                if (oLat > -22.68) {
+                    basePts.push([-22.6750, -43.2450]); // BR-040 / Rod. Washington Luiz (Xerém / Imbariê)
+                    basePts.push([-22.7350, -43.2850]); // Rod. Washington Luiz (Campos Elíseos)
+                    basePts.push([-22.7850, -43.3050]); // Duque de Caxias
+                } else if (oLon < -43.36) {
+                    basePts.push([-22.7880, -43.3720]); // Dutra - São João de Meriti
+                    basePts.push([-22.8115, -43.3380]); // Dutra / Trevo das Margaridas
+                }
+                basePts.push(
+                    [-22.8300, -43.2950], // Av. Brasil - Cordovil / Irajá
+                    [-22.8620, -43.2550], // Av. Brasil - Bonsucesso / Entrada Linha Amarela
+                    [-22.8805, -43.2740], // Linha Amarela - Del Castilho
+                    [-22.8935, -43.2950], // Linha Amarela - Engenho de Dentro
+                    [-22.9125, -43.3185], // Linha Amarela - Água Santa / Covanca
+                    [-22.9325, -43.3435], // Linha Amarela - Pechincha / Freguesia
+                    [-22.9465, -43.3615], // Linha Amarela - Cidade de Deus
+                    [-22.9520, -43.3880], // Estr. dos Bandeirantes
+                    endPt
+                );
+            } else if (oLat > -22.905 && oLon > -43.39) {
+                // 5. Eixo Zona Norte (Irajá / Penha / Cordovil / Vaz Lobo / Cascadura / Madureira / Marechal Hermes / Del Castilho)
+                basePts.push(startPt);
+                if (oLon > -43.30) {
+                    // Penha / Cordovil / Del Castilho -> Linha Amarela -> Jacarepaguá -> Curicica
+                    basePts.push(
+                        [-22.8780, -43.2750], // Del Castilho / Linha Amarela
+                        [-22.8935, -43.2950], // Engenho de Dentro
+                        [-22.9125, -43.3185], // Água Santa / Covanca
+                        [-22.9325, -43.3435], // Pechincha / Freguesia
+                        [-22.9465, -43.3615], // Cidade de Deus
+                        [-22.9520, -43.3880], // Estr. dos Bandeirantes
+                        endPt
+                    );
+                } else {
+                    // Cascadura / Madureira / Vaz Lobo / Marechal Hermes -> Cândido Benício / Praça Seca / Tanque / Taquara -> Curicica
+                    basePts.push(
+                        [-22.8750, -43.3380], // Campinho / Madureira
+                        [-22.8920, -43.3480], // Rua Cândido Benício - Praça Seca
+                        [-22.9150, -43.3560], // Tanque / Av. Geremário Dantas
+                        [-22.9270, -43.3730], // Taquara
+                        [-22.9410, -43.3910], // Estr. dos Bandeirantes - Merck
+                        endPt
+                    );
+                }
+            } else {
+                // 6. Eixo Jacarepaguá / Sulacap / Tanque / Taquara / Barra -> Estr. dos Bandeirantes -> Curicica
+                basePts.push(startPt);
+                if (oLat > -22.90) {
+                    basePts.push([-22.9080, -43.3980]); // Transolímpica / Sulacap
+                    basePts.push([-22.9330, -43.4035]); // Boiúna / Taquara
+                } else {
+                    basePts.push([-22.9320, -43.3820]); // Taquara / Estr. dos Bandeirantes
+                    basePts.push([-22.9440, -43.3960]); // Estr. dos Bandeirantes - Curicica
+                }
+                basePts.push(endPt);
+            }
+        } else {
+            // Rotas de São Paulo alinhadas às Marginais e Corredores rumo à Berrini / Roberto Marinho
+            basePts.push(startPt);
+            if (oLat > -23.38) {
+                // Campinas / Jundiaí -> Rod. dos Bandeirantes -> Marginal Pinheiros -> Berrini
+                basePts.push(
+                    [-23.1850, -46.8850], // Jundiaí - Rod. dos Bandeirantes
+                    [-23.3650, -46.7850], // Caieiras / Rodoanel
+                    [-23.5080, -46.7380], // Chegada SP / Marginal Tietê-Pinheiros
+                    [-23.5450, -46.7320], // Marginal Pinheiros - Villa-Lobos
+                    [-23.5780, -46.7050], // Marginal Pinheiros - Pinheiros
+                    [-23.6050, -46.6980], // Berrini
+                    endPt
+                );
+            } else if (oLon < -46.74) {
+                // Osasco / Barueri -> Castello Branco / Autonomistas -> Marginal Pinheiros -> Berrini
+                basePts.push(
+                    [-23.5260, -46.7480], // Cebolão / Entrada Marginal Pinheiros
+                    [-23.5480, -46.7320], // Marginal Pinheiros - Jaguaré / USP
+                    [-23.5780, -46.7050], // Marginal Pinheiros - Eusébio Matoso
+                    [-23.5950, -46.6960], // Marginal Pinheiros - Vila Olímpia
+                    [-23.6080, -46.6980], // Av. Eng. Luís Carlos Berrini
+                    endPt
+                );
+            } else if (oLon > -46.60 && oLat > -23.58) {
+                // Guarulhos / Santana / Tatuapé -> Marginal Tietê / Radial -> Av. 23 de Maio -> Av. dos Bandeirantes -> Berrini
+                basePts.push(
+                    [-23.5180, -46.6150], // Marginal Tietê / Ponte das Bandeiras
+                    [-23.5450, -46.6380], // Av. Tiradentes / Centro
+                    [-23.5720, -46.6450], // Av. 23 de Maio - Paraíso / Ibirapuera
+                    [-23.6020, -46.6620], // Av. dos Bandeirantes - Moema
+                    [-23.6120, -46.6850], // Av. Jornalista Roberto Marinho
+                    endPt
+                );
+            } else if (oLat < -23.62 && oLon > -46.62) {
+                // Santo André / São Bernardo / ABC -> Anchieta / Av. dos Bandeirantes -> Roberto Marinho
+                basePts.push(
+                    [-23.6420, -46.5650], // São Caetano / Anchieta
+                    [-23.6220, -46.6050], // Sacomã / Tancredo Neves
+                    [-23.6150, -46.6420], // Saúde / Av. dos Bandeirantes
+                    [-23.6120, -46.6720], // Congonhas / Av. Jornalista Roberto Marinho
+                    endPt
+                );
+            } else {
+                // Centro / Zona Sul / Santo Amaro -> Marginal Pinheiros / Santo Amaro -> Berrini
+                const midLat1 = Number((oLat * 0.7 + dLat * 0.3).toFixed(4));
+                const midLon1 = Number((oLon * 0.7 + dLon * 0.3).toFixed(4));
+                const midLat2 = Number((oLat * 0.35 + dLat * 0.65).toFixed(4));
+                const midLon2 = Number((oLon * 0.35 + dLon * 0.65).toFixed(4));
+                basePts.push([midLat1, midLon1], [midLat2, midLon2], endPt);
+            }
+        }
+
+        return tripDirection === 'FROM_GLOBO' ? [...basePts].reverse() : basePts;
     }
 
     /**
@@ -360,36 +595,58 @@ class CaravanStore {
         const region = isSp ? 'SP' : (data.region || 'RJ');
         const defaultDestCoords = isSp ? DESTINATION_SP_COORDS : DESTINATION_HOMOLOG_COORDS;
         const defaultDestLabel = isSp ? DESTINATION_SP_LABEL : DESTINATION_HOMOLOG_LABEL;
+        const tripDirection = data.tripDirection === 'FROM_GLOBO' ? 'FROM_GLOBO' : 'TO_GLOBO';
 
+        const targetDestCoords = data.destinationCoords || defaultDestCoords;
+        const corridorHint = `${data.corridor || ''} ${data.neighborhood || ''} ${data.originAddress || ''} ${data.caravanName || ''}`;
         const routeGeometry = data.routeGeometry && data.routeGeometry.length >= 2 
             ? data.routeGeometry 
-            : this.generateRealisticRouteGeometry(originCoords, data.destinationCoords || defaultDestCoords);
+            : this.generateRealisticRouteGeometry(originCoords, targetDestCoords, tripDirection, corridorHint);
 
         // Estima distância e duração base caso não fornecidos
-        const targetDestCoords = data.destinationCoords || defaultDestCoords;
         const distDirectMeters = calculateHaversineDistance(originCoords[0], originCoords[1], targetDestCoords[0], targetDestCoords[1]);
         const baseDistanceKm = data.baseDistanceKm || Math.round((distDirectMeters / 1000 * 1.35) * 10) / 10;
         const baseDurationMinutes = data.baseDurationMinutes || Math.round(baseDistanceKm * 1.5);
+
+        const plannedDep = data.plannedDepartureAt || new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        let windowEnd = data.operationalWindowEnd || null;
+        if (!windowEnd && data.enableScheduleTrafficCalc && plannedDep) {
+            const depMs = new Date(plannedDep).getTime();
+            if (!isNaN(depMs)) {
+                windowEnd = new Date(depMs + (baseDurationMinutes + 25) * 60 * 1000).toISOString();
+            }
+        }
+
+        const effectiveDestLabel = data.destinationLabel || (
+            tripDirection === 'FROM_GLOBO'
+                ? `${data.originAddress || data.originLabel || 'Local de Origem da Caravana'} (Saída: ${isSp ? 'Globo SP' : 'Estúdios Globo'})`
+                : defaultDestLabel
+        );
 
         const newPlan = {
             caravanId: id,
             region,
             caravanName: data.caravanName || 'Nova Caravana',
-            programName: data.programName || (isSp ? 'Encontro com Patrícia Poeta' : 'Caldeirão'),
+            programName: data.programName || (isSp ? 'Encontro' : 'Caldeirão'),
             companyName: data.companyName || (isSp ? 'Expresso Metropolitano SP' : 'Log Rio'),
             routeColor: data.routeColor || '#00d1ff',
             operationalNotes: data.operationalNotes || '',
             originLabel: data.originLabel || data.originAddress || 'Ponto de Partida',
             originAddress: data.originAddress || 'Endereço de Embarque',
+            neighborhood: data.neighborhood || '',
+            corridor: data.corridor || '',
             originCoords,
-            plannedDepartureAt: data.plannedDepartureAt || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-            destinationLabel: data.destinationLabel || defaultDestLabel,
+            plannedDepartureAt: plannedDep,
+            destinationLabel: effectiveDestLabel,
             destinationAddress: data.destinationAddress || (isSp ? 'Av. Jornalista Roberto Marinho, Brooklin, São Paulo - SP' : 'Acesso Portaria de Homologação — Curicica, Rio de Janeiro - RJ'),
             destinationCoords: targetDestCoords,
+            tripDirection,
+            enableScheduleTrafficCalc: Boolean(data.enableScheduleTrafficCalc),
+            scheduleTrafficAdjustmentMinutes: Number(data.scheduleTrafficAdjustmentMinutes) || 0,
             baseDistanceKm,
             baseDurationMinutes,
             operationalWindowStart: data.operationalWindowStart || null,
-            operationalWindowEnd: data.operationalWindowEnd || null,
+            operationalWindowEnd: windowEnd,
             routeGeometry,
             isSynthetic: true
         };
@@ -408,8 +665,9 @@ class CaravanStore {
         if (!existing) return null;
 
         const updatedPlan = { ...existing, ...updateData };
-        if (updateData.originCoords && (!updateData.routeGeometry || updateData.routeGeometry.length < 2)) {
-            updatedPlan.routeGeometry = this.generateRealisticRouteGeometry(updateData.originCoords, updatedPlan.destinationCoords);
+        const dir = updatedPlan.tripDirection || 'TO_GLOBO';
+        if ((updateData.originCoords || updateData.tripDirection) && (!updateData.routeGeometry || updateData.routeGeometry.length < 2)) {
+            updatedPlan.routeGeometry = this.generateRealisticRouteGeometry(updatedPlan.originCoords, updatedPlan.destinationCoords, dir);
         }
 
         this.caravans.set(id, updatedPlan);
@@ -462,12 +720,18 @@ class CaravanStore {
                 if (planRegion !== targetRegion) continue;
             }
 
-            const projection = this.projectionService.calculateProjection(plan, publicIncidents);
+            const projection = this.projectionService.calculateProjection(plan, incidents);
             this.cacheProjections.set(id, projection);
 
-            // Aplicação de filtros complementares
+            // Aplicação de filtros complementares (compatível com nomes curtos de programa ex: Domingão / Domingão com Huck)
             let match = true;
-            if (filterObj.programName && projection.programName !== filterObj.programName) match = false;
+            if (filterObj.programName) {
+                const fProg = String(filterObj.programName).toLowerCase().trim();
+                const pProg = String(projection.programName || '').toLowerCase().trim();
+                if (pProg !== fProg && !pProg.includes(fProg) && !fProg.includes(pProg)) {
+                    match = false;
+                }
+            }
             if (filterObj.companyName && projection.companyName !== filterObj.companyName) match = false;
             if (filterObj.projectedStatus && projection.projectedStatus !== filterObj.projectedStatus) match = false;
             if (filterObj.search) {
@@ -624,4 +888,3 @@ module.exports.DESTINATION_HOMOLOG_COORDS = DESTINATION_HOMOLOG_COORDS;
 module.exports.DESTINATION_HOMOLOG_LABEL = DESTINATION_HOMOLOG_LABEL;
 module.exports.DESTINATION_SP_COORDS = DESTINATION_SP_COORDS;
 module.exports.DESTINATION_SP_LABEL = DESTINATION_SP_LABEL;
-

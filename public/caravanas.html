@@ -257,11 +257,10 @@
       <div id="filters-caravanas" class="flex items-center gap-1.5 shrink-0">
         <div id="filter-program-wrap" class="shrink-0">
           <select id="filter-program" onchange="applyCaravanFilters()" class="bg-[#050914] border border-[#1e2c4f] hover:border-cyan-700 rounded text-[10.5px] text-slate-200 py-1 px-2 outline-none cursor-pointer">
-            <option value="">Programa: Todos</option>
-            <option value="Domingão com Huck">Domingão com Huck</option>
-            <option value="Caldeirão com Mion">Caldeirão com Mion</option>
-            <option value="Altas Horas">Altas Horas</option>
-            <option value="Conversa com Bial">Conversa com Bial</option>
+            <option value="">Programa: Todos (RJ)</option>
+            <option value="Domingão">Domingão</option>
+            <option value="Caldeirão">Caldeirão</option>
+            <option value="Angélica">Angélica</option>
           </select>
         </div>
         <div class="shrink-0">
@@ -283,9 +282,23 @@
             <option value="RISCO DE ATRASO">Risco de Atraso</option>
           </select>
         </div>
-        <button id="btn-show-all-routes" onclick="fitAllActiveCaravansInView()" class="px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 text-[10.5px] font-bold flex items-center gap-1 shadow transition" title="Enquadrar todas as caravanas ativas no mesmo plano de vídeo do mapa">
-          <i class="fa-solid fa-expand text-[10px]"></i>
-          <span>Mesmo Plano (Todas)</span>
+
+        <!-- FILTROS RÁPIDOS DE MAPA LIMPO: MARCAR/DESMARCAR OCORRÊNCIAS E CÂMERAS NO TRAJETO -->
+        <div class="flex items-center gap-1 bg-[#050914] border border-[#1e2c4f] rounded px-1.5 py-0.5 shrink-0" title="Marcar ou desmarcar ocorrências e câmeras no trajeto para deixar o mapa mais limpo">
+          <label class="flex items-center gap-1 text-[10px] text-amber-300 cursor-pointer select-none px-1 py-0.5 rounded hover:bg-white/5">
+            <input type="checkbox" id="chk-top-occurrences" checked onchange="toggleAllOccurrencesOnMap(this.checked)" class="accent-amber-500 rounded cursor-pointer w-3 h-3" />
+            <span>⚠️ Ocorrências</span>
+          </label>
+          <span class="text-slate-700">|</span>
+          <label class="flex items-center gap-1 text-[10px] text-cyan-300 cursor-pointer select-none px-1 py-0.5 rounded hover:bg-white/5">
+            <input type="checkbox" id="chk-top-cameras" checked onchange="toggleAllCamerasOnMap(this.checked)" class="accent-cyan-400 rounded cursor-pointer w-3 h-3" />
+            <span>🎥 Câmeras</span>
+          </label>
+        </div>
+
+        <button id="btn-show-all-routes" onclick="fitAllActiveCaravansInView()" class="px-2 py-1 rounded bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700 text-[10px] font-bold flex items-center gap-1 shadow transition" title="Enquadrar todas as caravanas ativas no mesmo plano de vídeo do mapa">
+          <i class="fa-solid fa-expand text-[9.5px]"></i>
+          <span class="hidden 2xl:inline">Mesmo Plano</span>
         </button>
       </div>
 
@@ -386,7 +399,7 @@
               </button>
               <button type="button" id="btn-subtab-precadastro" onclick="switchCaravanSubTab('precadastro')" class="py-1 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1 transition text-slate-400 hover:text-white">
                 <i class="fa-solid fa-list-check text-amber-400 text-[9.5px]"></i>
-                <span>Pré-Cadastro RJ</span>
+                <span id="subtab-precadastro-label">Pré-Cadastro RJ</span>
                 <span id="badge-subtab-precadastro" class="px-1.5 rounded-full bg-amber-950/90 text-amber-300 border border-amber-700/60 text-[9px] font-mono">49</span>
               </button>
             </div>
@@ -398,17 +411,54 @@
             </button>
           </div>
 
-          <!-- LINHA 2: SELETOR DIRETO PARA INCLUIR MAIS DE UMA CARAVANA RJ NAS ATIVAS E PLOTAR NO MAPA -->
-          <div id="precadastro-rj-bar" class="bg-[#060c1a] border border-amber-500/35 rounded-md p-1.5 flex items-center gap-1">
-            <select id="select-precadastro-caravana" onchange="onSelectPreRegisteredCaravan(this.value)" class="flex-1 min-w-0 bg-[#040812] border border-amber-600/40 focus:border-amber-400 rounded text-[10.5px] text-white py-1 px-1.5 outline-none font-medium cursor-pointer" title="Selecione uma ou mais caravanas do RJ para adicionar às Caravanas Ativas e visualizar no mesmo plano do mapa">
-              <option value="">🚌 + Incluir Caravana RJ nas Ativas (49)...</option>
-            </select>
-            <button type="button" onclick="plotAllPreRegisteredCaravans()" class="px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 text-[9px] font-bold transition shrink-0" title="Plotar todas as 49 caravanas pré-cadastradas do RJ no mapa">
-              49 🚌
-            </button>
-            <button type="button" onclick="clearPreRegisteredCaravansMap()" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 text-[9px] font-semibold transition shrink-0" title="Limpar marcadores avulsos de pré-cadastro do mapa">
-              ✕
-            </button>
+          <!-- LINHA 2: PAINEL RÁPIDO DE INSERIR CARAVANA (PROGRAMA RJ/SP + TEXTO LIVRE + HORA DE SAÍDA + DESTINO/TRAJETO) -->
+          <div id="precadastro-rj-bar" class="bg-[#060c1a] border border-amber-500/35 rounded-md p-1.5 space-y-1.5">
+            <!-- Seletor de Caravana + Botões Rápidos -->
+            <div class="flex items-center gap-1">
+              <select id="select-precadastro-caravana" onchange="onSelectPreRegisteredCaravan(this.value)" class="flex-1 min-w-0 bg-[#040812] border border-amber-600/40 focus:border-amber-400 rounded text-[10.5px] text-white py-1 px-1.5 outline-none font-medium cursor-pointer" title="Selecione uma caravana para adicionar às Caravanas Ativas com o programa, horário de saída e destino configurados abaixo">
+                <option value="">🚌 + Incluir Caravana RJ nas Ativas (49)...</option>
+              </select>
+              <button type="button" id="btn-plot-all-prereg" onclick="plotAllPreRegisteredCaravans()" class="px-2 py-1 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 text-[9px] font-bold transition shrink-0" title="Plotar todas as caravanas pré-cadastradas da região no mapa">
+                49 🚌
+              </button>
+              <button type="button" onclick="clearPreRegisteredCaravansMap()" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 text-[9px] font-semibold transition shrink-0" title="Limpar marcadores avulsos de pré-cadastro do mapa">
+                ✕
+              </button>
+            </div>
+
+            <!-- Linha de Parâmetros da Caravana: Programa (RJ: Domingão, Caldeirão, Angélica + Livre | SP: Encontro, Altas Horas + Livre), Hora de Saída e Destino -->
+            <div class="grid grid-cols-12 gap-1 items-center">
+              <div class="col-span-5">
+                <label class="block text-[8.5px] text-slate-400 uppercase font-bold mb-0.5">Programa (<span id="quick-prog-region-tag">RJ</span>)</label>
+                <select id="quick-program-select" onchange="onQuickProgramChange(this.value)" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[10px] text-cyan-200 py-1 px-1 outline-none cursor-pointer">
+                  <option value="Domingão">Domingão</option>
+                  <option value="Caldeirão">Caldeirão</option>
+                  <option value="Angélica">Angélica</option>
+                  <option value="__CUSTOM__">+ Texto livre...</option>
+                </select>
+              </div>
+              <div class="col-span-3">
+                <label class="block text-[8.5px] text-slate-400 uppercase font-bold mb-0.5">Hora Saída</label>
+                <input type="time" id="quick-departure-time" value="13:30" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[10px] text-white py-0.5 px-1 outline-none font-mono" title="Horário de saída planejado para cálculo de trânsito e ocorrências" />
+              </div>
+              <div class="col-span-4">
+                <label class="block text-[8.5px] text-slate-400 uppercase font-bold mb-0.5">Destino / Trajeto</label>
+                <select id="quick-trip-direction" class="w-full bg-[#040812] border border-[#1e2c4f] focus:border-cyan-400 rounded text-[9.5px] text-amber-200 py-1 px-1 outline-none cursor-pointer" title="Sentido do trajeto: da Origem da Caravana para a Globo ou da Globo para o Local de Origem da Caravana">
+                  <option value="TO_GLOBO">➔ Destino: Globo</option>
+                  <option value="FROM_GLOBO">↩ Globo ➔ Origem</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Campo de Texto Livre para Novo Programa (exibido ao escolher "+ Texto livre...") -->
+            <div id="quick-program-custom-wrap" class="hidden pt-0.5">
+              <div class="flex items-center gap-1">
+                <input type="text" id="quick-program-custom" placeholder="Digite o nome do programa (texto livre)..." class="flex-1 bg-[#040812] border border-cyan-500/60 focus:border-cyan-400 rounded py-1 px-2 text-[10px] text-white placeholder-slate-500 outline-none" />
+                <button type="button" onclick="applyQuickCustomProgram()" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-[9.5px] shrink-0">
+                  Usar Programa
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -437,24 +487,59 @@
     <!-- ----------------------------------------------------------------------- -->
     <section class="flex-1 flex flex-col relative overflow-hidden bg-black">
 
-      <!-- BANNER DE GOVERNANÇA COMPACTO FIXO NO MAPA -->
-      <div class="absolute top-2 left-2 right-2 md:right-auto z-[400] bg-[#090f1d]/90 backdrop-blur border border-white/15 rounded-lg px-3 py-1.5 shadow-lg flex items-center gap-2 max-w-lg pointer-events-auto">
-        <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
-        <span class="text-[10px] text-slate-300 leading-tight">
-          PROJEÇÃO OPERACIONAL BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. <strong class="text-white">NÃO REPRESENTA A LOCALIZAÇÃO REAL DO ÔNIBUS.</strong>
-        </span>
+      <!-- CONTAINER DO MAPA LEAFLET -->
+      <div id="map-container" class="w-full h-full"></div>
+
+      <!-- BANNER DE GOVERNANÇA COMPACTO + ALTERNADOR DE VISUALIZAÇÃO (ROTA DA CARAVANA vs TRÂNSITO) -->
+      <div class="absolute top-2.5 left-12 right-14 z-[500] flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="bg-[#090f1d]/90 backdrop-blur border border-white/15 rounded-lg px-2.5 py-1 shadow-lg flex items-center gap-2 max-w-md pointer-events-auto">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+          <span class="text-[9.5px] text-slate-300 leading-tight">
+            PROJEÇÃO BASEADA NO ENDEREÇO E HORÁRIO PLANEJADOS. <strong class="text-white">SEM GPS REAL DO ÔNIBUS.</strong>
+          </span>
+        </div>
+
+        <!-- BARRA FLUTUANTE DE ALTERNÂNCIA RÁPIDA: ROTA DA CARAVANA vs TRÂNSITO + MAPA LIMPO -->
+        <div class="bg-[#090f1d]/95 backdrop-blur border border-cyan-500/30 rounded-lg p-1 shadow-2xl flex items-center gap-1 pointer-events-auto">
+          <div class="flex items-center bg-[#040812] rounded p-0.5 border border-white/10">
+            <button type="button" id="btn-viewmode-both" onclick="setMapOverlayMode('both')" class="px-2 py-1 rounded text-[9.5px] font-bold transition bg-cyan-950 text-cyan-300 border border-cyan-600 shadow" title="Exibir rotas finas das caravanas e trânsito em tempo real">
+              🔀 Rota + Trânsito
+            </button>
+            <button type="button" id="btn-viewmode-routes" onclick="setMapOverlayMode('routes_only')" class="px-2 py-1 rounded text-[9.5px] font-bold transition text-slate-300 hover:text-white" title="Olhar apenas a rota da caravana (oculta linhas de trânsito das vias)">
+              🚌 Só Rota Caravana
+            </button>
+            <button type="button" id="btn-viewmode-traffic" onclick="setMapOverlayMode('traffic_only')" class="px-2 py-1 rounded text-[9.5px] font-bold transition text-slate-300 hover:text-white" title="Alternar para visualizar o trânsito em tempo real nas vias">
+              🚦 Só Trânsito
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- FLOATING LAYER CONTROLS (OTT, FOGO CRUZADO, TRÂNSITO, CÂMERAS) -->
-      <div id="tactical-layer-controls" class="absolute top-14 right-3 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2.5 shadow-2xl text-[10px] space-y-2 max-w-[210px] pointer-events-auto">
+      <!-- FLOATING LAYER CONTROLS (OCORRÊNCIAS, CÂMERAS, OTT, FOGO CRUZADO, TRÂNSITO) -->
+      <div id="tactical-layer-controls" class="absolute top-14 right-3 z-[500] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2.5 shadow-2xl text-[10px] space-y-2 max-w-[215px] pointer-events-auto">
         <div class="flex items-center justify-between pb-1 border-b border-white/10 font-bold text-white text-[10px]">
-          <span class="flex items-center gap-1"><i class="fa-solid fa-layer-group text-cyan-400"></i> Camadas</span>
-          <button id="btn-toggle-traffic-layer" onclick="toggleTrafficLayer()" class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition">
+          <span class="flex items-center gap-1"><i class="fa-solid fa-sliders text-cyan-400"></i> Mapa Limpo / Camadas</span>
+          <button id="btn-toggle-traffic-layer" onclick="toggleTrafficLayer()" class="px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[8.5px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
             <span id="traffic-layer-btn-text">Trânsito: ON</span>
           </button>
         </div>
         <div class="space-y-1.5 text-slate-300">
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-routes" checked onchange="toggleCaravanRoutesLayer(this.checked)" class="accent-cyan-400 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 flex items-center justify-center text-[7px] text-black font-bold">🚌</span>
+            <span>Roteiro das Caravanas</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-inc" checked onchange="toggleLayer('trafficIncidents', this.checked)" class="accent-orange-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-400 flex items-center justify-center text-[7px] text-black font-bold">⚠️</span>
+            <span>Ocorrências no Trajeto</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="chk-layer-cams" checked onchange="toggleLayer('cameras', this.checked)" class="accent-cyan-500 rounded" />
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 flex items-center justify-center text-[7px] text-black font-bold">🎥</span>
+            <span>Câmeras no Trajeto</span>
+          </label>
           <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
             <input type="checkbox" id="chk-layer-ott" checked onchange="toggleLayer('ott', this.checked)" class="accent-rose-500 rounded" />
             <span class="w-2.5 h-2.5 rounded-full bg-rose-500 flex items-center justify-center text-[7px] text-white font-bold">🎯</span>
@@ -465,35 +550,59 @@
             <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex items-center justify-center text-[7px] text-black font-bold">🔴</span>
             <span>Fogo Cruzado</span>
           </label>
-          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
-            <input type="checkbox" id="chk-layer-inc" checked onchange="toggleLayer('trafficIncidents', this.checked)" class="accent-orange-500 rounded" />
-            <span class="w-2.5 h-2.5 rounded-full bg-orange-400 flex items-center justify-center text-[7px] text-black font-bold">⚠️</span>
-            <span>Ocorrências de Trânsito</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
-            <input type="checkbox" id="chk-layer-cams" checked onchange="toggleLayer('cameras', this.checked)" class="accent-cyan-500 rounded" />
-            <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 flex items-center justify-center text-[7px] text-black font-bold">🎥</span>
-            <span>Câmeras Públicas</span>
-          </label>
         </div>
       </div>
 
-      <!-- CONTAINER DO MAPA LEAFLET -->
-      <div id="map-container" class="w-full h-full"></div>
-
       <!-- LEGENDA INTERATIVA DO MAPA (ROTA DAS CARAVANAS COM CORES DISTINTAS) -->
-      <div id="map-legend" class="absolute bottom-4 left-4 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/15 rounded-lg p-2.5 text-[10px] shadow-2xl max-w-xs transition">
-        <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-white">
+      <div id="map-legend" class="absolute bottom-4 left-4 z-[500] bg-[#090f1d]/95 backdrop-blur border border-white/15 rounded-lg p-2.5 text-[10px] shadow-2xl max-w-xs transition pointer-events-auto">
+        <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-white gap-2">
           <span>Rotas das Caravanas</span>
           <span id="legend-dest-label" class="text-[9px] text-cyan-400">Estúdios Globo</span>
         </div>
-        <div id="legend-items" class="space-y-1">
+        <div id="legend-items" class="space-y-1 max-h-36 overflow-y-auto custom-scroll">
           <!-- Gerado dinamicamente com checkboxes e cores por caravana -->
         </div>
       </div>
 
+      <!-- BARRA INFERIOR ESTILO GOOGLE MAPS: TRÂNSITO EM TEMPO REAL (RÁPIDO -> LENTO) + MARCAR/DESMARCAR TRÂNSITO -->
+      <div id="gmaps-traffic-bar" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] bg-white/95 dark:bg-[#0b1324]/95 text-slate-800 dark:text-slate-100 backdrop-blur-md border border-slate-300/80 dark:border-white/20 rounded-full px-3.5 py-1.5 shadow-2xl flex items-center gap-3 text-[11px] pointer-events-auto select-none">
+        <!-- Seletor / Indicador Trânsito em Tempo Real vs Rota -->
+        <div class="flex items-center gap-1.5 font-semibold text-[#0f172a] dark:text-white">
+          <i class="fa-solid fa-traffic-light text-emerald-500 text-xs"></i>
+          <select id="gmaps-mode-select" onchange="onGmapsBarSelectChange(this.value)" class="bg-transparent font-bold text-[11px] text-[#0f172a] dark:text-white outline-none cursor-pointer pr-1">
+            <option value="both" class="bg-[#0b1324] text-white">Trânsito em tempo real + Rota</option>
+            <option value="traffic_only" class="bg-[#0b1324] text-white">Apenas Trânsito em tempo real</option>
+            <option value="routes_only" class="bg-[#0b1324] text-white">Apenas Rota da Caravana</option>
+          </select>
+        </div>
+
+        <!-- Escala Rápido [Verde - Amarelo - Laranja - Vermelho] Lento (Idêntico ao Google Maps) -->
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-600 dark:text-slate-300 border-l border-r border-slate-300/60 dark:border-white/15 px-3">
+          <span class="font-medium">Rápido</span>
+          <div class="flex items-center gap-0.5">
+            <span class="w-4 h-2 rounded-l-sm bg-[#10b981]" title="Trânsito Livre / Rápido"></span>
+            <span class="w-4 h-2 bg-[#eab308]" title="Trânsito Moderado"></span>
+            <span class="w-4 h-2 bg-[#f97316]" title="Trânsito Lento"></span>
+            <span class="w-4 h-2 rounded-r-sm bg-[#ef4444]" title="Trânsito Intenso / Retenção"></span>
+          </div>
+          <span class="font-medium">Lento</span>
+        </div>
+
+        <!-- Resumo em Tempo Real do Tempo de Trânsito no Mapa -->
+        <div id="gmaps-realtime-summary" class="hidden md:flex items-center gap-1 text-[10px] font-mono text-cyan-700 dark:text-cyan-300">
+          <i class="fa-regular fa-clock"></i>
+          <span id="gmaps-realtime-text">Tempo real ativo</span>
+        </div>
+
+        <!-- Checkbox / Switch Marcar ou Desmarcar Trânsito -->
+        <label class="flex items-center gap-1.5 cursor-pointer" title="Marcar ou desmarcar o trânsito em tempo real no mapa">
+          <input type="checkbox" id="chk-gmaps-traffic" checked onchange="setTrafficVisibilityFromBar(this.checked)" class="accent-blue-600 w-3.5 h-3.5 rounded cursor-pointer" />
+          <span id="gmaps-traffic-status-label" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Ativo</span>
+        </label>
+      </div>
+
       <!-- LEGENDA DE FLUIDEZ DE TRÂNSITO (COLAPSÁVEL - TECLA 'T') -->
-      <div id="traffic-fluidity-legend" class="absolute bottom-16 right-4 z-[400] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2.5 shadow-2xl text-[10px] max-w-xs transition-all pointer-events-auto">
+      <div id="traffic-fluidity-legend" class="absolute bottom-14 right-4 z-[500] bg-[#090f1d]/95 backdrop-blur border border-white/20 rounded-lg p-2 shadow-2xl text-[10px] max-w-xs transition-all pointer-events-auto hidden xl:block">
         <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-white text-[10px]">
           <div class="flex items-center gap-1.5">
             <i class="fa-solid fa-traffic-light text-amber-400"></i>
@@ -530,7 +639,7 @@
       </div>
 
       <!-- INDICADOR DO MODO DO MAPA -->
-      <div class="absolute bottom-4 right-4 z-[400] bg-[#090f1d]/90 backdrop-blur border border-white/15 rounded px-2.5 py-1 text-[10px] text-slate-300 flex items-center gap-1.5 shadow">
+      <div class="absolute bottom-4 right-4 z-[500] bg-[#090f1d]/90 backdrop-blur border border-white/15 rounded px-2.5 py-1 text-[10px] text-slate-300 flex items-center gap-1.5 shadow">
         <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
         <span id="map-view-indicator">Satélite com Rótulos (Esri/ArcGIS)</span>
       </div>
@@ -579,21 +688,21 @@
       <div class="p-4 bg-[#080e1c] border-b border-[#1e2c4f] flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="h-6 w-6 rounded bg-cyan-600 flex items-center justify-center text-black font-black text-xs">+</div>
-          <h3 class="text-sm font-bold text-white">Cadastrar Nova Caravana de Plateia</h3>
+          <h3 class="text-sm font-bold text-white">Inserir / Cadastrar Caravana Inteligente</h3>
         </div>
         <button onclick="closeCaravanModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
 
-      <form id="form-caravan" onsubmit="handleCaravanSubmit(event)" class="p-4 space-y-3 overflow-y-auto max-h-[75vh] custom-scroll">
+      <form id="form-caravan" onsubmit="handleCaravanSubmit(event)" class="p-4 space-y-3 overflow-y-auto max-h-[78vh] custom-scroll">
 
-        <!-- SELETOR DO CATÁLOGO DE CARAVANAS PRÉ-CADASTRADAS DO RJ (49 OPÇÕES) -->
+        <!-- SELETOR DO CATÁLOGO DE CARAVANAS PRÉ-CADASTRADAS (RJ 49 LOCAIS / SP) -->
         <div class="bg-[#060c1a] border border-amber-500/40 rounded-lg p-2.5 space-y-1.5">
           <label for="form-precadastro-rj" class="block text-[10px] font-bold text-amber-300 uppercase flex items-center gap-1.5">
             <i class="fa-solid fa-bus text-amber-400"></i>
-            <span>Carregar Caravana Pré-Cadastrada do RJ (49 locais)</span>
+            <span id="form-precadastro-label">Carregar Caravana Pré-Cadastrada do RJ (49 locais)</span>
           </label>
           <select id="form-precadastro-rj" onchange="applyPreRegisteredToForm(this.value)" class="w-full bg-[#040812] border border-amber-600/40 focus:border-amber-400 rounded p-1.5 text-xs text-white outline-none">
-            <option value="">-- Selecionar do Pré-Cadastro RJ (Preenchimento Automático) --</option>
+            <option value="">-- Selecionar do Pré-Cadastro (Preenchimento Automático) --</option>
           </select>
           <p class="text-[9px] text-slate-400">Ao selecionar, o Nome, Bairro, Ponto de Referência e Coordenadas no mapa são preenchidos automaticamente.</p>
         </div>
@@ -605,14 +714,20 @@
             <span id="err-data" class="text-[9px] text-rose-400 hidden">Data obrigatória</span>
           </div>
           <div>
-            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Programa de TV *</label>
-            <select id="form-programa" required class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none">
-              <option value="Caldeirão">Caldeirão</option>
-              <option value="Altas Horas">Altas Horas</option>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Programa (<span id="form-prog-region-label">RJ</span>) *</label>
+            <select id="form-programa" onchange="onModalProgramChange(this.value)" required class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none">
               <option value="Domingão">Domingão</option>
-              <option value="Conversa com Bial">Conversa com Bial</option>
+              <option value="Caldeirão">Caldeirão</option>
+              <option value="Angélica">Angélica</option>
+              <option value="__CUSTOM__">+ Outro programa (Texto livre)...</option>
             </select>
           </div>
+        </div>
+
+        <!-- CAMPO DE TEXTO LIVRE PARA INCLUIR NOME DO PROGRAMA (RJ OU SP) -->
+        <div id="form-programa-custom-wrap" class="hidden bg-[#061022] border border-cyan-500/40 rounded-lg p-2.5">
+          <label class="block text-[10px] font-bold text-cyan-300 uppercase mb-1">Nome do Programa (Texto Livre) *</label>
+          <input type="text" id="form-programa-custom" placeholder="Digite o nome do programa..." class="w-full bg-[#040812] border border-cyan-500/50 focus:border-cyan-400 rounded p-1.5 text-xs text-white outline-none" />
         </div>
 
         <div>
@@ -622,32 +737,35 @@
         </div>
 
         <div>
-          <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Endereço de Embarque / Bairro *</label>
+          <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Endereço de Saída / Local da Caravana *</label>
           <input type="text" id="form-endereco" required placeholder="Ex: Praça da Matriz, Centro, São João de Meriti - RJ" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none" />
-          <span id="err-endereco" class="text-[9px] text-rose-400 hidden">Endereço será geocodificado no RJ</span>
+          <span id="err-endereco" class="text-[9px] text-rose-400 hidden">A caravana será plotada neste endereço</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Hora de Saída *</label>
+            <input type="time" id="form-saida" required class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none font-mono" />
+            <span id="err-saida" class="text-[9px] text-rose-400 hidden">Horário obrigatório</span>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Destino / Trajeto *</label>
+            <select id="form-trip-direction" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-amber-200 outline-none">
+              <option value="TO_GLOBO">Origem da Caravana ➔ Globo (Ida)</option>
+              <option value="FROM_GLOBO">Globo ➔ Local da Caravana (Retorno)</option>
+            </select>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Empresa de Ônibus *</label>
-            <input type="text" id="form-empresa" required placeholder="Ex: Log Rio, Doce Rio, Pianeta" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none" />
+            <input type="text" id="form-empresa" required placeholder="Ex: Log Rio, Doce Rio, Viação SP" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none" />
             <span id="err-empresa" class="text-[9px] text-rose-400 hidden">Empresa obrigatória</span>
           </div>
           <div>
-            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Horário de Saída *</label>
-            <input type="time" id="form-saida" required class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none" />
-            <span id="err-saida" class="text-[9px] text-rose-400 hidden">Horário obrigatório</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Horário Limite Chegada</label>
-            <input type="time" id="form-limite" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none" />
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Destino Homologação</label>
-            <input type="text" disabled value="ESTÚDIOS GLOBO — HOMOLOGAÇÃO" class="w-full bg-[#02050b] border border-white/5 rounded p-1.5 text-[10px] text-slate-400 font-mono" />
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Horário Limite Janela</label>
+            <input type="time" id="form-limite" class="w-full bg-[#050914] border border-[#1e2c4f] focus:border-cyan-500 rounded p-1.5 text-xs text-white outline-none font-mono" />
           </div>
         </div>
 
@@ -942,7 +1060,339 @@
       { id: 'CRV-RJ-49', caravana: 'ZÉ GAROTO', bairro: 'São Gonçalo', pontoReferencia: 'Próximo o Hospital Infantil Darcy Sarmanho Vargas // ESCULTURA ROSA DOS VENTOS', regiao: 'Niterói', corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela', coords: [-22.8256, -43.0531], baseDistanceKm: 43.0, baseDurationMinutes: 59 }
     ];
 
+    // CATÁLOGO PRÉ-CADASTRADO DE SÃO PAULO (SP)
+    const PRE_REGISTERED_CARAVANS_SP = [
+      { id: 'CRV-SP-01', caravana: 'OSASCO', bairro: 'Osasco', pontoReferencia: 'Largo de Osasco — Estação CPTM Osasco', regiao: 'Osasco', corridor: 'Marginal Pinheiros / Av. Jornalista Roberto Marinho', coords: [-23.5325, -46.7797], baseDistanceKm: 19.5, baseDurationMinutes: 35 },
+      { id: 'CRV-SP-02', caravana: 'SANTO ANDRÉ', bairro: 'Santo André', pontoReferencia: 'Praça do Carmo, Centro — Santo André', regiao: 'Santo André', corridor: 'Via Anchieta / Av. dos Bandeirantes / Brooklin', coords: [-23.6639, -46.5383], baseDistanceKm: 24.8, baseDurationMinutes: 44 },
+      { id: 'CRV-SP-03', caravana: 'GUARULHOS', bairro: 'Guarulhos', pontoReferencia: 'Praça Getúlio Vargas, Centro — Guarulhos', regiao: 'Guarulhos', corridor: 'Rod. Pres. Dutra / Marginal Tietê / Marginal Pinheiros', coords: [-23.4628, -46.5333], baseDistanceKm: 33.2, baseDurationMinutes: 55 },
+      { id: 'CRV-SP-04', caravana: 'BARUERI / ALPHAVILLE', bairro: 'Barueri', pontoReferencia: 'Terminal Rodoviário de Barueri — Centro', regiao: 'Osasco', corridor: 'Rod. Castello Branco / Marginal Pinheiros', coords: [-23.5114, -46.8764], baseDistanceKm: 28.4, baseDurationMinutes: 43 },
+      { id: 'CRV-SP-05', caravana: 'SÃO BERNARDO DO CAMPO', bairro: 'São Bernardo do Campo', pontoReferencia: 'Paço Municipal de São Bernardo do Campo', regiao: 'Santo André', corridor: 'Via Anchieta / Av. dos Bandeirantes', coords: [-23.6944, -46.5654], baseDistanceKm: 23.0, baseDurationMinutes: 41 },
+      { id: 'CRV-SP-06', caravana: 'TATUAPÉ / ZONA LESTE', bairro: 'Tatuapé', pontoReferencia: 'Praça Sílvio Romero — Tatuapé', regiao: 'Brooklin', corridor: 'Radial Leste / Av. 23 de Maio / Av. Jorn. Roberto Marinho', coords: [-23.5403, -46.5766], baseDistanceKm: 18.7, baseDurationMinutes: 36 },
+      { id: 'CRV-SP-07', caravana: 'SANTANA / ZONA NORTE', bairro: 'Santana', pontoReferencia: 'Terminal Santana — Rua Gabriel Prestes', regiao: 'Guarulhos', corridor: 'Av. Tiradentes / Av. 23 de Maio / Brooklin', coords: [-23.5029, -46.6249], baseDistanceKm: 19.2, baseDurationMinutes: 37 },
+      { id: 'CRV-SP-08', caravana: 'CAMPINAS', bairro: 'Campinas', pontoReferencia: 'Largo do Rosário, Centro — Campinas', regiao: 'Campinas', corridor: 'Rod. dos Bandeirantes / Marginal Pinheiros', coords: [-22.9056, -47.0608], baseDistanceKm: 96.4, baseDurationMinutes: 88 }
+    ];
+
+    function getActivePreRegisteredCatalog(region = currentRegion) {
+      return region === 'SP' ? PRE_REGISTERED_CARAVANS_SP : PRE_REGISTERED_CARAVANS_RJ;
+    }
+
+    // OPÇÕES DE PROGRAMAS POR REGIONAL + SUPORTE A TEXTO LIVRE
+    const PROGRAM_OPTIONS_BY_REGION = {
+      RJ: ['Domingão', 'Caldeirão', 'Angélica'],
+      SP: ['Encontro', 'Altas Horas']
+    };
+    const customProgramsByRegion = {
+      RJ: [],
+      SP: []
+    };
+
+    function getRegionProgramOptions(region = currentRegion) {
+      const base = PROGRAM_OPTIONS_BY_REGION[region] || PROGRAM_OPTIONS_BY_REGION.RJ;
+      const extra = customProgramsByRegion[region] || [];
+      return [...new Set([...base, ...extra])];
+    }
+
+    function registerCustomProgram(programName, region = currentRegion) {
+      const clean = String(programName || '').trim();
+      if (!clean) return '';
+      const list = customProgramsByRegion[region] || [];
+      const base = PROGRAM_OPTIONS_BY_REGION[region] || [];
+      if (!base.some(p => p.toLowerCase() === clean.toLowerCase()) && !list.some(p => p.toLowerCase() === clean.toLowerCase())) {
+        list.push(clean);
+      }
+      updateProgramFilterOptions();
+      return clean;
+    }
+
+    // SUAVIZAÇÃO CATMULL-ROM SPLINE PARA LINHAS FINAS E SUAVES DE CARAVANA NO MAPA
+    function smoothRouteCoordinates(coords, segmentsPerSpan = 6) {
+      if (!Array.isArray(coords) || coords.length < 2) return coords || [];
+      if (coords.length === 2) {
+        // Gera leve curvatura natural para segmentos de apenas 2 pontos
+        const p0 = coords[0];
+        const p1 = coords[1];
+        const midLat = (p0[0] + p1[0]) / 2 + (p1[1] - p0[1]) * 0.06;
+        const midLng = (p0[1] + p1[1]) / 2 - (p1[0] - p0[0]) * 0.06;
+        coords = [p0, [midLat, midLng], p1];
+      }
+
+      const pts = [coords[0], ...coords, coords[coords.length - 1]];
+      const smoothed = [];
+
+      for (let i = 1; i < pts.length - 2; i++) {
+        const p0 = pts[i - 1];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[i + 2];
+
+        for (let step = 0; step < segmentsPerSpan; step++) {
+          const t = step / segmentsPerSpan;
+          const t2 = t * t;
+          const t3 = t2 * t;
+
+          const lat = 0.5 * (
+            (2 * p1[0]) +
+            (-p0[0] + p2[0]) * t +
+            (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+            (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3
+          );
+          const lng = 0.5 * (
+            (2 * p1[1]) +
+            (-p0[1] + p2[1]) * t +
+            (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+            (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3
+          );
+          smoothed.push([Number(lat.toFixed(5)), Number(lng.toFixed(5))]);
+        }
+      }
+      smoothed.push(coords[coords.length - 1]);
+      return smoothed;
+    }
+
+    // TRAÇADO VIÁRIO DETALHADO POR CORREDOR EXPRESSO (RJ & SP) + GEOMETRIA REAL DE RUAS VIA OSRM
+    const osrmRouteCache = new Map();
+
+    function buildDetailedCorridorGeometry(originCoords, destCoords = null, tripDirection = 'TO_GLOBO', corridorHint = '') {
+      if (!Array.isArray(originCoords) || originCoords.length < 2) {
+        return [(REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ).coords];
+      }
+      const isSp = (currentRegion === 'SP') || originCoords[0] < -23.4;
+      const targetDest = Array.isArray(destCoords) && destCoords.length === 2
+        ? destCoords
+        : (isSp ? REGIONAL_CONFIG.SP.coords : REGIONAL_CONFIG.RJ.coords);
+
+      const [oLat, oLon] = originCoords;
+      const [dLat, dLon] = targetDest;
+      const hint = String(corridorHint || '').toLowerCase();
+
+      const startPt = [Number(oLat.toFixed(4)), Number(oLon.toFixed(4))];
+      const endPt = [Number(dLat.toFixed(4)), Number(dLon.toFixed(4))];
+      const basePts = [];
+
+      if (!isSp) {
+        if (oLon > -43.18 || hint.includes('ponte') || hint.includes('niterói') || hint.includes('gonçalo') || hint.includes('itaboraí') || hint.includes('alcântara')) {
+          basePts.push(startPt);
+          if (oLon > -42.96) {
+            basePts.push([-22.7750, -42.9300], [-22.8169, -43.0036], [-22.8286, -43.0530]);
+          } else if (oLon > -43.08) {
+            basePts.push([-22.8450, -43.0820]);
+          }
+          basePts.push(
+            [-22.8745, -43.1095],
+            [-22.8712, -43.1380],
+            [-22.8718, -43.1650],
+            [-22.8758, -43.1920],
+            [-22.8775, -43.2140],
+            [-22.8695, -43.2375],
+            [-22.8755, -43.2550],
+            [-22.8805, -43.2740],
+            [-22.8935, -43.2950],
+            [-22.9125, -43.3185],
+            [-22.9325, -43.3435],
+            [-22.9465, -43.3615],
+            [-22.9520, -43.3880],
+            endPt
+          );
+        } else if (
+          (oLat > -22.845 && oLon < -43.395 && !(oLat > -22.76 && oLon < -43.62)) ||
+          (hint.includes('transolímpica') && (hint.includes('dutra') || hint.includes('light') || hint.includes('alencastro')))
+        ) {
+          basePts.push(startPt);
+          if (oLon < -43.58) {
+            basePts.push([-22.6850, -43.5950], [-22.7120, -43.5450]);
+          }
+          if (oLon < -43.48) {
+            basePts.push([-22.7320, -43.4950]);
+          }
+          if (oLat > -22.77) {
+            basePts.push([-22.7580, -43.4510], [-22.7850, -43.4220]);
+          }
+          if (oLat > -22.82) {
+            basePts.push([-22.8080, -43.4120], [-22.8380, -43.3955]);
+          }
+          basePts.push(
+            [-22.8585, -43.3925],
+            [-22.8720, -43.3885],
+            [-22.8860, -43.3965],
+            [-22.9120, -43.4015],
+            [-22.9330, -43.4035],
+            [-22.9480, -43.4060],
+            endPt
+          );
+        } else if (oLon < -43.43) {
+          basePts.push(startPt);
+          if (oLat > -22.80 && oLon < -43.62) {
+            basePts.push([-22.7950, -43.6550], [-22.8550, -43.5950]);
+          } else if (oLat <= -22.91 && oLon < -43.58) {
+            basePts.push([-22.9350, -43.6350], [-22.9080, -43.5750]);
+          }
+          if (oLon < -43.51) {
+            basePts.push([-22.8850, -43.5420], [-22.8720, -43.4980]);
+          }
+          if (oLon < -43.44) {
+            basePts.push([-22.8680, -43.4620], [-22.8660, -43.4320]);
+          }
+          basePts.push(
+            [-22.8630, -43.3980],
+            [-22.8720, -43.3885],
+            [-22.8860, -43.3965],
+            [-22.9120, -43.4015],
+            [-22.9330, -43.4035],
+            [-22.9480, -43.4060],
+            endPt
+          );
+        } else if (oLat > -22.805) {
+          basePts.push(startPt);
+          if (oLat > -22.68) {
+            basePts.push([-22.6750, -43.2450], [-22.7350, -43.2850], [-22.7850, -43.3050]);
+          } else if (oLon < -43.36) {
+            basePts.push([-22.7880, -43.3720], [-22.8115, -43.3380]);
+          }
+          basePts.push(
+            [-22.8300, -43.2950],
+            [-22.8620, -43.2550],
+            [-22.8805, -43.2740],
+            [-22.8935, -43.2950],
+            [-22.9125, -43.3185],
+            [-22.9325, -43.3435],
+            [-22.9465, -43.3615],
+            [-22.9520, -43.3880],
+            endPt
+          );
+        } else if (oLat > -22.905 && oLon > -43.39) {
+          basePts.push(startPt);
+          if (oLon > -43.30) {
+            basePts.push(
+              [-22.8780, -43.2750],
+              [-22.8935, -43.2950],
+              [-22.9125, -43.3185],
+              [-22.9325, -43.3435],
+              [-22.9465, -43.3615],
+              [-22.9520, -43.3880],
+              endPt
+            );
+          } else {
+            basePts.push(
+              [-22.8750, -43.3380],
+              [-22.8920, -43.3480],
+              [-22.9150, -43.3560],
+              [-22.9270, -43.3730],
+              [-22.9410, -43.3910],
+              endPt
+            );
+          }
+        } else {
+          basePts.push(startPt);
+          if (oLat > -22.90) {
+            basePts.push([-22.9080, -43.3980], [-22.9330, -43.4035]);
+          } else {
+            basePts.push([-22.9320, -43.3820], [-22.9440, -43.3960]);
+          }
+          basePts.push(endPt);
+        }
+      } else {
+        basePts.push(startPt);
+        if (oLat > -23.38) {
+          basePts.push(
+            [-23.1850, -46.8850],
+            [-23.3650, -46.7850],
+            [-23.5080, -46.7380],
+            [-23.5450, -46.7320],
+            [-23.5780, -46.7050],
+            [-23.6050, -46.6980],
+            endPt
+          );
+        } else if (oLon < -46.74) {
+          basePts.push(
+            [-23.5260, -46.7480],
+            [-23.5480, -46.7320],
+            [-23.5780, -46.7050],
+            [-23.5950, -46.6960],
+            [-23.6080, -46.6980],
+            endPt
+          );
+        } else if (oLon > -46.60 && oLat > -23.58) {
+          basePts.push(
+            [-23.5180, -46.6150],
+            [-23.5450, -46.6380],
+            [-23.5720, -46.6450],
+            [-23.6020, -46.6620],
+            [-23.6120, -46.6850],
+            endPt
+          );
+        } else if (oLat < -23.62 && oLon > -46.62) {
+          basePts.push(
+            [-23.6420, -46.5650],
+            [-23.6220, -46.6050],
+            [-23.6150, -46.6420],
+            [-23.6120, -46.6720],
+            endPt
+          );
+        } else {
+          const midLat1 = Number((oLat * 0.7 + dLat * 0.3).toFixed(4));
+          const midLon1 = Number((oLon * 0.7 + dLon * 0.3).toFixed(4));
+          const midLat2 = Number((oLat * 0.35 + dLat * 0.65).toFixed(4));
+          const midLon2 = Number((oLon * 0.35 + dLon * 0.65).toFixed(4));
+          basePts.push([midLat1, midLon1], [midLat2, midLon2], endPt);
+        }
+      }
+
+      return tripDirection === 'FROM_GLOBO' ? [...basePts].reverse() : basePts;
+    }
+
+    async function fetchOsrmRealRoadGeometry(startCoords, endCoords) {
+      if (!Array.isArray(startCoords) || !Array.isArray(endCoords)) return null;
+      const cacheKey = `${startCoords[0].toFixed(4)},${startCoords[1].toFixed(4)}_${endCoords[0].toFixed(4)},${endCoords[1].toFixed(4)}`;
+      if (osrmRouteCache.has(cacheKey)) {
+        return osrmRouteCache.get(cacheKey);
+      }
+
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4500);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) return null;
+        const json = await res.json();
+        const coords = json?.routes?.[0]?.geometry?.coordinates;
+        if (Array.isArray(coords) && coords.length >= 4) {
+          const latLngs = coords.map(pt => [Number(pt[1].toFixed(5)), Number(pt[0].toFixed(5))]);
+          osrmRouteCache.set(cacheKey, latLngs);
+          return latLngs;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function enrichCaravanWithRealRoadGeometry(caravanObj) {
+      if (!caravanObj) return;
+      const regConf = REGIONAL_CONFIG[caravanObj.region || currentRegion] || REGIONAL_CONFIG.RJ;
+      const originCoords = caravanObj.originCoords || (Array.isArray(caravanObj.routeGeometry) && caravanObj.routeGeometry[0]);
+      const destCoords = caravanObj.destinationCoords || regConf.coords;
+      if (!Array.isArray(originCoords) || !Array.isArray(destCoords)) return;
+
+      const isFromGlobo = caravanObj.tripDirection === 'FROM_GLOBO';
+      const corridorHint = `${caravanObj.corridor || ''} ${caravanObj.neighborhood || ''} ${caravanObj.originAddress || ''}`;
+
+      if (!Array.isArray(caravanObj.routeGeometry) || caravanObj.routeGeometry.length < 6) {
+        caravanObj.routeGeometry = buildDetailedCorridorGeometry(originCoords, destCoords, caravanObj.tripDirection || 'TO_GLOBO', corridorHint);
+      }
+
+      const startPt = isFromGlobo ? destCoords : originCoords;
+      const endPt = isFromGlobo ? originCoords : destCoords;
+      const osrmLatLngs = await fetchOsrmRealRoadGeometry(startPt, endPt);
+      if (Array.isArray(osrmLatLngs) && osrmLatLngs.length >= 6) {
+        caravanObj.routeGeometry = osrmLatLngs;
+        caravanObj.isOsrmStreetGeometry = true;
+        renderCaravanRoutesOnMap();
+      }
+    }
+
+    let mapOverlayMode = 'both'; // 'both' | 'routes_only' | 'traffic_only'
+
     let layerVisibility = {
+      caravanRoutes: true,
       ott: true,
       fogoCruzado: true,
       trafficIncidents: true,
@@ -1113,6 +1563,8 @@
       } catch (e) {}
 
       document.getElementById('termo-data').value = new Date().toLocaleDateString('pt-BR');
+      updateRegionButtonsUI();
+      updateProgramFilterOptions();
       initLeafletMap();
       initPreRegisteredSelectors();
       renderCTScenarios();
@@ -1343,7 +1795,7 @@
     }
 
     // =========================================================================
-    // CONTROLE REGIONAL RJ / SP
+    // CONTROLE REGIONAL RJ / SP & PROGRAMAS COM OPÇÃO DE TEXTO LIVRE
     // =========================================================================
     function switchRegion(newRegion) {
       if (currentRegion === newRegion) return;
@@ -1358,6 +1810,7 @@
 
       updateRegionButtonsUI();
       updateProgramFilterOptions();
+      initPreRegisteredSelectors();
 
       const conf = REGIONAL_CONFIG[newRegion];
       if (leafletMap && conf) {
@@ -1388,16 +1841,39 @@
     function updateProgramFilterOptions() {
       const progSelect = document.getElementById('filter-program');
       const regSelect = document.getElementById('filter-region-caravanas');
-      if (!progSelect) return;
+      const quickProgSelect = document.getElementById('quick-program-select');
+      const quickRegTag = document.getElementById('quick-prog-region-tag');
+      const modalProgSelect = document.getElementById('form-programa');
+      const modalRegLabel = document.getElementById('form-prog-region-label');
 
-      if (currentRegion === 'SP') {
-        progSelect.innerHTML = `
-          <option value="">Todos os Programas SP</option>
-          <option value="Encontro com Patrícia Poeta">Encontro com Patrícia Poeta</option>
-          <option value="Altas Horas SP">Altas Horas</option>
-          <option value="Caldeirão SP">Caldeirão</option>
-        `;
-        if (regSelect) {
+      const progOptions = getRegionProgramOptions(currentRegion);
+      const optionsHtml = progOptions.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+
+      if (quickRegTag) quickRegTag.innerText = currentRegion;
+      if (modalRegLabel) modalRegLabel.innerText = currentRegion;
+
+      if (progSelect) {
+        const prevVal = progSelect.value;
+        progSelect.innerHTML = `<option value="">Programa: Todos (${currentRegion})</option>` + optionsHtml;
+        if (prevVal && progOptions.includes(prevVal)) progSelect.value = prevVal;
+      }
+
+      if (quickProgSelect) {
+        const prevQuick = quickProgSelect.value;
+        quickProgSelect.innerHTML = optionsHtml + `<option value="__CUSTOM__">+ Texto livre (novo programa)...</option>`;
+        if (prevQuick && progOptions.includes(prevQuick)) quickProgSelect.value = prevQuick;
+        onQuickProgramChange(quickProgSelect.value);
+      }
+
+      if (modalProgSelect) {
+        const prevModal = modalProgSelect.value;
+        modalProgSelect.innerHTML = optionsHtml + `<option value="__CUSTOM__">+ Outro programa (Texto livre)...</option>`;
+        if (prevModal && progOptions.includes(prevModal)) modalProgSelect.value = prevModal;
+        onModalProgramChange(modalProgSelect.value);
+      }
+
+      if (regSelect) {
+        if (currentRegion === 'SP') {
           regSelect.innerHTML = `
             <option value="">Todas Regiões SP</option>
             <option value="Osasco">Osasco / Zona Oeste</option>
@@ -1406,37 +1882,101 @@
             <option value="Campinas">Campinas / Interior</option>
             <option value="Brooklin">Brooklin / Berrini</option>
           `;
-        }
-      } else {
-        progSelect.innerHTML = `
-          <option value="">Todos os Programas RJ</option>
-          <option value="Domingão com Huck">Domingão com Huck</option>
-          <option value="Caldeirão com Mion">Caldeirão com Mion</option>
-          <option value="Altas Horas">Altas Horas</option>
-          <option value="Conversa com Bial">Conversa com Bial</option>
-        `;
-        if (regSelect) {
+        } else {
           regSelect.innerHTML = `
             <option value="">Todas Regiões RJ</option>
-            <option value="Niterói">Niterói / Leste</option>
+            <option value="Niterói">Niterói / São Gonçalo</option>
             <option value="Nova Iguaçu">Baixada Fluminense</option>
             <option value="Madureira">Zona Norte</option>
             <option value="Campo Grande">Zona Oeste</option>
-            <option value="Barra da Tijuca">Barra da Tijuca</option>
+            <option value="Barra da Tijuca">Jacarepaguá / Barra</option>
             <option value="Centro">Centro / Zona Sul</option>
           `;
         }
       }
     }
 
+    function onQuickProgramChange(val) {
+      const wrap = document.getElementById('quick-program-custom-wrap');
+      const input = document.getElementById('quick-program-custom');
+      if (!wrap) return;
+      if (val === '__CUSTOM__') {
+        wrap.classList.remove('hidden');
+        if (input) setTimeout(() => input.focus(), 50);
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function applyQuickCustomProgram() {
+      const input = document.getElementById('quick-program-custom');
+      const select = document.getElementById('quick-program-select');
+      const val = (input?.value || '').trim();
+      if (!val) {
+        showToast('Digite o nome do programa no campo de texto livre.', 'warning');
+        return;
+      }
+      const registered = registerCustomProgram(val, currentRegion);
+      if (select && registered) {
+        select.value = registered;
+      }
+      onQuickProgramChange(registered);
+      showToast(`Programa "${registered}" incluído nas opções de ${currentRegion}!`, 'success');
+    }
+
+    function getSelectedQuickProgram() {
+      const select = document.getElementById('quick-program-select');
+      const input = document.getElementById('quick-program-custom');
+      if (!select) return currentRegion === 'SP' ? 'Encontro' : 'Domingão';
+      if (select.value === '__CUSTOM__') {
+        const customVal = (input?.value || '').trim();
+        if (customVal) {
+          return registerCustomProgram(customVal, currentRegion);
+        }
+        return currentRegion === 'SP' ? 'Encontro' : 'Domingão';
+      }
+      return select.value;
+    }
+
+    function onModalProgramChange(val) {
+      const wrap = document.getElementById('form-programa-custom-wrap');
+      const input = document.getElementById('form-programa-custom');
+      if (!wrap) return;
+      if (val === '__CUSTOM__') {
+        wrap.classList.remove('hidden');
+        if (input) {
+          input.required = true;
+          setTimeout(() => input.focus(), 50);
+        }
+      } else {
+        wrap.classList.add('hidden');
+        if (input) input.required = false;
+      }
+    }
+
+    function getSelectedModalProgram() {
+      const select = document.getElementById('form-programa');
+      const input = document.getElementById('form-programa-custom');
+      if (!select) return currentRegion === 'SP' ? 'Encontro' : 'Domingão';
+      if (select.value === '__CUSTOM__') {
+        const customVal = (input?.value || '').trim();
+        if (customVal) {
+          return registerCustomProgram(customVal, currentRegion);
+        }
+        return '';
+      }
+      return select.value;
+    }
+
     // =========================================================================
-    // CONTROLE DE CAMADAS (TOGGLES TÁTICOS)
+    // CONTROLE DE CAMADAS, MAPA LIMPO E ALTERNÂNCIA ROTA CARAVANA vs TRÂNSITO
     // =========================================================================
     function toggleLayer(layerKey, isVisible) {
-      layerVisibility[layerKey] = isVisible;
+      layerVisibility[layerKey] = Boolean(isVisible);
       if (!leafletMap) return;
 
       const groupMap = {
+        caravanRoutes: caravanRoutesLayerGroup,
         ott: ottLayerGroup,
         fogoCruzado: fogoCruzadoLayerGroup,
         trafficIncidents: trafficIncidentsLayerGroup,
@@ -1445,38 +1985,164 @@
       };
 
       const group = groupMap[layerKey];
-      if (!group) return;
+      if (group) {
+        if (isVisible) {
+          if (!leafletMap.hasLayer(group)) leafletMap.addLayer(group);
+        } else {
+          if (leafletMap.hasLayer(group)) leafletMap.removeLayer(group);
+        }
+      }
 
-      if (isVisible) {
-        if (!leafletMap.hasLayer(group)) leafletMap.addLayer(group);
-      } else {
-        if (leafletMap.hasLayer(group)) leafletMap.removeLayer(group);
+      // Sincroniza checkboxes do topo e da caixa de camadas
+      if (layerKey === 'cameras') {
+        const topCam = document.getElementById('chk-top-cameras');
+        const sideCam = document.getElementById('chk-layer-cams');
+        if (topCam) topCam.checked = Boolean(isVisible);
+        if (sideCam) sideCam.checked = Boolean(isVisible);
+        renderCamerasOnMap();
+        renderCaravanRoutesOnMap(); // Re-renderiza sem alterar o zoom para ocultar/exibir câmeras da rota
+      } else if (layerKey === 'trafficIncidents' || layerKey === 'ott' || layerKey === 'fogoCruzado') {
+        const topOcc = document.getElementById('chk-top-occurrences');
+        if (topOcc) {
+          topOcc.checked = Boolean(layerVisibility.trafficIncidents || layerVisibility.ott || layerVisibility.fogoCruzado);
+        }
       }
     }
 
-    function toggleTrafficLayer() {
-      const newState = !layerVisibility.trafficFlow;
-      layerVisibility.trafficFlow = newState;
+    function toggleAllOccurrencesOnMap(isVisible) {
+      const state = Boolean(isVisible);
+      ['trafficIncidents', 'ott', 'fogoCruzado'].forEach(k => {
+        layerVisibility[k] = state;
+      });
+      const chkInc = document.getElementById('chk-layer-inc');
+      const chkOtt = document.getElementById('chk-layer-ott');
+      const chkFc = document.getElementById('chk-layer-fc');
+      const chkTop = document.getElementById('chk-top-occurrences');
+      if (chkInc) chkInc.checked = state;
+      if (chkOtt) chkOtt.checked = state;
+      if (chkFc) chkFc.checked = state;
+      if (chkTop) chkTop.checked = state;
+
+      toggleLayer('trafficIncidents', state);
+      toggleLayer('ott', state);
+      toggleLayer('fogoCruzado', state);
+      renderCaravanRoutesOnMap(); // Atualiza segmentos críticos na rota sem mover o mapa
+      showToast(state ? '⚠️ Ocorrências exibidas no trajeto e no mapa.' : '✨ Ocorrências ocultadas — mapa mais limpo.', 'info');
+    }
+
+    function toggleAllCamerasOnMap(isVisible) {
+      const state = Boolean(isVisible);
+      toggleLayer('cameras', state);
+      showToast(state ? '🎥 Câmeras exibidas no trajeto e no mapa.' : '✨ Câmeras ocultadas — mapa mais limpo.', 'info');
+    }
+
+    function toggleCaravanRoutesLayer(isVisible) {
+      const state = Boolean(isVisible);
+      layerVisibility.caravanRoutes = state;
+      const chk = document.getElementById('chk-layer-routes');
+      if (chk) chk.checked = state;
+      if (caravanRoutesLayerGroup && leafletMap) {
+        if (state) {
+          if (!leafletMap.hasLayer(caravanRoutesLayerGroup)) leafletMap.addLayer(caravanRoutesLayerGroup);
+        } else {
+          if (leafletMap.hasLayer(caravanRoutesLayerGroup)) leafletMap.removeLayer(caravanRoutesLayerGroup);
+        }
+      }
+      syncOverlayModeButtonsUI();
+    }
+
+    function setMapOverlayMode(mode) {
+      mapOverlayMode = mode;
+      if (mode === 'routes_only') {
+        toggleCaravanRoutesLayer(true);
+        setTrafficFlowState(false);
+        showToast('🚌 Exibindo apenas o roteiro fino e suave das caravanas.', 'info');
+      } else if (mode === 'traffic_only') {
+        toggleCaravanRoutesLayer(false);
+        setTrafficFlowState(true);
+        showToast('🚦 Alternado para visualização de Trânsito em Tempo Real nas vias.', 'info');
+      } else {
+        toggleCaravanRoutesLayer(true);
+        setTrafficFlowState(true);
+        showToast('🔀 Exibindo Roteiro das Caravanas + Trânsito em Tempo Real.', 'info');
+      }
+      syncOverlayModeButtonsUI();
+    }
+
+    function onGmapsBarSelectChange(val) {
+      setMapOverlayMode(val);
+    }
+
+    function setTrafficVisibilityFromBar(isChecked) {
+      setTrafficFlowState(Boolean(isChecked));
+      if (isChecked && !layerVisibility.caravanRoutes) {
+        mapOverlayMode = 'traffic_only';
+      } else if (isChecked && layerVisibility.caravanRoutes) {
+        mapOverlayMode = 'both';
+      } else if (!isChecked && layerVisibility.caravanRoutes) {
+        mapOverlayMode = 'routes_only';
+      }
+      syncOverlayModeButtonsUI();
+    }
+
+    function setTrafficFlowState(newState) {
+      layerVisibility.trafficFlow = Boolean(newState);
 
       const btn = document.getElementById('btn-toggle-traffic-layer');
       const btnText = document.getElementById('traffic-layer-btn-text');
       const legend = document.getElementById('traffic-fluidity-legend');
+      const gmapsChk = document.getElementById('chk-gmaps-traffic');
+      const gmapsStatus = document.getElementById('gmaps-traffic-status-label');
+
+      if (gmapsChk) gmapsChk.checked = Boolean(newState);
+      if (gmapsStatus) {
+        gmapsStatus.innerText = newState ? 'Ativo' : 'Oculto';
+        gmapsStatus.className = newState
+          ? 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400'
+          : 'text-[10px] font-bold text-slate-400';
+      }
 
       if (newState) {
-        if (btn) btn.className = "px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition";
+        if (btn) btn.className = "px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 text-[8.5px] font-bold flex items-center gap-1 shadow hover:bg-emerald-900 transition";
         if (btnText) btnText.innerText = "Trânsito: ON";
         if (trafficFlowLayerGroup && leafletMap && !leafletMap.hasLayer(trafficFlowLayerGroup)) {
           leafletMap.addLayer(trafficFlowLayerGroup);
         }
+        renderTrafficConditionsOnMap();
         if (legend) legend.classList.remove('hidden');
       } else {
-        if (btn) btn.className = "px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-[9px] font-bold flex items-center gap-1 shadow hover:bg-slate-800 transition";
+        if (btn) btn.className = "px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-[8.5px] font-bold flex items-center gap-1 shadow hover:bg-slate-800 transition";
         if (btnText) btnText.innerText = "Trânsito: OFF";
         if (trafficFlowLayerGroup && leafletMap && leafletMap.hasLayer(trafficFlowLayerGroup)) {
           leafletMap.removeLayer(trafficFlowLayerGroup);
         }
         if (legend) legend.classList.add('hidden');
       }
+    }
+
+    function syncOverlayModeButtonsUI() {
+      const btnBoth = document.getElementById('btn-viewmode-both');
+      const btnRoutes = document.getElementById('btn-viewmode-routes');
+      const btnTraffic = document.getElementById('btn-viewmode-traffic');
+      const gmapsSelect = document.getElementById('gmaps-mode-select');
+
+      const activeCls = "px-2 py-1 rounded text-[9.5px] font-bold transition bg-cyan-950 text-cyan-300 border border-cyan-600 shadow";
+      const inactiveCls = "px-2 py-1 rounded text-[9.5px] font-bold transition text-slate-300 hover:text-white";
+
+      if (btnBoth) btnBoth.className = mapOverlayMode === 'both' ? activeCls : inactiveCls;
+      if (btnRoutes) btnRoutes.className = mapOverlayMode === 'routes_only' ? activeCls : inactiveCls;
+      if (btnTraffic) btnTraffic.className = mapOverlayMode === 'traffic_only' ? activeCls : inactiveCls;
+      if (gmapsSelect && gmapsSelect.value !== mapOverlayMode) {
+        gmapsSelect.value = mapOverlayMode;
+      }
+    }
+
+    function toggleTrafficLayer() {
+      setTrafficFlowState(!layerVisibility.trafficFlow);
+      if (layerVisibility.trafficFlow && layerVisibility.caravanRoutes) mapOverlayMode = 'both';
+      else if (layerVisibility.trafficFlow) mapOverlayMode = 'traffic_only';
+      else mapOverlayMode = 'routes_only';
+      syncOverlayModeButtonsUI();
     }
 
     // =========================================================================
@@ -1519,6 +2185,7 @@
         if (res.ok) {
           const json = await res.json();
           caravansData = json.data || [];
+          caravansData.forEach(c => enrichCaravanWithRealRoadGeometry(c));
           updateCaravanKpis(json.kpis || {});
         }
       } catch (e) {
@@ -1673,30 +2340,47 @@
     }
 
     // =========================================================================
-    // PRÉ-CADASTRO DAS 49 CARAVANAS DO RJ: SELETORES, ABA E PLOTAGEM NO MAPA
+    // PRÉ-CADASTRO DE CARAVANAS (RJ 49 LOCAIS & SP): SELETORES, ABA E PLOTAGEM
     // =========================================================================
     function initPreRegisteredSelectors() {
+      const catalog = getActivePreRegisteredCatalog(currentRegion);
       const sideSelect = document.getElementById('select-precadastro-caravana');
       const formSelect = document.getElementById('form-precadastro-rj');
+      const subtabLabel = document.getElementById('subtab-precadastro-label');
+      const badgePre = document.getElementById('badge-subtab-precadastro');
+      const btnPlotAll = document.getElementById('btn-plot-all-prereg');
+      const formPreLabel = document.getElementById('form-precadastro-label');
 
-      const optionsHtml = PRE_REGISTERED_CARAVANS_RJ.map((item, idx) => {
+      const optionsHtml = catalog.map((item, idx) => {
         const num = String(idx + 1).padStart(2, '0');
         const label = `${num}. ${item.caravana} (${item.bairro}) — ${item.pontoReferencia}`;
         return `<option value="${item.id}">${escapeHtml(label)}</option>`;
       }).join('');
 
       if (sideSelect) {
-        sideSelect.innerHTML = `<option value="">🚌 + Incluir Caravana RJ nas Ativas (${PRE_REGISTERED_CARAVANS_RJ.length})...</option>` + optionsHtml;
+        sideSelect.innerHTML = `<option value="">🚌 + Incluir Caravana ${currentRegion} nas Ativas (${catalog.length})...</option>` + optionsHtml;
       }
       if (formSelect) {
-        formSelect.innerHTML = `<option value="">-- Selecionar do Pré-Cadastro RJ (${PRE_REGISTERED_CARAVANS_RJ.length} Caravanas) --</option>` + optionsHtml;
+        formSelect.innerHTML = `<option value="">-- Selecionar do Pré-Cadastro ${currentRegion} (${catalog.length} locais) --</option>` + optionsHtml;
       }
-      const badgePre = document.getElementById('badge-subtab-precadastro');
-      if (badgePre) badgePre.innerText = String(PRE_REGISTERED_CARAVANS_RJ.length);
+      if (subtabLabel) subtabLabel.innerText = `Pré-Cadastro ${currentRegion}`;
+      if (badgePre) badgePre.innerText = String(catalog.length);
+      if (btnPlotAll) {
+        btnPlotAll.innerText = `${catalog.length} 🚌`;
+        btnPlotAll.title = `Plotar todas as ${catalog.length} caravanas pré-cadastradas de ${currentRegion} no mapa`;
+      }
+      if (formPreLabel) {
+        formPreLabel.innerText = `Carregar Caravana Pré-Cadastrada de ${currentRegion} (${catalog.length} locais)`;
+      }
+    }
+
+    function findPreRegisteredById(preRegId) {
+      return PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId) ||
+             PRE_REGISTERED_CARAVANS_SP.find(c => c.id === preRegId) || null;
     }
 
     function isPreRegisteredCaravanActive(preRegId) {
-      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      const item = findPreRegisteredById(preRegId);
       if (!item) return null;
       return caravansData.find(c =>
         c.preRegId === item.id ||
@@ -1728,18 +2412,13 @@
 
     async function onSelectPreRegisteredCaravan(preRegId, openDrawer = false) {
       if (!preRegId) return;
-      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      const item = findPreRegisteredById(preRegId);
       if (!item) return;
 
       selectedPreRegisteredId = item.id;
 
-      if (currentRegion !== 'RJ') {
-        await switchRegion('RJ');
-      }
-
-      // Inclui automaticamente a caravana selecionada nas Caravanas Ativas da barra lateral
-      // mantendo todas as caravanas ativas visíveis no mesmo plano de vídeo do mapa
-      await quickAddPreRegisteredToGrade(item.id, { openDrawer, keepInSameFrame: true });
+      // Inclui a caravana com Programa, Hora de Saída e Destino selecionados sem alterar a visualização geral do mapa
+      await quickAddPreRegisteredToGrade(item.id, { openDrawer, keepInSameFrame: false });
 
       const sideSelect = document.getElementById('select-precadastro-caravana');
       if (sideSelect) sideSelect.value = '';
@@ -1747,25 +2426,34 @@
 
     function plotPreRegisteredCaravanOnMap(item, opts = {}) {
       if (!leafletMap || !preRegisteredBusLayerGroup || !item || !Array.isArray(item.coords)) return;
-      const { clearPrevious = false, zoomTo = true, openPopup = true, drawRoute = true, color = '#f5a623' } = opts;
+      const { clearPrevious = false, zoomTo = false, openPopup = true, drawRoute = true, color = '#f5a623' } = opts;
 
       if (clearPrevious) {
         preRegisteredBusLayerGroup.clearLayers();
       }
 
-      const destCoords = REGIONAL_CONFIG.RJ.coords;
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
+      const destCoords = regConf.coords;
 
       if (drawRoute) {
-        const midLat = Number(((item.coords[0] + destCoords[0]) / 2).toFixed(4));
-        const midLng = Number(((item.coords[1] + destCoords[1]) / 2).toFixed(4));
-        const routePts = [item.coords, [midLat, midLng], destCoords];
+        const corridorPts = buildDetailedCorridorGeometry(item.coords, destCoords, 'TO_GLOBO', `${item.corridor || ''} ${item.bairro || ''}`);
+        const smoothPts = smoothRouteCoordinates(corridorPts, 5);
 
-        L.polyline(routePts, {
+        const previewLine = L.polyline(smoothPts, {
           color: color,
-          weight: 4,
-          dashArray: '8, 6',
-          opacity: 0.9
+          weight: 2.0,
+          dashArray: '5, 5',
+          opacity: 0.85,
+          smoothFactor: 1.2,
+          lineCap: 'round',
+          lineJoin: 'round'
         }).addTo(preRegisteredBusLayerGroup);
+
+        fetchOsrmRealRoadGeometry(item.coords, destCoords).then(osrmPts => {
+          if (Array.isArray(osrmPts) && osrmPts.length >= 6 && preRegisteredBusLayerGroup.hasLayer(previewLine)) {
+            previewLine.setLatLngs(osrmPts);
+          }
+        });
       }
 
       const busIcon = createBusMapIcon(color, item.caravana, clearPrevious);
@@ -1774,7 +2462,7 @@
         .bindPopup(`
           <div style="font-family:sans-serif; font-size:11px; line-height:1.45; min-width:220px;">
             <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-              <span style="background:#f5a623; color:#000; font-weight:900; padding:2px 6px; border-radius:4px; font-size:10px;">🚌 CARAVANA RJ</span>
+              <span style="background:#f5a623; color:#000; font-weight:900; padding:2px 6px; border-radius:4px; font-size:10px;">🚌 CARAVANA ${currentRegion}</span>
               <span style="font-size:10px; color:#38bdf8; font-weight:bold;">${escapeHtml(item.id)}</span>
             </div>
             <strong style="font-size:12px; color:#0f172a;">${escapeHtml(item.caravana)}</strong><br>
@@ -1782,7 +2470,7 @@
             <strong>Ponto de Referência / Endereço:</strong><br>
             <span style="color:#334155; font-weight:600;">${escapeHtml(item.pontoReferencia)}</span><br>
             <strong>Corredor Principal:</strong> ${escapeHtml(item.corridor)}<br>
-            <strong>Distância até Estúdios Globo:</strong> <strong style="color:#d97706;">${item.baseDistanceKm} km (~${item.baseDurationMinutes} min)</strong>
+            <strong>Distância até ${escapeHtml(regConf.label)}:</strong> <strong style="color:#d97706;">${item.baseDistanceKm} km (~${item.baseDurationMinutes} min)</strong>
             <div style="margin-top:8px; display:flex; gap:6px;">
               <button onclick="quickAddPreRegisteredToGrade('${item.id}')" style="flex:1; background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">
                 + Ativar no Plano
@@ -1809,12 +2497,13 @@
 
     function plotAllPreRegisteredCaravans() {
       if (!leafletMap || !preRegisteredBusLayerGroup) return;
-      if (currentRegion !== 'RJ') switchRegion('RJ');
+      const catalog = getActivePreRegisteredCatalog(currentRegion);
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
 
       preRegisteredBusLayerGroup.clearLayers();
-      const bounds = [REGIONAL_CONFIG.RJ.coords];
+      const bounds = [regConf.coords];
 
-      PRE_REGISTERED_CARAVANS_RJ.forEach((item, idx) => {
+      catalog.forEach((item, idx) => {
         const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
         plotPreRegisteredCaravanOnMap(item, {
           clearPrevious: false,
@@ -1827,7 +2516,7 @@
       });
 
       leafletMap.fitBounds(bounds, { padding: [35, 35] });
-      showToast(`🚌 Todas as ${PRE_REGISTERED_CARAVANS_RJ.length} Caravanas Pré-Cadastradas do RJ foram plotadas no mesmo plano!`, 'success');
+      showToast(`🚌 Todas as ${catalog.length} Caravanas Pré-Cadastradas de ${currentRegion} foram plotadas no mesmo plano!`, 'success');
     }
 
     function clearPreRegisteredCaravansMap() {
@@ -1884,7 +2573,7 @@
       if (c && leafletMap) {
         const origin = c.originCoords || (Array.isArray(c.routeGeometry) && c.routeGeometry[0]);
         if (Array.isArray(origin)) {
-          leafletMap.setView(origin, 14, { animate: true });
+          leafletMap.panTo(origin, { animate: true });
         }
         if (activeCaravanMarkersById[caravanId]) {
           setTimeout(() => activeCaravanMarkersById[caravanId].openPopup(), 250);
@@ -1897,8 +2586,7 @@
       if (!c) return;
       c.visibleOnMap = Boolean(isVisible);
       renderCaravanFeed();
-      renderCaravanRoutesOnMap();
-      fitAllActiveCaravansInView();
+      renderCaravanRoutesOnMap(); // Mantém a visualização geral do mapa sem alterar o zoom/enquadramento
     }
 
     async function removeActiveCaravan(caravanId) {
@@ -1914,9 +2602,6 @@
       recomputeLocalCaravanKpis();
       renderCaravanFeed();
       renderCaravanRoutesOnMap();
-      if (caravansData.length > 0) {
-        fitAllActiveCaravansInView();
-      }
       showToast('Caravana removida do plano ativo.', 'info');
     }
 
@@ -1929,7 +2614,7 @@
       recomputeLocalCaravanKpis();
       renderCaravanFeed();
       renderCaravanRoutesOnMap();
-      showToast('Plano limpo! Selecione as caravanas do RJ na lista acima para comparar no mesmo plano de vídeo.', 'info');
+      showToast(`Plano limpo! Selecione as caravanas de ${currentRegion} na lista acima para comparar no mesmo plano de vídeo.`, 'info');
     }
 
     function recomputeLocalCaravanKpis() {
@@ -1950,8 +2635,9 @@
       const title = document.getElementById('drawer-title');
       const tag = document.getElementById('drawer-tag');
       const body = document.getElementById('drawer-body');
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
 
-      tag.innerText = `🚌 Caravana Pré-Cadastrada RJ • ${item.id}`;
+      tag.innerText = `🚌 Caravana Pré-Cadastrada ${currentRegion} • ${item.id}`;
       tag.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-amber-950 text-amber-300 border border-amber-700";
       title.innerText = `Caravana ${item.caravana} — ${item.bairro}`;
 
@@ -1959,7 +2645,7 @@
         <div class="bg-[#070b14] border border-amber-500/30 rounded-lg p-3 space-y-2.5">
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <div>
-              <span class="text-[9px] text-slate-400 block uppercase">Caravana Oficial RJ</span>
+              <span class="text-[9px] text-slate-400 block uppercase">Caravana Oficial ${currentRegion}</span>
               <strong class="text-amber-300 text-xs flex items-center gap-1.5"><i class="fa-solid fa-bus"></i> ${escapeHtml(item.caravana)}</strong>
             </div>
             <div class="text-right">
@@ -1969,7 +2655,7 @@
           </div>
 
           <div class="bg-[#0b1324] border border-white/10 rounded p-2.5 space-y-1">
-            <span class="text-[9px] text-cyan-400 font-bold uppercase block">📍 Ponto de Referência / Endereço de Embarque</span>
+            <span class="text-[9px] text-cyan-400 font-bold uppercase block">📍 Ponto de Referência / Endereço de Saída</span>
             <p class="text-xs text-white font-semibold leading-snug">${escapeHtml(item.pontoReferencia)}</p>
             <span class="text-[9.5px] text-slate-400 block font-mono">Coordenadas: ${item.coords[0].toFixed(4)}, ${item.coords[1].toFixed(4)}</span>
           </div>
@@ -1978,7 +2664,7 @@
             <span class="text-slate-500">Corredor Viário Principal:</span> <strong class="text-cyan-300">${escapeHtml(item.corridor)}</strong>
           </div>
           <div class="text-[10px] text-slate-300">
-            <span class="text-slate-500">Destino Padrão:</span> <strong class="text-white">ESTÚDIOS GLOBO (Curicica / Jacarepaguá)</strong>
+            <span class="text-slate-500">Destino Padrão:</span> <strong class="text-white">${escapeHtml(regConf.label)}</strong>
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1 text-center text-[10px]">
@@ -1998,9 +2684,9 @@
             </button>
             <div class="flex gap-2">
               <button onclick="openCaravanModalWithPreReg('${item.id}')" class="flex-1 py-1.5 rounded bg-[#111c35] hover:bg-[#1a2b52] text-cyan-300 border border-cyan-700/60 font-semibold text-xs transition">
-                Personalizar Horário / Programa
+                Personalizar Horário / Programa / Destino
               </button>
-              <button onclick="leafletMap.fitBounds([[${item.coords[0]}, ${item.coords[1]}], [-22.9550, -43.4100]], { padding: [50, 50] })" class="px-3 py-1.5 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-semibold text-xs transition">
+              <button onclick="leafletMap.fitBounds([[${item.coords[0]}, ${item.coords[1]}], [${regConf.coords[0]}, ${regConf.coords[1]}]], { padding: [50, 50] })" class="px-3 py-1.5 rounded bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-semibold text-xs transition">
                 Ver Rota Inteira
               </button>
             </div>
@@ -2015,8 +2701,9 @@
       const feed = document.getElementById('feed-container');
       const search = (document.getElementById('filter-search').value || '').trim().toLowerCase();
       const region = document.getElementById('filter-region-caravanas')?.value || '';
+      const catalog = getActivePreRegisteredCatalog(currentRegion);
 
-      const filtered = PRE_REGISTERED_CARAVANS_RJ.filter(item => {
+      const filtered = catalog.filter(item => {
         if (region) {
           const rLow = region.toLowerCase();
           const itemReg = `${item.regiao} ${item.bairro} ${item.corridor}`.toLowerCase();
@@ -2029,19 +2716,19 @@
         return true;
       });
 
-      document.getElementById('feed-count-badge').innerText = `${filtered.length} de ${PRE_REGISTERED_CARAVANS_RJ.length} pré-cadastradas`;
+      document.getElementById('feed-count-badge').innerText = `${filtered.length} de ${catalog.length} pré-cadastradas`;
 
       if (filtered.length === 0) {
         feed.innerHTML = `
           <div class="p-4 text-center text-slate-500 space-y-1.5">
             <div class="font-bold text-xs text-slate-400">Nenhuma caravana pré-cadastrada encontrada</div>
-            <div class="text-[10px]">Tente buscar por nome, bairro ou ponto de referência (Ex: Alcântara, Bangu, Comendador Soares, Taquara).</div>
+            <div class="text-[10px]">Tente buscar por nome, bairro ou ponto de referência.</div>
           </div>
         `;
         return;
       }
 
-      feed.innerHTML = filtered.map((item, idx) => {
+      feed.innerHTML = filtered.map((item) => {
         const activeMatch = isPreRegisteredCaravanActive(item.id);
         const isSelected = Boolean(activeMatch) || selectedPreRegisteredId === item.id;
         return `
@@ -2070,7 +2757,7 @@
                     ✓ Ativa
                   </button>
                 ` : `
-                  <button type="button" onclick="event.stopPropagation(); onSelectPreRegisteredCaravan('${item.id}', false)" class="px-1.5 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-black font-extrabold text-[9px] flex items-center gap-0.5" title="Incluir nas Caravanas Ativas e plotar ônibus no mapa">
+                  <button type="button" onclick="event.stopPropagation(); onSelectPreRegisteredCaravan('${item.id}', false)" class="px-1.5 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-black font-extrabold text-[9px] flex items-center gap-0.5" title="Incluir nas Caravanas Ativas e plotar ônibus no endereço de saída">
                     + Ativar 🚌
                   </button>
                 `}
@@ -2095,12 +2782,16 @@
 
       const feed = document.getElementById('feed-container');
       const search = (document.getElementById('filter-search').value || '').trim().toLowerCase();
-      const prog = document.getElementById('filter-program').value;
+      const prog = (document.getElementById('filter-program').value || '').trim();
       const region = document.getElementById('filter-region-caravanas')?.value || '';
       const status = document.getElementById('filter-status').value;
 
       const filtered = caravansData.filter(c => {
-        if (prog && c.programName !== prog) return false;
+        if (prog) {
+          const pLow = prog.toLowerCase();
+          const cProg = String(c.programName || '').toLowerCase();
+          if (cProg !== pLow && !cProg.includes(pLow) && !pLow.includes(cProg)) return false;
+        }
         if (status && c.projectedStatus !== status) return false;
 
         if (region) {
@@ -2117,7 +2808,7 @@
         }
 
         if (search) {
-          const fullText = `${c.caravanName} ${c.programName} ${c.companyName} ${c.originAddress} ${c.neighborhood || ''} ${c.corridor || ''} ${c.destinationLabel || ''}`.toLowerCase();
+          const fullText = `${c.caravanName} ${c.programName} ${c.companyName} ${c.originAddress} ${c.neighborhood || ''} ${c.corridor || ''} ${c.destinationLabel || ''} ${c.tripDirectionLabel || ''}`.toLowerCase();
           const matches = fullText.includes(search) ||
             (search.includes('barra') && (fullText.includes('curicica') || fullText.includes('jacarepaguá') || fullText.includes('estúdios globo'))) ||
             (search.includes('jacarepagu') && (fullText.includes('curicica') || fullText.includes('estúdios globo'))) ||
@@ -2136,7 +2827,7 @@
         feed.innerHTML = `
           <div class="p-4 text-center text-slate-400 space-y-2 bg-[#0b1324]/60 rounded-lg border border-white/5">
             <div class="font-bold text-xs text-cyan-300">Nenhuma caravana ativa no filtro atual</div>
-            <div class="text-[10px] text-slate-400">Escolha uma ou mais caravanas no seletor <strong>"🚌 + Incluir Caravana RJ nas Ativas (49)"</strong> acima para plotar e acompanhar múltiplas caravanas no mesmo plano de vídeo.</div>
+            <div class="text-[10px] text-slate-400">Escolha uma caravana no painel <strong>"🚌 + Incluir Caravana nas Ativas"</strong> acima informando Programa, Hora de Saída e Destino para plotar e acompanhar no mapa.</div>
           </div>
         `;
         return;
@@ -2163,13 +2854,18 @@
         const distKm = c.baseDistanceKm ? `${Number(c.baseDistanceKm).toFixed(1)} km` : '--';
         const durMin = `${c.projectedDurationMinutes || c.baseDurationMinutes || '--'} min`;
         const incCount = c.incidents ? c.incidents.length : 0;
+        const isFromGlobo = c.tripDirection === 'FROM_GLOBO';
+        const dirBadgeText = isFromGlobo ? '↩ Globo ➔ Origem' : '➔ Origem ➔ Globo';
+        const dirBadgeCls = isFromGlobo
+          ? 'bg-purple-950/80 text-purple-300 border-purple-700/60'
+          : 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60';
 
         return `
           <div onclick="focusSingleCaravan('${c.caravanId}')" class="caravan-card px-2 py-1.5 rounded-md border transition cursor-pointer ${isSelected ? 'bg-[#132244] border-cyan-400 shadow ring-1 ring-cyan-400/40' : 'bg-[#0b1324] border-white/10 hover:border-cyan-500/40'} ${!isVisible ? 'opacity-50' : ''}">
             <!-- LINHA 1: CHECKBOX PLANO + ÍCONE ÔNIBUS COLORIDO + NOME + STATUS + AÇÕES RÁPIDAS -->
             <div class="flex items-center justify-between gap-1.5">
               <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                <input type="checkbox" ${isVisible ? 'checked' : ''} onclick="event.stopPropagation();" onchange="toggleCaravanMapVisibility('${c.caravanId}', this.checked)" class="accent-cyan-400 rounded cursor-pointer shrink-0 w-3.5 h-3.5" title="Exibir/ocultar esta caravana no plano de vídeo do mapa" />
+                <input type="checkbox" ${isVisible ? 'checked' : ''} onclick="event.stopPropagation();" onchange="toggleCaravanMapVisibility('${c.caravanId}', this.checked)" class="accent-cyan-400 rounded cursor-pointer shrink-0 w-3.5 h-3.5" title="Exibir/ocultar esta caravana no mapa sem alterar o zoom" />
                 <span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] text-black font-black shadow" style="background-color: ${color};" title="Cor do Ônibus e Rota no Mapa">
                   <i class="fa-solid fa-bus"></i>
                 </span>
@@ -2181,7 +2877,7 @@
                 <span class="text-[8.5px] px-1.5 py-0.5 rounded border font-bold uppercase ${statusBadge}">
                   ${shortStatus}
                 </span>
-                <button type="button" onclick="event.stopPropagation(); focusSingleCaravan('${c.caravanId}')" class="px-1.5 py-0.5 rounded bg-[#070d19] hover:bg-cyan-950 text-cyan-300 border border-white/10 text-[9px]" title="Focar ônibus no mapa">
+                <button type="button" onclick="event.stopPropagation(); focusSingleCaravan('${c.caravanId}')" class="px-1.5 py-0.5 rounded bg-[#070d19] hover:bg-cyan-950 text-cyan-300 border border-white/10 text-[9px]" title="Centralizar ônibus no mapa">
                   🎯
                 </button>
                 <button type="button" onclick="event.stopPropagation(); selectCaravan('${c.caravanId}', true)" class="px-1.5 py-0.5 rounded bg-[#070d19] hover:bg-cyan-950 text-slate-300 hover:text-white border border-white/10 text-[9px] font-bold" title="Abrir detalhes táticos">
@@ -2193,18 +2889,23 @@
               </div>
             </div>
 
-            <!-- LINHA 2: ENDEREÇO / PONTO DE REFERÊNCIA & PROGRAMA -->
-            <div class="text-[9.5px] text-slate-400 truncate mt-0.5 pl-5" title="${escapeHtml(c.originAddress || '')}">
-              📍 <span class="text-slate-300">${escapeHtml(c.originAddress || c.neighborhood || 'Ponto de Embarque')}</span> • <span class="text-cyan-300/90">${escapeHtml(c.programName)}</span>
+            <!-- LINHA 2: ENDEREÇO DE SAÍDA & PROGRAMA + SENTIDO DO TRAJETO -->
+            <div class="flex items-center justify-between gap-1 text-[9.5px] text-slate-400 mt-0.5 pl-5">
+              <div class="truncate" title="${escapeHtml(c.originAddress || '')}">
+                📍 <span class="text-slate-300">${escapeHtml(c.originAddress || c.neighborhood || 'Endereço da Caravana')}</span> • <strong class="text-cyan-300">${escapeHtml(c.programName)}</strong>
+              </div>
+              <span class="text-[8px] px-1 py-0.2 rounded border shrink-0 font-semibold ${dirBadgeCls}" title="Sentido configurado para cálculo de rota e ocorrências">
+                ${dirBadgeText}
+              </span>
             </div>
 
             <!-- LINHA 3: FAIXA COMPACTA DE TELEMETRIA EM 1 LINHA -->
             <div class="flex items-center justify-between gap-1 bg-[#060a14] px-2 py-1 rounded border border-white/5 text-[9.5px] mt-1">
               <div class="flex items-center gap-2.5 font-mono">
                 <span title="Horário de Saída"><span class="text-slate-500">Saída</span> <strong class="text-slate-200">${depTime}</strong></span>
-                <span title="Distância até Estúdios Globo"><strong class="text-amber-400">${distKm}</strong></span>
-                <span title="Duração Projetada"><strong class="text-cyan-300">${durMin}</strong></span>
-                <span title="Chegada Projetada"><span class="text-slate-500">Cheg.</span> <strong class="text-white">${arrTime}</strong></span>
+                <span title="Distância do Trajeto"><strong class="text-amber-400">${distKm}</strong></span>
+                <span title="Duração com Trânsito no Horário"><strong class="text-cyan-300">${durMin}</strong></span>
+                <span title="Chegada Projetada no Destino"><span class="text-slate-500">Cheg.</span> <strong class="text-white">${arrTime}</strong></span>
               </div>
               <span class="text-[9px] truncate ${incCount > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400/90'}">
                 ${incCount > 0 ? `⚠️ ${incCount} ocorr.` : '✓ Livre'}
@@ -2216,7 +2917,7 @@
     }
 
     // =========================================================================
-    // MAPA: PLOTAGEM CONJUNTA UNIFICADA (MÚLTIPLAS CARAVANAS NO MESMO PLANO)
+    // MAPA: PLOTAGEM CONJUNTA COM LINHAS FINAS E SUAVES (SEM ALTERAR O ZOOM GERAL)
     // =========================================================================
     function renderCaravanRoutesOnMap() {
       if (!leafletMap || !caravanRoutesLayerGroup) return;
@@ -2228,36 +2929,59 @@
 
       if (caravansData.length === 0) return;
 
-      const bounds = [REGIONAL_CONFIG[currentRegion]?.coords || REGIONAL_CONFIG.RJ.coords];
-
       caravansData.forEach((c, idx) => {
         if (c.visibleOnMap === false) return;
 
         const isSelected = selectedCaravanId === c.caravanId;
         const color = ROUTE_COLORS[idx % ROUTE_COLORS.length];
         const isHighlighted = isAllRoutesMode || isSelected;
-        const opacity = isSelected ? 1.0 : (isAllRoutesMode ? 0.9 : 0.45);
-        const weight = isSelected ? 6 : 4;
+        // Linhas finas e suaves para não poluir a visualização cartográfica
+        const opacity = isSelected ? 0.94 : (isAllRoutesMode ? 0.78 : 0.45);
+        const weight = isSelected ? 2.6 : 1.9;
+
+        if (!Array.isArray(c.routeGeometry) || c.routeGeometry.length < 6) {
+          c.routeGeometry = buildDetailedCorridorGeometry(c.originCoords, c.destinationCoords, c.tripDirection || 'TO_GLOBO', `${c.corridor || ''} ${c.neighborhood || ''}`);
+        }
 
         if (Array.isArray(c.routeGeometry) && c.routeGeometry.length >= 2) {
-          const polyline = L.polyline(c.routeGeometry, {
+          const smoothLatLngs = c.isOsrmStreetGeometry ? c.routeGeometry : smoothRouteCoordinates(c.routeGeometry, 5);
+
+          // Halo suave apenas na rota selecionada para destaque elegante sem engrossar a linha
+          if (isSelected) {
+            L.polyline(smoothLatLngs, {
+              color: color,
+              weight: 5.0,
+              opacity: 0.22,
+              lineCap: 'round',
+              lineJoin: 'round',
+              interactive: false
+            }).addTo(caravanRoutesLayerGroup);
+          }
+
+          const polyline = L.polyline(smoothLatLngs, {
             color: color,
             weight: weight,
             opacity: opacity,
+            smoothFactor: 1.2,
             lineCap: 'round',
             lineJoin: 'round'
           }).addTo(caravanRoutesLayerGroup);
 
           polyline.on('click', () => selectCaravan(c.caravanId, true));
 
-          c.routeGeometry.forEach(pt => bounds.push(pt));
-
-          // Ponto de Origem com Ícone de Ônibus respectivo e Rótulo de Identificação no Mesmo Plano
+          // Plota o ícone de ônibus sempre no endereço da caravana (originCoords) para identificação clara no mapa
           const originCoords = c.originCoords || c.routeGeometry[0];
           const shortBusLabel = c.caravanName
             ? c.caravanName.replace(/^Caravana\s+/i, '').split('—')[0].trim()
             : (c.neighborhood || 'Caravana');
           const originIcon = createBusMapIcon(color, shortBusLabel, isSelected);
+
+          const depTime = c.plannedDepartureAt ? new Date(c.plannedDepartureAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+          const arrTime = c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+          const isFromGlobo = c.tripDirection === 'FROM_GLOBO';
+          const dirPopupLabel = isFromGlobo
+            ? '↩ Retorno: Globo ➔ Endereço da Caravana'
+            : '➔ Ida: Endereço da Caravana ➔ Globo';
 
           const originMarker = L.marker(originCoords, {
             icon: originIcon,
@@ -2266,16 +2990,18 @@
           })
             .addTo(caravanRoutesLayerGroup)
             .bindPopup(`
-              <div style="font-family:sans-serif; font-size:11px; line-height:1.45; min-width:215px;">
+              <div style="font-family:sans-serif; font-size:11px; line-height:1.45; min-width:225px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
                   <span style="background:${color}; color:#000; font-weight:900; padding:1px 6px; border-radius:4px; font-size:9.5px;">🚌 ATIVA NO PLANO</span>
-                  <span style="font-size:9.5px; color:#64748b; font-weight:bold;">${escapeHtml(c.programName || '')}</span>
+                  <span style="font-size:9.5px; color:#0284c7; font-weight:bold;">${escapeHtml(c.programName || '')}</span>
                 </div>
                 <strong style="font-size:12px; color:#0f172a;">${escapeHtml(c.caravanName)}</strong><br>
-                <strong>Endereço / Referência:</strong><br>
+                <span style="font-size:10px; color:#475569; font-weight:bold;">${dirPopupLabel}</span><br>
+                <strong>Endereço da Caravana:</strong><br>
                 <span style="color:#334155; font-weight:600;">${escapeHtml(c.originAddress)}</span><br>
+                <strong>Saída:</strong> <strong>${depTime}</strong> • <strong>Chegada Proj.:</strong> <strong>${arrTime}</strong><br>
                 <strong>Distância:</strong> <strong style="color:#d97706;">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + ' km' : '--'}</strong> •
-                <strong>Duração:</strong> <strong>${c.projectedDurationMinutes || c.baseDurationMinutes} min</strong>
+                <strong>Tempo c/ Trânsito:</strong> <strong>${c.projectedDurationMinutes || c.baseDurationMinutes} min</strong>
                 <div style="margin-top:6px; display:flex; gap:5px;">
                   <button onclick="selectCaravan('${c.caravanId}', true)" style="flex:1; background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">Ver Detalhes ↗</button>
                   <button onclick="fitAllActiveCaravansInView()" style="background:#0f172a; color:#38bdf8; border:1px solid #0284c7; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">🎯 Mesmo Plano</button>
@@ -2285,15 +3011,16 @@
 
           activeCaravanMarkersById[c.caravanId] = originMarker;
 
-          // Segmentos críticos de trânsito
-          if (c.criticalSegments && c.criticalSegments.length > 0 && isHighlighted) {
-            const seg = c.routeGeometry.slice(2, 4);
+          // Segmentos críticos de trânsito na rota (finos e respeitando filtro de ocorrências)
+          if (layerVisibility.trafficIncidents && c.criticalSegments && c.criticalSegments.length > 0 && isHighlighted) {
+            const seg = c.routeGeometry.slice(1, 4);
             if (seg.length >= 2) {
-              L.polyline(seg, {
+              L.polyline(smoothRouteCoordinates(seg, 5), {
                 color: '#ef4444',
-                weight: 6,
-                dashArray: '6, 6',
-                opacity: 0.95
+                weight: 2.5,
+                dashArray: '4, 5',
+                opacity: 0.88,
+                lineCap: 'round'
               }).addTo(caravanRoutesLayerGroup);
             }
           }
@@ -2304,20 +3031,20 @@
               <div class="flex items-center justify-between gap-2 py-0.5">
                 <label class="flex items-center gap-1.5 cursor-pointer min-w-0" onclick="focusSingleCaravan('${c.caravanId}')">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color};"></span>
-                  <span class="${isSelected ? 'text-white font-bold' : 'text-slate-200'} truncate max-w-[145px]" title="${escapeHtml(c.caravanName)}">${escapeHtml(shortBusLabel)}</span>
+                  <span class="${isSelected ? 'text-white font-bold' : 'text-slate-200'} truncate max-w-[140px]" title="${escapeHtml(c.caravanName)}">${escapeHtml(shortBusLabel)}</span>
                 </label>
-                <span class="text-[9px] font-mono text-slate-400 shrink-0">${c.baseDistanceKm ? Number(c.baseDistanceKm).toFixed(1) + 'km' : ''} ${c.projectedDurationMinutes || c.baseDurationMinutes}m</span>
+                <span class="text-[9px] font-mono text-slate-400 shrink-0">${depTime} • ${c.projectedDurationMinutes || c.baseDurationMinutes}m</span>
               </div>
             `;
           }
         }
       });
 
-      // Se caravana individual estiver selecionada, plota câmeras e rota alternativa
+      // Se caravana individual estiver selecionada, plota câmeras (se marcadas!) e rota alternativa fina
       if (selectedCaravanId) {
         const c = caravansData.find(item => item.caravanId === selectedCaravanId);
         if (c) {
-          if (Array.isArray(c.cameras)) {
+          if (layerVisibility.cameras && Array.isArray(c.cameras)) {
             c.cameras.forEach(cam => {
               const camLat = cam.latitude || cam.lat;
               const camLng = cam.longitude || cam.lng;
@@ -2333,7 +3060,7 @@
                 .addTo(caravanRoutesLayerGroup)
                 .bindPopup(`
                   <div style="font-family:sans-serif; font-size:11px;">
-                    <strong>Câmera Pública</strong><br>
+                    <strong>Câmera Pública no Trajeto</strong><br>
                     <strong>${escapeHtml(cam.cameraName || cam.name)}</strong><br>
                     Status: <strong style="color:#10b981;">${cam.status || 'ONLINE'}</strong><br>
                     <button onclick="openInternalCameraViewer('${cam.id}')" style="margin-top:4px; background:#0284c7; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">Visualizar Câmera Interna ↗</button>
@@ -2345,35 +3072,36 @@
 
           if (c.alternativeRoute) {
             const destConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
-            const altCoords = [
+            const altCoords = smoothRouteCoordinates([
               c.originCoords || c.routeGeometry[0],
               currentRegion === 'SP' ? [-23.5400, -46.7200] : [-22.8400, -43.3400],
               currentRegion === 'SP' ? [-23.5800, -46.7100] : [-22.8700, -43.3900],
               destConf.coords
-            ];
+            ], 5);
             const altLine = L.polyline(altCoords, {
               color: '#10b981',
-              weight: 4,
-              dashArray: '5, 8',
-              opacity: 0.85
+              weight: 2.2,
+              dashArray: '4, 6',
+              opacity: 0.85,
+              lineCap: 'round'
             }).addTo(caravanRoutesLayerGroup);
             altLine.bindPopup(`<strong>ROTA ALTERNATIVA PARA AVALIAÇÃO</strong><br>${escapeHtml(c.alternativeRoute.corridorName || 'Desvio Consultivo')}<br>Economia estimada: ~${c.alternativeRoute.estimatedSavingsMinutes || 10} min`);
           }
         }
       }
-
-      if (bounds.length > 1 && !selectedCaravanId) {
-        leafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
-      }
+      // Nota: Não executamos fitBounds automático aqui para preservar a visualização geral do mapa escolhida pelo operador.
     }
 
     // =========================================================================
-    // SOBREPOSIÇÃO DE TRÂNSITO EM TEMPO REAL NOS CORREDORES (6 NÍVEIS)
+    // SOBREPOSIÇÃO DE TRÂNSITO EM TEMPO REAL NOS CORREDORES + TEMPO NO MAPA
     // =========================================================================
     function renderTrafficConditionsOnMap() {
       if (!leafletMap || !trafficFlowLayerGroup) return;
       trafficFlowLayerGroup.clearLayers();
       if (!layerVisibility.trafficFlow) return;
+
+      let totalDelay = 0;
+      let slowCorridors = 0;
 
       trafficConditionsData.forEach(item => {
         let coords = CORRIDOR_COORDS[item.via];
@@ -2387,22 +3115,69 @@
         if (!coords) return;
 
         const color = getTrafficColor(item.status);
-        const line = L.polyline(coords, {
+        const smoothCorridor = smoothRouteCoordinates(coords, 4);
+        const line = L.polyline(smoothCorridor, {
           color: color,
-          weight: 5,
-          opacity: 0.85,
-          dashArray: item.status === 'Lento' || item.status === 'Crítico' || item.status === 'Parado' ? '8, 6' : null
+          weight: 3.6,
+          opacity: 0.86,
+          lineCap: 'round',
+          lineJoin: 'round',
+          dashArray: item.status === 'Lento' || item.status === 'Crítico' || item.status === 'Parado' ? '6, 5' : null
         }).addTo(trafficFlowLayerGroup);
+
+        const currentMins = item.tempoAtual || item.delayMinutes || '--';
+        const diffStr = String(item.diferenca || '+0 min');
+        if (diffStr.startsWith('+')) {
+          const num = parseInt(diffStr.replace(/[^\d]/g, ''), 10);
+          if (!isNaN(num)) totalDelay += num;
+        }
+        if (item.status && !String(item.status).toLowerCase().includes('normal') && !String(item.status).toLowerCase().includes('livre')) {
+          slowCorridors++;
+        }
+
+        // Etiqueta compacta estilo Google Maps indicando o tempo em tempo real do trânsito na via
+        const midPt = coords[Math.floor(coords.length / 2)];
+        if (Array.isArray(midPt) && midPt.length === 2) {
+          const badgeIcon = L.divIcon({
+            className: 'traffic-realtime-pill',
+            html: `
+              <div style="background:rgba(9,15,29,0.92); color:#fff; border:1px solid ${color}; border-radius:999px; padding:1px 6px; font-size:9px; font-family:monospace; font-weight:700; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.6); display:inline-flex; align-items:center; gap:3px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:${color}; display:inline-block;"></span>
+                <span>${currentMins} min</span>
+                <span style="color:${diffStr.startsWith('+') && diffStr !== '+0 min' ? '#fca5a5' : '#6ee7b7'}; font-size:8.5px;">(${escapeHtml(diffStr)})</span>
+              </div>
+            `,
+            iconSize: [86, 18],
+            iconAnchor: [43, 9]
+          });
+          L.marker(midPt, { icon: badgeIcon, interactive: true, zIndexOffset: 250 })
+            .addTo(trafficFlowLayerGroup)
+            .bindPopup(`
+              <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
+                <strong style="color:${color}; text-transform:uppercase;">${escapeHtml(item.via)}</strong><br>
+                <strong>Status de Fluidez:</strong> <span style="font-weight:bold; color:${color};">${escapeHtml(item.status)}</span><br>
+                <strong>Tempo em Tempo Real:</strong> <strong>${currentMins} min</strong><br>
+                <span style="font-weight:bold; color:${diffStr.startsWith('+') ? '#ef4444' : '#10b981'};">Retenção / Diferença: ${escapeHtml(diffStr)}</span>
+              </div>
+            `);
+        }
 
         line.bindPopup(`
           <div style="font-family:sans-serif; font-size:11px; line-height:1.4;">
             <strong style="color:${color}; text-transform:uppercase;">${escapeHtml(item.via)}</strong><br>
             <strong>Status de Fluidez:</strong> <span style="font-weight:bold; color:${color};">${escapeHtml(item.status)}</span><br>
-            <strong>Tempo Atual:</strong> ${item.tempoAtual || item.delayMinutes || '--'} min<br>
-            <span style="font-weight:bold; color:${String(item.diferenca || '').startsWith('+') ? '#ef4444' : '#10b981'};">Diferença: ${escapeHtml(item.diferenca || '+0 min')}</span>
+            <strong>Tempo Atual:</strong> ${currentMins} min<br>
+            <span style="font-weight:bold; color:${diffStr.startsWith('+') ? '#ef4444' : '#10b981'};">Diferença: ${escapeHtml(diffStr)}</span>
           </div>
         `);
       });
+
+      const summaryEl = document.getElementById('gmaps-realtime-text');
+      if (summaryEl) {
+        summaryEl.innerText = slowCorridors > 0
+          ? `${slowCorridors} via(s) com retenção (+${totalDelay} min)`
+          : 'Vias fluindo normalmente';
+      }
     }
 
     // =========================================================================
@@ -2578,6 +3353,10 @@
       const arrTime = c.projectedArrivalAt ? new Date(c.projectedArrivalAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
       const margin = c.marginToWindowMinutes !== null && c.marginToWindowMinutes !== undefined ? `${c.marginToWindowMinutes} min` : 'N/A';
       const distKm = c.baseDistanceKm ? `${Number(c.baseDistanceKm).toFixed(1)} km` : '32.5 km';
+      const isFromGlobo = c.tripDirection === 'FROM_GLOBO';
+      const dirLabel = isFromGlobo
+        ? '↩ Globo ➔ Local de Origem da Caravana (Retorno)'
+        : '➔ Origem da Caravana ➔ Globo (Ida)';
 
       // 1. Cronograma e Telemetria Operacional
       let html = `
@@ -2589,19 +3368,20 @@
             </div>
             <div>
               <span class="text-[9px] text-slate-400 block uppercase">Empresa de Ônibus</span>
-              <strong class="text-cyan-300 text-xs">${escapeHtml(c.companyName || 'Log Rio')}</strong>
+              <strong class="text-cyan-300 text-xs">${escapeHtml(c.companyName || (currentRegion === 'SP' ? 'Viação SP' : 'Log Rio'))}</strong>
             </div>
             <div class="text-right">
               <span class="text-[9px] text-slate-400 block uppercase">Status da Rota</span>
-              <strong class="text-xs ${c.projectedStatus === 'ATENÇÃO' ? 'text-amber-400' : 'text-emerald-400'}">${c.projectedStatus}</strong>
+              <strong class="text-xs ${c.projectedStatus === 'ATENÇÃO' ? 'text-amber-400' : (c.projectedStatus === 'RISCO DE ATRASO' ? 'text-rose-400' : 'text-emerald-400')}">${c.projectedStatus}</strong>
             </div>
           </div>
 
           <div class="text-[10px] text-slate-300">
-            <span class="text-slate-500">Origem:</span> ${escapeHtml(c.originAddress)}
+            <span class="text-slate-500">Endereço da Caravana:</span> ${escapeHtml(c.originAddress)}
           </div>
-          <div class="text-[10px] text-slate-300">
-            <span class="text-slate-500">Destino:</span> ${escapeHtml(c.destinationLabel)}
+          <div class="text-[10px] text-slate-300 flex items-center justify-between gap-2">
+            <span><span class="text-slate-500">Destino:</span> <strong class="text-amber-300">${escapeHtml(c.destinationLabel)}</strong></span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 font-semibold">${dirLabel}</span>
           </div>
 
           <!-- GRADE EM 5 COLUNAS COM DISTÂNCIA EM KM DESTACADA -->
@@ -3267,14 +4047,42 @@
     }
 
     // =========================================================================
+    // INCLUSÃO DE CARAVANA (PAINEL RÁPIDO + MODAL + PRÉ-CADASTRO RJ/SP + HORÁRIO E DESTINO)
     // =========================================================================
-    // INCLUSÃO DE CARAVANA (MODAL + PRÉ-CADASTRO RJ + GEOCODIFICAÇÃO)
-    // =========================================================================
+    function computeClientScheduleTrafficDelta(departureIso, tripDirection, baseDuration) {
+      if (!departureIso) return 0;
+      const dt = new Date(departureIso);
+      if (isNaN(dt.getTime())) return 0;
+      const h = dt.getUTCHours();
+      const base = Math.max(10, Number(baseDuration) || 40);
+      const dir = String(tripDirection || 'TO_GLOBO').toUpperCase();
+
+      let factor = 0.08;
+      if (dir === 'FROM_GLOBO') {
+        if (h >= 17 && h <= 20) factor = 0.30;
+        else if (h >= 21 && h <= 23) factor = 0.12;
+        else if (h >= 14 && h <= 16) factor = 0.16;
+      } else {
+        if (h >= 6 && h <= 9) factor = 0.28;
+        else if (h >= 11 && h <= 14) factor = 0.18;
+        else if (h >= 16 && h <= 19) factor = 0.32;
+      }
+      return Math.max(2, Math.round(base * factor));
+    }
+
     function openCaravanModal() {
       selectedFormPreRegCoords = null;
+      updateProgramFilterOptions();
+      initPreRegisteredSelectors();
       const preSel = document.getElementById('form-precadastro-rj');
       if (preSel) preSel.value = '';
       document.getElementById('form-data').value = new Date().toISOString().split('T')[0];
+      const quickTime = document.getElementById('quick-departure-time')?.value || '13:30';
+      const quickDir = document.getElementById('quick-trip-direction')?.value || 'TO_GLOBO';
+      const formSaida = document.getElementById('form-saida');
+      const formDir = document.getElementById('form-trip-direction');
+      if (formSaida && !formSaida.value) formSaida.value = quickTime;
+      if (formDir) formDir.value = quickDir;
       document.getElementById('modal-caravan-form').classList.remove('hidden');
     }
 
@@ -3292,63 +4100,89 @@
         selectedFormPreRegCoords = null;
         return;
       }
-      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      const item = findPreRegisteredById(preRegId);
       if (!item) return;
 
       selectedFormPreRegCoords = item.coords;
       document.getElementById('form-nome').value = `Caravana ${item.caravana}`;
-      document.getElementById('form-endereco').value = `${item.pontoReferencia} — ${item.bairro}, RJ`;
+      document.getElementById('form-endereco').value = `${item.pontoReferencia} — ${item.bairro}, ${currentRegion}`;
       if (!document.getElementById('form-empresa').value) {
-        document.getElementById('form-empresa').value = 'Log Rio';
+        document.getElementById('form-empresa').value = currentRegion === 'SP' ? 'Viação SP' : 'Log Rio';
       }
       if (!document.getElementById('form-saida').value) {
-        document.getElementById('form-saida').value = '13:30';
+        document.getElementById('form-saida').value = document.getElementById('quick-departure-time')?.value || '13:30';
       }
       if (!document.getElementById('form-limite').value) {
         document.getElementById('form-limite').value = '15:15';
       }
       document.getElementById('form-obs').value = `Bairro: ${item.bairro} | Corredor: ${item.corridor}`;
 
-      // Também plota imediatamente o ônibus no mapa
-      plotPreRegisteredCaravanOnMap(item, { clearPrevious: true, zoomTo: true, openPopup: true, drawRoute: true });
+      // Plota o ônibus no endereço de saída sem alterar o enquadramento geral do mapa
+      plotPreRegisteredCaravanOnMap(item, { clearPrevious: true, zoomTo: false, openPopup: true, drawRoute: true });
     }
 
     async function quickAddPreRegisteredToGrade(preRegId, opts = {}) {
-      const { openDrawer = false, keepInSameFrame = true } = opts;
-      const item = PRE_REGISTERED_CARAVANS_RJ.find(c => c.id === preRegId);
+      const { openDrawer = false, keepInSameFrame = false } = opts;
+      const item = findPreRegisteredById(preRegId);
       if (!item) return;
 
-      // Se já estiver ativa no plano, apenas garante visibilidade e destaca no mesmo plano
+      const todayStr = new Date().toISOString().split('T')[0];
+      const chosenTime = (document.getElementById('quick-departure-time')?.value || '13:30').trim();
+      const chosenDirection = document.getElementById('quick-trip-direction')?.value || 'TO_GLOBO';
+      const chosenProgram = getSelectedQuickProgram();
+
+      const departureIso = `${todayStr}T${chosenTime}:00.000Z`;
+      const depMs = new Date(departureIso).getTime();
+      const windowEndIso = !isNaN(depMs)
+        ? new Date(depMs + (item.baseDurationMinutes + 45) * 60000).toISOString()
+        : `${todayStr}T15:15:00.000Z`;
+
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
+      const fullOriginAddr = `${item.pontoReferencia} — ${item.bairro}, ${currentRegion}`;
+      const destLabel = chosenDirection === 'FROM_GLOBO'
+        ? `${fullOriginAddr} (Retorno da Globo)`
+        : `${regConf.label} (${currentRegion})`;
+
+      // Se já estiver ativa no plano com o mesmo sentido e horário, apenas destaca; se mudou horário/programa/destino, remove a anterior para substituir com novo cálculo
       const existing = isPreRegisteredCaravanActive(item.id);
       if (existing) {
-        existing.visibleOnMap = true;
-        selectedCaravanId = existing.caravanId;
-        if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
-        switchCaravanSubTab('grade');
-        if (keepInSameFrame) {
-          fitAllActiveCaravansInView(existing.caravanId);
+        const existingTime = existing.plannedDepartureAt ? new Date(existing.plannedDepartureAt).toISOString().substring(11, 16) : '';
+        const sameConfig = existing.programName === chosenProgram &&
+                           (existing.tripDirection || 'TO_GLOBO') === chosenDirection &&
+                           existingTime === chosenTime;
+        if (sameConfig) {
+          existing.visibleOnMap = true;
+          selectedCaravanId = existing.caravanId;
+          if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
+          switchCaravanSubTab('grade');
+          renderCaravanFeed();
+          renderCaravanRoutesOnMap();
+          if (keepInSameFrame) fitAllActiveCaravansInView(existing.caravanId);
+          if (openDrawer) renderCaravanDrawer(existing);
+          showToast(`🚌 Caravana ${item.caravana} (${item.bairro}) destacada no mapa!`, 'info');
+          return;
         } else {
-          focusSingleCaravan(existing.caravanId);
+          caravansData = caravansData.filter(c => c.caravanId !== existing.caravanId);
         }
-        if (openDrawer) renderCaravanDrawer(existing);
-        showToast(`🚌 Caravana ${item.caravana} (${item.bairro}) já está ativa no plano!`, 'info');
-        return;
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
-      const departureIso = `${todayStr}T13:30:00.000Z`;
-      const windowEndIso = `${todayStr}T15:15:00.000Z`;
-      const progSelect = document.getElementById('filter-program')?.value || 'Domingão com Huck';
-
       const payload = {
+        region: currentRegion,
         caravanName: `Caravana ${item.caravana} — ${item.bairro}`,
-        programName: progSelect,
-        companyName: 'Log Rio',
-        originAddress: `${item.pontoReferencia} — ${item.bairro}, RJ`,
+        programName: chosenProgram,
+        companyName: currentRegion === 'SP' ? 'Viação SP' : 'Log Rio',
+        neighborhood: item.bairro,
+        corridor: item.corridor,
+        originAddress: fullOriginAddr,
         originCoords: item.coords,
+        destinationLabel: destLabel,
+        tripDirection: chosenDirection,
+        enableScheduleTrafficCalc: true,
+        baseDistanceKm: item.baseDistanceKm,
+        baseDurationMinutes: item.baseDurationMinutes,
         plannedDepartureAt: departureIso,
         operationalWindowEnd: windowEndIso,
-        operationalNotes: `Pré-Cadastro Oficial RJ (${item.id}) • ${item.corridor}`
+        operationalNotes: `Pré-Cadastro Oficial ${currentRegion} (${item.id}) • ${item.corridor}`
       };
 
       try {
@@ -3364,46 +4198,55 @@
             preRegId: item.id,
             neighborhood: resJson.data.neighborhood || item.bairro,
             corridor: resJson.data.corridor || item.corridor,
+            tripDirection: resJson.data.tripDirection || chosenDirection,
             visibleOnMap: true
           };
+          if (!Array.isArray(created.routeGeometry) || created.routeGeometry.length < 6) {
+            created.routeGeometry = buildDetailedCorridorGeometry(item.coords, regConf.coords, chosenDirection, `${item.corridor || ''} ${item.bairro || ''}`);
+          }
           caravansData.unshift(created);
+          enrichCaravanWithRealRoadGeometry(created);
           selectedCaravanId = created.caravanId;
           if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
           recomputeLocalCaravanKpis();
           switchCaravanSubTab('grade');
-          fitAllActiveCaravansInView(created.caravanId);
+          renderCaravanFeed();
+          renderCaravanRoutesOnMap();
+          if (keepInSameFrame) fitAllActiveCaravansInView(created.caravanId);
           if (openDrawer) renderCaravanDrawer(created);
-          showToast(`🚌 Caravana ${item.caravana} incluída nas Ativas (${caravansData.length} no plano de vídeo)!`, 'success');
+          showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime}) plotada no endereço de saída!`, 'success');
           return;
         }
       } catch (e) {}
 
-      // Fallback local
-      const destCoords = REGIONAL_CONFIG.RJ.coords;
+      // Fallback local considerando horário de saída, sentido do trajeto e geometria viária real por corredor
+      const destCoords = regConf.coords;
+      const schedDelta = computeClientScheduleTrafficDelta(departureIso, chosenDirection, item.baseDurationMinutes);
+      const projDur = item.baseDurationMinutes + schedDelta;
+      const routeGeom = buildDetailedCorridorGeometry(item.coords, destCoords, chosenDirection, `${item.corridor || ''} ${item.bairro || ''}`);
+
       const localCaravan = {
         caravanId: 'crv-' + Date.now().toString(36),
         preRegId: item.id,
         ...payload,
-        neighborhood: item.bairro,
-        corridor: item.corridor,
-        destinationLabel: REGIONAL_CONFIG.RJ.label,
-        baseDistanceKm: item.baseDistanceKm,
-        baseDurationMinutes: item.baseDurationMinutes,
-        projectedDurationMinutes: item.baseDurationMinutes,
-        projectedArrivalAt: new Date(new Date(departureIso).getTime() + item.baseDurationMinutes * 60000).toISOString(),
+        projectedDurationMinutes: projDur,
+        projectedArrivalAt: new Date(new Date(departureIso).getTime() + projDur * 60000).toISOString(),
         projectedStatus: 'DENTRO DA JANELA',
         incidents: [],
         visibleOnMap: true,
-        routeGeometry: [item.coords, [Number(((item.coords[0] + destCoords[0]) / 2).toFixed(4)), Number(((item.coords[1] + destCoords[1]) / 2).toFixed(4))], destCoords]
+        routeGeometry: routeGeom
       };
       caravansData.unshift(localCaravan);
+      enrichCaravanWithRealRoadGeometry(localCaravan);
       selectedCaravanId = localCaravan.caravanId;
       if (preRegisteredBusLayerGroup) preRegisteredBusLayerGroup.clearLayers();
       recomputeLocalCaravanKpis();
       switchCaravanSubTab('grade');
-      fitAllActiveCaravansInView(localCaravan.caravanId);
+      renderCaravanFeed();
+      renderCaravanRoutesOnMap();
+      if (keepInSameFrame) fitAllActiveCaravansInView(localCaravan.caravanId);
       if (openDrawer) renderCaravanDrawer(localCaravan);
-      showToast(`🚌 Caravana ${item.caravana} incluída nas Ativas (${caravansData.length} no plano de vídeo)!`, 'success');
+      showToast(`🚌 ${item.caravana} (${chosenProgram} • Saída ${chosenTime}) plotada no endereço de saída!`, 'success');
     }
 
     function closeCaravanModal() {
@@ -3414,24 +4257,33 @@
       e.preventDefault();
 
       const data = document.getElementById('form-data').value;
-      const programa = document.getElementById('form-programa').value;
+      const programa = getSelectedModalProgram();
       const nome = document.getElementById('form-nome').value.trim();
       const endereco = document.getElementById('form-endereco').value.trim();
       const empresa = document.getElementById('form-empresa').value.trim();
       const saida = document.getElementById('form-saida').value;
+      const tripDirection = document.getElementById('form-trip-direction')?.value || 'TO_GLOBO';
       const limite = document.getElementById('form-limite').value;
       const obs = document.getElementById('form-obs').value.trim();
 
+      if (!programa) {
+        alert('Informe o nome do Programa!');
+        return;
+      }
       if (!nome || !endereco || !saida || !empresa) {
         alert('Preencha todos os campos obrigatórios!');
         return;
       }
 
-      // 1. Coordenada do Pré-Cadastro RJ ou Geocodificação Automática
-      let coords = Array.isArray(selectedFormPreRegCoords) ? selectedFormPreRegCoords : [-22.8000, -43.3500];
+      // 1. Coordenada do Pré-Cadastro ou Geocodificação Automática do Endereço de Saída
+      const regConf = REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ;
+      let coords = Array.isArray(selectedFormPreRegCoords)
+        ? selectedFormPreRegCoords
+        : (currentRegion === 'SP' ? [-23.5325, -46.7797] : [-22.8000, -43.3500]);
+
       if (!Array.isArray(selectedFormPreRegCoords)) {
         try {
-          const geoRes = await fetch(`/api/traffic-alert/geocode?q=${encodeURIComponent(endereco)}`);
+          const geoRes = await fetch(`/api/traffic-alert/geocode?q=${encodeURIComponent(endereco)}&region=${currentRegion}`);
           if (geoRes.ok) {
             const geoJson = await geoRes.json();
             if (geoJson.coords) coords = geoJson.coords;
@@ -3441,13 +4293,20 @@
 
       const departureIso = `${data}T${saida}:00.000Z`;
       const windowEndIso = limite ? `${data}T${limite}:00.000Z` : null;
+      const destLabel = tripDirection === 'FROM_GLOBO'
+        ? `${endereco} (Retorno da Globo)`
+        : `${regConf.label} (${currentRegion})`;
 
       const payload = {
+        region: currentRegion,
         caravanName: nome,
         programName: programa,
         companyName: empresa,
         originAddress: endereco,
         originCoords: coords,
+        destinationLabel: destLabel,
+        tripDirection: tripDirection,
+        enableScheduleTrafficCalc: true,
         plannedDepartureAt: departureIso,
         operationalWindowEnd: windowEndIso,
         operationalNotes: obs
@@ -3462,32 +4321,47 @@
 
         if (res.ok) {
           const resJson = await res.json();
-          caravansData.unshift(resJson.data);
+          const createdModalCaravan = {
+            ...resJson.data,
+            tripDirection: resJson.data.tripDirection || tripDirection,
+            visibleOnMap: true
+          };
+          if (!Array.isArray(createdModalCaravan.routeGeometry) || createdModalCaravan.routeGeometry.length < 6) {
+            createdModalCaravan.routeGeometry = buildDetailedCorridorGeometry(coords, regConf.coords, tripDirection, endereco);
+          }
+          caravansData.unshift(createdModalCaravan);
+          enrichCaravanWithRealRoadGeometry(createdModalCaravan);
           closeCaravanModal();
+          recomputeLocalCaravanKpis();
           switchCaravanSubTab('grade');
           renderCaravanFeed();
           renderCaravanRoutesOnMap();
           selectCaravan(resJson.data.caravanId, true);
-          showToast('🚌 Caravana cadastrada e rota com ícone de ônibus plotada no mapa!', 'success');
+          showToast(`🚌 Caravana cadastrada (${programa} • Saída ${saida}) e plotada no endereço!`, 'success');
         } else {
           alert('Falha ao cadastrar caravana no servidor local.');
         }
       } catch (err) {
         // Fallback em memória caso offline
-        const destCoords = (REGIONAL_CONFIG[currentRegion] || REGIONAL_CONFIG.RJ).coords;
+        const destCoords = regConf.coords;
+        const schedDelta = computeClientScheduleTrafficDelta(departureIso, tripDirection, 48);
+        const projDur = 48 + schedDelta;
         const localCaravan = {
           caravanId: 'crv-' + Date.now().toString(36),
           ...payload,
           baseDistanceKm: 34.0,
-          baseDurationMinutes: 50,
-          projectedDurationMinutes: 50,
-          projectedArrivalAt: new Date(new Date(departureIso).getTime() + 50 * 60000).toISOString(),
+          baseDurationMinutes: 48,
+          projectedDurationMinutes: projDur,
+          projectedArrivalAt: new Date(new Date(departureIso).getTime() + projDur * 60000).toISOString(),
           projectedStatus: 'DENTRO DA JANELA',
           incidents: [],
-          routeGeometry: [coords, [-22.8800, -43.3000], destCoords]
+          visibleOnMap: true,
+          routeGeometry: buildDetailedCorridorGeometry(coords, destCoords, tripDirection, endereco)
         };
         caravansData.unshift(localCaravan);
+        enrichCaravanWithRealRoadGeometry(localCaravan);
         closeCaravanModal();
+        recomputeLocalCaravanKpis();
         switchCaravanSubTab('grade');
         renderCaravanFeed();
         renderCaravanRoutesOnMap();

@@ -47,6 +47,8 @@ function createCaravanProjectionDTO({
     trafficComparison = null,
     trafficImpact = null,
     recalculationDelta = null,
+    tripDirection = 'TO_GLOBO',
+    scheduleTrafficAdjustmentMinutes = 0,
     region = 'RJ',
     routeColor = '#00d1ff',
     sourceStatus = 'ACTIVE',
@@ -87,6 +89,12 @@ function createCaravanProjectionDTO({
 
     // Cálculo do TTL de validade (padrão 15 minutos caso não informado)
     const validUntil = expiresAt || new Date(new Date(calculatedAt).getTime() + 15 * 60 * 1000).toISOString();
+    const normRegion = String(region || 'RJ').toUpperCase();
+    const normDirection = tripDirection === 'FROM_GLOBO' ? 'FROM_GLOBO' : 'TO_GLOBO';
+    const globoShortName = normRegion === 'SP' ? 'Globo SP' : 'Estúdios Globo';
+    const tripDirectionLabel = normDirection === 'FROM_GLOBO'
+        ? `${globoShortName} ➔ Local da Caravana`
+        : `Local da Caravana ➔ ${globoShortName}`;
 
     return Object.freeze({
         caravanId: String(caravanId).trim(),
@@ -103,6 +111,9 @@ function createCaravanProjectionDTO({
         destinationLabel: String(destinationLabel).trim(),
         destinationAddress: String(destinationAddress).trim(),
         destinationCoords: Array.isArray(destinationCoords) ? [Number(destinationCoords[0]), Number(destinationCoords[1])] : [-22.9550, -43.4100],
+        tripDirection: normDirection,
+        tripDirectionLabel,
+        scheduleTrafficAdjustmentMinutes: Math.round(Number(scheduleTrafficAdjustmentMinutes) || 0),
         baseDistanceKm: Number(Number(baseDistanceKm).toFixed(1)),
         baseDurationMinutes: Math.round(Number(baseDurationMinutes) || 0),
         incidentImpactMinutes: Math.round(Number(incidentImpactMinutes) || 0),
@@ -122,7 +133,7 @@ function createCaravanProjectionDTO({
         trafficComparison: trafficComparison ? Object.freeze({ ...trafficComparison }) : null,
         trafficImpact: trafficImpact ? Object.freeze({ ...trafficImpact }) : null,
         recalculationDelta: recalculationDelta ? Object.freeze({ ...recalculationDelta }) : null,
-        region: String(region || 'RJ').toUpperCase(),
+        region: normRegion,
         routeColor: String(routeColor || '#00d1ff'),
         sourceStatus: String(sourceStatus),
         calculatedAt: new Date(calculatedAt).toISOString(),

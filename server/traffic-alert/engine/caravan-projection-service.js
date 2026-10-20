@@ -74,6 +74,50 @@ function minDistanceToRouteMeters(occurrenceLat, occurrenceLon, routeCoords) {
     return { minDistance, closestSegmentIndex };
 }
 
+/**
+ * Calcula ajuste dinâmico de trânsito considerando o horário planejado de saída e o sentido do trajeto
+ * (TO_GLOBO: Origem da Caravana -> Globo | FROM_GLOBO: Globo -> Local de Origem da Caravana).
+ */
+function computeScheduleAndDirectionTrafficMinutes(plannedDepartureAt, tripDirection = 'TO_GLOBO', baseDurationMinutes = 0) {
+    if (!plannedDepartureAt || !baseDurationMinutes) return 0;
+    const d = new Date(plannedDepartureAt);
+    if (isNaN(d.getTime())) return 0;
+
+    // Extrai hora da string ISO (se contiver T13:30) ou UTC/local
+    let hour = d.getUTCHours();
+    let min = d.getUTCMinutes();
+    const isoMatch = String(plannedDepartureAt).match(/T(\d{2}):(\d{2})/);
+    if (isoMatch) {
+        hour = parseInt(isoMatch[1], 10);
+        min = parseInt(isoMatch[2], 10);
+    }
+    const timeDecimal = hour + min / 60;
+    const isFromGlobo = tripDirection === 'FROM_GLOBO';
+
+    // Pico Matutino (06:30 às 09:30)
+    if (timeDecimal >= 6.5 && timeDecimal <= 9.5) {
+        return isFromGlobo
+            ? Math.max(2, Math.round(baseDurationMinutes * 0.10))
+            : Math.max(5, Math.round(baseDurationMinutes * 0.24));
+    }
+    // Entrepico Almoço (11:30 às 14:00)
+    if (timeDecimal >= 11.5 && timeDecimal <= 14.0) {
+        return Math.max(2, Math.round(baseDurationMinutes * 0.08));
+    }
+    // Pico Vespertino / Saída de Estúdios (16:30 às 20:00)
+    if (timeDecimal >= 16.5 && timeDecimal <= 20.0) {
+        return isFromGlobo
+            ? Math.max(6, Math.round(baseDurationMinutes * 0.28))
+            : Math.max(4, Math.round(baseDurationMinutes * 0.16));
+    }
+    // Horário Noturno (20:00 às 22:00)
+    if (timeDecimal > 20.0 && timeDecimal <= 22.0) {
+        return isFromGlobo ? Math.max(2, Math.round(baseDurationMinutes * 0.08)) : 0;
+    }
+
+    return 0;
+}
+
 class CaravanRouteProjectionService {
     constructor(options = {}) {
         this.corridorBufferMeters = options.corridorBufferMeters || config.caravanMonitoring?.corridorBufferMeters || 1200;
@@ -95,6 +139,9 @@ class CaravanRouteProjectionService {
             destinationLabel = this.destinationLabel,
             destinationAddress,
             destinationCoords,
+            tripDirection = 'TO_GLOBO',
+            enableScheduleTrafficCalc = false,
+            scheduleTrafficAdjustmentMinutes = 0,
             baseDistanceKm = 0,
             baseDurationMinutes = 0,
             operationalWindowStart = null,
@@ -103,10 +150,13 @@ class CaravanRouteProjectionService {
             sourceStatus = 'ACTIVE'
         } = caravanPlan;
 
+        const normDirection = tripDirection === 'FROM_GLOBO' ? 'FROM_GLOBO' : 'TO_GLOBO';
+
         // 1. Validação de dados mínimos
         if (!plannedDepartureAt || isNaN(new Date(plannedDepartureAt).getTime())) {
             return createCaravanProjectionDTO({
                 ...caravanPlan,
+                tripDirection: normDirection,
                 projectedStatus: CARAVAN_PROJECTED_STATUS.DADOS_INCOMPLETOS,
                 consultativeRecommendations: [
                     'Horário planejado de saída não informado ou inválido.',
@@ -119,6 +169,7 @@ class CaravanRouteProjectionService {
         if (!originCoords || !Array.isArray(originCoords) || originCoords.length !== 2) {
             return createCaravanProjectionDTO({
                 ...caravanPlan,
+                tripDirection: normDirection,
                 projectedStatus: CARAVAN_PROJECTED_STATUS.DADOS_INCOMPLETOS,
                 consultativeRecommendations: [
                     'Coordenadas de origem não geocodificadas.',
@@ -135,6 +186,7 @@ class CaravanRouteProjectionService {
 
             return createCaravanProjectionDTO({
                 ...caravanPlan,
+                tripDirection: normDirection,
                 projectedStatus: CARAVAN_PROJECTED_STATUS.FONTE_INDISPONIVEL,
                 projectedDurationMinutes: baseDurationMinutes,
                 projectedArrivalAt: arrivalDate.toISOString(),
@@ -200,9 +252,14 @@ class CaravanRouteProjectionService {
             }
         }
 
-        // 3. Cálculo dos tempos projetados
+        // 3. Cálculo dos tempos projetados considerando horário de saída e sentido do trajeto
+        const computedScheduleAdj = enableScheduleTrafficCalc
+            ? computeScheduleAndDirectionTrafficMinutes(plannedDepartureAt, normDirection, baseDurationMinutes)
+            : (Number(scheduleTrafficAdjustmentMinutes) || 0);
+
         const departureTime = new Date(plannedDepartureAt).getTime();
-        const projectedDurationMinutes = Math.max(1, baseDurationMinutes + totalIncidentImpactMinutes);
+        const totalDelayMinutes = totalIncidentImpactMinutes + computedScheduleAdj;
+        const projectedDurationMinutes = Math.max(1, baseDurationMinutes + totalDelayMinutes);
         const projectedArrivalTime = departureTime + projectedDurationMinutes * 60 * 1000;
         const projectedArrivalDate = new Date(projectedArrivalTime);
 
@@ -222,7 +279,7 @@ class CaravanRouteProjectionService {
             }
         } else {
             // Sem janela explícita cadastrada
-            if (relevantIncidents.length > 0 && totalIncidentImpactMinutes >= 20) {
+            if ((relevantIncidents.length > 0 && totalIncidentImpactMinutes >= 20) || totalDelayMinutes >= 20) {
                 projectedStatus = CARAVAN_PROJECTED_STATUS.ATENCAO;
             } else {
                 projectedStatus = CARAVAN_PROJECTED_STATUS.PLANEJADA;
@@ -234,7 +291,7 @@ class CaravanRouteProjectionService {
 
         if (projectedStatus === CARAVAN_PROJECTED_STATUS.RISCO_DE_ATRASO) {
             recommendations.push('Recomenda-se antecipar a conferência operacional junto ao responsável da caravana.');
-            recommendations.push(`Impacto adicional estimado de ${totalIncidentImpactMinutes} min na rota projetada ultrapassa a janela operacional prevista.`);
+            recommendations.push(`Impacto adicional estimado de ${totalDelayMinutes} min na rota projetada ultrapassa a janela operacional prevista.`);
             recommendations.push('Avaliar alternativas de corredores viários antes da partida planejada.');
         } else if (projectedStatus === CARAVAN_PROJECTED_STATUS.ATENCAO) {
             recommendations.push('Ocorrência pública identificada na rota projetada. Acompanhamento preventivo recomendado.');
@@ -250,7 +307,7 @@ class CaravanRouteProjectionService {
         }
 
         // 5. Câmeras públicas no entorno da rota (raio 2.500m)
-        const isSp = caravanPlan.region === 'SP' || (destinationCoords && destinationCoords[0] < -23.4);
+        const isSp = caravanPlan.region === 'SP' || (destinationCoords && destinationCoords[0] < -23.4) || (originCoords && originCoords[0] < -23.4);
         const activeCameraCatalog = isSp ? CET_SP_CAMERAS_CATALOG : COR_RIO_CAMERAS_CATALOG;
 
         const nearbyCameras = [];
@@ -275,21 +332,22 @@ class CaravanRouteProjectionService {
                 ? 'Desvio consultivo via Av. Santo Amaro / Chucri Zaidan evitando trecho de retenção na Marginal Pinheiros.'
                 : 'Desvio consultivo via Transolímpica evitando trecho de lentidão crítica.';
             const altCorridor = isSp ? 'Av. Santo Amaro / Chucri Zaidan' : 'Via Transolímpica / Av. Brasil';
-            const altGeometry = isSp
+            const baseAltGeometry = isSp
                 ? [
-                    routeGeometry[0] || [-23.5325, -46.7917],
+                    originCoords || [-23.5325, -46.7917],
                     [-23.5700, -46.7200],
                     [-23.5950, -46.6850],
                     [-23.6100, -46.6900],
                     destinationCoords || [-23.6186, -46.6974]
                 ]
                 : [
-                    routeGeometry[0] || [-22.8090, -43.3640],
+                    originCoords || [-22.8090, -43.3640],
                     [-22.8400, -43.3700],
                     [-22.8700, -43.3850],
                     [-22.9200, -43.4000],
                     destinationCoords || [-22.9550, -43.4100]
                 ];
+            const altGeometry = normDirection === 'FROM_GLOBO' ? [...baseAltGeometry].reverse() : baseAltGeometry;
 
             alternativeRoute = {
                 isConsultativeOnly: true,
@@ -306,22 +364,26 @@ class CaravanRouteProjectionService {
         }
 
         // 7. Comparativo de Provedores com Governança
+        const targetNavCoords = normDirection === 'FROM_GLOBO'
+            ? (originCoords || (isSp ? [-23.5325, -46.7917] : [-22.8090, -43.3640]))
+            : (destinationCoords || (isSp ? [-23.6186, -46.6974] : [-22.9550, -43.4100]));
+
         const trafficComparison = {
             baseDurationMinutes,
             trafficDurationMinutes: projectedDurationMinutes,
-            differenceMinutes: totalIncidentImpactMinutes,
+            differenceMinutes: totalDelayMinutes,
             googleStatus: 'REQUER_APROVACAO_QUOTA',
             googleQuotaNotice: 'Integração Google Routes API desativada localmente (requer quota corporativa aprovada).',
             googleNotes: 'Integração Google Routes API desativada localmente (requer quota corporativa aprovada).',
             wazeStatus: 'CONSULTA_EXTERNA_DISPONIVEL',
-            wazeLink: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : (isSp ? -23.6186 : -22.9550)},${destinationCoords ? destinationCoords[1] : (isSp ? -46.6974 : -43.4100)}&navigate=yes`,
-            wazeConsultativeUrl: `https://www.waze.com/ul?ll=${destinationCoords ? destinationCoords[0] : (isSp ? -23.6186 : -22.9550)},${destinationCoords ? destinationCoords[1] : (isSp ? -46.6974 : -43.4100)}&navigate=yes`,
+            wazeLink: `https://www.waze.com/ul?ll=${targetNavCoords[0]},${targetNavCoords[1]}&navigate=yes`,
+            wazeConsultativeUrl: `https://www.waze.com/ul?ll=${targetNavCoords[0]},${targetNavCoords[1]}&navigate=yes`,
             wazeNotes: 'Consulta externa oficial (política anti-scraping: sem endpoints não autorizados).',
             lastQueriedAt: new Date().toISOString()
         };
 
         // 8. Impacto do Trânsito Consolidado por Segmento
-        const delayMin = totalIncidentImpactMinutes;
+        const delayMin = totalDelayMinutes;
         const pctIncrease = baseDurationMinutes > 0 ? Math.round((delayMin / baseDurationMinutes) * 100 * 10) / 10 : 0;
         let impactLevel = 'Normal';
         if (delayMin > 20) impactLevel = 'Crítico';
@@ -330,13 +392,15 @@ class CaravanRouteProjectionService {
 
         const mostImpacted = relevantIncidents.length > 0
             ? `${relevantIncidents[0].corridor} (+${relevantIncidents[0].impactMinutes || delayMin} min)`
-            : (delayMin > 0 ? `Trecho de aproximação (+${delayMin} min)` : 'Fluxo livre');
+            : (delayMin > 0 ? `Fluxo horário no sentido ${normDirection === 'FROM_GLOBO' ? 'Globo ➔ Origem' : 'Origem ➔ Globo'} (+${delayMin} min)` : 'Fluxo livre');
 
         const trafficImpact = {
             baseDurationMinutes,
             projectedDurationMinutes,
             differenceMinutes: delayMin,
             totalDelayMinutes: delayMin,
+            scheduleTrafficAdjustmentMinutes: computedScheduleAdj,
+            incidentDelayMinutes: totalIncidentImpactMinutes,
             congestedSegmentsCount: Array.isArray(criticalSegments) ? criticalSegments.length : 0,
             percentageIncrease: pctIncrease,
             impactLevel,
@@ -369,6 +433,8 @@ class CaravanRouteProjectionService {
         return createCaravanProjectionDTO({
             ...caravanPlan,
             region: isSp ? 'SP' : 'RJ',
+            tripDirection: normDirection,
+            scheduleTrafficAdjustmentMinutes: computedScheduleAdj,
             companyName: caravanPlan.companyName || (isSp ? 'Expresso Metropolitano SP' : 'Log Rio'),
             operationalNotes: caravanPlan.operationalNotes || '',
             routeColor: caravanPlan.routeColor || '#00d1ff',
@@ -622,6 +688,7 @@ module.exports = {
     CaravanRouteProjectionService,
     pointToSegmentDistanceMeters,
     minDistanceToRouteMeters,
+    computeScheduleAndDirectionTrafficMinutes,
     COR_RIO_CAMERAS_CATALOG,
     CET_SP_CAMERAS_CATALOG
 };

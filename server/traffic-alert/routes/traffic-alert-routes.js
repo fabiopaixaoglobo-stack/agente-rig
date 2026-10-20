@@ -1089,7 +1089,15 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
                 originCoords,
                 plannedDepartureAt,
                 operationalWindowEnd,
-                operationalNotes
+                operationalNotes,
+                tripDirection,
+                destinationLabel,
+                enableScheduleTrafficCalc,
+                region,
+                neighborhood,
+                corridor,
+                baseDistanceKm,
+                baseDurationMinutes
             } = req.body || {};
 
             if (!caravanName || !programName || !originAddress || !plannedDepartureAt) {
@@ -1108,7 +1116,15 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
                 originCoords: originCoords || [-22.8000, -43.3500],
                 plannedDepartureAt,
                 operationalWindowEnd,
-                operationalNotes
+                operationalNotes,
+                tripDirection: tripDirection || 'TO_GLOBO',
+                destinationLabel: destinationLabel || undefined,
+                enableScheduleTrafficCalc: enableScheduleTrafficCalc !== undefined ? Boolean(enableScheduleTrafficCalc) : true,
+                region,
+                neighborhood,
+                corridor,
+                baseDistanceKm,
+                baseDurationMinutes
             }, publicIncidents);
 
             res.status(201).json({
@@ -1168,9 +1184,10 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
      */
     router.post('/caravans/recalculate-all', checkCaravanEnabled, (req, res) => {
         try {
+            const region = req.query.region ? String(req.query.region).toUpperCase() : (req.body?.region ? String(req.body.region).toUpperCase() : undefined);
             const publicIncidents = store.getAllIncidents();
-            const all = caravanStore.recalculateAll(publicIncidents);
-            const kpis = caravanStore.getKpis(publicIncidents);
+            const all = caravanStore.recalculateAll(publicIncidents, region ? { region } : {});
+            const kpis = caravanStore.getKpis(publicIncidents, region ? { region } : {});
             res.json({
                 ok: true,
                 message: 'Todas as rotas de caravanas foram recalculadas.',
@@ -1186,11 +1203,12 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
 
     /**
      * GET /geocode
-     * Endpoint auxiliar de geocodificação para bairros, pontos de referência e endereços sintéticos do RJ.
+     * Endpoint auxiliar de geocodificação para bairros, pontos de referência e endereços sintéticos do RJ e SP.
      */
     router.get('/geocode', (req, res) => {
         try {
             const q = String(req.query.q || '').trim().toLowerCase();
+            const region = String(req.query.region || '').trim().toUpperCase();
             if (Array.isArray(PRE_REGISTERED_CARAVANS_RJ)) {
                 for (const item of PRE_REGISTERED_CARAVANS_RJ) {
                     const ref = (item.pontoReferencia || '').toLowerCase();
@@ -1203,6 +1221,7 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
             }
 
             const GEO_LOOKUP = {
+                // Rio de Janeiro
                 'são joão de meriti': [-22.8038, -43.3725],
                 'sao joao de meriti': [-22.8038, -43.3725],
                 'nova iguaçu': [-22.7560, -43.4600],
@@ -1219,13 +1238,51 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
                 'meier': [-22.8980, -43.2800],
                 'jacarepaguá': [-22.9450, -43.3600],
                 'jacarepagua': [-22.9450, -43.3600],
-                'barra da tijuca': [-22.9990, -43.3600]
+                'barra da tijuca': [-22.9990, -43.3600],
+                'copacabana': [-22.9694, -43.1868],
+                'botafogo': [-22.9519, -43.1857],
+                'petrópolis': [-22.5050, -43.1789],
+                'petropolis': [-22.5050, -43.1789],
+                'teresópolis': [-22.4123, -42.9664],
+                'maricá': [-22.9194, -42.8186],
+                // São Paulo
+                'osasco': [-23.5325, -46.7917],
+                'guarulhos': [-23.4628, -46.5333],
+                'santo andré': [-23.6558, -46.5337],
+                'santo andre': [-23.6558, -46.5337],
+                'são bernardo': [-23.6944, -46.5654],
+                'sao bernardo': [-23.6944, -46.5654],
+                'são caetano': [-23.6229, -46.5548],
+                'barueri': [-23.4985, -46.8520],
+                'alphaville': [-23.4985, -46.8520],
+                'campinas': [-22.9056, -47.0608],
+                'tatuapé': [-23.5401, -46.5766],
+                'tatuape': [-23.5401, -46.5766],
+                'santana': [-23.5015, -46.6247],
+                'pinheiros': [-23.5673, -46.7019],
+                'itaim': [-23.5843, -46.6784],
+                'brooklin': [-23.6186, -46.6974],
+                'berrini': [-23.6100, -46.6950],
+                'paulista': [-23.5614, -46.6558],
+                'mooca': [-23.5606, -46.5969],
+                'ipiranga': [-23.5855, -46.6098],
+                'interlagos': [-23.6815, -46.6970],
+                'santo amaro': [-23.6542, -46.7088],
+                'diadema': [-23.6865, -46.6234],
+                'mauá': [-23.6677, -46.4613],
+                'cotia': [-23.6026, -46.9190],
+                'taboão da serra': [-23.6088, -46.7575],
+                'lapa': [-23.5236, -46.7026]
             };
 
             for (const [key, coords] of Object.entries(GEO_LOOKUP)) {
                 if (q.includes(key)) {
                     return res.json({ ok: true, query: q, coords, matchedKey: key });
                 }
+            }
+
+            if (region === 'SP' || q.includes('sp') || q.includes('são paulo') || q.includes('sao paulo')) {
+                return res.json({ ok: true, query: q, coords: [-23.5505, -46.6333], matchedKey: 'fallback_sp' });
             }
 
             res.json({ ok: true, query: q, coords: [-22.8200, -43.3800], matchedKey: 'fallback_rio' });

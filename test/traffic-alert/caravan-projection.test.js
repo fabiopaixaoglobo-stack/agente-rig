@@ -233,4 +233,52 @@ describe('🔒 SEGURANÇA, ESCOPO E PRESERVAÇÃO DO MONITORAMENTO', () => {
         assert.ok(dashboardHtml.includes('Monitoramento 🔒'), 'Aba Monitoramento deve conter selo de bloqueio 🔒');
         assert.ok(dashboardHtml.includes('id="tab-btn-monitoramento"'));
     });
+
+    it('3. Pré-cadastro (São Gonçalo e Austin) deve gerar trajeto viário real multi-ponto (nunca linha reta) e considerar horário/sentido', () => {
+        const store = new CaravanStore();
+
+        const sgCaravan = store.addCaravan({
+            region: 'RJ',
+            caravanName: 'Caravana SÃO GONÇALO — São Gonçalo',
+            programName: 'Domingão',
+            neighborhood: 'São Gonçalo',
+            corridor: 'BR-101 / Ponte Rio-Niterói / Linha Amarela',
+            originCoords: [-22.8247, -43.0519],
+            plannedDepartureAt: '2026-10-20T17:30:00.000Z',
+            tripDirection: 'TO_GLOBO',
+            enableScheduleTrafficCalc: true,
+            baseDistanceKm: 43.2,
+            baseDurationMinutes: 60
+        });
+        assert.ok(sgCaravan.routeGeometry.length >= 12, 'Trajeto de São Gonçalo deve possuir múltiplos pontos viários (>= 12)');
+        assert.strictEqual(sgCaravan.tripDirection, 'TO_GLOBO');
+        assert.ok(sgCaravan.scheduleTrafficAdjustmentMinutes > 0, 'Deve calcular ajuste de trânsito pelo horário de saída');
+
+        const austinCaravan = store.addCaravan({
+            region: 'RJ',
+            caravanName: 'Caravana AUSTIN — Austin',
+            programName: 'Angélica',
+            neighborhood: 'Austin',
+            corridor: 'Presidente Dutra / Transolímpica',
+            originCoords: [-22.7114, -43.5218],
+            plannedDepartureAt: '2026-10-20T18:00:00.000Z',
+            tripDirection: 'FROM_GLOBO',
+            enableScheduleTrafficCalc: true,
+            baseDistanceKm: 39.2,
+            baseDurationMinutes: 54
+        });
+        assert.ok(austinCaravan.routeGeometry.length >= 10, 'Trajeto de Austin deve possuir múltiplos pontos viários (>= 10)');
+        assert.strictEqual(austinCaravan.tripDirection, 'FROM_GLOBO');
+        assert.deepStrictEqual(austinCaravan.routeGeometry[0], [-22.955, -43.41], 'No sentido FROM_GLOBO o trajeto parte dos Estúdios Globo');
+    });
+
+    it('4. caravanas.html deve conter seletores de Programa (RJ/SP + texto livre), Hora de Saída, Destino, Mapa Limpo e barra Google Maps', () => {
+        const caravanasHtml = fs.readFileSync(path.join(__dirname, '../../public/caravanas.html'), 'utf8');
+        assert.ok(caravanasHtml.includes('Domingão') && caravanasHtml.includes('Caldeirão') && caravanasHtml.includes('Angélica'));
+        assert.ok(caravanasHtml.includes('Encontro') && caravanasHtml.includes('Altas Horas'));
+        assert.ok(caravanasHtml.includes('quick-program-custom') && caravanasHtml.includes('form-programa-custom'));
+        assert.ok(caravanasHtml.includes('quick-departure-time') && caravanasHtml.includes('quick-trip-direction'));
+        assert.ok(caravanasHtml.includes('chk-top-occurrences') && caravanasHtml.includes('chk-top-cameras'));
+        assert.ok(caravanasHtml.includes('gmaps-traffic-bar') && caravanasHtml.includes('buildDetailedCorridorGeometry'));
+    });
 });
