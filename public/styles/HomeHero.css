@@ -152,11 +152,20 @@
 }
 
 /* Marcação de Autoria e Desenvolvimento na parte inferior */
+@keyframes footerFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 .hero-footer {
   position: absolute;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
   z-index: 10;
   display: inline-flex;
   align-items: center;
@@ -175,7 +184,8 @@
   pointer-events: auto;
   user-select: none;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  animation: footerFade 2s ease-out forwards;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .hero-footer:hover {
