@@ -150,3 +150,53 @@
   text-align: center;
   min-height: 15px;
 }
+
+/* Marcação de Autoria e Desenvolvimento na parte inferior */
+.hero-footer {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 22px;
+  background: rgba(5, 10, 15, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 209, 255, 0.28);
+  border-radius: 999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 209, 255, 0.12);
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: auto;
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.hero-footer:hover {
+  border-color: rgba(0, 209, 255, 0.6);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 209, 255, 0.25);
+  background: rgba(5, 10, 15, 0.85);
+}
+
+.hero-footer .hero-author {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 720px) {
+  .hero-footer {
+    bottom: 16px;
+    font-size: 11px;
+    padding: 6px 16px;
+    max-width: 90%;
+    white-space: normal;
+    text-align: center;
+  }
+}
