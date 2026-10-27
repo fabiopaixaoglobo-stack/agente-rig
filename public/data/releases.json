@@ -1,145 +1,100 @@
 {
-  "checkpoint": "5.4",
-  "version": "CP 5.4",
-  "date": "2026-09-29",
-  "formattedDate": "29/09/2026",
-  "status": "Homologado",
-  "badge": "Release Notes Vivo",
-  "summary": "Evolução Integrada RJ + SP do RIT Caravanas e RIT Alerta: Módulo SP (Edifício Jornalista Roberto Marinho), Ocorrências de Segurança OTT e Fogo Cruzado, Visualizador Interno de Câmeras Públicas, Camada de Trânsito com 6 Níveis de Fluidez, Recálculo de Projeção com Delta Auditável e KPIs Interativos.",
+  "checkpoint": "5.6",
+  "version": "CP 5.6 · Outubro 2026",
+  "date": "2026-10-27",
+  "formattedDate": "27/10/2026",
+  "status": "Em Produção Ativa",
+  "badge": "Ecossistema 360° em Tempo Real",
+  "summary": "Consolidação Executiva 360° do Ecossistema Agente RIT / Conexão Transportes: +4.297 Câmeras Ao Vivo, Motor Preditivo IA + Risco (OTT, Fogo Cruzado e Clima COR), Monitoramento de Rodovias e Vias nas 5 Capitais, Caravanas Inteligentes RJ (49 rotas pré-cadastradas com trajeto viário real e barra Google Traffic) + SP, Central de Inteligência Aérea RIT Fly v1.1 (ADS-B nacional com failover triplo, silhuetas FlightAware, 8 Hubs METAR, Ocorrências Consolidadas e RIT Fly AI), Comparativo Multimodal de Custos (Score 97) e Governança Transversal (Cyber, Privacidade LGPD e Governança by Design).",
   "metrics": {
-    "unitTests": "105/105",
-    "smokeTests": "25/25",
-    "playwrightEvidence": "16",
-    "auditEvidence": "20/20"
+    "cameras": "+4.297",
+    "capitais": "5 Capitais + 8 Hubs Aéreos",
+    "caravanas": "49 Rotas RJ + Polo SP",
+    "economia": "Até 35% na Janela Ideal"
   },
   "features": [
     {
-      "id": "caravanas_sp",
-      "date": "29/09/2026",
-      "name": "Módulo RIT Caravanas São Paulo",
-      "subtitle": "Operação Regional Ed. Jornalista Roberto Marinho",
-      "desc": "Extensão do módulo de Caravanas para São Paulo com destino oficial no Brooklin (Encontro com Patrícia Poeta, Altas Horas SP, Caldeirão SP), rotas alternativas OSRM e alternância fluida RJ/SP com preservação de estado.",
-      "tag": "Regional SP",
+      "id": "rit_fly_v1_1",
+      "date": "27/10/2026",
+      "name": "RIT Fly v1.1 — Central de Inteligência Aérea Corporativa",
+      "subtitle": "ADS-B Nacional, 8 Aeroportos METAR, Silhuetas FlightAware & RIT Fly AI",
+      "desc": "Rastreamento aéreo nacional em tempo real com rotas IATA reais e failover triplo (CDN Nacional + adsb.fi + adsb.lol), silhuetas vetoriais orientadas pela proa, Painel de Ocorrências Consolidadas, meteorologia METAR da NOAA em 8 aeroportos, assistente conversacional RIT Fly AI e sincronia preditiva com frotas terrestres.",
+      "tag": "Inteligência Aérea",
       "status": "completed"
     },
     {
-      "id": "ott_fogo_cruzado",
-      "date": "29/09/2026",
-      "name": "Ocorrências de Segurança OTT & Fogo Cruzado",
-      "subtitle": "Camadas Independentes & Análise de Proximidade",
-      "desc": "Interface canônica de ocorrências de segurança normalizadas, deduplicação espacial, status de frescura (atual, recente, desatualizada) e cruzamento no raio de 3.500m com as rotas ativas das caravanas.",
-      "tag": "Segurança CCO",
+      "id": "caravanas_49_rj_sp",
+      "date": "27/10/2026",
+      "name": "Caravanas Inteligentes RJ (49 Rotas) & São Paulo",
+      "subtitle": "Trajetos Viários Reais, Multi-Caravanas Simultâneas & Barra Google Traffic",
+      "desc": "Aba dedicada com 49 caravanas pré-cadastradas do RJ para os Estúdios Globo e rotas SP para o Ed. Jornalista Roberto Marinho, plotagem simultânea de múltiplos ônibus no mapa com geometria real de rodovias, cálculo por horário de saída e sentido (ida/volta), filtro por programa e recálculo dinâmico de chegada com trânsito.",
+      "tag": "Caravanas RJ + SP",
       "status": "completed"
     },
     {
-      "id": "cameras_internas",
-      "date": "29/09/2026",
-      "name": "Visualizador Interno de Câmeras Públicas",
-      "subtitle": "Visualização In-App sem Nova Aba",
-      "desc": "Exibição in-app de câmeras do COR-Rio e CET-SP com metadados, carimbo de data/hora, navegação sequencial entre câmeras próximas, atualização em tempo real e fallback controlado para restrições CSP/X-Frame-Options.",
-      "tag": "Câmeras Públicas",
+      "id": "monitoramento_rodovias_5_capitais",
+      "date": "27/10/2026",
+      "name": "Monitoramento de Trânsito, Rodovias & RIT Alerta (5 Capitais)",
+      "subtitle": "Painel de Vias Monitoradas, 7 KPIs com Drill-Down & 6 Níveis de Fluidez",
+      "desc": "Telemetria contínua dos principais corredores e rodovias (Linha Vermelha, Linha Amarela, Av. Brasil, Ponte Rio-Niterói, Transolímpica, Via Dutra, Marginais SP, EPIA BSB, BR-101 REC e Anel Rodoviário BH), com painel lateral de inteligência regional e alertas em tempo real.",
+      "tag": "Trânsito & Rodovias",
       "status": "completed"
     },
     {
-      "id": "camada_transito",
-      "date": "29/09/2026",
-      "name": "Camada de Trânsito Ativável & Fluidez Viária",
-      "subtitle": "6 Níveis Cromáticos, Legenda e Atalho 'T'",
-      "desc": "Polylines coloridas por nível de fluidez nos principais corredores viários (Livre, Moderado, Lento, Intenso, Parado, Sem dados), controle de visibilidade independente, legenda recolhível e impacto direto nas durações das caravanas.",
-      "tag": "Fluidez Viária",
+      "id": "central_cameras_ia_risco",
+      "date": "27/10/2026",
+      "name": "+4.297 Câmeras Ao Vivo & Motor Preditivo IA + Risco",
+      "subtitle": "Sinal Ao Vivo, Mosaico 2x2, OTT, Fogo Cruzado & Alerta Clima",
+      "desc": "Cobertura visual de alta disponibilidade integrando COR-Rio, CET-SP e concessionárias rodoviárias, busca inteligente no raio de 1 km a 5 km do trajeto, visualizador in-app e cruzamento geoespacial instantâneo com eventos de segurança pública (OTT e Fogo Cruzado).",
+      "tag": "Câmeras & Segurança",
       "status": "completed"
     },
     {
-      "id": "recalculo_delta",
-      "date": "29/09/2026",
-      "name": "Recálculo de Projeção com Delta Auditável",
-      "subtitle": "Comparativo Preciso & Indicador de Variação",
-      "desc": "Botão de recálculo com estado de loading, consulta resiliente aos provedores de trânsito, cálculo do delta comparativo (duração, nova estimativa de chegada e severidade), registro de timestamp e feedback visual via toast.",
-      "tag": "Projeção Dinâmica",
+      "id": "roteirizacao_custos_esg",
+      "date": "27/10/2026",
+      "name": "Centro de Roteirização, Eficiência Financeira & ESG (Score 97)",
+      "subtitle": "Comparativo de 7 Modais, Curva 24h, Pedágios, Lote XLSX & CO₂",
+      "desc": "Recomendação algorítmica do modal ótimo comparando Frota Própria Globo, Cooperativa, Táxi e Apps (UberX, 99Pop, Comfort, Black), projeção horária de 24h com até 35% de economia na janela ideal, auditoria de pedágios, processamento em lote XLSX e pegada de carbono.",
+      "tag": "Eficiência & ESG",
       "status": "completed"
     },
     {
-      "id": "rit_alerta_interativo",
-      "date": "29/09/2026",
-      "name": "RIT Alerta Dinâmico & KPIs Clicáveis",
-      "subtitle": "Explicabilidade Total & Alertas de Mobilidade",
-      "desc": "Transformação dos 5 cards executivos de KPI em elementos interativos com explicabilidade e filtros rápidos, contagem dinâmica de câmeras e integração de alertas meteorológicos (chuva, vento, alagamento) do COR-Rio e CGE-SP.",
-      "tag": "Alertas Operacionais",
-      "status": "completed"
-    },
-    {
-      "id": "roteirizacao",
-      "date": "29/09/2026",
-      "name": "Centro de Roteirização & Comparativo de Custos",
-      "subtitle": "Comparativo Multimodal VAH & Projeção 24h",
-      "desc": "Simulação em tempo real entre Frota Própria Globo, UberX, 99Pop, Táxi e Cooperativa. Projeção de trânsito em 24h indicando janela ideal com até 35% de economia e -20 min.",
-      "tag": "Custos & Rotas",
-      "status": "completed"
-    },
-    {
-      "id": "drawer",
-      "date": "29/09/2026",
-      "name": "Drawer Tático Integrado",
-      "subtitle": "Painel Lateral Retrátil",
-      "desc": "Interface colapsável com visualização de rotas, comparativo Google Maps vs Waze, geolocalização e telemetria de trânsito em tempo real.",
-      "tag": "Interface CCO",
-      "status": "completed"
-    },
-    {
-      "id": "geocode",
-      "date": "29/09/2026",
-      "name": "Geocodificação Offline Imediata",
-      "subtitle": "Zero Latência Viária",
-      "desc": "Mapeamento instantâneo para Centros de Distribuição e rotas sem dependência de APIs externas pagas ou latência de rede.",
-      "tag": "Performance",
-      "status": "completed"
-    },
-    {
-      "id": "multirotas",
-      "date": "29/09/2026",
-      "name": "Multi-Rotas Coloridas & Lote",
-      "subtitle": "7 Cores Canônicas",
-      "desc": "Visualização simultânea de trajetos com diferenciação cromática de 7 cores, recálculo em lote e identificador tático unificado.",
-      "tag": "Cartografia",
-      "status": "completed"
-    },
-    {
-      "id": "auditoria",
-      "date": "29/09/2026",
-      "name": "Auditoria Probatória com SHA-256",
-      "subtitle": "Rastreabilidade & Conformidade",
-      "desc": "Suíte completa de testes automatizados, manifesto SHA-256 de evidências, relatório de integridade e conformidade com Privacy by Design estrito.",
-      "tag": "Governança",
+      "id": "governanca_cyber_lgpd",
+      "date": "27/10/2026",
+      "name": "Articulação Transversal: Cyber Segurança, Privacidade (LGPD) & Governança",
+      "subtitle": "Privacy by Design, Zero GPS Invasivo & RBAC Corporativo",
+      "desc": "Arquitetura concebida em alinhamento com Cyber Segurança, Privacidade e Governança: zero rastreamento GPS de motoristas, proteção estrita de dados pessoais, controle de acesso por perfil (RBAC), sessões auditáveis e conformidade corporativa desde a concepção.",
+      "tag": "Cyber & Governança",
       "status": "completed"
     }
   ],
   "history": [
     {
+      "checkpoint": "5.6",
+      "date": "Out/2026",
+      "title": "Consolidação Executiva 360°: Caravanas 49 Rotas Reais + RIT Fly Nacional",
+      "summary": "49 caravanas RJ com trajetos viários reais e barra Google Traffic, feed ADS-B nacional com failover triplo, silhuetas FlightAware e painel de ocorrências consolidadas.",
+      "status": "Ativo"
+    },
+    {
+      "checkpoint": "5.5",
+      "date": "Out/2026",
+      "title": "RIT Fly v1.1 & Inteligência Regional de Rodovias",
+      "summary": "Central de Inteligência Aérea Corporativa com 8 hubs METAR, RIT Fly AI, integração aéreo-solo e novo painel de vias monitoradas nas 5 capitais.",
+      "status": "Concluído"
+    },
+    {
+      "checkpoint": "5.4",
+      "date": "Set/2026",
+      "title": "Expansão Regional RJ + SP, Câmeras In-App & OTT/Fogo Cruzado",
+      "summary": "Operação unificada Estúdios Globo RJ e Ed. Jornalista Roberto Marinho SP, visualizador interno de câmeras e camada de fluidez em 6 cores.",
+      "status": "Concluído"
+    },
+    {
       "checkpoint": "5.3",
-      "date": "29/09/2026",
-      "title": "Redesenho Executivo & Multi-Rotas em 7 Cores",
-      "summary": "Auditoria probatória com checksums SHA-256, geocodificação offline, visualização multi-rota e drawer tático preliminar.",
-      "status": "Concluído"
-    },
-    {
-      "checkpoint": "5.2",
-      "date": "28/09/2026",
-      "title": "Módulo Caravanas & Provedores Externos",
-      "summary": "Cálculo comparativo de rotas Google/Waze, mockups de alta definição e geocodificação offline preliminar.",
-      "status": "Concluído"
-    },
-    {
-      "checkpoint": "5.1",
-      "date": "25/09/2026",
-      "title": "Migração de Identidade RIG para RIT",
-      "summary": "Preservação de retrocompatibilidade, sanitização de rotas canônicas e segurança estática contra vazamento de dados sensíveis.",
-      "status": "Concluído"
-    },
-    {
-      "checkpoint": "4.2",
-      "date": "21/09/2026",
-      "title": "RIT Alerta & Câmeras CET-Rio/COR",
-      "summary": "Monitoramento viário contínuo, 4.297 câmeras integradas nas 5 regionais Globo (RJ, SP, BSB, REC e BH).",
+      "date": "Set/2026",
+      "title": "Centro de Roteirização Multimodal, Geocodificação & Mosaico 2x2",
+      "summary": "Comparativo financeiro de 7 modais (Score 97), projeção de 24h, radar meteorológico e integração de +4.297 câmeras.",
       "status": "Concluído"
     }
   ]

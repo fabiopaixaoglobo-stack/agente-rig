@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agente RIT — Como Funciona | Versão CP 5.4 (29/09/2026) · Histórico Vivo de Entregas</title>
+  <title>Agente RIT — Ecossistema Conexão Transportes | Visão Executiva 360° em Tempo Real</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
@@ -17,10 +18,10 @@
       --dark: #050C18;
       --dark-card: #0A1322;
       --glass: rgba(0, 209, 255, 0.04);
-      --glass-border: rgba(0, 209, 255, 0.16);
+      --glass-border: rgba(0, 209, 255, 0.18);
       --white: #FFFFFF;
-      --muted: rgba(255, 255, 255, 0.65);
-      --accent-grad: linear-gradient(135deg, #00D1FF 0%, #3B82F6 50%, #F5A623 100%);
+      --muted: rgba(255, 255, 255, 0.72);
+      --accent-grad: linear-gradient(135deg, #00D1FF 0%, #38BDF8 45%, #F5A623 100%);
     }
 
     * {
@@ -64,7 +65,7 @@
     .hero-bg-globe {
       background: url('assets/Imagem%20Globo%20Futuristas.png') no-repeat center center;
       background-size: cover;
-      filter: brightness(0.6) saturate(1.25);
+      filter: brightness(0.78) saturate(1.35);
     }
     .hero-bg-video-wrapper {
       overflow: hidden;
@@ -73,12 +74,12 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: brightness(0.55) contrast(1.15);
+      filter: brightness(0.74) contrast(1.15);
     }
     .hero-bg-overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at center, rgba(5, 12, 24, 0.45) 0%, rgba(5, 12, 24, 0.85) 70%, #050C18 100%);
+      background: radial-gradient(circle at center, rgba(5, 12, 24, 0.24) 0%, rgba(5, 12, 24, 0.72) 74%, #050C18 100%);
       z-index: 1;
     }
 
@@ -94,13 +95,13 @@
       position: absolute;
       border-radius: 50%;
       background: var(--cyan);
-      opacity: 0.12;
+      opacity: 0.14;
       animation: float linear infinite;
     }
     @keyframes float {
       0% { transform: translateY(102vh) scale(0); opacity: 0; }
-      10% { opacity: 0.15; }
-      90% { opacity: 0.15; }
+      10% { opacity: 0.18; }
+      90% { opacity: 0.18; }
       100% { transform: translateY(-5vh) scale(1); opacity: 0; }
     }
 
@@ -110,47 +111,59 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 56px;
+      height: 52px;
       display: flex;
       align-items: center;
-      padding: 0 24px;
+      padding: 0 20px;
       background: rgba(5, 12, 24, 0.94);
       border-bottom: 1px solid var(--glass-border);
       backdrop-filter: blur(16px);
       z-index: 100;
-      gap: 14px;
+      gap: 12px;
     }
     .top-logo {
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 900;
       color: var(--cyan);
-      letter-spacing: 2.5px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 8px;
       text-decoration: none;
+      white-space: nowrap;
     }
     .top-divider {
       width: 1px;
-      height: 20px;
+      height: 18px;
       background: var(--glass-border);
     }
     .top-subtitle {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--muted);
-      font-weight: 500;
-      letter-spacing: 1px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 8px;
+      white-space: nowrap;
+    }
+    .badge-version {
+      background: rgba(245, 166, 35, 0.15);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 166, 35, 0.45);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
     }
     .badge-live-notes {
-      background: rgba(0, 209, 255, 0.12);
-      color: var(--cyan);
-      border: 1px solid rgba(0, 209, 255, 0.3);
-      padding: 2px 7px;
+      background: rgba(16, 185, 129, 0.14);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 2px 8px;
       border-radius: 4px;
       font-size: 9px;
       font-weight: 800;
@@ -159,26 +172,67 @@
     .top-badges {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       margin-left: auto;
     }
     .top-pill {
-      font-size: 9.5px;
+      font-size: 9px;
       font-weight: 800;
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: 5px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
+      letter-spacing: 0.4px;
+      display: inline-flex;
       align-items: center;
       gap: 5px;
       text-decoration: none;
       transition: all 0.2s;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      font-family: 'Outfit', sans-serif;
     }
-    .top-pill.checkpoint { background: #0284c7; color: #fff; }
-    .top-pill.status { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
-    .top-pill.action { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
-    .top-pill.action:hover { background: var(--cyan); color: #000; border-color: var(--cyan); }
+    .top-pill.nav-quick {
+      background: rgba(0, 209, 255, 0.08);
+      color: #E2E8F0;
+      border-color: rgba(0, 209, 255, 0.22);
+    }
+    .top-pill.nav-quick:hover {
+      background: rgba(0, 209, 255, 0.22);
+      color: #fff;
+      border-color: var(--cyan);
+    }
+    .top-pill.status {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+    .top-pill.action {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .top-pill.action:hover {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+    }
+    @media (max-width: 1520px) {
+      .badge-live-notes {
+        display: none;
+      }
+      .top-bar {
+        padding: 0 14px;
+        gap: 8px;
+      }
+      .top-badges {
+        gap: 4px;
+      }
+      .top-pill {
+        font-size: 8.5px;
+        padding: 4px 7px;
+      }
+    }
 
     /* Deck de Slides */
     .deck {
@@ -197,8 +251,8 @@
       visibility: hidden;
       pointer-events: none !important;
       transition: opacity 0.45s cubic-bezier(0.25, 1, 0.5, 1), transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.45s;
-      transform: scale(0.97) translateY(16px);
-      padding: 72px 28px 65px;
+      transform: scale(0.97) translateY(14px);
+      padding: 58px 24px 54px;
       overflow: hidden;
       z-index: 1;
     }
@@ -213,15 +267,359 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none !important;
-      transform: scale(0.97) translateY(-16px);
+      transform: scale(0.97) translateY(-14px);
       z-index: 2;
     }
 
-    /* Layout Dividido (Split) */
+    /* ========================================================================= */
+    /* SLIDE 1: TELA INICIAL EXECUTIVA 360° (PROGRAMA DE MENTORIA / PITCH)       */
+    /* ========================================================================= */
+    .hero-executive-wrapper {
+      width: 100%;
+      max-width: 1380px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+      text-align: center;
+      z-index: 10;
+      padding: 2px 0;
+    }
+
+    .exec-top-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .homologation-badge-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 22, 42, 0.85);
+      border: 1px solid rgba(0, 209, 255, 0.38);
+      box-shadow: 0 0 24px rgba(0, 209, 255, 0.14);
+      padding: 5px 16px;
+      border-radius: 30px;
+      margin-bottom: 8px;
+      backdrop-filter: blur(10px);
+    }
+    .status-dot-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+      animation: blink 1.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .homologation-badge-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--cyan);
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+    }
+    .homologation-badge-divider {
+      color: rgba(255, 255, 255, 0.25);
+    }
+    .homologation-badge-text {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #6EE7B7;
+      letter-spacing: 0.4px;
+    }
+    .homologation-badge-date {
+      font-size: 9.5px;
+      color: #FBBF24;
+      background: rgba(245, 166, 35, 0.14);
+      border: 1px solid rgba(245, 166, 35, 0.35);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 800;
+    }
+
+    .title-hero {
+      font-size: clamp(26px, 3.1vw, 44px);
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      line-height: 1.06;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .highlight {
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle-hero {
+      font-size: clamp(12px, 1.05vw, 15px);
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 400;
+      max-width: 1060px;
+      line-height: 1.38;
+      margin-bottom: 10px;
+    }
+    .subtitle-hero strong {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    /* Faixa dos 3 Pilares Executivos da Mentoria (Rennan Tigre / Banca) */
+    .mentoria-pillars-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 1320px;
+      margin-bottom: 10px;
+    }
+    .mentoria-pillar-card {
+      background: linear-gradient(135deg, rgba(10, 22, 44, 0.88) 0%, rgba(6, 14, 28, 0.92) 100%);
+      border: 1px solid rgba(0, 209, 255, 0.25);
+      border-left: 4px solid var(--cyan);
+      border-radius: 10px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      text-align: left;
+      backdrop-filter: blur(10px);
+    }
+    .mentoria-pillar-card.gold {
+      border-left-color: var(--gold);
+      border-color: rgba(245, 166, 35, 0.28);
+    }
+    .mentoria-pillar-card.emerald {
+      border-left-color: var(--emerald);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .mp-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(0, 209, 255, 0.12);
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .mentoria-pillar-card.gold .mp-icon {
+      background: rgba(245, 166, 35, 0.14);
+      color: #FBBF24;
+    }
+    .mentoria-pillar-card.emerald .mp-icon {
+      background: rgba(16, 185, 129, 0.14);
+      color: #34D399;
+    }
+    .mp-text strong {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 1px;
+    }
+    .mp-text span {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.25;
+      display: block;
+    }
+
+    /* Grid 3x2 das 6 Funcionalidades Estratégicas do Agente RIT na Tela Inicial */
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+      width: 100%;
+      max-width: 1320px;
+      align-items: stretch;
+    }
+    @media (max-width: 1024px) {
+      .kpi-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .mentoria-pillars-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+    .kpi-card {
+      background: rgba(8, 18, 36, 0.74);
+      border: 1px solid rgba(0, 209, 255, 0.28);
+      border-radius: 12px;
+      padding: 11px 14px;
+      backdrop-filter: blur(10px);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    }
+    .kpi-card:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 10px 28px rgba(0, 209, 255, 0.22), 0 0 14px rgba(0, 209, 255, 0.3);
+      transform: translateY(-3px);
+      background: rgba(11, 25, 48, 0.95);
+    }
+    .kpi-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .kpi-icon-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .kpi-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(0, 209, 255, 0.1);
+      border: 1px solid rgba(0, 209, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .kpi-num {
+      font-size: 13px;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(0, 209, 255, 0.12);
+      border: 1px solid rgba(0, 209, 255, 0.3);
+      color: var(--cyan);
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .kpi-label-main {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+      line-height: 1.2;
+    }
+    .kpi-lbl {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.76);
+      line-height: 1.34;
+      margin-bottom: 8px;
+    }
+    .kpi-lbl strong {
+      color: #fff;
+      font-weight: 700;
+    }
+    .kpi-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 7px;
+    }
+    .kpi-mini-chip {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #CBD5E1;
+    }
+    .kpi-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding-top: 6px;
+      margin-top: auto;
+    }
+    .kpi-tap-cue {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .kpi-jump-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #FBBF24;
+      background: rgba(245, 166, 35, 0.12);
+      border: 1px solid rgba(245, 166, 35, 0.35);
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .kpi-jump-link:hover {
+      background: var(--gold);
+      color: #050C18;
+    }
+
+    /* Rodapé Executivo do Slide 1 */
+    .exec-bottom-section {
+      width: 100%;
+      max-width: 1320px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: linear-gradient(90deg, rgba(0, 209, 255, 0.12) 0%, rgba(10, 22, 44, 0.92) 50%, rgba(245, 166, 35, 0.12) 100%);
+      border: 1px solid rgba(0, 209, 255, 0.3);
+      border-radius: 10px;
+      padding: 8px 16px;
+      margin-top: 8px;
+      backdrop-filter: blur(10px);
+    }
+    .exec-bottom-quote {
+      font-size: 11.5px;
+      color: #F8FAFC;
+      font-weight: 500;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .exec-bottom-quote strong.cyan { color: var(--cyan); font-weight: 800; }
+    .exec-bottom-quote strong.gold { color: #FBBF24; font-weight: 800; }
+    .exec-bottom-quote strong.emerald { color: #34D399; font-weight: 800; }
+    .exec-bottom-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Layout Dividido (Split) para Telas 2 a 9 */
     .split-container {
       display: grid;
-      grid-template-columns: 0.72fr 1.28fr;
-      gap: 28px;
+      grid-template-columns: 0.74fr 1.26fr;
+      gap: 26px;
       width: 100%;
       max-width: 98%;
       height: 100%;
@@ -246,66 +644,60 @@
       align-self: flex-start;
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.4px;
       text-transform: uppercase;
       color: var(--cyan);
       border: 1px solid var(--cyan);
       padding: 3px 10px;
       border-radius: 4px;
-      margin-bottom: 10px;
-      background: rgba(0, 209, 255, 0.06);
+      margin-bottom: 8px;
+      background: rgba(0, 209, 255, 0.08);
     }
-    .tag.alert { color: var(--gold); border-color: var(--gold); background: rgba(245, 166, 35, 0.1); }
-    .tag.success { color: var(--emerald); border-color: var(--emerald); background: rgba(16, 185, 129, 0.1); }
-    .tag.purple { color: var(--purple); border-color: var(--purple); background: rgba(168, 85, 247, 0.1); }
+    .tag.alert { color: var(--gold); border-color: var(--gold); background: rgba(245, 166, 35, 0.12); }
+    .tag.success { color: var(--emerald); border-color: var(--emerald); background: rgba(16, 185, 129, 0.12); }
+    .tag.purple { color: var(--purple); border-color: var(--purple); background: rgba(168, 85, 247, 0.12); }
 
     .title-xl {
-      font-size: clamp(24px, 2.6vw, 36px);
+      font-size: clamp(23px, 2.5vw, 34px);
       font-weight: 900;
-      line-height: 1.15;
+      line-height: 1.14;
       letter-spacing: -0.5px;
-      margin-bottom: 10px;
-    }
-    .highlight {
-      background: var(--accent-grad);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      margin-bottom: 8px;
     }
     .description {
-      font-size: clamp(12px, 1vw, 13.5px);
+      font-size: clamp(12px, 0.98vw, 13.5px);
       color: var(--muted);
-      line-height: 1.5;
-      margin-bottom: 14px;
-      font-weight: 300;
+      line-height: 1.48;
+      margin-bottom: 12px;
+      font-weight: 400;
     }
 
     /* Lista de Recursos / Benefícios */
     .features-list {
       display: flex;
       flex-direction: column;
-      gap: 9px;
+      gap: 8px;
     }
     .feature-item {
       display: flex;
       gap: 11px;
       align-items: flex-start;
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(10, 20, 38, 0.72);
+      border: 1px solid rgba(0, 209, 255, 0.15);
       border-radius: 8px;
       padding: 9px 12px;
       transition: all 0.2s ease;
     }
     .feature-item:hover {
-      background: rgba(0, 209, 255, 0.04);
-      border-color: rgba(0, 209, 255, 0.25);
+      background: rgba(0, 209, 255, 0.06);
+      border-color: rgba(0, 209, 255, 0.35);
       transform: translateX(3px);
     }
     .feature-icon {
       width: 28px;
       height: 28px;
       border-radius: 6px;
-      background: rgba(0, 209, 255, 0.08);
+      background: rgba(0, 209, 255, 0.1);
       border: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
@@ -343,15 +735,15 @@
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--glass-border);
-      background: rgba(5, 12, 24, 0.85);
-      box-shadow: 0 15px 45px rgba(0, 209, 255, 0.1),
-                  0 0 0 1px rgba(0, 209, 255, 0.06);
+      background: rgba(5, 12, 24, 0.9);
+      box-shadow: 0 15px 45px rgba(0, 209, 255, 0.12),
+                  0 0 0 1px rgba(0, 209, 255, 0.08);
       display: flex;
       flex-direction: column;
     }
     .mockup-bar {
       height: 30px;
-      background: rgba(10, 20, 38, 0.95);
+      background: rgba(10, 20, 38, 0.96);
       border-bottom: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
@@ -379,7 +771,7 @@
       flex: 1;
       width: 100%;
       height: calc(100% - 30px);
-      background: #000;
+      background: #040914;
       position: relative;
       display: flex;
       justify-content: center;
@@ -398,22 +790,22 @@
     /* Carrossel Interno com Botões */
     .toggle-views-container {
       display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 7px;
+      margin-bottom: 11px;
       flex-wrap: wrap;
     }
     .view-toggle-btn {
       background: rgba(0, 209, 255, 0.08);
       border: 1px solid var(--glass-border);
       color: var(--muted);
-      padding: 5px 12px;
+      padding: 5px 11px;
       border-radius: 5px;
       cursor: pointer;
       font-family: 'Outfit', sans-serif;
       font-size: 10.5px;
       font-weight: 700;
       transition: all 0.2s;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
     .view-toggle-btn.active {
       background: var(--cyan);
@@ -545,114 +937,28 @@
       border: 1px solid #F43F5E;
     }
 
-    /* Hero / Slide 1 */
-    .hero-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      max-width: 980px;
-      z-index: 10;
-    }
-    .title-hero {
-      font-size: clamp(32px, 4vw, 52px);
-      font-weight: 900;
-      letter-spacing: -1.2px;
-      line-height: 1.08;
-      margin-bottom: 12px;
-    }
-    .subtitle-hero {
-      font-size: clamp(13px, 1.15vw, 16px);
-      color: var(--muted);
-      font-weight: 300;
-      max-width: 780px;
-      line-height: 1.45;
-      margin-bottom: 20px;
-    }
-
-    /* Cards de Benefícios / KPIs Operacionais */
-    .kpi-container {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      width: 100%;
-      max-width: 1040px;
-      margin-top: 10px;
-    }
-    @media (max-width: 1024px) {
-      .kpi-container {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-    @media (max-width: 640px) {
-      .kpi-container {
-        grid-template-columns: 1fr;
-      }
-    }
-    .kpi-card {
-      background: rgba(10, 20, 36, 0.85);
-      border: 1px solid rgba(0, 209, 255, 0.22);
-      border-radius: 8px;
-      padding: 12px 10px;
-      backdrop-filter: blur(8px);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-    }
-    .kpi-card:hover {
-      border-color: var(--cyan);
-      box-shadow: 0 8px 24px rgba(0, 209, 255, 0.22), 0 0 12px rgba(0, 209, 255, 0.35);
-      transform: translateY(-4px);
-      background: rgba(10, 25, 46, 0.95);
-    }
-    .kpi-icon {
-      font-size: 20px;
-      margin-bottom: 6px;
-    }
-    .kpi-num {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--white);
-      margin-bottom: 2px;
-    }
-    .kpi-label-main {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--white);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 3px;
-    }
-    .kpi-lbl {
-      font-size: 9.5px;
-      color: var(--muted);
-      line-height: 1.25;
-    }
-    .kpi-tap-cue {
+    .pillar-chip {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      margin-top: 6px;
-      font-size: 8.5px;
-      font-weight: 700;
-      color: var(--cyan);
-      opacity: 0.75;
-      letter-spacing: 0.4px;
-      transition: all 0.2s;
-      text-transform: uppercase;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 4px 11px;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
     }
-    .kpi-card:hover .kpi-tap-cue {
-      opacity: 1;
-      color: #fff;
-      text-shadow: 0 0 8px rgba(0, 209, 255, 0.8);
+    .pillar-chip i {
+      color: var(--cyan);
+      font-size: 11px;
     }
 
-    /* Modal Explicativo de KPIs */
+    /* Modal Explicativo Executivo (Cards Slide 1) */
     .kpi-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(3, 7, 18, 0.82);
+      background: rgba(3, 7, 18, 0.84);
       backdrop-filter: blur(10px);
       display: flex;
       justify-content: center;
@@ -670,12 +976,12 @@
       pointer-events: all;
     }
     .kpi-modal-box {
-      background: rgba(10, 19, 34, 0.97);
+      background: rgba(10, 19, 34, 0.98);
       border: 1px solid var(--cyan);
       border-radius: 14px;
-      max-width: 640px;
+      max-width: 680px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 35px rgba(0, 209, 255, 0.25);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 209, 255, 0.25);
       transform: translateY(20px) scale(0.97);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       padding: 24px;
@@ -719,7 +1025,7 @@
       padding-bottom: 12px;
     }
     .kpi-modal-icon {
-      font-size: 28px;
+      font-size: 26px;
       width: 48px;
       height: 48px;
       border-radius: 10px;
@@ -739,15 +1045,15 @@
       margin-bottom: 3px;
     }
     .kpi-modal-title {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       line-height: 1.25;
       color: #fff;
     }
     .kpi-modal-desc {
       font-size: 12.5px;
-      color: rgba(255, 255, 255, 0.85);
-      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.88);
+      line-height: 1.48;
     }
     .kpi-modal-section {
       display: flex;
@@ -836,29 +1142,16 @@
     }
     .kpi-modal-footer {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
       border-top: 1px solid var(--glass-border);
       padding-top: 10px;
     }
 
-    /* Code Block Box para Governança */
-    .code-box {
-      background: #040812;
-      border: 1px solid rgba(0, 209, 255, 0.25);
-      border-radius: 8px;
-      padding: 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: #7dd3fc;
-      margin-top: 12px;
-      line-height: 1.4;
-      text-align: left;
-    }
-
-    /* Barra de Navegação */
+    /* Barra de Navegação Inferior */
     .nav-bar {
       position: fixed;
-      bottom: 16px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -867,7 +1160,7 @@
       background: rgba(5, 12, 24, 0.92);
       border: 1px solid var(--glass-border);
       border-radius: 50px;
-      padding: 6px 18px;
+      padding: 5px 18px;
       backdrop-filter: blur(16px);
       z-index: 100;
     }
@@ -876,10 +1169,10 @@
       border: none;
       color: var(--white);
       font-family: 'Outfit', sans-serif;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       cursor: pointer;
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 50px;
       transition: all 0.2s;
     }
@@ -924,347 +1217,69 @@
     }
     .fullscreen-btn:hover { color: var(--cyan); }
 
-    /* Botão de Ação nos Slides */
+    /* Assinatura de Autoria Discreta no Canto Inferior Direito */
+    .author-badge-fixed {
+      position: fixed;
+      bottom: 14px;
+      right: 22px;
+      z-index: 95;
+      background: rgba(5, 12, 24, 0.85);
+      border: 1px solid rgba(0, 209, 255, 0.25);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+    }
+    .author-badge-fixed strong {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+    @media (max-width: 1100px) {
+      .author-badge-fixed { display: none; }
+    }
+
+    /* Botões de Ação nos Slides */
     .btn-action-primary {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       background: linear-gradient(135deg, #00D1FF 0%, #0284c7 100%);
       color: #000;
       font-weight: 800;
-      font-size: 12px;
-      padding: 10px 18px;
+      font-size: 11px;
+      padding: 8px 15px;
       border-radius: 6px;
       text-decoration: none;
-      box-shadow: 0 0 20px rgba(0, 209, 255, 0.4);
+      box-shadow: 0 0 18px rgba(0, 209, 255, 0.35);
       transition: all 0.2s;
       cursor: pointer;
       border: none;
+      font-family: 'Outfit', sans-serif;
     }
     .btn-action-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 28px rgba(0, 209, 255, 0.6);
+      box-shadow: 0 0 26px rgba(0, 209, 255, 0.55);
     }
     .btn-action-secondary {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--glass-border);
       color: #fff;
       font-weight: 700;
-      font-size: 12px;
-      padding: 10px 18px;
+      font-size: 11px;
+      padding: 8px 14px;
       border-radius: 6px;
       text-decoration: none;
       transition: all 0.2s;
       cursor: pointer;
+      font-family: 'Outfit', sans-serif;
     }
     .btn-action-secondary:hover {
-      background: rgba(0, 209, 255, 0.1);
+      background: rgba(0, 209, 255, 0.12);
       border-color: var(--cyan);
-    }
-
-    /* Estilos do Checkpoint 5.3 & Histórico de Entregas */
-    .badge-version {
-      background: rgba(245, 166, 35, 0.15);
-      color: #F5A623;
-      border: 1px solid rgba(245, 166, 35, 0.4);
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 9.5px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-    .homologation-badge-strip {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      padding: 6px 14px;
-      border-radius: 30px;
-      margin-bottom: 14px;
-    }
-    .status-dot-pulse {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 10px #10B981;
-      animation: blink 1.8s infinite;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-    .homologation-badge-title {
-      font-size: 11px;
-      font-weight: 800;
-      color: #10B981;
-      letter-spacing: 1px;
-    }
-    .homologation-badge-divider {
-      color: rgba(255, 255, 255, 0.2);
-    }
-    .homologation-badge-text {
-      font-size: 11px;
-      font-weight: 600;
-      color: #a7f3d0;
-    }
-    .homologation-badge-date {
-      font-size: 10px;
-      color: var(--muted);
-      background: rgba(0, 0, 0, 0.3);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .pillars-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin-top: 10px;
-      max-width: 880px;
-    }
-    .pillar-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 5px 12px;
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .pillar-chip i {
-      color: var(--cyan);
-      font-size: 11px;
-    }
-
-    /* Estilos do Slide 10 - Histórico Vivo de Entregas */
-    .releases-split-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 20px;
-      width: 100%;
-      text-align: left;
-      height: 64vh;
-      overflow: hidden;
-    }
-    .releases-col-main {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: rgba(10, 19, 34, 0.7);
-      border: 1px solid var(--glass-border);
-      border-radius: 12px;
-      padding: 16px;
-      overflow: hidden;
-    }
-    .release-header-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 12px;
-      margin-bottom: 12px;
-    }
-    .release-header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .release-tag-active {
-      background: var(--cyan);
-      color: #000;
-      font-size: 9px;
-      font-weight: 900;
-      padding: 2px 7px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-    }
-    .release-version-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: #fff;
-    }
-    .release-date-badge {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .release-status-pill {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      color: #10B981;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .releases-feature-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow-y: auto;
-      padding-right: 6px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(0, 209, 255, 0.3) transparent;
-      flex: 1;
-    }
-    .release-feature-card {
-      display: flex;
-      gap: 12px;
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 8px;
-      padding: 9px 12px;
-      transition: all 0.2s;
-    }
-    .release-feature-card:hover {
-      background: rgba(0, 209, 255, 0.04);
-      border-color: rgba(0, 209, 255, 0.25);
-      transform: translateX(2px);
-    }
-    .feature-status-icon {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      color: #10B981;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .feature-body {
-      flex: 1;
-    }
-    .feature-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2px;
-    }
-    .feature-header-row strong {
-      font-size: 12.5px;
-      color: #fff;
-    }
-    .feature-tag {
-      font-size: 9px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 3px;
-      background: rgba(0, 209, 255, 0.1);
-      color: var(--cyan);
-      border: 1px solid rgba(0, 209, 255, 0.2);
-    }
-    .feature-body p {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    .releases-col-side {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      height: 100%;
-    }
-    .history-title {
-      font-size: 12.5px;
-      font-weight: 800;
-      color: var(--cyan);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .history-timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background: rgba(10, 19, 34, 0.7);
-      border: 1px solid var(--glass-border);
-      border-radius: 12px;
-      padding: 14px;
-      flex: 1;
-      overflow-y: auto;
-    }
-    .history-item {
-      position: relative;
-      padding-left: 18px;
-      border-left: 2px solid rgba(0, 209, 255, 0.2);
-    }
-    .history-dot {
-      position: absolute;
-      left: -5px;
-      top: 3px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--cyan);
-    }
-    .history-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11.5px;
-      margin-bottom: 3px;
-    }
-    .history-header strong {
-      color: #fff;
-    }
-    .history-date {
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-    }
-    .history-item p {
-      font-size: 10.5px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    .policy-box {
-      background: rgba(245, 166, 35, 0.08);
-      border: 1px solid rgba(245, 166, 35, 0.25);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
-    .policy-icon {
-      color: var(--gold);
-      font-size: 16px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .policy-text h5 {
-      font-size: 11.5px;
-      font-weight: 800;
-      color: var(--gold);
-      margin-bottom: 2px;
-    }
-    .policy-text p {
-      font-size: 10.5px;
-      color: rgba(255, 255, 255, 0.7);
-      line-height: 1.35;
     }
   </style>
 </head>
@@ -1275,7 +1290,7 @@
     <div class="hero-bg-layer hero-bg-globe active" id="hero-bg-globe"></div>
     <div class="hero-bg-layer hero-bg-video-wrapper" id="hero-bg-video-wrapper">
       <video class="hero-bg-video" id="hero-bg-video" autoplay loop muted playsinline>
-        <source src="assets/V%C3%ADdeo%20Loop%20Agente%20RIT%20-%20Futurista%20-%20Vers%C3%A3o%20Final.mp4" type="video/mp4">
+        <source src="assets/V%C3%ADdeo%20Loop%20Agente%20RIT%20-%20Futurista%20-%20Vers%C3%A3o%20Final.mp4?v=20261027.1" type="video/mp4">
       </video>
     </div>
     <div class="hero-bg-overlay"></div>
@@ -1291,144 +1306,290 @@
     </a>
     <div class="top-divider"></div>
     <div class="top-subtitle">
-      <span>COMO FUNCIONA</span>
-      <span class="badge-version">VERSÃO CP 5.4 · ATUALIZADO EM 29/09/2026</span>
-      <span class="badge-live-notes"><i class="fa-solid fa-bolt"></i> HISTÓRICO VIVO DE ENTREGAS</span>
+      <span>ECOSSISTEMA CONEXÃO TRANSPORTES</span>
+      <span class="badge-version">VISÃO EXECUTIVA 360° · OUTUBRO 2026</span>
+      <span class="badge-live-notes"><i class="fa-solid fa-shield-halved"></i> CYBER, PRIVACIDADE (LGPD) & GOVERNANÇA</span>
     </div>
-    
+
     <div class="top-badges">
-      <div class="top-pill checkpoint"><i class="fa-solid fa-code-branch"></i> CHECKPOINT 5.4</div>
-      <div class="top-pill status" id="pill-status"><i class="fa-solid fa-circle-check"></i> EVIDENCIADO</div>
-      <a href="/caravanas.html" class="top-pill action"><i class="fa-solid fa-bus"></i> CARAVANAS</a>
-      <a href="/dashboard.html" class="top-pill action"><i class="fa-solid fa-desktop"></i> PAINEL GERENCIAL</a>
+      <button class="top-pill nav-quick" onclick="goToSlide(0)" title="Tela 1: Visão Executiva 360°"><i class="fa-solid fa-compass"></i> VISÃO 360°</button>
+      <button class="top-pill nav-quick" onclick="goToSlide(1)" title="Tela 2: +4.297 Câmeras Ao Vivo & Risco"><i class="fa-solid fa-video"></i> CÂMERAS</button>
+      <button class="top-pill nav-quick" onclick="goToSlide(2)" title="Tela 3: Monitoramento de Trânsito & Rodovias"><i class="fa-solid fa-road"></i> RODOVIAS & TRÂNSITO</button>
+      <button class="top-pill nav-quick" onclick="goToSlide(6)" title="Tela 7: Roteirização & Custos"><i class="fa-solid fa-calculator"></i> CUSTOS</button>
+      <button class="top-pill nav-quick" onclick="goToSlide(7)" title="Tela 8: Caravanas Inteligentes RJ & SP"><i class="fa-solid fa-bus"></i> CARAVANAS</button>
+      <button class="top-pill nav-quick" onclick="goToSlide(8)" title="Tela 9: RIT Fly Inteligência Aérea"><i class="fa-solid fa-plane-departure"></i> RIT FLY</button>
+      <button class="top-pill action" id="btn-audio-toggle" onclick="toggleHeroAudio()" title="Ativar/Desativar Som do Vídeo"><span id="audio-icon">🔇</span></button>
+      <a href="/dashboard.html" class="top-pill action"><i class="fa-solid fa-desktop"></i> PAINEL AO VIVO</a>
       <a href="/index.html" class="top-pill action"><i class="fa-solid fa-arrow-left"></i> INÍCIO</a>
     </div>
   </header>
 
-  <!-- Deck de 8 Slides Operacionais -->
+  <!-- Deck de 9 Telas Executivas & Operacionais -->
   <main class="deck" id="deck">
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 1: BEM-VINDO AO AGENTE RIT (CHECKPOINT 5.4 - STATUS OPERACIONAL)     -->
+    <!-- SLIDE 1: VISÃO EXECUTIVA 360° (SÍNTESE DO PROGRAMA DE MENTORIA & PITCH)   -->
     <!-- ========================================================================= -->
     <section class="slide active" data-slide="1">
-      <div class="hero-container">
-        <!-- Status de Homologação em Destaque -->
-        <div class="homologation-badge-strip">
-          <span class="status-dot-pulse"></span>
-          <span class="homologation-badge-title">CHECKPOINT 5.4</span>
-          <span class="homologation-badge-divider">|</span>
-          <span class="homologation-badge-text">🟢 STATUS OPERACIONAL: HOMOLOGADO RJ & SP COM TRÂNSITO, CÂMERAS E SEGURANÇA</span>
-          <span class="homologation-badge-date">29/09/2026</span>
+      <div class="hero-executive-wrapper">
+
+        <!-- Topo Executivo -->
+        <div class="exec-top-section">
+          <div class="homologation-badge-strip">
+            <span class="status-dot-pulse"></span>
+            <span class="homologation-badge-title">AGENTE RIT / CONEXÃO TRANSPORTES</span>
+            <span class="homologation-badge-divider">|</span>
+            <span class="homologation-badge-text">DO AUTODESENVOLVIMENTO À ARTICULAÇÃO TRANSVERSAL: OPERAÇÃO, DADOS, IA & NEGÓCIOS</span>
+            <span class="homologation-badge-date">OPERAÇÃO 360° AO VIVO</span>
+          </div>
+
+          <h1 class="title-hero">
+            ROTA INTELIGENTE DE <span class="highlight">TRANSPORTES</span>
+          </h1>
+          <p class="subtitle-hero">
+            Plataforma estratégica que converte dados dispersos de <strong>câmeras ao vivo, monitoramento de trânsito, rodovias, caravanas, malha aérea (RIT Fly), clima e custos</strong> em <strong>inteligência preditiva 360°</strong> — protegendo equipes em campo, garantindo pontualidade artística e otimizando recursos 24x7.
+          </p>
+
+          <!-- 3 Pilares Executivos da Apresentação de Mentoria -->
+          <div class="mentoria-pillars-bar">
+            <div class="mentoria-pillar-card">
+              <div class="mp-icon"><i class="fa-solid fa-bullseye"></i></div>
+              <div class="mp-text">
+                <strong>1. Decisão Orientada por Dados</strong>
+                <span>Rota, tempo, custo, clima e contexto operacional unificados em uma única leitura executiva.</span>
+              </div>
+            </div>
+            <div class="mentoria-pillar-card gold">
+              <div class="mp-icon"><i class="fa-solid fa-shield-heart"></i></div>
+              <div class="mp-text">
+                <strong>2. Visão Integrada do Risco & Resposta Rápida</strong>
+                <span>Ocorrências (OTT/Fogo Cruzado), rodovias e +4.297 câmeras validam o cenário antes e durante a operação.</span>
+              </div>
+            </div>
+            <div class="mentoria-pillar-card emerald">
+              <div class="mp-icon"><i class="fa-solid fa-lock"></i></div>
+              <div class="mp-text">
+                <strong>3. Articulação Transversal & Governança</strong>
+                <span>Cocriação desde a concepção com Cyber Segurança, Privacidade (LGPD — Zero GPS invasivo) e Governança.</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <h1 class="title-hero">
-          ROTA INTELIGENTE DE <span class="highlight">TRANSPORTES</span>
-        </h1>
-        <p class="subtitle-hero">
-          Centro de Comando, Monitoramento e Otimização Logística Urbana em Tempo Real · Suporte Operacional Globo CCO
-        </p>
-
-        <!-- 5 KPIs Operacionais Explicativos do Checkpoint 5.4 -->
+        <!-- 6 Cards de Funcionalidades do Ecossistema Agente RIT (Em Uma Única Tela) -->
         <div class="kpi-container">
-          <div class="kpi-card" onclick="openKpiModal(1)" title="Clique para ver o detalhamento da validação">
-            <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-vial-circle-check"></i></div>
-            <div class="kpi-num" style="color: #10B981;">105 / 105</div>
-            <div class="kpi-label-main">VALIDAÇÕES AUTOMATIZADAS</div>
-            <div class="kpi-lbl">Verificações de Funcionalidade e Integração</div>
-            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+
+          <!-- Funcionalidade 1: Câmeras & Segurança Preditiva -->
+          <div class="kpi-card" onclick="openKpiModal(1)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #00D1FF;"><i class="fa-solid fa-video"></i></div>
+                  <div class="kpi-label-main">CÂMERAS AO VIVO & IA DE RISCO</div>
+                </div>
+                <div class="kpi-num">+4.297 CÂMERAS</div>
+              </div>
+              <div class="kpi-lbl">
+                Monitoramento visual em tempo real (COR-Rio, CET-SP e concessionárias), <strong>videowall mosaico 2x2</strong>, busca inteligente no raio da rota e cruzamento preditivo com <strong>OTT e Fogo Cruzado</strong>.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">📹 Sinal Ao Vivo In-App</span>
+                <span class="kpi-mini-chip">🛡️ OTT & Fogo Cruzado</span>
+                <span class="kpi-mini-chip">🔲 Mosaico 2x2 CCO</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(1);">Ver Telas 2 & 5 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
           </div>
 
-          <div class="kpi-card" onclick="openKpiModal(2)" title="Clique para ver o detalhamento da validação">
-            <div class="kpi-icon" style="color: #00D1FF;"><i class="fa-solid fa-list-check"></i></div>
-            <div class="kpi-num" style="color: #00D1FF;">25 / 25</div>
-            <div class="kpi-label-main">TESTES DE VALIDAÇÃO RÁPIDA</div>
-            <div class="kpi-lbl">Fluxos Críticos do Centro de Controle</div>
-            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+          <!-- Funcionalidade 2: Monitoramento de Trânsito & Rodovias -->
+          <div class="kpi-card" onclick="openKpiModal(2)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #F5A623;"><i class="fa-solid fa-road"></i></div>
+                  <div class="kpi-label-main">TRÂNSITO, RODOVIAS & ALERTAS</div>
+                </div>
+                <div class="kpi-num" style="color:#FBBF24; border-color:rgba(245,166,35,0.4); background:rgba(245,166,35,0.12);">5 CAPITAIS</div>
+              </div>
+              <div class="kpi-lbl">
+                Telemetria contínua de <strong>rodovias e vias expressas</strong> (Linha Vermelha, Linha Amarela, Av. Brasil, Ponte Rio-Niterói, Dutra, Marginais SP, EPIA, BR-101 e Anel BH) em <strong>RJ, SP, BSB, REC e BH</strong>.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">🛣️ Status das Vias Ao Vivo</span>
+                <span class="kpi-mini-chip">🚦 6 Níveis de Fluidez</span>
+                <span class="kpi-mini-chip">⚡ 7 KPIs com Drill-Down</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(2);">Ver Telas 3 & 4 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
           </div>
 
-          <div class="kpi-card" onclick="openKpiModal(3)" title="Clique para ver o detalhamento da validação">
-            <div class="kpi-icon" style="color: #A855F7;"><i class="fa-solid fa-camera-retro"></i></div>
-            <div class="kpi-num" style="color: #A855F7;">16</div>
-            <div class="kpi-label-main">EVIDÊNCIAS DE HOMOLOGAÇÃO</div>
-            <div class="kpi-lbl">Capturas Automatizadas da Operação</div>
-            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+          <!-- Funcionalidade 3: Caravanas Inteligentes RJ & SP -->
+          <div class="kpi-card" onclick="openKpiModal(3)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #10B981;"><i class="fa-solid fa-bus"></i></div>
+                  <div class="kpi-label-main">CARAVANAS INTELIGENTES RJ & SP</div>
+                </div>
+                <div class="kpi-num" style="color:#34D399; border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.12);">49 ROTAS RJ + SP</div>
+              </div>
+              <div class="kpi-lbl">
+                Gestão de pontualidade para <strong>Estúdios Globo (RJ)</strong> e <strong>Ed. Roberto Marinho (SP)</strong>: 49 caravanas pré-cadastradas, trajetos reais por rodovias, múltiplos ônibus no mapa e barra Google Traffic.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">🚌 49 Caravanas RJ + SP</span>
+                <span class="kpi-mini-chip">🗺️ Trajeto Viário Real</span>
+                <span class="kpi-mini-chip">⏱️ Hora Saída & Sentido</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(7);">Ver Tela 8 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
           </div>
 
-          <div class="kpi-card" onclick="openKpiModal(4)" title="Clique para ver o detalhamento da validação">
-            <div class="kpi-icon" style="color: #F5A623;"><i class="fa-solid fa-fingerprint"></i></div>
-            <div class="kpi-num" style="color: #F5A623;">20 / 20</div>
-            <div class="kpi-label-main">AUDITORIAS DE INTEGRIDADE</div>
-            <div class="kpi-lbl">Controle e Rastreabilidade de Evidências</div>
-            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+          <!-- Funcionalidade 4: RIT Fly Inteligência Aérea -->
+          <div class="kpi-card" onclick="openKpiModal(4)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #38BDF8;"><i class="fa-solid fa-plane-departure"></i></div>
+                  <div class="kpi-label-main">RIT FLY — INTELIGÊNCIA AÉREA</div>
+                </div>
+                <div class="kpi-num">ADS-B + 8 HUBS</div>
+              </div>
+              <div class="kpi-lbl">
+                Radar aéreo nacional ao vivo (<strong>+480 aeronaves</strong>, silhuetas FlightAware e rotas IATA reais), clima METAR em <strong>8 aeroportos</strong>, ocorrências consolidadas, <strong>RIT Fly AI</strong> e sincronia voo + solo.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">✈️ Radar ADS-B Nacional</span>
+                <span class="kpi-mini-chip">🌦️ METAR 8 Aeroportos</span>
+                <span class="kpi-mini-chip">🤖 RIT Fly AI + Transfer</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(8);">Ver Tela 9 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
           </div>
 
-          <div class="kpi-card" onclick="openKpiModal(5)" title="Clique para ver o detalhamento de governança e histórico de entregas">
-            <div class="kpi-icon" style="color: #38BDF8;"><i class="fa-solid fa-shield-halved"></i></div>
-            <div class="kpi-num" style="color: #38BDF8;">CP 5.4</div>
-            <div class="kpi-label-main">GOVERNANÇA & ENTREGAS</div>
-            <div class="kpi-lbl">Privacidade Estrita & Histórico Vivo</div>
-            <div class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Clique para detalhes</div>
+          <!-- Funcionalidade 5: Roteirização, Custos & ESG -->
+          <div class="kpi-card" onclick="openKpiModal(5)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #A855F7;"><i class="fa-solid fa-scale-balanced"></i></div>
+                  <div class="kpi-label-main">ROTEIRIZAÇÃO, CUSTOS & ESG</div>
+                </div>
+                <div class="kpi-num" style="color:#C084FC; border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.12);">SCORE 97 · -35%</div>
+              </div>
+              <div class="kpi-lbl">
+                Motor financeiro que compara <strong>Frota Própria Globo vs. Cooperativa, Táxi e Apps (Uber/99)</strong>, curva horária 24h (economia de até 35% na janela ideal), pedágios, lote XLSX e pegada CO₂.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">💰 7 Modais Comparados</span>
+                <span class="kpi-mini-chip">📊 Janela Ideal 24h</span>
+                <span class="kpi-mini-chip">🌱 Lote XLSX & CO₂</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(6);">Ver Tela 7 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+
+          <!-- Funcionalidade 6: Clima, Cyber Segurança, LGPD & Governança -->
+          <div class="kpi-card" onclick="openKpiModal(6)" title="Clique para ver o detalhamento executivo">
+            <div>
+              <div class="kpi-card-top">
+                <div class="kpi-icon-badge">
+                  <div class="kpi-icon" style="color: #34D399;"><i class="fa-solid fa-shield-halved"></i></div>
+                  <div class="kpi-label-main">CLIMA, CYBER, LGPD & GOVERNANÇA</div>
+                </div>
+                <div class="kpi-num" style="color:#34D399; border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.12);">PRIVACY BY DESIGN</div>
+              </div>
+              <div class="kpi-lbl">
+                <strong>Radar Meteorológico Doppler</strong> para prevenção de alagamentos e arquitetura articulada com <strong>Cyber Segurança, Privacidade (LGPD — Zero GPS invasivo) e Governança Corporativa</strong>.
+              </div>
+              <div class="kpi-chips-row">
+                <span class="kpi-mini-chip">🌧️ Radar Clima Doppler</span>
+                <span class="kpi-mini-chip">🔒 Zero GPS Invasivo</span>
+                <span class="kpi-mini-chip">🏛️ Governança & Escala</span>
+              </div>
+            </div>
+            <div class="kpi-card-footer">
+              <span class="kpi-tap-cue"><i class="fa-solid fa-circle-info"></i> Resumo Executivo</span>
+              <span class="kpi-jump-link" onclick="event.stopPropagation(); goToSlide(5);">Ver Tela 6 <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Barra Inferior de Síntese Executiva -->
+        <div class="exec-bottom-section">
+          <div class="exec-bottom-quote">
+            <i class="fa-solid fa-award" style="color:#FBBF24; font-size:16px;"></i>
+            <span>
+              <strong>Síntese Executiva:</strong> De dados dispersos à <strong class="cyan">inteligência preditiva em tempo real</strong> — <strong class="gold">proteção de vidas</strong>, <strong class="cyan">eficiência financeira</strong> e <strong class="emerald">governança transversal</strong> em uma única decisão.
+            </span>
+          </div>
+          <div class="exec-bottom-actions">
+            <button onclick="goToSlide(1); setTimeout(() => document.getElementById('btn-cam-exec')?.click(), 80);" class="btn-action-secondary">
+              <i class="fa-solid fa-layer-group"></i> PAINEL 360° BANCA
+            </button>
+            <button onclick="nextSlide()" class="btn-action-primary">
+              DETALHAR AS 9 TELAS <i class="fa-solid fa-arrow-right"></i>
+            </button>
           </div>
         </div>
 
-        <!-- 5 Pilares Estratégicos -->
-        <div class="pillars-strip">
-          <span class="pillar-chip"><i class="fa-solid fa-bolt"></i> Antecipação Viária</span>
-          <span class="pillar-chip"><i class="fa-solid fa-map-location-dot"></i> Planejamento Dinâmico</span>
-          <span class="pillar-chip"><i class="fa-solid fa-satellite-dish"></i> Monitoramento CCO</span>
-          <span class="pillar-chip"><i class="fa-solid fa-lightbulb"></i> Apoio Decisório</span>
-          <span class="pillar-chip"><i class="fa-solid fa-shield-halved"></i> Governança Estrita</span>
-        </div>
-
-        <div style="margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-          <button onclick="nextSlide()" class="btn-action-primary">
-            EXPLORAR RECURSOS HOMOLOGADOS <i class="fa-solid fa-arrow-right"></i>
-          </button>
-          <button onclick="openKpiModal(5)" class="btn-action-secondary">
-            <i class="fa-solid fa-shield-halved"></i> GOVERNANÇA & ENTREGAS
-          </button>
-        </div>
       </div>
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 2: CENTRAL DE CÂMERAS & OCORRÊNCIAS (4.297 CÂMERAS & SINAL AO VIVO)  -->
+    <!-- SLIDE 2: CENTRAL DE CÂMERAS & OCORRÊNCIAS (+4.297 CÂMERAS & VISÃO 360°)   -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="2">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-satellite-dish"></i> Aba 01 · Monitoramento CCO em Tempo Real</span>
+          <span class="tag alert"><i class="fa-solid fa-satellite-dish"></i> Tela 02 · Monitoramento Visual CCO & Inteligência Preditiva</span>
           <h2 class="title-xl">Central de Câmeras & <span class="highlight">Ocorrências Viárias</span></h2>
           <p class="description">
-            Painel tático de monitoramento cobrindo mais de 4.297 câmeras de trânsito em alta definição, georreferenciamento de incidentes viários (COR, CET-Rio, OTT e Fogo Cruzado) e mapas de satélite HD.
+            Centro de Comando com mais de 4.297 câmeras ao vivo em alta definição, cruzamento geoespacial instantâneo de incidentes (COR-Rio, CET-SP, OTT e Fogo Cruzado) e recomendação preditiva da IA Operacional RIT.
           </p>
-          
+
           <div class="toggle-views-container">
-            <button class="view-toggle-btn active" id="btn-cam-mapa">1. Mapa CCO & 4.297 Câmeras</button>
-            <button class="view-toggle-btn" id="btn-cam-live">2. Câmera ao Vivo #002425</button>
+            <button class="view-toggle-btn active" id="btn-cam-mapa">1. Mapa CCO & +4.297 Câmeras</button>
+            <button class="view-toggle-btn" id="btn-cam-live">2. Câmera Ao Vivo In-App</button>
+            <button class="view-toggle-btn" id="btn-cam-exec">3. Painel Executivo 360° (Banca)</button>
           </div>
 
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-video"></i></div>
               <div class="feature-text">
-                <h4>4.297 Câmeras de Trânsito Ativas</h4>
-                <p>Visualização instantânea de feeds de concessionárias e CET-Rio com streaming contínuo no CCO.</p>
+                <h4>+4.297 Câmeras Ativas & Visualizador In-App</h4>
+                <p>Streaming contínuo de concessionárias, COR-Rio e CET-SP com abertura direta na plataforma e diagnóstico automático de saúde das fontes.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
               <div class="feature-text">
-                <h4>Camadas Inteligentes: OTT, Fogo Cruzado & Heatmap</h4>
-                <p>Sobreposição geográfica de incidentes, disparos, operações policiais e manchas de risco em tempo real.</p>
+                <h4>Motor Preditivo IA + Risco (OTT & Fogo Cruzado)</h4>
+                <p>Sobreposição georreferenciada de ocorrências policiais, disparos, interdições e manchas de calor para proteger equipes de reportagem e elenco.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-crosshairs"></i></div>
               <div class="feature-text">
-                <h4>Busca por Raio Inteligente (1 km a 5 km)</h4>
-                <p>Identificação automática das 10 câmeras mais próximas de qualquer endereço ou ocorrência na malha.</p>
+                <h4>Busca Inteligente por Raio (1 km a 5 km) & 5 Regionais</h4>
+                <p>Identificação imediata das câmeras mais próximas de qualquer rota crítica (ex.: Estúdios Globo ↔ Jardim Botânico) e alternância por UF.</p>
               </div>
             </div>
           </div>
@@ -1438,7 +1599,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-cam">agente-rit-backend / dashboard.html#central-cameras</div>
+              <div class="mockup-title" id="title-mockup-cam">agenterit.com.br / dashboard.html#central-cameras-ocorrencias</div>
             </div>
             <div class="mockup-content">
               <div class="carousel-view active" id="view-cam-mapa">
@@ -1447,6 +1608,9 @@
               <div class="carousel-view" id="view-cam-live">
                 <img class="mockup-img" src="assets/apresentacao/rit_cameras_ao_vivo.png" alt="Sinal de Câmera ao Vivo" />
               </div>
+              <div class="carousel-view" id="view-cam-exec">
+                <img class="mockup-img" src="assets/apresentacao/slide04_painel_executivo_banca.png" alt="Painel Executivo 360 Banca Mentoria" />
+              </div>
             </div>
           </div>
         </div>
@@ -1454,43 +1618,44 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 3: RIT ALERTA + PAINEL DE CONDIÇÕES OPERACIONAIS (5 CAPITAIS)       -->
+    <!-- SLIDE 3: MONITORAMENTO DE TRÂNSITO, RODOVIAS & RIT ALERTA (5 CAPITAIS)    -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="3">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-triangle-exclamation"></i> Aba 02 · Alertas & Condições em Tempo Real</span>
-          <h2 class="title-xl">RIT Alerta + <span class="highlight">Condições Operacionais</span></h2>
+          <span class="tag alert"><i class="fa-solid fa-road"></i> Tela 03 · Monitoramento de Rodovias, Vias Expressas & 5 Capitais</span>
+          <h2 class="title-xl">Monitoramento de Trânsito, <span class="highlight">Rodovias & RIT Alerta</span></h2>
           <p class="description">
-            Monitoramento contínuo de incidentes em tempo real integrando feeds da CET-Rio, COR, Lamsa, EcoPonte e concessionárias, com painel tático de condições de vias das 5 capitais Globo.
+            Inteligência autônoma de trânsito e rodovias em tempo real, com painel lateral de vias monitoradas, 7 KPIs interativos com drill-down e telemetria ativa nas 5 capitais operacionais da Globo (RJ, SP, BSB, REC e BH).
           </p>
-          
+
           <div class="toggle-views-container">
-            <button class="view-toggle-btn active" id="btn-alerta-desktop">1. Cockpit Alerta Desktop</button>
-            <button class="view-toggle-btn" id="btn-alerta-rodovias">2. Filtro Linha Vermelha</button>
-            <button class="view-toggle-btn" id="btn-alerta-condicoes">3. Quadro de Vias (RJ / SP / BSB / REC / BH)</button>
+            <button class="view-toggle-btn active" id="btn-alerta-desktop">1. Vias & Rodovias RJ</button>
+            <button class="view-toggle-btn" id="btn-alerta-sp">2. Vias & Rodovias SP</button>
+            <button class="view-toggle-btn" id="btn-alerta-rodovias">3. Filtro Linha Vermelha</button>
+            <button class="view-toggle-btn" id="btn-alerta-condicoes">4. Quadro Ao Vivo (5 Capitais)</button>
           </div>
 
           <div class="features-list">
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-highway" style="font-style:normal;">🛣️</i></div>
               <div class="feature-text">
-                <h4>Priorização Automática de Ocorrências</h4>
-                <p>Triagem instantânea de acidentes, obras e interdições com cálculo de atraso e impacto na malha viária.</p>
+                <h4>Monitoramento de Rodovias & Corredores Críticos</h4>
+                <p>Acompanhamento ao vivo de Av. Brasil, Presidente Dutra, Linha Vermelha, Linha Amarela, Transolímpica, Ponte Rio-Niterói, Marginais Tietê/Pinheiros, Castelo Branco, EPIA (BSB), BR-101 (REC) e Anel Rodoviário (BH).</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
               <div class="feature-text">
-                <h4>Classificação por Severidade & SLA Operacional</h4>
-                <p>Níveis canônicos (Crítico, Médio, Baixo) para direcionamento prioritário aos operadores do CCO.</p>
+                <h4>7 KPIs Executivos com Drill-Down & Retenção em Minutos</h4>
+                <p>Índice de mobilidade da praça, retenção média (+min), velocidade média (km/h), bloqueios críticos, vias afetadas e saúde das fontes públicas.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-table-list"></i></div>
               <div class="feature-text">
-                <h4>Telemetria de Vias das 5 Regionais Globo</h4>
-                <p>Status operacional das principais vias expressas de RJ, SP, BSB, REC e BH consumindo traffic-conditions.json.</p>
+                <h4>Sincronização Regional Instantânea (RJ, SP, BSB, REC e BH)</h4>
+                <p>Alternância fluida entre as 5 capitais com reposicionamento automático do mapa, camada de trânsito e alertas climáticos integrados.</p>
               </div>
             </div>
           </div>
@@ -1500,18 +1665,22 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-alerta">agente-rit-backend / dashboard.html#rit-alerta</div>
+              <div class="mockup-title" id="title-mockup-alerta">agenterit.com.br / dashboard.html#rit-alerta-rodovias-rj</div>
             </div>
             <div class="mockup-content">
-              <!-- View 1: Cockpit Desktop -->
+              <!-- View 1: Novo Painel de Vias e Rodovias RJ -->
               <div class="carousel-view active" id="view-alerta-desktop">
-                <img class="mockup-img" src="assets/apresentacao/rit_alerta_desktop.png" alt="RIT Alerta Cockpit Desktop" />
+                <img class="mockup-img" src="assets/apresentacao/rit_alerta_rj_v2.png" alt="RIT Alerta Vias e Rodovias RJ" />
               </div>
-              <!-- View 2: Linha Vermelha -->
+              <!-- View 2: Novo Painel de Vias e Rodovias SP -->
+              <div class="carousel-view" id="view-alerta-sp">
+                <img class="mockup-img" src="assets/apresentacao/rit_alerta_sp_v2.png" alt="RIT Alerta Vias e Rodovias SP" />
+              </div>
+              <!-- View 3: Linha Vermelha -->
               <div class="carousel-view" id="view-alerta-rodovias">
                 <img class="mockup-img" src="assets/apresentacao/rit_alerta_rodovias.png" alt="RIT Alerta Filtro Rodovias" />
               </div>
-              <!-- View 3: Painel Interativo de Condições -->
+              <!-- View 4: Painel Interativo de Condições -->
               <div class="carousel-view" id="view-alerta-condicoes">
                 <div class="conditions-panel">
                   <div class="conditions-header">
@@ -1522,13 +1691,13 @@
                       <button class="cond-tab-btn" onclick="switchConditionsTab('REC')">REC</button>
                       <button class="cond-tab-btn" onclick="switchConditionsTab('BH')">BH</button>
                     </div>
-                    <span class="cond-refresh-tag"><i class="fa-solid fa-circle-notch fa-spin"></i> TEMPO REAL CCO</span>
+                    <span class="cond-refresh-tag"><i class="fa-solid fa-circle-notch fa-spin"></i> TELEMETRIA 5 CAPITAIS</span>
                   </div>
                   <div class="conditions-table-wrap">
                     <table class="conditions-table">
                       <thead>
                         <tr>
-                          <th>Via / Corredor</th>
+                          <th>Rodovia / Corredor Viário</th>
                           <th>Status Operacional</th>
                           <th>Tempo Atual</th>
                           <th>Tempo Ref.</th>
@@ -1554,40 +1723,40 @@
     <section class="slide" data-slide="4">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-chart-line"></i> Aba 04 · Centro Integrado Multimodal</span>
-          <h2 class="title-xl">Painel Trânsito <span class="highlight">Integrado</span></h2>
+          <span class="tag alert"><i class="fa-solid fa-chart-line"></i> Tela 04 · Centro Integrado Multimodal & Rodovias</span>
+          <h2 class="title-xl">Painel Trânsito <span class="highlight">Integrado & Rodovias</span></h2>
           <p class="description">
-            Visão regional unificada e telemetria dos principais corredores, rodovias e eixos viários metropolitanos, consolidando fluxos de tráfego e ocorrências das capitais operacionais Globo.
+            Visão executiva consolidada dos grandes eixos rodoviários, pontes, túneis e corredores metropolitanos, integrando concessionárias e órgãos de trânsito para antecipar gargalos logísticos.
           </p>
-          
+
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-network-wired"></i></div>
               <div class="feature-text">
-                <h4>Visão Integrada de Corredores Expressos</h4>
-                <p>Acompanhamento centralizado de eixos arteriais, rodovias de ligação e eixos de acesso aos centros de produção.</p>
+                <h4>Monitoramento Integrado de Concessionárias & Eixos Expressos</h4>
+                <p>Consolidação de fluxos rodoviários e acessos estratégicos aos Estúdios Globo, Jardim Botânico, Berrini/Brooklin e regionais.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-traffic-light"></i></div>
               <div class="feature-text">
-                <h4>Telemetria de Velocidade & Retenção</h4>
-                <p>Medição em tempo real de lentidão, velocidade média e tempos médios de percurso nas vias expressas.</p>
+                <h4>Camada de Fluidez em 6 Níveis Cromáticos</h4>
+                <p>Leitura visual imediata (Livre, Moderado, Lento, Intenso, Parado/Bloqueado) com medição contínua de velocidade e retenção.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
               <div class="feature-text">
-                <h4>Suporte Decisório para Equipes de Operação</h4>
-                <p>Alertas antecipados de engarrafamentos e interdições para replanejamento dinâmico de saídas de estúdio.</p>
+                <h4>Suporte Decisório Proativo para Saídas de Frota</h4>
+                <p>Permite ajustar rotas antes da partida dos veículos, reduzindo atrasos em coberturas jornalísticas, gravações e grandes eventos.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 14px; display: flex; gap: 8px;">
-            <span class="pillar-chip"><i class="fa-solid fa-city"></i> Corredores RJ & SP</span>
-            <span class="pillar-chip"><i class="fa-solid fa-traffic-light"></i> Telemetria CCO</span>
-            <span class="pillar-chip"><i class="fa-solid fa-clock"></i> Tempo Real</span>
+          <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="pillar-chip"><i class="fa-solid fa-road"></i> Corredores & Rodovias</span>
+            <span class="pillar-chip"><i class="fa-solid fa-city"></i> 5 Capitais Globo</span>
+            <span class="pillar-chip"><i class="fa-solid fa-clock"></i> Decisão Antecipada</span>
           </div>
         </div>
 
@@ -1595,7 +1764,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit-backend / dashboard.html#painel-transito-integrado</div>
+              <div class="mockup-title">agenterit.com.br / dashboard.html#painel-transito-integrado</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba4_painel_integrado.png" alt="Painel Trânsito Integrado" />
@@ -1606,45 +1775,45 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 5: CÂMERAS RJ — MONITORAMENTO MOSAICO 2x2 CCO                       -->
+    <!-- SLIDE 5: CÂMERAS RJ — VIDEOWALL MOSAICO 2x2 CCO                           -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="5">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-table-cells-large"></i> Aba 05 · Mosaico Visual 2x2 CCO</span>
-          <h2 class="title-xl">Câmeras RJ — <span class="highlight">Mosaico 2x2</span></h2>
+          <span class="tag alert"><i class="fa-solid fa-table-cells-large"></i> Tela 05 · Videowall Operacional 2x2 CCO</span>
+          <h2 class="title-xl">Câmeras em Tempo Real — <span class="highlight">Mosaico 2x2</span></h2>
           <p class="description">
-            Matriz de monitoramento visual simultâneo 2x2 de alta resolução, permitindo aos controladores do CCO acompanhar múltiplos pontos estratégicos sem necessidade de alternar janelas.
+            Matriz de monitoramento visual simultâneo 2x2 de alta resolução, permitindo acompanhar quatro rodovias ou corredores críticos ao mesmo tempo sem alternar telas.
           </p>
 
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-expand"></i></div>
               <div class="feature-text">
-                <h4>Mosaico Quádruplo Simultâneo</h4>
-                <p>Exibição sincronizada de 4 câmeras de trânsito em alta definição das principais concessionárias e vias expressas.</p>
+                <h4>Videowall Quádruplo Sincronizado</h4>
+                <p>Exibição simultânea de 4 feeds ao vivo de alta definição das principais vias expressas, túneis e pontes.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-sliders"></i></div>
               <div class="feature-text">
-                <h4>Seleção Rápida de Pontos Críticos</h4>
-                <p>Acesso instantâneo a Linha Amarela, Linha Vermelha, Ponte Rio-Niterói, Transolímpica e Aterro do Flamengo.</p>
+                <h4>Seleção Rápida de Rodovias e Eixos Críticos</h4>
+                <p>Acesso imediato a Linha Amarela, Linha Vermelha, Ponte Rio-Niterói, Av. Brasil, Transolímpica, Lagoa-Barra e Aterro.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-eye"></i></div>
               <div class="feature-text">
-                <h4>Confirmação Visual Imediata para o CCO</h4>
-                <p>Validação visual imediata de ocorrências viárias antes de despachar orientações táticas para a frota.</p>
+                <h4>Confirmação Visual Imediata do Cenário</h4>
+                <p>Validação visual em segundos para verificar liberação de pista, condições de chuva ou impacto real de acidentes.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 14px; display: flex; gap: 8px;">
+          <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
             <span class="pillar-chip"><i class="fa-solid fa-film"></i> 4 Feeds Simultâneos</span>
             <span class="pillar-chip"><i class="fa-solid fa-bolt"></i> Baixa Latência</span>
-            <span class="pillar-chip"><i class="fa-solid fa-shield-cat"></i> Resolução CCO</span>
+            <span class="pillar-chip"><i class="fa-solid fa-check-double"></i> Validação Visual</span>
           </div>
         </div>
 
@@ -1652,7 +1821,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit-backend / dashboard.html#cameras-rj-2x2</div>
+              <div class="mockup-title">agenterit.com.br / dashboard.html#cameras-rj-2x2</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba5_cameras_rj_2x2.png" alt="Câmeras RJ Mosaico 2x2" />
@@ -1663,45 +1832,45 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 6: RADAR METEOROLÓGICO RJ (PREVENÇÃO CLIMÁTICA & LOGÍSTICA)         -->
+    <!-- SLIDE 6: RADAR METEOROLÓGICO, CLIMA & GOVERNANÇA TRANSVERSAL              -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="6">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag alert"><i class="fa-solid fa-cloud-bolt"></i> Aba 06 · Meteorologia & Alerta Climático</span>
-          <h2 class="title-xl">Radar Meteorológico <span class="highlight">RJ</span></h2>
+          <span class="tag alert"><i class="fa-solid fa-cloud-bolt"></i> Tela 06 · Inteligência Climática & Governança Corporativa</span>
+          <h2 class="title-xl">Radar Meteorológico & <span class="highlight">Prevenção Climática</span></h2>
           <p class="description">
-            Monitoramento meteorológico contínuo com imagens de radar, manchas de precipitação e análise preditiva de chuvas para planejamento seguro de operações de transporte e equipes de externa.
+            Monitoramento meteorológico contínuo com radar Doppler, manchas de precipitação e alertas de alagamento (COR-Rio e CGE-SP), aliado a uma arquitetura construída sob estrita governança corporativa.
           </p>
 
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-cloud-rain"></i></div>
               <div class="feature-text">
-                <h4>Radar Meteorológico em Alta Resolução</h4>
-                <p>Integração de feeds meteorológicos com projeção de deslocamento das nuvens de chuva e intensidade de precipitação.</p>
+                <h4>Radar Doppler em Tempo Real & Estágios Operacionais</h4>
+                <p>Acompanhamento do deslocamento de núcleos de chuva severa, ventos fortes e estágios de atenção da cidade.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-water"></i></div>
               <div class="feature-text">
-                <h4>Prevenção Logística de Alagamentos</h4>
-                <p>Antecipação a bolsões d'água e vias com risco de interdição pluvial na Baixada Fluminense, Zona Norte e Zona Oeste.</p>
+                <h4>Prevenção Logística de Bolsões d'Água e Interdições</h4>
+                <p>Antecipação de pontos críticos de alagamento para desvio seguro de equipes de externa, unidades móveis e colaboradores.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-truck-droplet"></i></div>
+              <div class="feature-icon" style="color:#10B981;"><i class="fa-solid fa-shield-halved"></i></div>
               <div class="feature-text">
-                <h4>Proteção das Equipes de Externa</h4>
-                <p>Definição de rotas seguras e janelas operacionais durante eventos climáticos adversos na malha do Rio.</p>
+                <h4>Articulação Transversal: Cyber, Privacidade (LGPD) & Governança</h4>
+                <p>Zero coleta de GPS invasivo de motoristas, proteção de dados pessoais (Privacy by Design), controle de acesso RBAC e auditoria íntegra.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 14px; display: flex; gap: 8px;">
-            <span class="pillar-chip"><i class="fa-solid fa-umbrella"></i> Alerta Rio</span>
+          <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="pillar-chip"><i class="fa-solid fa-umbrella"></i> Alerta Clima COR/CGE</span>
             <span class="pillar-chip"><i class="fa-solid fa-satellite"></i> Radar Doppler</span>
-            <span class="pillar-chip"><i class="fa-solid fa-shield"></i> Prevenção Pluvial</span>
+            <span class="pillar-chip"><i class="fa-solid fa-user-shield"></i> 100% LGPD & Cyber</span>
           </div>
         </div>
 
@@ -1709,7 +1878,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit-backend / dashboard.html#radar-meteorologico</div>
+              <div class="mockup-title">agenterit.com.br / dashboard.html#radar-meteorologico</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba6_radar_meteorologico.png" alt="Radar Meteorológico RJ" />
@@ -1720,45 +1889,45 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 7: CENTRO DE ROTEIRIZAÇÃO & COMPARATIVO MULTIMODAL DE CUSTOS (VAH)   -->
+    <!-- SLIDE 7: CENTRO DE ROTEIRIZAÇÃO, CUSTOS MULTIMODAL (SCORE 97) & ESG       -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="7">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag success"><i class="fa-solid fa-calculator"></i> Aba 07 · Inteligência Financeira & Otimização</span>
+          <span class="tag success"><i class="fa-solid fa-calculator"></i> Tela 07 · Inteligência Financeira, Otimização & ESG</span>
           <h2 class="title-xl">Centro de Roteirização & <span class="highlight">Custos Multimodal</span></h2>
           <p class="description">
-            Motor de cálculo tarifário e análise de eficiência comparando rotas entre a Frota Própria da Globo e 7 modais de aplicativos com projeção horária de trânsito em 24h.
+            Motor de decisão financeira que compara rotas entre a Frota Própria Globo e 6 modais parceiros/aplicativos, recomendando a opção de melhor custo-benefício com curva preditiva de 24h.
           </p>
 
           <div class="features-list">
             <div class="feature-item">
               <div class="feature-icon" style="color: #10B981;"><i class="fa-solid fa-scale-balanced"></i></div>
               <div class="feature-text">
-                <h4>Comparativo Multimodal Estilo VAH (7 Modais)</h4>
-                <p>Simulação em tempo real: Frota Globo (R$ 103,57), UberX, 99Pop, Cooperativa, Uber Comfort, Táxi e Uber Black com score de custo-benefício.</p>
+                <h4>Comparativo de 7 Modais com Score de Eficiência (97/100)</h4>
+                <p>Simulação instantânea entre Frota Própria Globo, Cooperativa, Táxi, UberX, 99Pop, Uber Comfort e Uber Black ponderando custo, tempo e risco.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon" style="color: #00D1FF;"><i class="fa-solid fa-chart-column"></i></div>
               <div class="feature-text">
-                <h4>Projeção 24h & Janela Comercial Ideal</h4>
-                <p>Identificação algorítmica de horários fora de pico com economia estimada de até 35% e -20 min de retenção viária.</p>
+                <h4>Projeção 24h & Economia de até 35% na Janela Ideal</h4>
+                <p>Curva horária que identifica janelas fora de pico com redução de até 35% no custo e -20 minutos de exposição no trânsito.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon" style="color: #F5A623;"><i class="fa-solid fa-leaf"></i></div>
               <div class="feature-text">
-                <h4>Cálculo de Pedágios & Pegada CO₂</h4>
-                <p>Auditoria automática de custos de pedágio no trajeto e cálculo de impacto ambiental (kg de CO₂ por viagem).</p>
+                <h4>Processamento em Lote (XLSX), Pedágios & Pegada de CO₂</h4>
+                <p>Importação de planilhas operacionais em lote, auditoria automática de pedágios no trajeto e cálculo de emissões de CO₂ por viagem.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 14px; display: flex; gap: 8px;">
-            <span class="pillar-chip"><i class="fa-brands fa-whatsapp" style="color:#25D366;"></i> Resumo WhatsApp</span>
-            <span class="pillar-chip"><i class="fa-brands fa-waze" style="color:#00D1FF;"></i> Integração Waze</span>
-            <span class="pillar-chip"><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Importação XLSX</span>
+          <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="pillar-chip"><i class="fa-brands fa-whatsapp" style="color:#25D366;"></i> Resumo Executivo WhatsApp</span>
+            <span class="pillar-chip"><i class="fa-brands fa-waze" style="color:#00D1FF;"></i> Abertura Direta Waze</span>
+            <span class="pillar-chip"><i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Lote XLSX</span>
           </div>
         </div>
 
@@ -1766,7 +1935,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit-backend / dashboard.html#centro-roteirizacao-custos</div>
+              <div class="mockup-title">agenterit.com.br / dashboard.html#centro-roteirizacao-custos</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/rit_roteirizacao_custos.png" alt="Centro de Roteirização e Comparativo Multimodal de Custos" />
@@ -1777,51 +1946,51 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 8: MÓDULO CARAVANAS & RIT ALERTA RJ+SP (HOMOLOGADO CP 5.4)            -->
+    <!-- SLIDE 8: CARAVANAS INTELIGENTES RJ (49 ROTAS) & SÃO PAULO                 -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="8">
       <div class="split-container">
         <div class="content-left">
-          <span class="tag success"><i class="fa-solid fa-bus"></i> Módulo Caravanas & RIT Alerta · Homologado Checkpoint 5.4</span>
-          <h2 class="title-xl">Caravanas & Alertas <span class="highlight">RJ + SP</span></h2>
+          <span class="tag success"><i class="fa-solid fa-bus"></i> Tela 08 · Pontualidade Artística · 49 Caravanas RJ + Polo SP</span>
+          <h2 class="title-xl">Caravanas Inteligentes <span class="highlight">RJ + SP</span></h2>
           <p class="description">
-            Operação regional unificada (Estúdios Globo RJ e Edifício Jornalista Roberto Marinho SP), camada de trânsito em tempo real, visualizador interno de câmeras públicas e cruzamento de ocorrências de segurança OTT e Fogo Cruzado.
+            Gestão preditiva de caravanas de auditório para os Estúdios Globo (Curicica - RJ) e Edifício Jornalista Roberto Marinho (Brooklin - SP), com 49 rotas pré-cadastradas, trajetos reais por rodovias e barra Google Traffic.
           </p>
 
           <div class="toggle-views-container">
-            <button class="view-toggle-btn active" id="btn-crv-rotas">1. Multi-Rotas RJ/SP</button>
-            <button class="view-toggle-btn" id="btn-crv-drawer">2. Trânsito Fluidez (6 Cores)</button>
-            <button class="view-toggle-btn" id="btn-crv-comparativo">3. Câmeras In-App</button>
-            <button class="view-toggle-btn" id="btn-crv-cameras">4. Ocorrências OTT/FC</button>
+            <button class="view-toggle-btn active" id="btn-crv-rotas">1. 49 Caravanas RJ & Trajeto Real</button>
+            <button class="view-toggle-btn" id="btn-crv-drawer">2. Polo São Paulo (Brooklin)</button>
+            <button class="view-toggle-btn" id="btn-crv-comparativo">3. Comparativo Google vs Waze</button>
+            <button class="view-toggle-btn" id="btn-crv-cameras">4. Câmeras & Risco no Trajeto</button>
           </div>
 
           <div class="features-list">
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-bus-simple"></i></div>
               <div class="feature-text">
-                <h4>Operação Regional RJ + SP & Alternância Sem Reload</h4>
-                <p>Seletor instantâneo de polo operacional preservando estado, com rotas para Estúdios Globo (Curicica) e Ed. Jornalista Roberto Marinho (Brooklin).</p>
+                <h4>49 Caravanas Pré-Cadastradas RJ + Programas RJ/SP</h4>
+                <p>Seleção imediata de 49 origens do RJ e rotas de SP, vínculo por programa (Domingão, Caldeirão, Altas Horas, Encontro, Mais Você ou texto livre) e múltiplos ônibus simultâneos no mapa.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><i class="fa-solid fa-route"></i></div>
+              <div class="feature-text">
+                <h4>Trajetos Viários Reais, Horário de Saída & Sentido (Ida/Volta)</h4>
+                <p>Geometria real das rodovias, sincronização do seletor de horário de partida e sentido (Rumo à Globo ou Retorno) com recálculo automático da chegada com trânsito.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-traffic-light"></i></div>
               <div class="feature-text">
-                <h4>Camada de Fluidez Viária & Ocorrências de Segurança</h4>
-                <p>6 níveis cromáticos de trânsito, tecla de atalho 'T' e plotagem de eventos OTT e Fogo Cruzado com raio de impacto de 3.500m sobre as caravanas.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-video"></i></div>
-              <div class="feature-text">
-                <h4>Câmeras In-App & Recálculo com Delta Auditável</h4>
-                <p>Visualizador interno com fallback de segurança (CSP/X-Frame-Options), recálculo de projeção com exibição do comparativo de variação e feedback toast.</p>
+                <h4>Barra Google Maps Traffic & Camadas Limpas no Mapa</h4>
+                <p>Barra inferior de fluidez por trecho, controle independente de camadas (Roteiro, Ocorrências, Câmeras, OTT e Fogo Cruzado) e operação 100% livre de GPS invasivo.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 14px;">
-            <a href="/caravanas.html" class="btn-action-primary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:11px; padding:8px 16px;">
-              <i class="fa-solid fa-bus"></i> ACESSAR MÓDULO CARAVANAS EM PRODUÇÃO <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <div style="margin-top: 12px;">
+            <a href="/caravanas.html" class="btn-action-primary">
+              <i class="fa-solid fa-bus"></i> ACESSAR MÓDULO CARAVANAS AO VIVO <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
         </div>
@@ -1830,14 +1999,14 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-crv">agente-rit-backend / caravanas-dashboard#multiplas-rotas</div>
+              <div class="mockup-title" id="title-mockup-crv">agenterit.com.br / dashboard.html#caravanas-49-rotas-rj</div>
             </div>
             <div class="mockup-content">
               <div class="carousel-view active" id="view-crv-rotas">
-                <img class="mockup-img" src="assets/apresentacao/rit_caravanas_multiplas_rotas.png" alt="Multiplas Rotas de Caravanas" />
+                <img class="mockup-img" src="assets/apresentacao/rit_caravanas_49_rj.png" alt="49 Caravanas RJ e Multiplas Rotas Reais" />
               </div>
               <div class="carousel-view" id="view-crv-drawer">
-                <img class="mockup-img" src="assets/apresentacao/rit_drawer_runtime_audit.png" alt="Painel Lateral Tático Operacional" />
+                <img class="mockup-img" src="assets/apresentacao/rit_caravanas_sp_brooklin.png" alt="Caravanas Polo São Paulo Brooklin" />
               </div>
               <div class="carousel-view" id="view-crv-comparativo">
                 <img class="mockup-img" src="assets/apresentacao/rit_caravanas_comparativo.png" alt="Comparativo Google vs Waze" />
@@ -1847,10 +2016,12 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
     </section>
 
     <!-- ========================================================================= -->
-    <!-- SLIDE 9: RIT FLY — CENTRAL DE INTELIGÊNCIA AÉREA CORPORATIVA (CP 5.5)      -->
+    <!-- SLIDE 9: RIT FLY — CENTRAL DE INTELIGÊNCIA AÉREA CORPORATIVA (v1.1)        -->
     <!-- ========================================================================= -->
     <section class="slide" data-slide="9">
       <div class="split-container">
@@ -1858,76 +2029,64 @@
           <span class="tag success"><i class="fa-solid fa-plane-departure"></i> RIT FLY · Central de Inteligência Aérea Corporativa</span>
           <h2 class="title-xl">Como Funciona o <span class="highlight">RIT FLY</span></h2>
           <p class="description">
-            Plataforma B2B de inteligência logística que unifica o rastreamento tático do espaço aéreo brasileiro, meteorologia METAR de 8 aeroportos estratégicos e sincronização preditiva com frotas terrestres em solo.
+            Plataforma corporativa que unifica o rastreamento em tempo real da malha aérea nacional (ADS-B com rotas IATA reais), meteorologia METAR de 8 aeroportos estratégicos, assistente RIT Fly AI e sincronia com o transporte terrestre em solo.
           </p>
 
-          <div class="features-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div class="toggle-views-container">
+            <button class="view-toggle-btn active" id="btn-fly-radar">1. Radar ADS-B Nacional (+480 Voos & Ocorrências)</button>
+            <button class="view-toggle-btn" id="btn-fly-drawer">2. Detalhe do Voo & Sincronia Terrestre</button>
+          </div>
+
+          <div class="features-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-plane"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">1. Monitoramento de Aeronaves</h4>
-                <p style="font-size:10px;">ADS-B ao vivo com rotação real de proa, altitude, velocidade e categoria.</p>
+                <h4 style="font-size:11.5px;">1. Radar ADS-B Nacional</h4>
+                <p style="font-size:10px;">+480 aeronaves ao vivo com silhuetas FlightAware orientadas pela proa e failover triplo.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">2. Tipos de Mapa</h4>
-                <p style="font-size:10px;">Radar tático escuro, Satélite de alta resolução, Terreno e Mapa padrão.</p>
+                <h4 style="font-size:11.5px;">2. Ocorrências Consolidadas</h4>
+                <p style="font-size:10px;">Painel unificado de alertas de clima/METAR, atrasos de voos e pressão nos hubs.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-tower-broadcast"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">3. Aeroportos & Meteorologia</h4>
-                <p style="font-size:10px;">8 hubs monitorados com METAR da NOAA ao vivo e regras de voo VFR/IFR.</p>
+                <h4 style="font-size:11.5px;">3. 8 Hubs & METAR Ao Vivo</h4>
+                <p style="font-size:10px;">SDU, GIG, CGH, GRU, VCP, BSB, CNF e REC com boletins METAR e quadro "Voos do Dia".</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-filter"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">4. Busca & Filtro por Companhia</h4>
-                <p style="font-size:10px;">Filtro dinâmico por operadora aérea, matrícula, prefixo ou voo.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-circle-info"></i></div>
-              <div class="feature-text">
-                <h4 style="font-size:12px;">5. Detalhes do Voo</h4>
-                <p style="font-size:10px;">Painel lateral com telemetria, rota, ETA e proveniência transparente.</p>
+                <h4 style="font-size:11.5px;">4. Filtro Cia & 6 Mapas</h4>
+                <p style="font-size:10px;">Filtro rápido (GOL, LATAM, AZUL, Executivos, Helicópteros) e 6 camadas de mapa.</p>
               </div>
             </div>
             <div class="feature-item">
               <div class="feature-icon"><i class="fa-solid fa-robot"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">6. RIT Fly AI</h4>
-                <p style="font-size:10px;">Assistente em linguagem natural para previsão de pouso e riscos de rota.</p>
+                <h4 style="font-size:11.5px;">5. Assistente RIT Fly AI</h4>
+                <p style="font-size:10px;">Chatbot em linguagem natural para consultar clima nos aeroportos, atrasos e riscos.</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+              <div class="feature-icon"><i class="fa-solid fa-car-side"></i></div>
               <div class="feature-text">
-                <h4 style="font-size:12px;">7. Integração Aéreo-Terrestre</h4>
-                <p style="font-size:10px;">Reprogramação automática de motoristas em caso de atraso na malha aérea.</p>
-              </div>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-              <div class="feature-text">
-                <h4 style="font-size:12px;">8. Alertas & Proveniência</h4>
-                <p style="font-size:10px;">Diferenciação clara entre dados ao vivo e dados calculados pelo RIT.</p>
+                <h4 style="font-size:11.5px;">6. Sincronia Aéreo-Solo</h4>
+                <p style="font-size:10px;">Reprogramação preditiva da frota terrestre em caso de atraso ou antecipação do voo.</p>
               </div>
             </div>
           </div>
 
-          <div style="margin-top: 10px; font-size:10px; color:#94a3b8; background:rgba(255,255,255,0.03); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
-            <strong>ℹ️ Proveniência & Limitações:</strong> Dados de telemetria observados via ADS-B público ou licenciado. Horários de pouso e esperas evitadas calculados matematicamente pelo algoritmo RIT. Requer contratação de provider comercial para alta frequência sem restrições de taxa.
-          </div>
-
-          <div style="margin-top: 12px;">
-            <a href="/dashboard.html" class="btn-action-primary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:11px; padding:8px 16px;">
+          <div style="margin-top: 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <a href="/dashboard.html" class="btn-action-primary">
               <i class="fa-solid fa-plane-departure"></i> ABRIR RIT FLY NO DASHBOARD <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
+            <span class="pillar-chip"><i class="fa-solid fa-shield-halved"></i> LGPD & Proveniência Transparente</span>
           </div>
         </div>
 
@@ -1935,64 +2094,14 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agente-rit / rit-fly#central-inteligencia-aerea</div>
+              <div class="mockup-title" id="title-mockup-fly">agenterit.com.br / dashboard.html#rit-fly-central-aerea</div>
             </div>
             <div class="mockup-content">
-              <div class="carousel-view active" style="display:flex; flex-direction:column; background:#070d18; padding:16px; height:100%; box-sizing:border-box; justify-content:space-between;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
-                  <div style="font-size:13px; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:6px;">
-                    <i class="fa-solid fa-plane-departure"></i> RIT FLY RADAR AÉREO
-                  </div>
-                  <span style="background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; font-size:9px; font-weight:800; padding:2px 8px; border-radius:4px;">🟢 ADS-B TEMPO REAL</span>
-                </div>
-
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:10px 0;">
-                  <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px; text-align:center;">
-                    <div style="font-size:8px; color:#94a3b8; text-transform:uppercase;">Voos Ativos</div>
-                    <div style="font-size:16px; font-weight:900; color:#38bdf8; font-family:monospace;">14 AERONAVES</div>
-                  </div>
-                  <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px; text-align:center;">
-                    <div style="font-size:8px; color:#94a3b8; text-transform:uppercase;">Espera Evitada</div>
-                    <div style="font-size:16px; font-weight:900; color:#10b981; font-family:monospace;">22 min / viagem</div>
-                  </div>
-                  <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:8px; border-radius:6px; text-align:center;">
-                    <div style="font-size:8px; color:#94a3b8; text-transform:uppercase;">Hubs Estratégicos</div>
-                    <div style="font-size:16px; font-weight:900; color:#f59e0b; font-family:monospace;">8 Aeroportos</div>
-                  </div>
-                </div>
-
-                <!-- Simulação Visual do Drawer Tático e Mapa -->
-                <div style="background:rgba(10,18,32,0.9); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:12px; font-size:11px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div>
-                      <strong style="color:#fff; font-size:13px;">G3 1234 (PR-XMB)</strong>
-                      <div style="font-size:9px; color:#94a3b8;">GOL Linhas Aéreas · Boeing 737-800 SFP</div>
-                    </div>
-                    <span style="background:rgba(16,185,129,0.2); color:#10b981; font-weight:bold; padding:2px 6px; border-radius:3px; font-size:9px;">No Horário</span>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:8px; border-radius:6px; margin-bottom:8px;">
-                    <div>
-                      <div style="font-size:16px; font-weight:900; font-family:monospace; color:#fff;">SDU</div>
-                      <div style="font-size:8px; color:#94a3b8;">Rio de Janeiro</div>
-                    </div>
-                    <div style="color:#38bdf8; font-size:14px;">➔</div>
-                    <div style="text-align:right;">
-                      <div style="font-size:16px; font-weight:900; font-family:monospace; color:#fff;">CGH</div>
-                      <div style="font-size:8px; color:#94a3b8;">São Paulo</div>
-                    </div>
-                  </div>
-                  <div style="display:flex; justify-content:space-between; font-size:9px; color:#94a3b8;">
-                    <span>Altitude: <strong>7.315 m (24.000 ft)</strong></span>
-                    <span>Velocidade: <strong>780 km/h</strong></span>
-                    <span>ETA: <strong style="color:#38bdf8;">15:20</strong></span>
-                  </div>
-                </div>
-
-                <div style="display:flex; gap:6px; margin-top:8px;">
-                  <span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px; font-size:9px; padding:4px 8px; color:#cbd5e1;">🗺️ 6 Camadas de Mapa</span>
-                  <span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px; font-size:9px; padding:4px 8px; color:#cbd5e1;">🏢 Voos do Dia por Hub</span>
-                  <span style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px; font-size:9px; padding:4px 8px; color:#cbd5e1;">🤖 RIT Fly AI</span>
-                </div>
+              <div class="carousel-view active" id="view-fly-radar">
+                <img class="mockup-img" src="assets/apresentacao/rit_fly_radar_ao_vivo.png" alt="RIT Fly Radar ADS-B Nacional Ao Vivo" />
+              </div>
+              <div class="carousel-view" id="view-fly-drawer">
+                <img class="mockup-img" src="assets/apresentacao/rit_fly_drawer_voo.png" alt="RIT Fly Detalhe do Voo e Integração Terrestre" />
               </div>
             </div>
           </div>
@@ -2002,23 +2111,23 @@
 
   </main>
 
-  <!-- Modal Explicativo de KPIs Homologados -->
+  <!-- Modal Explicativo Executivo das 6 Funcionalidades (Slide 1) -->
   <div class="kpi-modal-overlay" id="kpi-modal-overlay" onclick="handleKpiBackdropClick(event)">
     <div class="kpi-modal-box" id="kpi-modal-box">
       <button class="kpi-modal-close" onclick="closeKpiModal()" title="Fechar (Esc)"><i class="fa-solid fa-xmark"></i></button>
-      
+
       <div class="kpi-modal-header">
         <div class="kpi-modal-icon" id="kpi-modal-icon"></div>
         <div>
-          <div class="kpi-modal-tag" id="kpi-modal-tag">VALIDAÇÃO OPERACIONAL</div>
-          <h3 class="kpi-modal-title" id="kpi-modal-title">Título do KPI</h3>
+          <div class="kpi-modal-tag" id="kpi-modal-tag">PILAR ESTRATÉGICO AGENTE RIT</div>
+          <h3 class="kpi-modal-title" id="kpi-modal-title">Título da Funcionalidade</h3>
         </div>
       </div>
 
       <p class="kpi-modal-desc" id="kpi-modal-desc"></p>
 
       <div class="kpi-modal-section">
-        <h4 class="kpi-section-title"><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Cenários e Fluxos Avaliados:</h4>
+        <h4 class="kpi-section-title"><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Recursos Ativos em Produção:</h4>
         <div class="kpi-checklist-grid" id="kpi-modal-checklist">
           <!-- Inserido dinamicamente via JS -->
         </div>
@@ -2026,18 +2135,21 @@
 
       <div class="kpi-two-col">
         <div class="kpi-risk-card">
-          <h5><i class="fa-solid fa-shield-halved"></i> Qual risco evita:</h5>
+          <h5><i class="fa-solid fa-shield-halved"></i> Dor Operacional Resolvida:</h5>
           <p id="kpi-modal-risk"></p>
         </div>
         <div class="kpi-benefit-card">
-          <h5><i class="fa-solid fa-bolt"></i> Benefício operacional:</h5>
+          <h5><i class="fa-solid fa-bolt"></i> Impacto para o Negócio Globo:</h5>
           <p id="kpi-modal-benefit"></p>
         </div>
       </div>
 
       <div class="kpi-modal-footer">
+        <button class="btn-action-secondary" id="kpi-modal-jump-btn" onclick="closeKpiModal()">
+          <i class="fa-solid fa-display"></i> VER TELA DEDICADA
+        </button>
         <button class="btn-action-primary" onclick="closeKpiModal()">
-          <i class="fa-solid fa-check"></i> ENTENDIDO
+          <i class="fa-solid fa-check"></i> FECHAR RESUMO
         </button>
       </div>
     </div>
@@ -2047,16 +2159,22 @@
   <nav class="nav-bar">
     <button class="nav-btn" id="prev-btn"><i class="fa-solid fa-chevron-left"></i> Anterior</button>
     <div class="dots" id="dots-container"></div>
-    <div class="slide-counter" id="counter">1 / 8</div>
+    <div class="slide-counter" id="counter">1 / 9</div>
     <button class="nav-btn" id="next-btn">Próximo <i class="fa-solid fa-chevron-right"></i></button>
     <button class="fullscreen-btn" id="btn-fullscreen" title="Tela Cheia (F11)"><i class="fa-solid fa-expand"></i></button>
   </nav>
+
+  <!-- Assinatura Executiva Fixa -->
+  <div class="author-badge-fixed">
+    Idealizado e Desenvolvido por <strong>Fábio Paixão</strong>
+  </div>
 
   <!-- Scripts de Interatividade -->
   <script>
     // Alternância do Fundo Dinâmico a cada 8 segundos (Globo Digital <-> Vídeo Loop Noturno)
     const globeLayer = document.getElementById('hero-bg-globe');
     const videoLayer = document.getElementById('hero-bg-video-wrapper');
+    const heroVideo = document.getElementById('hero-bg-video');
     let isGlobeActive = true;
     setInterval(() => {
       if (isGlobeActive) {
@@ -2069,6 +2187,18 @@
         isGlobeActive = true;
       }
     }, 8000);
+
+    function toggleHeroAudio() {
+      const icon = document.getElementById('audio-icon');
+      if (!heroVideo) return;
+      if (heroVideo.muted) {
+        heroVideo.muted = false;
+        if (icon) icon.textContent = '🔊';
+      } else {
+        heroVideo.muted = true;
+        if (icon) icon.textContent = '🔇';
+      }
+    }
 
     // Gerador de Partículas de Fundo
     const particlesContainer = document.getElementById('particles');
@@ -2090,18 +2220,18 @@
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const btnFullscreen = document.getElementById('btn-fullscreen');
-    
+
     let currentIdx = 0;
 
     // Criar Dots de Navegação
     slides.forEach((_, i) => {
       const dot = document.createElement('div');
       dot.className = i === 0 ? 'dot active' : 'dot';
-      dot.setAttribute('title', `Slide ${i + 1}`);
+      dot.setAttribute('title', `Tela ${i + 1}`);
       dot.addEventListener('click', () => goToSlide(i));
       dotsContainer.appendChild(dot);
     });
-    
+
     const dots = document.querySelectorAll('.dot');
 
     function updateCounter() {
@@ -2110,7 +2240,7 @@
 
     function goToSlide(idx) {
       if (idx === currentIdx) return;
-      
+
       const prevIdx = currentIdx;
       currentIdx = idx;
 
@@ -2148,7 +2278,6 @@
         closeKpiModal();
         return;
       }
-      // Se modal estiver aberto, não navega slides com setas
       if (document.getElementById('kpi-modal-overlay')?.classList.contains('active')) {
         return;
       }
@@ -2173,91 +2302,110 @@
     });
 
     // =========================================================================
-    // MODAL EXPLICATIVO DE KPIS OPERACIONAIS (SLIDE 1)
+    // MODAL EXPLICATIVO EXECUTIVO DAS 6 FUNCIONALIDADES (SLIDE 1)
     // =========================================================================
     const kpiData = {
       1: {
-        icon: '<i class="fa-solid fa-vial-circle-check" style="color:#10B981;"></i>',
-        tag: '95 / 95 · VALIDAÇÕES AUTOMATIZADAS',
-        title: '95 verificações concluídas com sucesso',
-        desc: 'Esses testes validam automaticamente os componentes da plataforma antes de uma publicação em produção.',
+        icon: '<i class="fa-solid fa-video" style="color:#00D1FF;"></i>',
+        tag: '+4.297 CÂMERAS AO VIVO · SEGURANÇA PREDITIVA CCO',
+        title: 'Central de Câmeras Ao Vivo, Mosaico 2x2 & IA de Risco',
+        desc: 'Unifica mais de 4.297 câmeras de trânsito (COR-Rio, CET-SP e concessionárias) com inteligência geoespacial para validar rotas e ocorrências de segurança pública em segundos.',
         checklist: [
-          'Navegação entre telas e módulos',
-          'Carregamento de mapas e camadas GIS',
-          'Painéis de monitoramento do CCO',
-          'Integrações contínuas de dados viários',
-          'Funcionalidades do módulo de caravanas',
-          'Regras de roteirização e cálculo de custos',
-          'Painel de condições operacionais das vias'
+          '+4.297 câmeras ao vivo com visualizador interno (sem sair da tela)',
+          'Videowall Mosaico 2x2 para acompanhamento simultâneo de 4 vias',
+          'Cruzamento preditivo de rotas com OTT e Fogo Cruzado',
+          'Busca inteligente das câmeras mais próximas no raio de 1 km a 5 km',
+          'Painel MODO COMANDO com recomendação da IA Operacional RIT',
+          'Monitoramento de saúde e disponibilidade das fontes em tempo real'
         ],
-        risk: 'Evita que alterações no código quebrem telas, interrompam streams de câmeras ou causem divergências em cálculos operacionais no CCO.',
-        benefit: 'Reduz falhas em produção a zero e aumenta a confiabilidade operacional do CCO e da equipe de Transportes.'
+        risk: 'Elimina decisões às cegas em rotas com tiroteios, operações policiais, interdições ou acidentes graves.',
+        benefit: 'Protege a vida de equipes de Jornalismo, elenco e colaboradores em campo com confirmação visual imediata.',
+        targetSlide: 1
       },
       2: {
-        icon: '<i class="fa-solid fa-list-check" style="color:#00D1FF;"></i>',
-        tag: '20 / 20 · TESTES DE VALIDAÇÃO RÁPIDA',
-        title: '20 cenários críticos aprovados',
-        desc: 'São verificações rápidas executadas após cada atualização para confirmar que os principais recursos continuam funcionando sem qualquer regressão.',
+        icon: '<i class="fa-solid fa-road" style="color:#F5A623;"></i>',
+        tag: '5 CAPITAIS · RODOVIAS, VIAS EXPRESSAS & RIT ALERTA',
+        title: 'Monitoramento de Trânsito, Rodovias & Alertas Operacionais',
+        desc: 'Monitoramento contínuo das principais rodovias e corredores urbanos nas 5 capitais operacionais da Globo (RJ, SP, BSB, REC e BH), com alertas priorizados por severidade.',
         checklist: [
-          'Pesquisa e traçado dinâmico de rotas',
-          'Abertura instantânea dos painéis laterais',
-          'Navegação tática entre os slides da apresentação',
-          'Central de câmeras e visualização ao vivo',
-          'Alertas operacionais e triagem por severidade',
-          'Módulo de caravanas com recálculo em lote',
-          'Painel gerencial executivo com telemetria CCO'
+          'Rodovias RJ: Linha Vermelha, Linha Amarela, Av. Brasil, Ponte, Dutra e Transolímpica',
+          'Corredores SP: Marginal Tietê, Marginal Pinheiros, Castelo Branco e Anhanguera',
+          'Regionais BSB, REC e BH: EPIA, Eixo Monumental, BR-101, Via Mangue e Anel Rodoviário',
+          '7 KPIs executivos com drill-down (Mobilidade, Retenção, Críticos e Vias Afetadas)',
+          'Camada de trânsito ativável com 6 níveis cromáticos de fluidez',
+          'Quadro comparativo ao vivo: Tempo Atual vs. Tempo de Referência (+min)'
         ],
-        risk: 'Impede que falhas imperceptíveis ou erros de renderização passem despercebidos após atualizações no servidor.',
-        benefit: 'Detecta qualquer anomalia imediatamente após alterações, assegurando disponibilidade contínua dos fluxos mais vitais.'
+        risk: 'Substitui a postura reativa diante de engarrafamentos severos por antecipação viária baseada em telemetria.',
+        benefit: 'Reduz o tempo de resposta do CCO e assegura continuidade 24x7 para operações sensíveis da Globo.',
+        targetSlide: 2
       },
       3: {
-        icon: '<i class="fa-solid fa-camera-retro" style="color:#A855F7;"></i>',
-        tag: '12 EVIDÊNCIAS DE HOMOLOGAÇÃO',
-        title: '12 registros automáticos gerados durante a validação',
-        desc: 'O sistema realiza capturas das telas principais para comprovar fisicamente que cada funcionalidade foi exibida corretamente.',
+        icon: '<i class="fa-solid fa-bus" style="color:#10B981;"></i>',
+        tag: '49 ROTAS RJ + POLO SP · PONTUALIDADE ARTÍSTICA',
+        title: 'Caravanas Inteligentes Estúdios Globo (RJ) & Ed. Roberto Marinho (SP)',
+        desc: 'Gestão completa de pontualidade e segurança das caravanas de plateia para gravações e programas ao vivo no Rio de Janeiro e em São Paulo.',
         checklist: [
-          'Capa institucional com globo e vídeo loop',
-          'Central de câmeras e sinal ao vivo',
-          'Painel de alertas e condições das vias',
-          'Radar meteorológico e detecção de chuvas',
-          'Centro de roteirização e comparativo VAH',
-          'Caravanas inteligentes e traçados no mapa',
-          'Histórico de entregas e governança'
+          'Aba com 49 caravanas pré-cadastradas do RJ para os Estúdios Globo (Curicica)',
+          'Operação regional São Paulo para o Ed. Jornalista Roberto Marinho (Brooklin)',
+          'Plotagem simultânea de múltiplos ônibus no mapa com trajetos reais por rodovias',
+          'Cálculo dinâmico por programa, horário de saída e sentido (Ida ou Retorno)',
+          'Barra visual Google Maps Traffic com retenção em minutos no trajeto',
+          'Cruzamento automático com câmeras e ocorrências no percurso da caravana'
         ],
-        risk: 'Elimina a dependência de verificações visuais manuais e evita discrepâncias de layout não documentadas entre releases.',
-        benefit: 'Garante rastreabilidade total e comprovação visual incontestável das validações realizadas para auditorias corporativas.'
+        risk: 'Evita atrasos de plateia em programas de auditório e exposição de ônibus a vias bloqueadas ou inseguras.',
+        benefit: 'Garante 100% de previsibilidade no SLA de chegada artística sem usar GPS invasivo nos ônibus.',
+        targetSlide: 7
       },
       4: {
-        icon: '<i class="fa-solid fa-fingerprint" style="color:#F5A623;"></i>',
-        tag: '15 / 15 · AUDITORIAS DE INTEGRIDADE',
-        title: '15 verificações de integridade aprovadas',
-        desc: 'São mecanismos que garantem que relatórios, imagens e evidências utilizadas na homologação não foram alterados após sua geração.',
+        icon: '<i class="fa-solid fa-plane-departure" style="color:#38BDF8;"></i>',
+        tag: 'ADS-B NACIONAL + 8 HUBS METAR · SINCRONIA AÉREO-SOLO',
+        title: 'RIT Fly v1.1 — Central de Inteligência Aérea Corporativa',
+        desc: 'Conecta o monitoramento em tempo real da malha aérea brasileira e a meteorologia aeroportuária diretamente ao despacho de transporte terrestre executivo e artístico.',
         checklist: [
-          'Integridade matemática de arquivos e imagens',
-          'Rastreabilidade rigorosa de evidências primárias',
-          'Registro auditável das execuções em tempo real',
-          'Controle formal de versões e checkpoints',
-          'Auditoria documental padronizada para esteiras de publicação'
+          'Radar ADS-B nacional (+480 voos ao vivo) com silhuetas FlightAware e rotas IATA reais',
+          'Alta disponibilidade com failover triplo (CDN Nacional + adsb.fi + adsb.lol)',
+          '8 aeroportos estratégicos (SDU, GIG, CGH, GRU, VCP, BSB, CNF e REC) com METAR ao vivo',
+          'Painel de Ocorrências Consolidadas (Clima/METAR, Atrasos e Fluxo de Hubs)',
+          'Assistente conversacional RIT Fly AI para consultas rápidas em linguagem natural',
+          'Sincronização voo + transporte terrestre para eliminar espera ociosa em aeroportos'
         ],
-        risk: 'Evita adulteração acidental, perda da cadeia de custódia e inconsistências documentais entre a homologação e a operação real.',
-        benefit: 'Assegura transparência, governança corporativa e máxima confiabilidade das informações apresentadas aos gestores.'
+        risk: 'Evita deslocamento prematuro de motoristas e horas paradas em aeroportos quando há atrasos aéreos ou fechamento por clima.',
+        benefit: 'Une logística aérea e terrestre em uma única plataforma, elevando a eficiência e o nível de serviço executivo.',
+        targetSlide: 8
       },
       5: {
-        icon: '<i class="fa-solid fa-shield-halved" style="color:#38BDF8;"></i>',
-        tag: 'CHECKPOINT 5.3 · GOVERNANÇA & HISTÓRICO VIVO',
-        title: 'Governança Operacional e Histórico Vivo de Entregas',
-        desc: 'O Agente RIT opera sob estrito escopo consultivo e privacidade desde a concepção (LGPD), mantendo controle formal de versões e registro contínuo de todas as funcionalidades homologadas.',
+        icon: '<i class="fa-solid fa-scale-balanced" style="color:#A855F7;"></i>',
+        tag: 'SCORE 97 · ATÉ 35% DE ECONOMIA NA JANELA IDEAL',
+        title: 'Centro de Roteirização, Comparativo Multimodal de Custos & ESG',
+        desc: 'Motor de inteligência financeira que recomenda o modal mais eficiente para cada requisição, combinando economia orçamentária, tempo de viagem e sustentabilidade.',
         checklist: [
-          'Trava de Privacidade: Zero GPS de motoristas e zero coleta de dados pessoais (PII)',
-          'Projeções Sintéticas: DTO com isSynthetic: true, isGpsBased: false e disclaimer obrigatório',
-          'Módulo Caravanas: Traçado multi-rotas em 7 cores, geocodificação offline e recálculo em lote',
-          'Central CCO: 4.297 câmeras de trânsito em alta definição e georreferenciamento de ocorrências',
-          'Matriz de Custos: Comparativo multimodal de rotas (VAH vs Veículo Próprio vs Provedores)',
-          'Radar Meteorológico: Detecção de chuvas em tempo real e monitoramento de satélite HD',
-          'Diretriz DP-RIT-001: Histórico integrado com data/releases.json (CP 5.3, 5.2, 5.1, 4.2)'
+          'Comparativo instantâneo de 7 modais: Frota Globo, Cooperativa, Táxi, UberX, 99, Comfort e Black',
+          'Score ponderado (0 a 100) apontando a melhor decisão operacional e financeira',
+          'Curva preditiva de 24h identificando horários com até 35% de economia e -20 min no trânsito',
+          'Cálculo automático de tarifas de pedágio ao longo da rota selecionada',
+          'Processamento em lote via importação de planilhas operacionais (XLSX)',
+          'Cálculo automático da pegada de carbono (kg de CO₂) e exportação para WhatsApp/Waze'
         ],
-        risk: 'Elimina riscos jurídicos e trabalhistas relacionados à LGPD ou rastreamento indevido, e evita desalinhamento operacional sobre quais recursos já estão homologados.',
-        benefit: 'Assegura conformidade legal plena, auditoria documental transparente e clareza executiva imediata sobre as entregas ativas no sistema.'
+        risk: 'Elimina escolhas subótimas de modal em horários de tarifa dinâmica elevada ou pico de retenção.',
+        benefit: 'Gera economia direta no orçamento de transportes e apoia as metas corporativas de ESG da Globo.',
+        targetSlide: 6
+      },
+      6: {
+        icon: '<i class="fa-solid fa-shield-halved" style="color:#34D399;"></i>',
+        tag: 'ARTICULAÇÃO TRANSVERSAL · CYBER, PRIVACIDADE & GOVERNANÇA',
+        title: 'Inteligência Climática, Cyber Segurança, Privacidade (LGPD) & Governança',
+        desc: 'O maior diferencial executivo do projeto: unir inovação em Inteligência Artificial e monitoramento climático ao alinhamento rigoroso com Cyber Segurança, Privacidade e Governança desde a concepção.',
+        checklist: [
+          'Privacy by Design: zero rastreamento GPS de motoristas e zero coleta invasiva de dados pessoais',
+          'Controle de acesso corporativo por perfil (RBAC), autenticação segura e trilha de auditoria',
+          'Radar Meteorológico Doppler para prevenção de bolsões d\'água e alagamentos',
+          'Cabeçalhos de segurança OWASP, proteção de rotas e segregação de provedores',
+          'Transparência de proveniência de dados (diferenciação clara entre dado ao vivo e projeção)',
+          'Arquitetura modular pronta para escalar e conectar outras áreas de negócio da Globo'
+        ],
+        risk: 'Previne riscos jurídicos, trabalhistas, de privacidade (LGPD) e de segurança da informação em ambientes corporativos.',
+        benefit: 'Transforma uma iniciativa técnica em um produto corporativo confiável, ético e pronto para escala transversal.',
+        targetSlide: 5
       }
     };
 
@@ -2269,7 +2417,7 @@
       document.getElementById('kpi-modal-tag').textContent = data.tag;
       document.getElementById('kpi-modal-title').textContent = data.title;
       document.getElementById('kpi-modal-desc').textContent = data.desc;
-      
+
       const checklistContainer = document.getElementById('kpi-modal-checklist');
       if (checklistContainer) {
         checklistContainer.innerHTML = data.checklist.map(item => `
@@ -2282,6 +2430,14 @@
 
       document.getElementById('kpi-modal-risk').textContent = data.risk;
       document.getElementById('kpi-modal-benefit').textContent = data.benefit;
+
+      const jumpBtn = document.getElementById('kpi-modal-jump-btn');
+      if (jumpBtn && typeof data.targetSlide === 'number') {
+        jumpBtn.onclick = () => {
+          closeKpiModal();
+          goToSlide(data.targetSlide);
+        };
+      }
 
       const overlay = document.getElementById('kpi-modal-overlay');
       overlay?.classList.add('active');
@@ -2298,69 +2454,96 @@
       }
     }
 
-    // Controle Carrossel do Slide 2 (Central de Câmeras)
+    // Controle Carrossel do Slide 2 (Central de Câmeras + Painel 360 Banca)
     const btnCamMapa = document.getElementById('btn-cam-mapa');
     const btnCamLive = document.getElementById('btn-cam-live');
+    const btnCamExec = document.getElementById('btn-cam-exec');
     const viewCamMapa = document.getElementById('view-cam-mapa');
     const viewCamLive = document.getElementById('view-cam-live');
+    const viewCamExec = document.getElementById('view-cam-exec');
     const titleCam = document.getElementById('title-mockup-cam');
 
-    if (btnCamMapa && btnCamLive) {
+    function resetCamViews() {
+      btnCamMapa?.classList.remove('active');
+      btnCamLive?.classList.remove('active');
+      btnCamExec?.classList.remove('active');
+      viewCamMapa?.classList.remove('active');
+      viewCamLive?.classList.remove('active');
+      viewCamExec?.classList.remove('active');
+    }
+
+    if (btnCamMapa && btnCamLive && btnCamExec) {
       btnCamMapa.addEventListener('click', () => {
+        resetCamViews();
         btnCamMapa.classList.add('active');
-        btnCamLive.classList.remove('active');
         viewCamMapa.classList.add('active');
-        viewCamLive.classList.remove('active');
-        if (titleCam) titleCam.textContent = 'agente-rit-backend / dashboard.html#central-cameras';
+        if (titleCam) titleCam.textContent = 'agenterit.com.br / dashboard.html#central-cameras-ocorrencias';
       });
 
       btnCamLive.addEventListener('click', () => {
+        resetCamViews();
         btnCamLive.classList.add('active');
-        btnCamMapa.classList.remove('active');
         viewCamLive.classList.add('active');
-        viewCamMapa.classList.remove('active');
-        if (titleCam) titleCam.textContent = 'agente-rit-backend / dashboard.html#camera-ao-vivo-002425';
+        if (titleCam) titleCam.textContent = 'agenterit.com.br / dashboard.html#camera-ao-vivo-002425';
+      });
+
+      btnCamExec.addEventListener('click', () => {
+        resetCamViews();
+        btnCamExec.classList.add('active');
+        viewCamExec.classList.add('active');
+        if (titleCam) titleCam.textContent = 'agenterit.com.br / visao-executiva-360-banca-mentoria';
       });
     }
 
-    // Controle Carrossel do Slide 3 (RIT Alerta + Condições Operacionais)
+    // Controle Carrossel do Slide 3 (RIT Alerta + Rodovias + Condições 5 Capitais)
     const btnAlertaDesktop = document.getElementById('btn-alerta-desktop');
+    const btnAlertaSp = document.getElementById('btn-alerta-sp');
     const btnAlertaRodovias = document.getElementById('btn-alerta-rodovias');
     const btnAlertaCondicoes = document.getElementById('btn-alerta-condicoes');
     const viewAlertaDesktop = document.getElementById('view-alerta-desktop');
+    const viewAlertaSp = document.getElementById('view-alerta-sp');
     const viewAlertaRodovias = document.getElementById('view-alerta-rodovias');
     const viewAlertaCondicoes = document.getElementById('view-alerta-condicoes');
     const titleAlerta = document.getElementById('title-mockup-alerta');
 
     function resetAlertaViews() {
       btnAlertaDesktop?.classList.remove('active');
+      btnAlertaSp?.classList.remove('active');
       btnAlertaRodovias?.classList.remove('active');
       btnAlertaCondicoes?.classList.remove('active');
       viewAlertaDesktop?.classList.remove('active');
+      viewAlertaSp?.classList.remove('active');
       viewAlertaRodovias?.classList.remove('active');
       viewAlertaCondicoes?.classList.remove('active');
     }
 
-    if (btnAlertaDesktop && btnAlertaRodovias && btnAlertaCondicoes) {
+    if (btnAlertaDesktop && btnAlertaSp && btnAlertaRodovias && btnAlertaCondicoes) {
       btnAlertaDesktop.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaDesktop.classList.add('active');
         viewAlertaDesktop.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agente-rit-backend / dashboard.html#rit-alerta';
+        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#rit-alerta-rodovias-rj';
+      });
+
+      btnAlertaSp.addEventListener('click', () => {
+        resetAlertaViews();
+        btnAlertaSp.classList.add('active');
+        viewAlertaSp.classList.add('active');
+        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#rit-alerta-rodovias-sp';
       });
 
       btnAlertaRodovias.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaRodovias.classList.add('active');
         viewAlertaRodovias.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agente-rit-backend / dashboard.html#filtro-linha-vermelha';
+        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#filtro-linha-vermelha';
       });
 
       btnAlertaCondicoes.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaCondicoes.classList.add('active');
         viewAlertaCondicoes.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agente-rit-backend / data/traffic-conditions.json#quadro-operacional';
+        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / data/traffic-conditions.json#quadro-5-capitais';
       });
     }
 
@@ -2391,28 +2574,53 @@
         resetCrvViews();
         btnCrvRotas.classList.add('active');
         viewCrvRotas.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agente-rit-backend / caravanas-dashboard#multiplas-rotas';
+        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / dashboard.html#caravanas-49-rotas-rj';
       });
 
       btnCrvDrawer.addEventListener('click', () => {
         resetCrvViews();
         btnCrvDrawer.classList.add('active');
         viewCrvDrawer.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agente-rit-backend / caravanas#painel-lateral-tatico';
+        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#polo-sp-brooklin';
       });
 
       btnCrvComp.addEventListener('click', () => {
         resetCrvViews();
         btnCrvComp.classList.add('active');
         viewCrvComp.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agente-rit-backend / caravanas-dashboard#comparativo-google-waze';
+        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#comparativo-google-waze';
       });
 
       btnCrvCams.addEventListener('click', () => {
         resetCrvViews();
         btnCrvCams.classList.add('active');
         viewCrvCams.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agente-rit-backend / caravanas-dashboard#cameras-associadas-2500m';
+        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#cameras-no-trajeto';
+      });
+    }
+
+    // Controle Carrossel do Slide 9 (RIT Fly v1.1 - 2 Vistas Reais)
+    const btnFlyRadar = document.getElementById('btn-fly-radar');
+    const btnFlyDrawer = document.getElementById('btn-fly-drawer');
+    const viewFlyRadar = document.getElementById('view-fly-radar');
+    const viewFlyDrawer = document.getElementById('view-fly-drawer');
+    const titleFly = document.getElementById('title-mockup-fly');
+
+    if (btnFlyRadar && btnFlyDrawer) {
+      btnFlyRadar.addEventListener('click', () => {
+        btnFlyRadar.classList.add('active');
+        btnFlyDrawer.classList.remove('active');
+        viewFlyRadar.classList.add('active');
+        viewFlyDrawer.classList.remove('active');
+        if (titleFly) titleFly.textContent = 'agenterit.com.br / dashboard.html#rit-fly-central-aerea';
+      });
+
+      btnFlyDrawer.addEventListener('click', () => {
+        btnFlyDrawer.classList.add('active');
+        btnFlyRadar.classList.remove('active');
+        viewFlyDrawer.classList.add('active');
+        viewFlyRadar.classList.remove('active');
+        if (titleFly) titleFly.textContent = 'agenterit.com.br / dashboard.html#rit-fly-detalhe-voo-sincronia';
       });
     }
 
@@ -2502,73 +2710,8 @@
         });
     }
 
-    // =========================================================================
-    // INTEGRAÇÃO DINÂMICA: HISTÓRICO VIVO DE ENTREGAS VIA data/releases.json (SLIDE 10)
-    // =========================================================================
-    function loadReleasesData() {
-      fetch('data/releases.json')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (!data) return;
-
-          const verEl = document.getElementById('rel-current-version');
-          const dateEl = document.getElementById('rel-current-date');
-          if (verEl && data.checkpoint) verEl.textContent = `Checkpoint ${data.checkpoint}`;
-          if (dateEl && data.formattedDate) dateEl.innerHTML = `<i class="fa-regular fa-calendar"></i> ${data.formattedDate}`;
-
-          const featContainer = document.getElementById('releases-features-container');
-          if (featContainer && Array.isArray(data.features) && data.features.length > 0) {
-            featContainer.innerHTML = data.features.map(f => {
-              // Ajusta termos em ingles no nome da feature se houver
-              let featureName = f.name.replace('Drawer', 'Painel Lateral');
-              return `
-                <div class="release-feature-card">
-                  <div class="feature-status-icon"><i class="fa-solid fa-check"></i></div>
-                  <div class="feature-body">
-                    <div class="feature-header-row">
-                      <strong>${featureName}</strong>
-                      <span class="feature-tag">${f.tag || 'Operacional'}</span>
-                    </div>
-                    <p>${f.desc.replace(/Drawer/g, 'Painel lateral')}</p>
-                  </div>
-                </div>
-              `;
-            }).join('');
-          }
-
-          const histContainer = document.getElementById('releases-history-container');
-          if (histContainer && Array.isArray(data.history) && data.history.length > 0) {
-            histContainer.innerHTML = data.history.map(h => `
-              <div class="history-item">
-                <div class="history-dot"></div>
-                <div class="history-header">
-                  <strong>Checkpoint ${h.checkpoint}</strong>
-                  <span class="history-date">${h.date}</span>
-                </div>
-                <p><strong>${h.title}:</strong> ${(h.summary || h.scope || '').replace(/mockups/g, 'capturas de tela')}</p>
-              </div>
-            `).join('');
-          }
-        })
-        .catch(err => {
-          console.warn('[ReleaseNotes] Executando com dados embutidos de fallback:', err);
-        });
-    }
-
-    function reloadReleasesData() {
-      loadReleasesData();
-      const statusPill = document.querySelector('.release-status-pill');
-      if (statusPill) {
-        statusPill.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Atualizado';
-        setTimeout(() => {
-          statusPill.innerHTML = '<i class="fa-solid fa-circle-check"></i> Homologado';
-        }, 1500);
-      }
-    }
-
     // Inicialização
     loadTrafficConditions();
-    loadReleasesData();
     updateCounter();
   </script>
 </body>
