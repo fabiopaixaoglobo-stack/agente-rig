@@ -640,11 +640,12 @@ app.get('/api/cameras/cetsp/image/:pasta/:img?', (req, res) => {
 const bsbCameraUrls = {
     'esplanada': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-esplanada',
     'parque-da-cidade': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-parque-da-cidade',
-    'mane-garrincha': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-mane-garrincha'
+    'mane-garrincha': 'https://www.climaaovivo.com.br/df/brasilia/combo-livre-brasil-21-mane-garrincha',
+    'recreio-cdesign': 'https://www.climaaovivo.com.br/rj/rio-de-janeiro/rio-de-janeiro-cdesign-hotel'
 };
 const bsbImageCache = new Map();
 
-app.get('/api/cameras/brasilia/image/:camId', async (req, res) => {
+app.get(['/api/cameras/brasilia/image/:camId', '/api/cameras/rj/image/:camId'], async (req, res) => {
     const camId = String(req.params.camId || '').toLowerCase().trim();
     const targetPageUrl = bsbCameraUrls[camId];
     if (!targetPageUrl) {

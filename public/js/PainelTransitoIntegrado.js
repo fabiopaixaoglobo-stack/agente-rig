@@ -1,10 +1,10 @@
-import { trafficCameraSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.0.0';
+import { trafficCameraSources, getRjAlternativeSources, getRjCamerasRjSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.2.0';
 import { showToast, escapeHtml } from './utils.js';
 
 export class PainelTransitoIntegrado {
     constructor() {
         this.containerId = 'tab-painel-integrado';
-        this.storageKey = 'rit_cim_cards_selection_v5';
+        this.storageKey = 'rit_cim_cards_selection_v6';
         this.clockInterval = null;
         this.snapshotTimers = {};
         this.activeFullscreenSlot = null;
@@ -12,9 +12,28 @@ export class PainelTransitoIntegrado {
         this.codecCapabilities = detectVideoCodecCapabilities();
         
         // Definição dos 6 slots padrão com fontes visuais integradas prioritárias (snapshots, streams e mapas)
+        // Para o RJ, inicia em OUTRAS_FONTES (100% online) mantendo a base CamerasRJ pronta para alternância
         this.defaultSlots = {
-            card_1: { regional: 'RJ', slotNum: 1, sourceId: 'RJ_CURICICA_BANDEIRANTES' },
-            card_2: { regional: 'RJ', slotNum: 2, sourceId: 'RJ_CAMERASRJ_BARRA' },
+            card_1: {
+                regional: 'RJ',
+                slotNum: 1,
+                providerMode: 'OUTRAS_FONTES',
+                sourceId: 'RJ_ALT_GALEAO_LIVE',
+                selectedBairro: 'SRC_RJ_ALT_GALEAO_LIVE',
+                altSourceId: 'RJ_ALT_GALEAO_LIVE',
+                camerasRjBairro: 'SRC_RJ_CURICICA_BANDEIRANTES',
+                camerasRjSourceId: 'RJ_CURICICA_BANDEIRANTES'
+            },
+            card_2: {
+                regional: 'RJ',
+                slotNum: 2,
+                providerMode: 'OUTRAS_FONTES',
+                sourceId: 'RJ_ALT_SDU_LIVE',
+                selectedBairro: 'SRC_RJ_ALT_SDU_LIVE',
+                altSourceId: 'RJ_ALT_SDU_LIVE',
+                camerasRjBairro: 'SRC_RJ_CAMERASRJ_BARRA',
+                camerasRjSourceId: 'RJ_CAMERASRJ_BARRA'
+            },
             card_3: { regional: 'SP', slotNum: 1, sourceId: 'SP_CET_23' },
             card_4: { regional: 'BSB', slotNum: 1, sourceId: 'BSB_ESPLANADA' },
             card_5: { regional: 'REC', slotNum: 1, sourceId: 'REC_ZET_PE_01' },
@@ -75,13 +94,21 @@ export class PainelTransitoIntegrado {
                 const parsed = JSON.parse(saved);
                 this.currentSlots = { ...this.defaultSlots, ...parsed };
 
-                // Migração de segurança: se tiver os IDs legados antigos de portais ou bloqueados, migra para os visuais
-                if (!this.currentSlots.card_1?.sourceId || this.currentSlots.card_1.sourceId === 'RJ_MAPA_RIO_01') {
-                    this.currentSlots.card_1.sourceId = 'RJ_CURICICA_BANDEIRANTES';
-                }
-                if (!this.currentSlots.card_2?.sourceId || this.currentSlots.card_2.sourceId === 'RJ_ZET_UFRJ_01') {
-                    this.currentSlots.card_2.sourceId = 'RJ_CAMERASRJ_BARRA';
-                }
+                // Garantir providerMode e IDs válidos para os cards do RJ
+                ['card_1', 'card_2'].forEach((k, idx) => {
+                    const slot = this.currentSlots[k];
+                    if (slot && slot.regional === 'RJ') {
+                        if (!slot.providerMode) slot.providerMode = 'OUTRAS_FONTES';
+                        if (!slot.altSourceId) slot.altSourceId = idx === 0 ? 'RJ_ALT_GALEAO_LIVE' : 'RJ_ALT_SDU_LIVE';
+                        if (!slot.camerasRjBairro) slot.camerasRjBairro = idx === 0 ? 'SRC_RJ_CURICICA_BANDEIRANTES' : 'SRC_RJ_CAMERASRJ_BARRA';
+                        if (!slot.camerasRjSourceId) slot.camerasRjSourceId = idx === 0 ? 'RJ_CURICICA_BANDEIRANTES' : 'RJ_CAMERASRJ_BARRA';
+                        if (slot.providerMode !== 'CAMERAS_RJ' && (!slot.sourceId || slot.sourceId === 'RJ_MAPA_RIO_01')) {
+                            slot.sourceId = slot.altSourceId;
+                            slot.selectedBairro = `SRC_${slot.altSourceId}`;
+                        }
+                    }
+                });
+
                 if (!this.currentSlots.card_3?.sourceId || this.currentSlots.card_3.sourceId.includes('OFICIAL') || this.currentSlots.card_3.sourceId.includes('PAINEL_DIRETO')) {
                     this.currentSlots.card_3.sourceId = 'SP_CET_23';
                 }
@@ -363,46 +390,68 @@ export class PainelTransitoIntegrado {
         const sourceId = slotConfig.sourceId || '';
         const regionalData = trafficCameraSources[slotConfig.regional];
         const catalogSources = regionalData?.sources || [];
-
-        // 1. Caso seja fonte estruturada do catálogo (ex: RJ_MAPA_RIO_01, SRC_RJ_MAPA_RIO_01, SP_CET_23)
         const cleanSrcId = sourceId.replace('SRC_', '');
+
+        // Tratamento específico para o Rio de Janeiro conforme a Fonte de Dados selecionada (OUTRAS_FONTES vs CAMERAS_RJ)
+        if (slotConfig.regional === 'RJ') {
+            const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
+
+            if (providerMode !== 'CAMERAS_RJ') {
+                const altSources = getRjAlternativeSources();
+                const altMatch = altSources.find(s => s.id === cleanSrcId || s.id === sourceId);
+                return altMatch || altSources[0] || catalogSources[0] || null;
+            }
+
+            // Modo CAMERAS_RJ: verifica primeiro destaques do catálogo CamerasRJ
+            const camRjCatalog = getRjCamerasRjSources();
+            const camRjMatch = camRjCatalog.find(s => s.id === cleanSrcId || s.id === sourceId);
+            if (camRjMatch) {
+                return camRjMatch;
+            }
+
+            // Verifica câmera individual do bairro (CAM_1301 ou 1301)
+            const cleanCamId = sourceId.replace('CAM_', '');
+            if (cleanCamId && (sourceId.startsWith('CAM_') || !isNaN(cleanCamId))) {
+                const camInfo = this.findCameraInfo(cleanCamId);
+                const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
+                const bairroName = (slotConfig.selectedBairro && !slotConfig.selectedBairro.startsWith('SRC_'))
+                    ? slotConfig.selectedBairro
+                    : (camInfo?.bairro || 'Rio de Janeiro');
+                const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
+                const embedUrl = `https://player.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
+
+                return {
+                    id: `CAM_${cleanCamId}`,
+                    regional: 'RJ',
+                    cidade: 'Rio de Janeiro',
+                    bairro: bairroName,
+                    referencia: caption,
+                    nome: caption,
+                    tipoFonte: 'stream',
+                    url: url,
+                    embedUrl: embedUrl,
+                    suportaIframe: true,
+                    sourceProvider: 'CamerasRJ',
+                    providerCategory: 'CAMERAS_RJ',
+                    requiresCodec: 'H265',
+                    protocol: 'WebRTC/WHEP',
+                    compatibilityNote: 'Transmissão ao vivo via WebRTC do portal CamerasRJ.',
+                    healthStatus: 'suspended_notice',
+                    lastValidation: new Date().toISOString(),
+                    prioridade: 1,
+                    observacao: `Câmera municipal em ${bairroName}: ${caption}`
+                };
+            }
+
+            return camRjCatalog[0] || catalogSources[0] || null;
+        }
+
+        // Demais Regionais (SP, BSB, REC, BH)
         const catalogMatch = catalogSources.find(s => s.id === cleanSrcId || s.id === sourceId);
         if (catalogMatch) {
             return catalogMatch;
         }
 
-        // 2. Caso seja câmera individual do Rio (CAM_1301 ou 1301)
-        const cleanCamId = sourceId.replace('CAM_', '');
-        if (cleanCamId && (sourceId.startsWith('CAM_') || !isNaN(cleanCamId))) {
-            const camInfo = this.findCameraInfo(cleanCamId);
-            const caption = camInfo?.caption || `Câmera ${cleanCamId}`;
-            const bairroName = slotConfig.selectedBairro || camInfo?.bairro || 'Rio de Janeiro';
-            const url = `https://www.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
-            const embedUrl = `https://player.camerasrj.com.br/camera/${encodeURIComponent(cleanCamId)}/`;
-
-            return {
-                id: `CAM_${cleanCamId}`,
-                regional: 'RJ',
-                cidade: 'Rio de Janeiro',
-                bairro: bairroName,
-                referencia: caption,
-                nome: caption,
-                tipoFonte: 'stream',
-                url: url,
-                embedUrl: embedUrl,
-                suportaIframe: true,
-                sourceProvider: 'CamerasRJ',
-                requiresCodec: 'H265',
-                protocol: 'WebRTC/WHEP',
-                compatibilityNote: 'Transmissão ao vivo via WebRTC do portal CamerasRJ.',
-                healthStatus: 'online',
-                lastValidation: new Date().toISOString(),
-                prioridade: 1,
-                observacao: `Câmera ao vivo em ${bairroName}: ${caption}`
-            };
-        }
-
-        // 3. Fallback: primeira fonte do catálogo da regional
         return catalogSources[0] || null;
     }
 
@@ -417,15 +466,61 @@ export class PainelTransitoIntegrado {
         const slotLabel = `Câmera ${slotConfig.slotNum}`;
         const isEmbeddable = currentSource ? (currentSource.tipoFonte === 'snapshot' || (Boolean(currentSource.embedUrl) && currentSource.suportaIframe === true)) : false;
         
-        // Badge de compatibilidade HEVC para fontes CamerasRJ quando o browser não anuncia H.265
+        // Badge de compatibilidade HEVC / status de sinal
         let healthBadge = '';
-        if (currentSource && (currentSource.requiresCodec === 'H265' || currentSource.sourceProvider === 'CamerasRJ') && !this.codecCapabilities.supportsH265) {
+        if (currentSource && currentSource.providerCategory === 'CAMERAS_RJ') {
+            healthBadge = '<span class="cim-badge-hevc-warning" title="Base CamerasRJ preservada. Aguardando liberação do sinal pelo COR-Rio."><i class="fa-solid fa-building-columns"></i> BASE CAMERASRJ</span>';
+        } else if (currentSource && (currentSource.requiresCodec === 'H265' || currentSource.sourceProvider === 'CamerasRJ') && !this.codecCapabilities.supportsH265) {
             healthBadge = '<span class="cim-badge-hevc-warning" title="Este navegador não anunciou suporte a H.265/HEVC no WebRTC. Pode exigir aceleração por hardware ou navegador compatível."><i class="fa-solid fa-triangle-exclamation"></i> PODE EXIGIR H.265</span>';
         } else if (isEmbeddable) {
             healthBadge = '<span class="cim-badge-online"><i class="fa-solid fa-circle"></i> SINAL INTEGRADO</span>';
         } else {
             healthBadge = '<span class="cim-badge-external"><i class="fa-solid fa-arrow-up-right-from-square"></i> PORTAL EXTERNO</span>';
         }
+
+        const isRJ = slotConfig.regional === 'RJ';
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
+
+        const selectorsHtml = isRJ ? `
+            <div class="cim-card-selectors">
+                <div style="display: grid; grid-template-columns: 185px 1fr; gap: 8px;">
+                    <div class="cim-selector-field">
+                        <label class="cim-sel-lbl">Fonte de Dados:</label>
+                        <select class="cim-select select-provider" data-slot="${slotKey}" style="font-weight:700; color:${providerMode === 'OUTRAS_FONTES' ? '#10b981' : '#f59e0b'};">
+                            <option value="OUTRAS_FONTES" ${providerMode === 'OUTRAS_FONTES' ? 'selected' : ''}>🟢 Outras Fontes (Ativas)</option>
+                            <option value="CAMERAS_RJ" ${providerMode === 'CAMERAS_RJ' ? 'selected' : ''}>🏛️ CamerasRJ (Municipal)</option>
+                        </select>
+                    </div>
+                    <div class="cim-selector-field">
+                        <label class="cim-sel-lbl">${providerMode === 'CAMERAS_RJ' ? 'Bairro / Região (CamerasRJ):' : 'Região / Corredor Ativo:'}</label>
+                        <select class="cim-select select-bairro" data-slot="${slotKey}">
+                            ${this.generateBairroOptions(slotConfig, currentSource)}
+                        </select>
+                    </div>
+                </div>
+                <div class="cim-selector-field">
+                    <label class="cim-sel-lbl">Fonte / Câmera:</label>
+                    <select class="cim-select select-fonte" data-slot="${slotKey}">
+                        ${this.generateFonteOptions(slotConfig, currentSource)}
+                    </select>
+                </div>
+            </div>
+        ` : `
+            <div class="cim-card-selectors">
+                <div class="cim-selector-field">
+                    <label class="cim-sel-lbl">Bairro / Região / Via:</label>
+                    <select class="cim-select select-bairro" data-slot="${slotKey}">
+                        ${this.generateBairroOptions(slotConfig, currentSource)}
+                    </select>
+                </div>
+                <div class="cim-selector-field">
+                    <label class="cim-sel-lbl">Fonte / Câmera:</label>
+                    <select class="cim-select select-fonte" data-slot="${slotKey}">
+                        ${this.generateFonteOptions(slotConfig, currentSource)}
+                    </select>
+                </div>
+            </div>
+        `;
 
         cardEl.innerHTML = `
             <div class="cim-card-header">
@@ -442,21 +537,8 @@ export class PainelTransitoIntegrado {
                 </div>
             </div>
 
-            <!-- SELETORES UNIFICADOS MODELO CÂMERAS RJ -->
-            <div class="cim-card-selectors">
-                <div class="cim-selector-field">
-                    <label class="cim-sel-lbl">Bairro / Região / Via:</label>
-                    <select class="cim-select select-bairro" data-slot="${slotKey}">
-                        ${this.generateBairroOptions(slotConfig, currentSource)}
-                    </select>
-                </div>
-                <div class="cim-selector-field">
-                    <label class="cim-sel-lbl">Fonte / Câmera:</label>
-                    <select class="cim-select select-fonte" data-slot="${slotKey}">
-                        ${this.generateFonteOptions(slotConfig, currentSource)}
-                    </select>
-                </div>
-            </div>
+            <!-- SELETORES UNIFICADOS COM FONTE DE DADOS -->
+            ${selectorsHtml}
 
             <!-- ÁREA DO PLAYER / MAPA / SNAPSHOT / CARD OPERACIONAL -->
             <div class="cim-viewport-container" id="viewport-${slotKey}">
@@ -483,6 +565,7 @@ export class PainelTransitoIntegrado {
         `;
 
         // Eventos dos Selects e Botões do Card
+        const selProvider = cardEl.querySelector('.select-provider');
         const selBairro = cardEl.querySelector('.select-bairro');
         const selFonte = cardEl.querySelector('.select-fonte');
         const btnRefresh = cardEl.querySelector('.btn-cim-card-refresh');
@@ -491,17 +574,56 @@ export class PainelTransitoIntegrado {
         const btnRetrySlot = cardEl.querySelector('.btn-cim-retry-slot');
         const btnDiagTrigger = cardEl.querySelector('.btn-cim-diag-trigger');
 
+        selProvider?.addEventListener('change', (e) => {
+            const newMode = e.target.value;
+            slotConfig.providerMode = newMode;
+
+            if (newMode === 'OUTRAS_FONTES') {
+                const targetId = slotConfig.altSourceId || (slotKey === 'card_2' ? 'RJ_ALT_SDU_LIVE' : 'RJ_ALT_GALEAO_LIVE');
+                slotConfig.sourceId = targetId;
+                slotConfig.selectedBairro = `SRC_${targetId}`;
+                showToast("Fonte de Dados alterada para Outras Fontes (Câmeras Ativas e Validadas).", "success");
+            } else {
+                const savedBairro = slotConfig.camerasRjBairro || (slotKey === 'card_2' ? 'SRC_RJ_CAMERASRJ_BARRA' : 'SRC_RJ_CURICICA_BANDEIRANTES');
+                slotConfig.selectedBairro = savedBairro;
+                if (savedBairro.startsWith('SRC_')) {
+                    slotConfig.sourceId = savedBairro.replace('SRC_', '');
+                } else if (slotConfig.camerasRjSourceId) {
+                    slotConfig.sourceId = slotConfig.camerasRjSourceId;
+                } else {
+                    const camerasList = (this.camerasData && this.camerasData[savedBairro]) || [];
+                    slotConfig.sourceId = camerasList.length > 0 ? `CAM_${camerasList[0].id}` : 'RJ_CURICICA_BANDEIRANTES';
+                }
+                showToast("Fonte de Dados alterada para Base Municipal CamerasRJ.", "info");
+            }
+
+            this.saveSlotSelection();
+            this.renderSingleCard(slotKey, cardEl);
+        });
+
         selBairro?.addEventListener('change', (e) => {
             const selectedVal = e.target.value;
             slotConfig.selectedBairro = selectedVal;
 
             if (selectedVal.startsWith('SRC_')) {
                 slotConfig.sourceId = selectedVal.replace('SRC_', '');
+                if (slotConfig.regional === 'RJ') {
+                    if (slotConfig.providerMode === 'CAMERAS_RJ') {
+                        slotConfig.camerasRjBairro = selectedVal;
+                        slotConfig.camerasRjSourceId = slotConfig.sourceId;
+                    } else {
+                        slotConfig.altSourceId = slotConfig.sourceId;
+                    }
+                }
             } else {
-                // Seleciona a primeira câmera do bairro selecionado
+                // Seleciona a primeira câmera do bairro selecionado na base CamerasRJ
                 const camerasList = (this.camerasData && this.camerasData[selectedVal]) || [];
                 if (camerasList.length > 0) {
                     slotConfig.sourceId = `CAM_${camerasList[0].id}`;
+                }
+                if (slotConfig.regional === 'RJ') {
+                    slotConfig.camerasRjBairro = selectedVal;
+                    slotConfig.camerasRjSourceId = slotConfig.sourceId;
                 }
             }
 
@@ -515,8 +637,19 @@ export class PainelTransitoIntegrado {
                 if (selectedVal.startsWith('SRC_')) {
                     slotConfig.sourceId = selectedVal.replace('SRC_', '');
                     slotConfig.selectedBairro = selectedVal;
+                    if (slotConfig.regional === 'RJ') {
+                        if (slotConfig.providerMode === 'CAMERAS_RJ') {
+                            slotConfig.camerasRjBairro = selectedVal;
+                            slotConfig.camerasRjSourceId = slotConfig.sourceId;
+                        } else {
+                            slotConfig.altSourceId = slotConfig.sourceId;
+                        }
+                    }
                 } else {
                     slotConfig.sourceId = selectedVal;
+                    if (slotConfig.regional === 'RJ') {
+                        slotConfig.camerasRjSourceId = selectedVal;
+                    }
                 }
                 this.saveSlotSelection();
                 this.renderSingleCard(slotKey, cardEl);
@@ -532,12 +665,14 @@ export class PainelTransitoIntegrado {
         });
 
         btnSwitchFallback?.addEventListener('click', (e) => {
-            const fallbackId = e.currentTarget.getAttribute('data-fallback') || 'RJ_MAPA_RIO_01';
+            const fallbackId = e.currentTarget.getAttribute('data-fallback') || 'RJ_ALT_GALEAO_LIVE';
+            slotConfig.providerMode = 'OUTRAS_FONTES';
             slotConfig.selectedBairro = `SRC_${fallbackId}`;
             slotConfig.sourceId = fallbackId;
+            slotConfig.altSourceId = fallbackId;
             this.saveSlotSelection();
             this.renderSingleCard(slotKey, cardEl);
-            showToast("Alternado para a fonte de redundância do Rio de Janeiro.", "info");
+            showToast("Alternado para fonte ativa do Rio de Janeiro.", "info");
         });
 
         btnRetrySlot?.addEventListener('click', () => {
@@ -558,21 +693,36 @@ export class PainelTransitoIntegrado {
         const sourcesList = regionalData?.sources || [];
 
         if (regional === 'RJ') {
-            let html = '<option value="">Selecione o Bairro / Via...</option>';
-            
-            // Grupo Destaques
-            html += '<optgroup label="⭐ DESTAQUES & PORTAIS OFICIAIS (RJ)">';
-            sourcesList.forEach(src => {
-                const val = `SRC_${src.id}`;
-                const isSelected = (slotConfig.selectedBairro === val || (currentSource && currentSource.id === src.id && (!slotConfig.selectedBairro || slotConfig.selectedBairro.startsWith('SRC_')))) ? 'selected' : '';
-                html += `<option value="${val}" ${isSelected}>[PORTAL] ${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia || src.nome)}</option>`;
-            });
-            html += '</optgroup>';
+            const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
 
-            // Grupo Bairros
+            if (providerMode !== 'CAMERAS_RJ') {
+                const altSources = getRjAlternativeSources();
+                let html = '<optgroup label="🟢 OUTRAS FONTES ATIVAS E VALIDADAS (RJ)">';
+                altSources.forEach(src => {
+                    const val = `SRC_${src.id}`;
+                    const isSelected = (slotConfig.sourceId === src.id || currentSource?.id === src.id) ? 'selected' : '';
+                    html += `<option value="${val}" ${isSelected}>🟢 ${escapeHtml(src.bairro)} — ${escapeHtml(src.referencia || src.nome)}</option>`;
+                });
+                html += '</optgroup>';
+                return html;
+            }
+
+            // Modo CAMERAS_RJ (Base Municipal completa preservada)
+            let html = '<option value="">Selecione o Bairro / Via (CamerasRJ)...</option>';
+            const camRjHighlights = getRjCamerasRjSources();
+            if (camRjHighlights.length > 0) {
+                html += '<optgroup label="🏛️ DESTAQUES CAMERASRJ (BASE MUNICIPAL)">';
+                camRjHighlights.forEach(src => {
+                    const val = `SRC_${src.id}`;
+                    const isSelected = (slotConfig.selectedBairro === val || (currentSource && currentSource.id === src.id && (!slotConfig.selectedBairro || slotConfig.selectedBairro.startsWith('SRC_')))) ? 'selected' : '';
+                    html += `<option value="${val}" ${isSelected}>[DESTAQUE] ${escapeHtml(src.bairro)} - ${escapeHtml(src.referencia || src.nome)}</option>`;
+                });
+                html += '</optgroup>';
+            }
+
             const bairrosRJ = Object.keys(this.camerasData || {}).sort((a, b) => a.localeCompare(b, 'pt-BR'));
             if (bairrosRJ.length > 0) {
-                html += '<optgroup label="BAIRROS DO RIO DE JANEIRO">';
+                html += '<optgroup label="📍 BAIRROS DO RIO DE JANEIRO (BASE CAMERASRJ)">';
                 bairrosRJ.forEach(bairro => {
                     const isSelected = (slotConfig.selectedBairro === bairro || (currentSource && currentSource.bairro === bairro && !slotConfig.selectedBairro?.startsWith('SRC_'))) ? 'selected' : '';
                     html += `<option value="${escapeHtml(bairro)}" ${isSelected}>${escapeHtml(bairro)}</option>`;
@@ -607,18 +757,29 @@ export class PainelTransitoIntegrado {
         }
 
         // Para RJ:
-        const selectedBairro = slotConfig.selectedBairro || (currentSource ? (currentSource.id?.startsWith('SRC_') ? `SRC_${currentSource.id}` : (currentSource.bairro && currentSource.bairro !== 'Rio de Janeiro' ? currentSource.bairro : `SRC_${currentSource.id}`)) : `SRC_${sourcesList[0]?.id}`);
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
 
-        // Se for um item de catálogo do RJ (SRC_...)
+        if (providerMode !== 'CAMERAS_RJ') {
+            const altSources = getRjAlternativeSources();
+            return altSources.map(src => {
+                const val = `SRC_${src.id}`;
+                const isSelected = (slotConfig.sourceId === src.id || currentSource?.id === src.id) ? 'selected' : '';
+                const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Snapshot Ao Vivo' : '🎥 Stream Ao Vivo';
+                return `<option value="${val}" ${isSelected}>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
+            }).join('');
+        }
+
+        // Modo CAMERAS_RJ:
+        const camRjHighlights = getRjCamerasRjSources();
+        const selectedBairro = slotConfig.selectedBairro || (currentSource ? (currentSource.id?.startsWith('CAM_') ? currentSource.bairro : `SRC_${currentSource.id}`) : `SRC_${camRjHighlights[0]?.id}`);
+
+        // Se for um destaque do catálogo CamerasRJ (SRC_...)
         if (!selectedBairro || selectedBairro.startsWith('SRC_')) {
-            const srcId = selectedBairro ? selectedBairro.replace('SRC_', '') : sourcesList[0]?.id;
-            const src = sourcesList.find(s => s.id === srcId) || currentSource || sourcesList[0];
-
-            if (src) {
-                const tipoLabel = src.tipoFonte === 'snapshot' ? '📷 Ao Vivo' : (src.tipoFonte === 'stream' ? '🎥 Ao Vivo' : (src.tipoFonte === 'mapa' ? '🗺️ Mapa' : '🌐 Portal'));
-                return `<option value="SRC_${src.id}" selected>${tipoLabel} | ${escapeHtml(src.nome)}</option>`;
-            }
-            return '<option value="">Selecione a Câmera / Fonte...</option>';
+            return camRjHighlights.map(src => {
+                const val = `SRC_${src.id}`;
+                const isSelected = (slotConfig.sourceId === src.id || currentSource?.id === src.id) ? 'selected' : '';
+                return `<option value="${val}" ${isSelected}>🏛️ CamerasRJ | ${escapeHtml(src.nome)}</option>`;
+            }).join('');
         }
 
         // Se for um Bairro do Rio (camerasData)
@@ -797,8 +958,27 @@ export class PainelTransitoIntegrado {
 
     changeCardSource(slotKey, newSourceId) {
         if (!this.currentSlots[slotKey]) return;
-        
-        this.currentSlots[slotKey].sourceId = newSourceId;
+        const slot = this.currentSlots[slotKey];
+
+        if (newSourceId.startsWith('SRC_')) {
+            const cleanId = newSourceId.replace('SRC_', '');
+            slot.sourceId = cleanId;
+            slot.selectedBairro = newSourceId;
+            if (slot.regional === 'RJ') {
+                if (slot.providerMode === 'CAMERAS_RJ') {
+                    slot.camerasRjBairro = newSourceId;
+                    slot.camerasRjSourceId = cleanId;
+                } else {
+                    slot.altSourceId = cleanId;
+                }
+            }
+        } else {
+            slot.sourceId = newSourceId;
+            if (slot.regional === 'RJ' && slot.providerMode === 'CAMERAS_RJ') {
+                slot.camerasRjSourceId = newSourceId;
+            }
+        }
+
         this.saveSlotSelection();
 
         const cardEl = document.getElementById(`cim-${slotKey}`);
@@ -1012,14 +1192,20 @@ export class PainelTransitoIntegrado {
 
     applyFallbackRio() {
         if (this.currentSlots.card_1) {
-            this.currentSlots.card_1.sourceId = 'RJ_MAPA_RIO_01';
+            this.currentSlots.card_1.providerMode = 'OUTRAS_FONTES';
+            this.currentSlots.card_1.sourceId = 'RJ_ALT_GALEAO_LIVE';
+            this.currentSlots.card_1.selectedBairro = 'SRC_RJ_ALT_GALEAO_LIVE';
+            this.currentSlots.card_1.altSourceId = 'RJ_ALT_GALEAO_LIVE';
         }
         if (this.currentSlots.card_2) {
-            this.currentSlots.card_2.sourceId = 'RJ_ZET_UFRJ_01';
+            this.currentSlots.card_2.providerMode = 'OUTRAS_FONTES';
+            this.currentSlots.card_2.sourceId = 'RJ_ALT_SDU_LIVE';
+            this.currentSlots.card_2.selectedBairro = 'SRC_RJ_ALT_SDU_LIVE';
+            this.currentSlots.card_2.altSourceId = 'RJ_ALT_SDU_LIVE';
         }
         this.saveSlotSelection();
         this.renderAllCards();
-        showToast("Câmeras do Rio alternadas para o Mapa Interativo e Sensores UFRJ com 100% de compatibilidade.", "success");
+        showToast("Câmeras do Rio alternadas para Outras Fontes Ativas com 100% de compatibilidade.", "success");
     }
 }
 

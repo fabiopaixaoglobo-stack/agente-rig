@@ -1,10 +1,10 @@
-import { trafficCameraSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.0.0';
+import { trafficCameraSources, getRjAlternativeSources, getRjCamerasRjSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.2.0';
 import { showToast, escapeHtml } from './utils.js';
 
 export class CamerasRJ {
     constructor() {
         this.containerId = 'tab-cameras';
-        this.storageKey = 'rit_cameras_rj_quads_v2';
+        this.storageKey = 'rit_cameras_rj_quads_v3';
         this.cacheKey = 'rit_cameras_rj_data_cache';
         this.cacheTimestampKey = 'rit_cameras_rj_data_time';
         this.activeFullscreenSlot = null;
@@ -15,12 +15,49 @@ export class CamerasRJ {
         this.camerasData = {};
         this.isTabActive = false;
 
-        // 4 Quadrantes Padrão (Preset Tático CIM / Operacional com Fontes Validadas)
+        // 4 Quadrantes Padrão iniciando em "Outras Fontes" (100% ativas e validadas),
+        // preservando a configuração "CamerasRJ" pronta para alternância imediata.
         this.defaultSlots = {
-            quad_1: { slotNum: 1, bairro: 'Curicica', sourceId: 'RJ_CURICICA_BANDEIRANTES', label: 'Curicica / Estúdios Globo' },
-            quad_2: { slotNum: 2, bairro: 'Barra da Tijuca', sourceId: 'RJ_CAMERASRJ_BARRA', label: 'Barra da Tijuca / Transoeste' },
-            quad_3: { slotNum: 3, bairro: 'Centro', sourceId: 'RJ_ZET_UFRJ_03', label: 'Centro & Corredores Viários' },
-            quad_4: { slotNum: 4, bairro: 'Ponte Rio-Niterói', sourceId: 'RJ_ZET_UFRJ_02', label: 'Ponte Rio-Niterói / Baía' }
+            quad_1: {
+                slotNum: 1,
+                providerMode: 'OUTRAS_FONTES',
+                bairro: 'Ilha do Governador / Galeão',
+                sourceId: 'RJ_ALT_GALEAO_LIVE',
+                altSourceId: 'RJ_ALT_GALEAO_LIVE',
+                camerasRjBairro: 'Curicica',
+                camerasRjSourceId: 'RJ_CURICICA_BANDEIRANTES',
+                label: 'Aeroporto do Galeão & Linha Vermelha'
+            },
+            quad_2: {
+                slotNum: 2,
+                providerMode: 'OUTRAS_FONTES',
+                bairro: 'Centro / Santos Dumont',
+                sourceId: 'RJ_ALT_SDU_LIVE',
+                altSourceId: 'RJ_ALT_SDU_LIVE',
+                camerasRjBairro: 'Barra da Tijuca',
+                camerasRjSourceId: 'RJ_CAMERASRJ_BARRA',
+                label: 'Aeroporto Santos Dumont & Centro'
+            },
+            quad_3: {
+                slotNum: 3,
+                providerMode: 'OUTRAS_FONTES',
+                bairro: 'Copacabana (Posto 3)',
+                sourceId: 'RJ_ALT_COPA_POSTO3',
+                altSourceId: 'RJ_ALT_COPA_POSTO3',
+                camerasRjBairro: 'Camorim',
+                camerasRjSourceId: 'CAM_1014',
+                label: 'Copacabana Posto 3 / Av. Atlântica'
+            },
+            quad_4: {
+                slotNum: 4,
+                providerMode: 'OUTRAS_FONTES',
+                bairro: 'Copacabana / Arpoador (Posto 6)',
+                sourceId: 'RJ_ALT_COPA_POSTO6',
+                altSourceId: 'RJ_ALT_COPA_POSTO6',
+                camerasRjBairro: 'Barra da Tijuca',
+                camerasRjSourceId: 'RJ_CAMERASRJ_COPACABANA',
+                label: 'Copacabana Posto 6 / Acesso Ipanema'
+            }
         };
 
         this.currentSlots = {};
@@ -41,10 +78,10 @@ export class CamerasRJ {
         this.renderAllQuadrants();
         this.setupTabObserver();
 
-        console.info('[CamerasRJ] Painel de Monitoramento 2x2 inicializado com sucesso.');
+        console.info('[CamerasRJ] Painel de Monitoramento 2x2 inicializado com seletor de Fonte de Dados.');
     }
 
-    // 1. CARREGAMENTO E CACHE DE 120 SEGUNDOS
+    // 1. CARREGAMENTO E CACHE DE 120 SEGUNDOS (BASE CAMERAS RJ)
     async loadCamerasData() {
         const now = Date.now();
         try {
@@ -73,15 +110,17 @@ export class CamerasRJ {
         try {
             const saved = localStorage.getItem(this.storageKey);
             if (saved) {
-                this.currentSlots = { ...this.defaultSlots, ...JSON.parse(saved) };
-                
-                // Migração de slots antigos bloqueados ou instáveis
-                if (this.currentSlots.quad_3?.sourceId === 'RJ_CAMERASRJ_CENTRO' || !this.currentSlots.quad_3?.sourceId) {
-                    this.currentSlots.quad_3 = { slotNum: 3, bairro: 'Centro', sourceId: 'RJ_ZET_UFRJ_03', label: 'Centro & Corredores Viários' };
-                }
-                if (this.currentSlots.quad_4?.sourceId === 'RJ_CAMERASRJ_COPACABANA' || !this.currentSlots.quad_4?.sourceId) {
-                    this.currentSlots.quad_4 = { slotNum: 4, bairro: 'Ponte Rio-Niterói', sourceId: 'RJ_ZET_UFRJ_02', label: 'Ponte Rio-Niterói / Baía' };
-                }
+                const parsed = JSON.parse(saved);
+                this.currentSlots = {};
+                ['quad_1', 'quad_2', 'quad_3', 'quad_4'].forEach(k => {
+                    this.currentSlots[k] = {
+                        ...this.defaultSlots[k],
+                        ...(parsed[k] || {})
+                    };
+                    if (!this.currentSlots[k].providerMode) {
+                        this.currentSlots[k].providerMode = 'OUTRAS_FONTES';
+                    }
+                });
                 return;
             }
         } catch (e) {
@@ -98,8 +137,15 @@ export class CamerasRJ {
         }
     }
 
+    getDominantProviderMode() {
+        const modes = Object.values(this.currentSlots).map(s => s.providerMode || 'OUTRAS_FONTES');
+        const allCamerasRj = modes.every(m => m === 'CAMERAS_RJ');
+        return allCamerasRj ? 'CAMERAS_RJ' : 'OUTRAS_FONTES';
+    }
+
     // 3. ESTRUTURA DO PAINEL COM CABEÇALHO COMPACTO E GRID 2X2
     renderStructure(tabPane) {
+        const globalMode = this.getDominantProviderMode();
         tabPane.innerHTML = `
             <div class="cam-rj-container">
                 <!-- CABEÇALHO COMPACTO (ZERO SCROLL) -->
@@ -108,7 +154,16 @@ export class CamerasRJ {
                         <span class="cim-live-pill"><i class="fa-solid fa-video"></i> 4 CÂMERAS AO VIVO</span>
                         <h2 class="cam-rj-header-title">Câmeras Rio de Janeiro (Layout 2x2)</h2>
                     </div>
-                    <div class="cam-rj-header-right">
+                    <div class="cam-rj-header-right" style="display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:5px; background:rgba(15,23,42,0.9); border:1px solid rgba(0,209,255,0.35); border-radius:4px; padding:2px 6px;">
+                            <label for="sel-cam-global-provider" style="font-size:9px; font-weight:800; color:#00d1ff; text-transform:uppercase; white-space:nowrap;">
+                                <i class="fa-solid fa-database"></i> Fonte de Dados:
+                            </label>
+                            <select id="sel-cam-global-provider" class="cam-rj-select-compact" style="height:20px; font-size:9.5px; font-weight:700; border-color:#00d1ff; min-width:175px;" title="Alternar Fonte de Dados de todos os 4 quadrantes">
+                                <option value="OUTRAS_FONTES" ${globalMode === 'OUTRAS_FONTES' ? 'selected' : ''}>🟢 Outras Fontes (Ativas / Online)</option>
+                                <option value="CAMERAS_RJ" ${globalMode === 'CAMERAS_RJ' ? 'selected' : ''}>🏛️ CamerasRJ (Base Municipal)</option>
+                            </select>
+                        </div>
                         <button id="btn-cam-refresh-all" class="btn-cim-action btn-cim-primary" title="Recarregar todas as 4 câmeras">
                             <i class="fa-solid fa-arrows-rotate"></i> <span>RECARREGAR</span>
                         </button>
@@ -158,6 +213,11 @@ export class CamerasRJ {
         const grid = document.getElementById('cam-rj-grid');
         if (!grid) return;
 
+        const globalSelect = document.getElementById('sel-cam-global-provider');
+        if (globalSelect) {
+            globalSelect.value = this.getDominantProviderMode();
+        }
+
         grid.innerHTML = '';
         const slotKeys = ['quad_1', 'quad_2', 'quad_3', 'quad_4'];
 
@@ -173,10 +233,9 @@ export class CamerasRJ {
             `;
             grid.appendChild(cardEl);
 
-            // Escalonamento de 150ms por quadrante para tempo inicial < 3s sem sobrecarga de conexões
             setTimeout(() => {
                 this.renderSingleQuadrant(key, cardEl);
-            }, idx * 150);
+            }, idx * 120);
         });
     }
 
@@ -196,10 +255,23 @@ export class CamerasRJ {
 
     resolveSourceObject(slotConfig) {
         if (!slotConfig) return null;
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
         const sourceId = slotConfig.sourceId || '';
         const catalogSources = trafficCameraSources.RJ?.sources || [];
+        const altSources = getRjAlternativeSources();
 
-        // 1. Caso seja fonte estruturada do catálogo
+        // Se estiver em modo OUTRAS_FONTES, garante que resolve uma fonte ativa válida
+        if (providerMode === 'OUTRAS_FONTES') {
+            const cleanSrcId = sourceId.replace('SRC_', '');
+            const altMatch = altSources.find(s => s.id === cleanSrcId || s.id === sourceId);
+            if (altMatch) {
+                return altMatch;
+            }
+            return altSources[0] || catalogSources[0] || null;
+        }
+
+        // Modo CAMERAS_RJ:
+        // 1. Caso seja destaque estruturado do catálogo CamerasRJ
         const cleanSrcId = sourceId.replace('SRC_', '');
         const catalogMatch = catalogSources.find(s => s.id === cleanSrcId || s.id === sourceId);
         if (catalogMatch) {
@@ -217,6 +289,7 @@ export class CamerasRJ {
 
             return {
                 id: `CAM_${cleanCamId}`,
+                providerCategory: 'CAMERAS_RJ',
                 regional: 'RJ',
                 cidade: 'Rio de Janeiro',
                 bairro: bairroName,
@@ -229,7 +302,7 @@ export class CamerasRJ {
                 sourceProvider: 'CamerasRJ',
                 requiresCodec: 'H265',
                 protocol: 'WebRTC/WHEP',
-                fallbackSources: ["RJ_ZET_UFRJ_03", "RJ_ZET_UFRJ_02", "RJ_ZET_UFRJ_01", "RJ_MAPA_RIO_01"],
+                fallbackSources: ["RJ_ALT_GALEAO_LIVE", "RJ_ZET_UFRJ_03"],
                 healthStatus: 'online',
                 lastValidation: new Date().toISOString(),
                 prioridade: 1,
@@ -237,12 +310,14 @@ export class CamerasRJ {
             };
         }
 
-        // 3. Fallback: primeira fonte do catálogo
-        return catalogSources[0] || null;
+        // 3. Fallback dentro de CamerasRJ
+        const camRjDefaults = getRjCamerasRjSources();
+        return camRjDefaults[0] || catalogSources[0] || null;
     }
 
     renderSingleQuadrant(slotKey, cardEl) {
         const slotConfig = this.currentSlots[slotKey] || this.defaultSlots[slotKey];
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
         const currentSource = this.resolveSourceObject(slotConfig);
         const slotLabel = `Posição ${slotConfig.slotNum}`;
 
@@ -253,6 +328,9 @@ export class CamerasRJ {
                     <span class="cim-regiao-tag tag-rj">RJ</span>
                     <strong style="font-size:10.5px; color:#fff; text-transform:uppercase;">${escapeHtml(currentSource?.bairro || 'Rio de Janeiro')}</strong>
                     <span class="cim-slot-tag">${slotLabel}</span>
+                    <span style="font-size:8.5px; padding:1px 5px; border-radius:3px; font-weight:700; background:${providerMode === 'OUTRAS_FONTES' ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.18)'}; color:${providerMode === 'OUTRAS_FONTES' ? '#10b981' : '#60a5fa'}; border:1px solid ${providerMode === 'OUTRAS_FONTES' ? 'rgba(16,185,129,0.35)' : 'rgba(59,130,246,0.35)'};">
+                        ${providerMode === 'OUTRAS_FONTES' ? 'OUTRAS FONTES' : 'CAMERAS RJ'}
+                    </span>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
                     <span id="badge-${slotKey}" class="cim-badge-loading">
@@ -269,12 +347,16 @@ export class CamerasRJ {
                 </div>
             </div>
 
-            <!-- BARRA DE SELETORES COMPACTA INLINE (1 LINHA) -->
+            <!-- BARRA DE SELETORES COMPACTA INLINE (1 LINHA: FONTE DE DADOS | REGIÃO/BAIRRO | CÂMERA) -->
             <div class="cam-rj-selectors-bar">
-                <select class="cam-rj-select-compact select-bairro" data-slot="${slotKey}" style="flex:1;" title="Selecione o Bairro">
+                <select class="cam-rj-select-compact select-provider" data-slot="${slotKey}" style="flex:0.85; border-color:${providerMode === 'OUTRAS_FONTES' ? '#10b981' : '#3b82f6'};" title="Selecione a Fonte de Dados (Outras Fontes Ativas ou Base CamerasRJ)">
+                    <option value="OUTRAS_FONTES" ${providerMode === 'OUTRAS_FONTES' ? 'selected' : ''}>🟢 Fonte: Outras Fontes (Ativas)</option>
+                    <option value="CAMERAS_RJ" ${providerMode === 'CAMERAS_RJ' ? 'selected' : ''}>🏛️ Fonte: CamerasRJ (Municipal)</option>
+                </select>
+                <select class="cam-rj-select-compact select-bairro" data-slot="${slotKey}" style="flex:1;" title="${providerMode === 'OUTRAS_FONTES' ? 'Selecione a Região / Corredor Viário Ativo' : 'Selecione o Bairro (CamerasRJ)'}">
                     ${this.generateBairroOptions(slotConfig, currentSource)}
                 </select>
-                <select class="cam-rj-select-compact select-fonte" data-slot="${slotKey}" style="flex:1.4;" title="Selecione o Ponto de Câmera">
+                <select class="cam-rj-select-compact select-fonte" data-slot="${slotKey}" style="flex:1.35;" title="Selecione a Câmera / Transmissão">
                     ${this.generateFonteOptions(slotConfig, currentSource)}
                 </select>
             </div>
@@ -290,23 +372,37 @@ export class CamerasRJ {
     }
 
     generateBairroOptions(slotConfig, currentSource) {
-        let html = '<option value="">Bairro...</option>';
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
 
-        // 1. Destaques e Portais
-        html += '<optgroup label="⭐ DESTAQUES & PORTAIS OFICIAIS">';
-        const rjSources = trafficCameraSources.RJ?.sources || [];
-        rjSources.forEach(src => {
-            const isSel = slotConfig.sourceId === src.id || slotConfig.sourceId === `SRC_${src.id}`;
-            html += `<option value="SRC_${src.id}" ${isSel ? 'selected' : ''}>[PORTAL] ${escapeHtml(src.bairro)} - ${escapeHtml(src.nome)}</option>`;
-        });
-        html += '</optgroup>';
+        if (providerMode === 'OUTRAS_FONTES') {
+            const altSources = getRjAlternativeSources();
+            let html = '<optgroup label="🟢 OUTRAS FONTES ATIVAS & VALIDADAS (RJ)">';
+            altSources.forEach(src => {
+                const isSel = (currentSource && currentSource.id === src.id) || slotConfig.sourceId === src.id || slotConfig.sourceId === `SRC_${src.id}`;
+                html += `<option value="SRC_${src.id}" ${isSel ? 'selected' : ''}>${escapeHtml(src.bairro)} — ${escapeHtml(src.referencia)}</option>`;
+            });
+            html += '</optgroup>';
+            return html;
+        }
 
-        // 2. Todos os Bairros do Rio
+        // Modo CAMERAS_RJ (Base Municipal completa preservada)
+        let html = '<option value="">Selecione o Bairro (CamerasRJ)...</option>';
+
+        const camRjHighlights = getRjCamerasRjSources();
+        if (camRjHighlights.length > 0) {
+            html += '<optgroup label="⭐ DESTAQUES CAMERAS RJ">';
+            camRjHighlights.forEach(src => {
+                const isSel = slotConfig.sourceId === src.id || slotConfig.sourceId === `SRC_${src.id}`;
+                html += `<option value="SRC_${src.id}" ${isSel ? 'selected' : ''}>[DESTAQUE] ${escapeHtml(src.bairro)} - ${escapeHtml(src.nome)}</option>`;
+            });
+            html += '</optgroup>';
+        }
+
         const bairros = Object.keys(this.camerasData).sort((a, b) => a.localeCompare(b, 'pt-BR'));
         if (bairros.length > 0) {
-            html += '<optgroup label="BAIRROS DO RIO DE JANEIRO">';
+            html += '<optgroup label="🏛️ BAIRROS DO RIO DE JANEIRO (BASE CAMERAS RJ)">';
             bairros.forEach(b => {
-                const isSel = (slotConfig.bairro === b) && !slotConfig.sourceId?.startsWith('SRC_');
+                const isSel = (slotConfig.bairro === b) && !String(slotConfig.sourceId || '').startsWith('SRC_') && !String(slotConfig.sourceId || '').startsWith('RJ_');
                 html += `<option value="${escapeHtml(b)}" ${isSel ? 'selected' : ''}>${escapeHtml(b)}</option>`;
             });
             html += '</optgroup>';
@@ -316,12 +412,28 @@ export class CamerasRJ {
     }
 
     generateFonteOptions(slotConfig, currentSource) {
-        // Se for um portal do catálogo
-        if (slotConfig.sourceId?.startsWith('SRC_') || (currentSource && !currentSource.id?.startsWith('CAM_'))) {
-            return `<option value="${currentSource.id}" selected>${escapeHtml(currentSource.nome)} (${escapeHtml(currentSource.referencia)})</option>`;
+        const providerMode = slotConfig.providerMode || 'OUTRAS_FONTES';
+
+        if (providerMode === 'OUTRAS_FONTES') {
+            const altSources = getRjAlternativeSources();
+            return altSources.map(src => {
+                const isSel = (currentSource && currentSource.id === src.id) || slotConfig.sourceId === src.id || slotConfig.sourceId === `SRC_${src.id}`;
+                const icon = src.tipoFonte === 'snapshot' ? '📷 Snapshot' : '🎥 Ao Vivo';
+                return `<option value="${src.id}" ${isSel ? 'selected' : ''}>${icon} | ${escapeHtml(src.nome)}</option>`;
+            }).join('');
         }
 
-        // Se for um bairro específico
+        // Modo CAMERAS_RJ:
+        // Se for um destaque do catálogo CamerasRJ
+        if (slotConfig.sourceId?.startsWith('SRC_') || slotConfig.sourceId?.startsWith('RJ_')) {
+            const camRjHighlights = getRjCamerasRjSources();
+            return camRjHighlights.map(src => {
+                const isSel = (currentSource && currentSource.id === src.id) || slotConfig.sourceId === src.id || slotConfig.sourceId === `SRC_${src.id}`;
+                return `<option value="${src.id}" ${isSel ? 'selected' : ''}>🎥 ${escapeHtml(src.nome)} (${escapeHtml(src.referencia)})</option>`;
+            }).join('');
+        }
+
+        // Se for um bairro específico do CamerasRJ
         const bairro = slotConfig.bairro || 'Curicica';
         const cameras = this.camerasData[bairro] || [];
 
@@ -333,7 +445,7 @@ export class CamerasRJ {
         const sorted = [...cameras].sort((a, b) => (a.caption || '').localeCompare(b.caption || '', 'pt-BR'));
         sorted.forEach(c => {
             const isSel = String(slotConfig.sourceId) === `CAM_${c.id}` || String(slotConfig.sourceId) === String(c.id);
-            html += `<option value="CAM_${c.id}" ${isSel ? 'selected' : ''}>${escapeHtml(c.caption || `Câmera ${c.id}`)}</option>`;
+            html += `<option value="CAM_${c.id}" ${isSel ? 'selected' : ''}>🎥 ${escapeHtml(c.caption || `Câmera ${c.id}`)}</option>`;
         });
 
         return html;
@@ -363,7 +475,7 @@ export class CamerasRJ {
                     src="${cleanEmbedUrl}" 
                     class="cam-rj-iframe"
                     allowfullscreen 
-                    allow="autoplay; encrypted-media">
+                    allow="autoplay; encrypted-media; fullscreen">
                 </iframe>
             `;
         }
@@ -380,18 +492,43 @@ export class CamerasRJ {
         `;
     }
 
-    // 5. DETECÇÃO DE TIMEOUT (8S), RETRY INTELIGENTE (5S) E FALLBACK AUTOMÁTICO
+    // 5. MONITORAMENTO DE STREAM E ATUALIZAÇÃO DE SNAPSHOTS
     startStreamMonitor(slotKey, currentSource) {
-        // Limpar timers existentes do slot
         if (this.slotTimers[slotKey]) {
             clearTimeout(this.slotTimers[slotKey]);
             delete this.slotTimers[slotKey];
         }
+        if (this.snapshotIntervals[slotKey]) {
+            clearInterval(this.snapshotIntervals[slotKey]);
+            delete this.snapshotIntervals[slotKey];
+        }
 
         const badgeEl = document.getElementById(`badge-${slotKey}`);
         const iframe = document.getElementById(`iframe-cam-${slotKey}`);
+        const snapImg = document.getElementById(`img-cam-${slotKey}`);
 
-        if (!currentSource || !iframe) {
+        if (!currentSource) return;
+
+        // Caso seja câmera de Snapshot (ex: Clima ao Vivo Recreio)
+        if (currentSource.tipoFonte === 'snapshot' && snapImg) {
+            snapImg.onload = () => {
+                if (badgeEl) {
+                    badgeEl.className = 'cim-badge-online';
+                    badgeEl.innerHTML = '<i class="fa-solid fa-circle"></i> AO VIVO';
+                }
+            };
+            const imgUrl = currentSource.proxyUrl || currentSource.directImageUrl;
+            const intervalMs = currentSource.refreshInterval || 30000;
+            this.snapshotIntervals[slotKey] = setInterval(() => {
+                const el = document.getElementById(`img-cam-${slotKey}`);
+                if (el) {
+                    el.src = `${imgUrl}?t=${Date.now()}`;
+                }
+            }, intervalMs);
+            return;
+        }
+
+        if (!iframe) {
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-online';
                 badgeEl.innerHTML = '<i class="fa-solid fa-circle"></i> SINAL ATIVO';
@@ -399,27 +536,24 @@ export class CamerasRJ {
             return;
         }
 
-        // Configura onload no iframe
         iframe.onload = () => {
             if (this.slotTimers[slotKey]) {
                 clearTimeout(this.slotTimers[slotKey]);
                 delete this.slotTimers[slotKey];
             }
-            this.slotRetries[slotKey] = 0; // reset retry counter
+            this.slotRetries[slotKey] = 0;
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-online';
                 badgeEl.innerHTML = '<i class="fa-solid fa-circle"></i> AO VIVO';
             }
         };
 
-        // Timeout de conexão de 8 segundos
         this.slotTimers[slotKey] = setTimeout(() => {
             console.warn(`[CAMERA-TIMEOUT] Slot: ${slotKey} | Timeout de conexão (>8s) para: ${currentSource.nome}`);
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-error';
                 badgeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> TIMEOUT';
             }
-
             this.handleStreamFailure(slotKey, currentSource);
         }, 8000);
     }
@@ -432,85 +566,117 @@ export class CamerasRJ {
         const delay = delays[retries - 1] || 30000;
 
         if (retries <= 3) {
-            console.info(`[CAMERA-RETRY] Slot: ${slotKey} | Tentativa ${retries}/3 de reconexão exponencial em ${delay/1000}s para ${currentSource.nome}...`);
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-loading';
                 badgeEl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> RETRY ${retries}/3 (${delay/1000}s)`;
             }
-            if (window.diagnosticoFontes) {
-                window.diagnosticoFontes.registrarEvento(`RJ: Reconexão exponencial no quadrante ${this.currentSlots[slotKey]?.slotNum || slotKey} (${retries}/3 em ${delay/1000}s).`);
-            }
-
             setTimeout(() => {
                 const iframe = document.getElementById(`iframe-cam-${slotKey}`);
                 if (iframe && currentSource.embedUrl) {
-                    iframe.src = `${normalizeEmbedUrl(currentSource.embedUrl)}?retry=${Date.now()}`;
+                    const sep = currentSource.embedUrl.includes('?') ? '&' : '?';
+                    iframe.src = `${normalizeEmbedUrl(currentSource.embedUrl)}${sep}retry=${Date.now()}`;
                     this.startStreamMonitor(slotKey, currentSource);
                 }
             }, delay);
         } else {
-            // Aciona Fallback Automático
-            console.warn(`[CAMERA-FALLBACK] Slot: ${slotKey} | Esgotadas 3 tentativas para ${currentSource.nome}. Alternando para contingência...`);
             if (badgeEl) {
                 badgeEl.className = 'cim-badge-error';
-                badgeEl.innerHTML = '<i class="fa-solid fa-shield"></i> CONTINGÊNCIA';
+                badgeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> INDISPONÍVEL';
             }
-            if (window.diagnosticoFontes) {
-                window.diagnosticoFontes.registrarEvento(`RJ: Fallback acionado no quadrante ${this.currentSlots[slotKey]?.slotNum || slotKey} após 3 tentativas.`);
-            }
-
-            // Alterna para o Mapa Interativo de Câmeras do Rio ou UFRJ ZET
-            const fallbackId = (currentSource.fallbackSources && currentSource.fallbackSources[0]) || 'RJ_MAPA_RIO_01';
-            this.currentSlots[slotKey] = {
-                ...this.currentSlots[slotKey],
-                sourceId: fallbackId
-            };
-            this.saveSlotSelection();
-            
-            const cardEl = document.getElementById(`cam-card-${slotKey}`);
-            if (cardEl) {
-                this.renderSingleQuadrant(slotKey, cardEl);
-            }
-            showToast(`Câmera da Posição ${this.currentSlots[slotKey].slotNum} alternada para fonte de contingência.`, "info");
         }
     }
 
     // 6. EVENTOS POR QUADRANTE
     bindQuadrantEvents(slotKey, cardEl) {
+        const selProvider = cardEl.querySelector('.select-provider');
         const selBairro = cardEl.querySelector('.select-bairro');
         const selFonte = cardEl.querySelector('.select-fonte');
-        const btnFullscreen = cardEl.querySelector('.btn-cim-card-fullscreen');
-        const btnRefresh = cardEl.querySelector('.btn-cim-refresh-slot');
+        const btnFullscreen = cardEl.querySelector('button.btn-cim-card-fullscreen');
 
+        // Troca de Fonte de Dados (Outras Fontes vs CamerasRJ)
+        selProvider?.addEventListener('change', (e) => {
+            const newMode = e.target.value;
+            const slot = this.currentSlots[slotKey];
+            slot.providerMode = newMode;
+
+            if (newMode === 'OUTRAS_FONTES') {
+                const altSources = getRjAlternativeSources();
+                const targetAltId = slot.altSourceId || this.defaultSlots[slotKey]?.altSourceId || altSources[0]?.id;
+                const foundAlt = altSources.find(s => s.id === targetAltId) || altSources[0];
+                if (foundAlt) {
+                    slot.sourceId = foundAlt.id;
+                    slot.bairro = foundAlt.bairro;
+                }
+            } else {
+                // Alterna para a base CamerasRJ preservada
+                const savedBairro = slot.camerasRjBairro || this.defaultSlots[slotKey]?.camerasRjBairro || 'Curicica';
+                const savedCamId = slot.camerasRjSourceId || this.defaultSlots[slotKey]?.camerasRjSourceId || 'RJ_CURICICA_BANDEIRANTES';
+                slot.bairro = savedBairro;
+                slot.sourceId = savedCamId;
+            }
+
+            this.saveSlotSelection();
+            const globalSelect = document.getElementById('sel-cam-global-provider');
+            if (globalSelect) {
+                globalSelect.value = this.getDominantProviderMode();
+            }
+            this.renderSingleQuadrant(slotKey, cardEl);
+        });
+
+        // Troca de Região/Via (Outras Fontes) ou Bairro (CamerasRJ)
         selBairro?.addEventListener('change', (e) => {
             const val = e.target.value;
-            if (val.startsWith('SRC_')) {
-                this.currentSlots[slotKey].sourceId = val;
-                this.currentSlots[slotKey].bairro = '';
+            const slot = this.currentSlots[slotKey];
+            const providerMode = slot.providerMode || 'OUTRAS_FONTES';
+
+            if (providerMode === 'OUTRAS_FONTES') {
+                const cleanId = val.replace('SRC_', '');
+                slot.sourceId = cleanId;
+                slot.altSourceId = cleanId;
+                const found = getRjAlternativeSources().find(s => s.id === cleanId);
+                if (found) slot.bairro = found.bairro;
             } else {
-                this.currentSlots[slotKey].bairro = val;
-                const cams = this.camerasData[val] || [];
-                if (cams.length > 0) {
-                    this.currentSlots[slotKey].sourceId = `CAM_${cams[0].id}`;
+                if (val.startsWith('SRC_')) {
+                    const cleanId = val.replace('SRC_', '');
+                    slot.sourceId = cleanId;
+                    slot.camerasRjSourceId = cleanId;
+                    slot.bairro = '';
+                } else {
+                    slot.bairro = val;
+                    slot.camerasRjBairro = val;
+                    const cams = this.camerasData[val] || [];
+                    if (cams.length > 0) {
+                        slot.sourceId = `CAM_${cams[0].id}`;
+                        slot.camerasRjSourceId = `CAM_${cams[0].id}`;
+                    }
                 }
             }
+
             this.saveSlotSelection();
             this.renderSingleQuadrant(slotKey, cardEl);
         });
 
+        // Troca direta da Câmera / Transmissão
         selFonte?.addEventListener('change', (e) => {
             const val = e.target.value;
-            this.currentSlots[slotKey].sourceId = val;
+            const slot = this.currentSlots[slotKey];
+            const providerMode = slot.providerMode || 'OUTRAS_FONTES';
+
+            slot.sourceId = val;
+            if (providerMode === 'OUTRAS_FONTES') {
+                slot.altSourceId = val;
+                const found = getRjAlternativeSources().find(s => s.id === val);
+                if (found) slot.bairro = found.bairro;
+            } else {
+                slot.camerasRjSourceId = val;
+            }
+
             this.saveSlotSelection();
             this.renderSingleQuadrant(slotKey, cardEl);
         });
 
         btnFullscreen?.addEventListener('click', () => {
             this.openFullscreen(slotKey);
-        });
-
-        btnRefresh?.addEventListener('click', () => {
-            this.renderSingleQuadrant(slotKey, cardEl);
         });
     }
 
@@ -519,8 +685,6 @@ export class CamerasRJ {
         this.activeFullscreenSlot = slotKey;
         const slotConfig = this.currentSlots[slotKey] || this.defaultSlots[slotKey];
         const currentSource = this.resolveSourceObject(slotConfig);
-
-        console.log(`[CAMERA-FULLSCREEN] Slot: ${slotKey} | Tela inteira aberta para ${currentSource?.nome || slotKey}`);
 
         const overlay = document.getElementById('cam-rj-fullscreen-overlay');
         const titleEl = document.getElementById('cam-fs-title');
@@ -536,7 +700,6 @@ export class CamerasRJ {
     }
 
     closeFullscreen() {
-        console.log(`[CAMERA-FULLSCREEN] Tela inteira fechada, retornando ao layout 2x2.`);
         this.activeFullscreenSlot = null;
         const overlay = document.getElementById('cam-rj-fullscreen-overlay');
         const bodyEl = document.getElementById('cam-fs-body');
@@ -546,6 +709,34 @@ export class CamerasRJ {
 
     // 8. EVENTOS GLOBAIS
     bindGlobalEvents() {
+        document.getElementById('sel-cam-global-provider')?.addEventListener('change', (e) => {
+            const newMode = e.target.value;
+            const altSources = getRjAlternativeSources();
+            ['quad_1', 'quad_2', 'quad_3', 'quad_4'].forEach((slotKey, idx) => {
+                const slot = this.currentSlots[slotKey];
+                slot.providerMode = newMode;
+                if (newMode === 'OUTRAS_FONTES') {
+                    const targetAltId = slot.altSourceId || this.defaultSlots[slotKey]?.altSourceId || altSources[idx % altSources.length]?.id;
+                    const foundAlt = altSources.find(s => s.id === targetAltId) || altSources[idx % altSources.length];
+                    if (foundAlt) {
+                        slot.sourceId = foundAlt.id;
+                        slot.bairro = foundAlt.bairro;
+                    }
+                } else {
+                    slot.bairro = slot.camerasRjBairro || this.defaultSlots[slotKey]?.camerasRjBairro || 'Curicica';
+                    slot.sourceId = slot.camerasRjSourceId || this.defaultSlots[slotKey]?.camerasRjSourceId || 'RJ_CURICICA_BANDEIRANTES';
+                }
+            });
+            this.saveSlotSelection();
+            this.renderAllQuadrants();
+            showToast(
+                newMode === 'OUTRAS_FONTES'
+                    ? "Fonte de Dados alterada para Outras Fontes (Câmeras Ativas e Validadas)."
+                    : "Fonte de Dados alterada para CamerasRJ (Base Municipal COR-Rio).",
+                "info"
+            );
+        });
+
         document.getElementById('btn-cam-refresh-all')?.addEventListener('click', () => {
             this.renderAllQuadrants();
             showToast("Todas as 4 câmeras foram recarregadas.", "info");
@@ -555,7 +746,7 @@ export class CamerasRJ {
             this.currentSlots = JSON.parse(JSON.stringify(this.defaultSlots));
             this.saveSlotSelection();
             this.renderAllQuadrants();
-            showToast("Layout padrão restaurado.", "info");
+            showToast("Layout padrão restaurado com Outras Fontes Ativas.", "info");
         });
 
         document.getElementById('btn-cam-fs-close')?.addEventListener('click', () => {
@@ -568,7 +759,6 @@ export class CamerasRJ {
             }
         });
 
-        // Fechar fullscreen no ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.activeFullscreenSlot) {
                 this.closeFullscreen();
