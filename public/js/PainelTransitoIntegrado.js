@@ -1,4 +1,4 @@
-import { trafficCameraSources, getRjAlternativeSources, getRjCamerasRjSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.2.0';
+import { trafficCameraSources, getRjAlternativeSources, getRjCamerasRjSources, getCatalogStats, normalizeEmbedUrl, detectVideoCodecCapabilities } from './traffic-camera-data.js?v=4.3.0';
 import { showToast, escapeHtml } from './utils.js';
 
 export class PainelTransitoIntegrado {

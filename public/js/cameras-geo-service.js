@@ -189,14 +189,22 @@ export class CamerasGeoService {
                             id: c.id,
                             nome: c.nome,
                             bairro: c.bairro,
-                            latitude: c.lat || c.latitude,
-                            longitude: c.lon || c.longitude,
-                            status: c.status,
+                            latitude: parseFloat(c.lat ?? c.latitude),
+                            longitude: parseFloat(c.lon ?? c.longitude),
+                            status: c.status || 'online',
                             orientacao: c.orientacao || 0,
                             angulo: c.angulo || 180,
-                            embedUrl: c.embedUrl || null
+                            alcance: c.alcance || 500,
+                            embedUrl: c.embedUrl || null,
+                            url: c.url || null,
+                            providerCategory: c.providerCategory || 'CAMERAS_RJ',
+                            sourceProvider: c.sourceProvider || 'CamerasRJ',
+                            operadora: c.operadora || 'COR Rio / CamerasRJ'
                         }));
                         this.spatialIndex.buildIndex(this.cameras);
+                        if (!this.bairrosClusters || this.bairrosClusters.length === 0) {
+                            this.buildBairroClusters();
+                        }
                         this.totalCamerasCount = json.total || this.cameras.length;
                         this.isLoaded = true;
                         this.lastLoadedTimestamp = Date.now();
@@ -212,9 +220,19 @@ export class CamerasGeoService {
             try {
                 const resp = await fetch('/data/cameras_georreferenciadas.json');
                 if (resp.ok) {
-                    this.cameras = await resp.json();
+                    const rawList = await resp.json();
+                    this.cameras = (Array.isArray(rawList) ? rawList : []).map(c => ({
+                        ...c,
+                        latitude: parseFloat(c.latitude ?? c.lat),
+                        longitude: parseFloat(c.longitude ?? c.lon),
+                        status: c.status || 'online',
+                        providerCategory: c.providerCategory || 'CAMERAS_RJ',
+                        sourceProvider: c.sourceProvider || 'CamerasRJ',
+                        operadora: c.operadora || 'COR Rio / CamerasRJ'
+                    }));
                     this.spatialIndex.buildIndex(this.cameras);
                     this.buildBairroClusters();
+                    this.totalCamerasCount = this.cameras.length;
                     this.isLoaded = true;
                     this.lastLoadedTimestamp = Date.now();
                     const elapsed = (performance.now() - t0).toFixed(1);
@@ -295,9 +313,12 @@ export class CamerasGeoService {
         return { ok: false, online: false, latencyMs: 0 };
     }
 
-    buildBairroClusters() {
+    buildClustersFromList(list) {
         const bairroMap = new Map();
-        this.cameras.forEach(cam => {
+        (list || []).forEach(cam => {
+            const lat = parseFloat(cam.latitude ?? cam.lat);
+            const lon = parseFloat(cam.longitude ?? cam.lon);
+            if (isNaN(lat) || isNaN(lon)) return;
             const b = cam.bairro || 'Rio de Janeiro';
             if (!bairroMap.has(b)) {
                 bairroMap.set(b, {
@@ -312,17 +333,20 @@ export class CamerasGeoService {
             const cluster = bairroMap.get(b);
             cluster.camerasCount++;
             if (cam.status === 'online') cluster.onlineCount++;
-            cluster.latSum += cam.latitude;
-            cluster.lonSum += cam.longitude;
+            cluster.latSum += lat;
+            cluster.lonSum += lon;
             cluster.cameras.push(cam);
         });
 
-        // Calcula centróides
-        this.bairrosClusters = Array.from(bairroMap.values()).map(cluster => ({
+        return Array.from(bairroMap.values()).map(cluster => ({
             ...cluster,
             latitude: cluster.latSum / cluster.camerasCount,
             longitude: cluster.lonSum / cluster.camerasCount
         }));
+    }
+
+    buildBairroClusters() {
+        this.bairrosClusters = this.buildClustersFromList(this.cameras);
     }
 
     getBairroClusters() {

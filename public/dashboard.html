@@ -386,8 +386,18 @@
               <i class="fa-solid fa-layer-group"></i> Camadas Inteligentes:
             </span>
             <label class="cicc-layer-pill" style="color: #00d1ff;" title="Exibe câmeras disponíveis no provedor selecionado." data-tooltip="Exibe câmeras disponíveis no provedor selecionado." data-tooltip-pos="bottom">
-              <input type="checkbox" id="layer-toggle-cameras" checked /> 📹 Câmeras (<span id="cicc-cams-count">4.297</span>)
+              <input type="checkbox" id="layer-toggle-cameras" checked /> 📹 Câmeras (<span id="cicc-cams-count">4.310</span>)
             </label>
+            <div style="display: flex; align-items: center; gap: 5px; background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(0, 209, 255, 0.45); border-radius: 4px; padding: 1px 6px;">
+              <label for="seletor-fonte-cameras-cicc" style="font-size: 9px; font-weight: 800; color: #00d1ff; text-transform: uppercase; white-space: nowrap; cursor: pointer;">
+                <i class="fa-solid fa-database"></i> Fonte de Dados:
+              </label>
+              <select id="seletor-fonte-cameras-cicc" class="select" title="Alternar origem das câmeras georreferenciadas no mapa: Outras Fontes (Ativas 24h), CamerasRJ (Base Municipal) ou Ambas." data-tooltip="Alternar origem das câmeras georreferenciadas no mapa" data-tooltip-pos="bottom" style="height: 20px; font-size: 9.5px; font-weight: 700; padding: 0 5px; background: #071018; color: #fff; border: 1px solid #00d1ff; min-width: 195px;">
+                <option value="AMBAS" selected>🌐 Ambas as Fontes (CamerasRJ + Outras)</option>
+                <option value="OUTRAS_FONTES">🟢 Outras Fontes (Ativas / Online)</option>
+                <option value="CAMERAS_RJ">🏛️ CamerasRJ (Base Municipal)</option>
+              </select>
+            </div>
             <label class="cicc-layer-pill" style="color: #38bdf8;" title="Mostra ocorrências operacionais registradas em tempo real." data-tooltip="Mostra ocorrências operacionais registradas em tempo real." data-tooltip-pos="bottom">
               <input type="checkbox" id="layer-toggle-ott" checked /> 🔫 OTT
             </label>
@@ -1942,6 +1952,6 @@
   </div>
 
   <script src="session-manager.js"></script>
-  <script type="module" src="js/main.js?v=4.2.0"></script>
+  <script type="module" src="js/main.js?v=4.3.0"></script>
 </body>
 </html>

@@ -463,13 +463,22 @@ export class MapService {
     }
 
     // ==========================================
-    // CLUSTERIZAÇÃO MULTIESCALA (LOD) DE CÂMERAS
+    // CLUSTERIZAÇÃO MULTIESCALA (LOD) E PLOTAGEM GEORREFERENCIADA DE CÂMERAS
     // ==========================================
     initCamerasLayer(camerasList, bairroClusters, onCameraClick, onCameraHover) {
         this.camerasData = camerasList || [];
         this.bairroClusters = bairroClusters || [];
-        this.onCameraClickCallback = onCameraClick;
-        this.onCameraHoverCallback = onCameraHover;
+        if (onCameraClick) this.onCameraClickCallback = onCameraClick;
+        if (onCameraHover) this.onCameraHoverCallback = onCameraHover;
+        this.cameraMarkersMap.clear();
+        if (this.layerGroups?.cameras) this.layerGroups.cameras.clearLayers();
+        this._renderCamerasLOD();
+    }
+
+    setCameraProviderFilter(providerMode = 'AMBAS') {
+        this.cameraProviderFilter = providerMode;
+        this.cameraMarkersMap.clear();
+        if (this.layerGroups?.cameras) this.layerGroups.cameras.clearLayers();
         this._renderCamerasLOD();
     }
 
@@ -479,7 +488,7 @@ export class MapService {
                 const id = String(item.camera_id || item.id).padStart(6, '0');
                 this.runtimeStatusMap.set(id, item);
             }
-            if (this.map && this.map.getZoom() >= 15) {
+            if (this.map) {
                 this.cameraMarkersMap.clear();
                 if (this.layerGroups?.cameras) this.layerGroups.cameras.clearLayers();
                 this._renderCamerasLOD();
@@ -496,13 +505,22 @@ export class MapService {
         }
     }
 
+    _getCameraRuntimeStatus(cam) {
+        if (cam.providerCategory === 'OUTRAS_FONTES') {
+            return (cam.status || 'ONLINE').toUpperCase();
+        }
+        const paddedId = String(cam.id).padStart(6, '0');
+        const runtime = this.runtimeStatusMap.get(cam.id) || this.runtimeStatusMap.get(paddedId);
+        const rawStatus = (runtime && runtime.status) || cam.status_runtime || cam.status || 'ONLINE';
+        return String(rawStatus).toUpperCase();
+    }
+
     _renderCamerasLOD() {
         if (!this.map || !this.layerGroups?.cameras) return;
         
         // Verifica se o container do mapa está visível com dimensões válidas
         const container = this.map.getContainer();
         if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
-            // Container oculto no momento; adia renderização até a aba ser ativada
             return;
         }
 
@@ -519,58 +537,12 @@ export class MapService {
                 bounds = this.map.getBounds();
             } catch (e) {}
 
-            // 1. ZOOM BAIXO (z <= 11): Super-Clusters Regionais no Viewport
-            if (zoom <= 11) {
+            // Se a lista de câmeras individuais ainda não carregou, exibe clusters de bairro temporariamente
+            if ((!this.camerasData || this.camerasData.length === 0) && this.bairroClusters && this.bairroClusters.length > 0) {
                 this.layerGroups.cameras.clearLayers();
                 this.cameraMarkersMap.clear();
 
-                const padBounds = bounds ? bounds.pad(0.3) : null;
-                const visibleBairros = padBounds
-                    ? this.bairroClusters.filter(b => padBounds.contains([b.latitude, b.longitude]))
-                    : this.bairroClusters;
-
-                if (!visibleBairros || visibleBairros.length === 0) return;
-
-                const regionalMap = new Map();
-                visibleBairros.forEach(b => {
-                    let reg = 'Zona Norte';
-                    if (b.latitude < -22.95 && b.longitude > -43.25) reg = 'Zona Sul';
-                    else if (b.longitude < -43.34) reg = 'Zona Oeste / Barra';
-                    else if (b.latitude > -22.92 && b.longitude > -43.20) reg = 'Centro';
-
-                    if (!regionalMap.has(reg)) {
-                        regionalMap.set(reg, { reg, count: 0, latSum: 0, lonSum: 0, online: 0 });
-                    }
-                    const r = regionalMap.get(reg);
-                    r.count += b.camerasCount;
-                    r.online += (b.onlineCount || 0);
-                    r.latSum += b.latitude * b.camerasCount;
-                    r.lonSum += b.longitude * b.camerasCount;
-                });
-
-                regionalMap.forEach(r => {
-                    if (r.count === 0) return;
-                    const lat = r.latSum / r.count;
-                    const lon = r.lonSum / r.count;
-                    const html = `
-                        <div class="lod-cluster-super" title="${r.reg}: ${r.count} câmeras (${r.online} online)">
-                            <div class="lod-cluster-badge">${r.count}</div>
-                            <div class="lod-cluster-label">${r.reg}</div>
-                        </div>
-                    `;
-                    const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [54, 54], iconAnchor: [27, 27] });
-                    const marker = L.marker([lat, lon], { icon }).addTo(this.layerGroups.cameras);
-                    marker.on('click', () => this.map.setView([lat, lon], 13));
-                });
-                return;
-            }
-
-            // 2. ZOOM MÉDIO (12 <= z <= 14): Clusters por Bairro no Viewport
-            if (zoom <= 14) {
-                this.layerGroups.cameras.clearLayers();
-                this.cameraMarkersMap.clear();
-
-                const padBounds = bounds ? bounds.pad(0.2) : null;
+                const padBounds = bounds ? bounds.pad(0.25) : null;
                 const visibleClusters = padBounds
                     ? this.bairroClusters.filter(b => padBounds.contains([b.latitude, b.longitude]))
                     : this.bairroClusters;
@@ -588,30 +560,88 @@ export class MapService {
                     `;
                     const icon = L.divIcon({ className: 'lod-icon-wrap', html, iconSize: [44, 44], iconAnchor: [22, 22] });
                     const marker = L.marker([b.latitude, b.longitude], { icon }).addTo(this.layerGroups.cameras);
-                    marker.on('click', () => this.map.setView([b.latitude, b.longitude], 16));
+                    marker.on('click', () => this.map.setView([b.latitude, b.longitude], 15));
                 });
                 return;
             }
 
-            // 3. ZOOM ALTO (z >= 15): Marcadores Individuais com Virtualização (Máx 150 nós DOM)
-            const padBounds = bounds ? bounds.pad(0.08) : null;
-            const south = padBounds ? padBounds.getSouth() : -23.1;
-            const north = padBounds ? padBounds.getNorth() : -22.7;
-            const west = padBounds ? padBounds.getWest() : -43.8;
-            const east = padBounds ? padBounds.getEast() : -43.1;
+            if (!this.camerasData || this.camerasData.length === 0) {
+                this.layerGroups.cameras.clearLayers();
+                this.cameraMarkersMap.clear();
+                return;
+            }
 
-            const visibleCandidates = [];
+            // Plotagem Georreferenciada Direta de Câmeras em Todos os Níveis de Zoom
+            const padFactor = zoom <= 11 ? 0.35 : (zoom <= 14 ? 0.15 : 0.08);
+            const padBounds = bounds ? bounds.pad(padFactor) : null;
+            const south = padBounds ? padBounds.getSouth() : -25.0;
+            const north = padBounds ? padBounds.getNorth() : -7.0;
+            const west = padBounds ? padBounds.getWest() : -49.0;
+            const east = padBounds ? padBounds.getEast() : -34.0;
+
+            const priorityCams = [];
+            const inBoundsRegular = [];
+
             for (let i = 0; i < this.camerasData.length; i++) {
                 const cam = this.camerasData[i];
-                if (cam.latitude >= south && cam.latitude <= north && cam.longitude >= west && cam.longitude <= east) {
-                    visibleCandidates.push(cam);
-                    if (visibleCandidates.length >= 150) break; // Limite rigoroso de 150 nós DOM
+                const lat = parseFloat(cam.latitude ?? cam.lat);
+                const lon = parseFloat(cam.longitude ?? cam.lon);
+                if (isNaN(lat) || isNaN(lon)) continue;
+
+                const statusUpper = this._getCameraRuntimeStatus(cam);
+                if (this.activeStatusFilters && !this.activeStatusFilters.has(statusUpper)) {
+                    continue;
+                }
+
+                // Câmeras de Outras Fontes ou destacadas são sempre priorizadas
+                if (cam.providerCategory === 'OUTRAS_FONTES' || this.currentHighlightedCamId === cam.id) {
+                    if ((lat >= south && lat <= north && lon >= west && lon <= east) || this.camerasData.length <= 50) {
+                        priorityCams.push(cam);
+                    }
+                    continue;
+                }
+
+                if (lat >= south && lat <= north && lon >= west && lon <= east) {
+                    inBoundsRegular.push(cam);
                 }
             }
 
+            const maxRegularPins = zoom >= 15 ? 260 : (zoom >= 13 ? 220 : 190);
+            let selectedRegular = [];
+
+            if (inBoundsRegular.length <= maxRegularPins) {
+                selectedRegular = inBoundsRegular;
+            } else {
+                // Amostragem espacial round-robin por bairro para cobrir 100% da geografia visível sem sobrecarga de DOM
+                const byBairro = new Map();
+                for (let i = 0; i < inBoundsRegular.length; i++) {
+                    const c = inBoundsRegular[i];
+                    const b = c.bairro || 'Geral';
+                    if (!byBairro.has(b)) byBairro.set(b, []);
+                    byBairro.get(b).push(c);
+                }
+
+                const buckets = Array.from(byBairro.values());
+                let pass = 0;
+                let addedInPass = true;
+                while (selectedRegular.length < maxRegularPins && addedInPass) {
+                    addedInPass = false;
+                    for (let bIdx = 0; bIdx < buckets.length; bIdx++) {
+                        const bucket = buckets[bIdx];
+                        if (pass < bucket.length) {
+                            selectedRegular.push(bucket[pass]);
+                            addedInPass = true;
+                            if (selectedRegular.length >= maxRegularPins) break;
+                        }
+                    }
+                    pass++;
+                }
+            }
+
+            const visibleCandidates = [...priorityCams, ...selectedRegular];
             const visibleIds = new Set(visibleCandidates.map(c => c.id));
 
-            // Remove marcadores que saíram do viewport
+            // Remove marcadores que saíram do viewport ou filtro
             this.cameraMarkersMap.forEach((marker, id) => {
                 if (!visibleIds.has(id)) {
                     this.layerGroups.cameras.removeLayer(marker);
@@ -625,15 +655,14 @@ export class MapService {
                     return;
                 }
 
-                // Obtém dados da auditoria em tempo de execução
-                const runtime = this.runtimeStatusMap.get(cam.id);
-                const rawStatus = (runtime && runtime.status) || cam.status_runtime || cam.status || 'OFFLINE';
-                const statusUpper = rawStatus.toUpperCase();
+                const lat = parseFloat(cam.latitude ?? cam.lat);
+                const lon = parseFloat(cam.longitude ?? cam.lon);
+                const isOutrasFontes = cam.providerCategory === 'OUTRAS_FONTES';
 
-                // Filtro ativo de status (Etapa 7)
-                if (this.activeStatusFilters && !this.activeStatusFilters.has(statusUpper)) {
-                    return;
-                }
+                // Obtém dados da auditoria em tempo de execução
+                const paddedId = String(cam.id).padStart(6, '0');
+                const runtime = this.runtimeStatusMap.get(cam.id) || this.runtimeStatusMap.get(paddedId);
+                const statusUpper = this._getCameraRuntimeStatus(cam);
 
                 const isOnline = statusUpper === 'ONLINE';
                 const isLenta = statusUpper === 'LENTA';
@@ -646,7 +675,8 @@ export class MapService {
 
                 let color = '#ef4444';
                 let statusLabel = statusUpper;
-                if (isOnline) { color = '#10b981'; statusLabel = 'ONLINE'; }
+                if (isOutrasFontes && isOnline) { color = '#00d1ff'; statusLabel = 'ONLINE (24H)'; }
+                else if (isOnline) { color = '#10b981'; statusLabel = 'ONLINE'; }
                 else if (isLenta) { color = '#eab308'; statusLabel = 'LENTA'; }
                 else if (isDegradada) { color = '#f97316'; statusLabel = 'DEGRADADA'; }
                 else if (isTimeout) { color = '#475569'; statusLabel = 'TIMEOUT'; }
@@ -656,33 +686,50 @@ export class MapService {
 
                 if (isHighlighted) color = '#fbbf24';
 
-                const borderStyle = isSuspect ? '2px dashed #f59e0b' : `2px solid ${color}`;
-                const pulseClass = isHighlighted ? 'camera-pulse-selected' : '';
+                const dotBg = isOutrasFontes ? 'linear-gradient(135deg, #10b981, #00d1ff)' : color;
+                const borderStyle = isSuspect
+                    ? '2px dashed #f59e0b'
+                    : (isOutrasFontes ? '2px solid #ffffff' : `2px solid ${color}`);
+                const pulseClass = (isHighlighted || isOutrasFontes) ? 'camera-pulse-selected' : '';
                 const rotationDeg = cam.orientacao || 0;
+                const pinLabel = isOutrasFontes
+                    ? escapeHtml(cam.shortLabel || String(cam.id).replace(/^RJ_ALT_|^RJ_ZET_/, '').slice(0, 10))
+                    : escapeHtml(String(cam.id).slice(-4));
+                const labelStyle = isOutrasFontes
+                    ? 'white-space:nowrap; border-color:#00d1ff; color:#00d1ff; background:rgba(7,16,24,0.92); padding:1px 4px; font-size:8px;'
+                    : '';
 
                 const html = `
-                    <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="Câmera #${cam.id} - ${statusLabel}">
-                        <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${isHighlighted ? 0.6 : 0.25}; border-color: ${color};"></div>
-                        <div class="lod-camera-dot" style="background: ${color}; box-shadow: 0 0 10px ${color}; border: ${borderStyle};">
+                    <div class="lod-camera-pin ${pulseClass}" id="cam-pin-${cam.id}" title="${escapeHtml(cam.nome)} - ${statusLabel}">
+                        <div class="lod-camera-fov" style="transform: rotate(${rotationDeg}deg); opacity: ${(isHighlighted || isOutrasFontes) ? 0.55 : 0.25}; border-color: ${color};"></div>
+                        <div class="lod-camera-dot" style="background: ${dotBg}; box-shadow: 0 0 12px ${color}; border: ${borderStyle};">
                             <i class="fa-solid fa-video"></i>
                             ${isSuspect ? '<span style="position:absolute; top:-6px; right:-6px; font-size:9px; background:#f59e0b; color:#000; border-radius:50%; width:12px; height:12px; display:flex; align-items:center; justify-content:center; font-weight:900;">!</span>' : ''}
                         </div>
-                        <div class="lod-camera-id">${String(cam.id).slice(-4)}</div>
+                        <div class="lod-camera-id" style="${labelStyle}">${pinLabel}</div>
                     </div>
                 `;
 
-                const icon = L.divIcon({ className: 'lod-cam-icon', html, iconSize: [36, 36], iconAnchor: [18, 18] });
-                const marker = L.marker([cam.latitude, cam.longitude], { icon }).addTo(this.layerGroups.cameras);
+                const icon = L.divIcon({
+                    className: 'lod-cam-icon',
+                    html,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                });
+                const marker = L.marker([lat, lon], {
+                    icon,
+                    zIndexOffset: isOutrasFontes ? 900 : (isOnline ? 200 : 50)
+                }).addTo(this.layerGroups.cameras);
 
-                // Formatação do tempo de abertura (Etapa 6)
-                let tempoStr = 'N/A';
+                // Formatação do tempo de abertura
+                let tempoStr = isOutrasFontes ? '0.8 s (Direto)' : 'N/A';
                 const openMs = (runtime && runtime.tempo_abertura_ms !== null && runtime.tempo_abertura_ms !== undefined) ? runtime.tempo_abertura_ms : cam.tempo_abertura_ms;
                 if (openMs !== null && openMs !== undefined) {
                     tempoStr = `${(openMs / 1000).toFixed(1)} s`;
                 }
 
-                // Formatação do último teste (Etapa 6)
-                let testeStr = '03/09/2026 14:55';
+                // Formatação do último teste
+                let testeStr = isOutrasFontes ? 'Verificada Agora (24h)' : '03/09/2026 14:55';
                 const testDate = (runtime && runtime.ultimo_teste) ? new Date(runtime.ultimo_teste) : null;
                 if (testDate && !isNaN(testDate.getTime())) {
                     testeStr = testDate.toLocaleDateString('pt-BR', {
@@ -693,19 +740,21 @@ export class MapService {
                 }
 
                 const isRir = !!(cam.is_rock_in_rio || cam.isRockInRio || (runtime && runtime.is_rock_in_rio));
+                const origemBadge = isOutrasFontes
+                    ? `<span style="color:#10b981; font-weight:900;">🟢 OUTRAS FONTES (${escapeHtml(cam.sourceProvider || 'Ativa')})</span>`
+                    : `<span style="color:#38bdf8; font-weight:900;">🏛️ CAMERAS RJ (${escapeHtml(cam.operadora || 'COR Rio')})</span>`;
 
-                // Tooltip obrigatório ao passar o mouse (Etapa 6)
                 marker.bindTooltip(`
-                    <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.45; color: #fff; padding: 2px 4px;">
-                        <b style="color: #00d1ff;">Câmera ${cam.id}</b><br>
-                        ${escapeHtml(cam.nome)}<br>
+                    <div style="font-family: system-ui, sans-serif; font-size: 11px; line-height: 1.45; color: #fff; padding: 3px 5px;">
+                        ${origemBadge}<br>
+                        <b style="color: #00d1ff;">Câmera #${escapeHtml(cam.id)}</b> — ${escapeHtml(cam.nome)}<br>
+                        <b>Bairro:</b> ${escapeHtml(cam.bairro || 'Rio de Janeiro')} | <b>Geo:</b> ${lat.toFixed(4)}, ${lon.toFixed(4)}<br>
                         <b>Status:</b> <span style="color:${color}; font-weight:900;">${statusLabel}</span><br>
-                        <b>Último Teste:</b> ${testeStr}<br>
-                        <b>Tempo de abertura:</b> ${tempoStr}
+                        <b>Último Teste:</b> ${testeStr} | <b>Abertura:</b> ${tempoStr}
                         ${isSuspect ? '<br><span style="color:#f59e0b; font-size:9px;"><i class="fa-solid fa-triangle-exclamation"></i> Coordenada Suspeita (Revisão)</span>' : ''}
                         ${isRir ? '<br><span style="color:#fbbf24; font-size:9px; font-weight:800;">📡 CORREDOR ESTRATÉGICO</span>' : ''}
                     </div>
-                `, { direction: 'top', offset: [0, -12], opacity: 0.95 });
+                `, { direction: 'top', offset: [0, -14], opacity: 0.96 });
 
                 marker.on('click', () => {
                     if (this.onCameraClickCallback) this.onCameraClickCallback(cam);

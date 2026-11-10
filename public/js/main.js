@@ -1,13 +1,13 @@
-import { CONFIG } from './config.js?v=4.1.1';
-import { MapService } from './map-service.js?v=4.1.1';
-import { DataService } from './data-service.js?v=4.1.1';
-import { UiController } from './ui-controller.js?v=4.1.1';
-import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.1.1';
-import { CamerasRJ } from './CamerasRJ.js?v=4.2.0';
-import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.2.0';
-import { CorRio } from './CorRio.js?v=4.1.1';
-import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.2.0';
-import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.2.0';
+import { CONFIG } from './config.js?v=4.3.0';
+import { MapService } from './map-service.js?v=4.3.0';
+import { DataService } from './data-service.js?v=4.3.0';
+import { UiController } from './ui-controller.js?v=4.3.0';
+import { MonitoramentoGrupos } from './MonitoramentoGrupos.js?v=4.3.0';
+import { CamerasRJ } from './CamerasRJ.js?v=4.3.0';
+import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.3.0';
+import { CorRio } from './CorRio.js?v=4.3.0';
+import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.3.0';
+import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.3.0';
 import { TrafficAlertView } from './traffic-alert/traffic-alert-view.js';
 import { RitFlyView } from './rit-fly/rit-fly-view.js';
 

@@ -1,7 +1,8 @@
 import { CONFIG } from './config.js';
 import { showToast, escapeHtml, formatarHorario } from './utils.js';
 import { parseDataHora } from './data-service.js';
-import { CamerasGeoService } from './cameras-geo-service.js';
+import { CamerasGeoService } from './cameras-geo-service.js?v=4.3.0';
+import { getRjAlternativeSources, getRjCamerasRjSources, getRegionalGeoreferencedSources } from './traffic-camera-data.js?v=4.3.0';
 import { ritCache } from './indexeddb-cache.js';
 
 function abrirCanalExterno(url) {
@@ -334,11 +335,14 @@ export class UiController {
         try { this.initUpload(); } catch (e) { console.error("Erro initUpload:", e); }
         try { this.initModals(); } catch (e) { console.error("Erro initModals:", e); }
         try { this.initPlanner(); } catch (e) { console.error("Erro initPlanner:", e); }
-        try { this.initRegionalization(); } catch (e) { console.error("Erro initRegionalization:", e); }
 
         this.camerasGeoService = new CamerasGeoService();
+        this.municipalCamerasList = [];
+        this.currentCameraSourceMode = localStorage.getItem('rit_cicc_camera_source_mode') || 'AMBAS';
         this.activeOcorrencias = [];
         this.currentCorrelatedCameras = [];
+
+        try { this.initRegionalization(); } catch (e) { console.error("Erro initRegionalization:", e); }
         try { this.initCentralInteligente(); } catch (e) { console.error("Erro initCentralInteligente:", e); }
         try { this.initSmartAddressSearch(); } catch (e) { console.error("Erro initSmartAddressSearch:", e); }
         
@@ -1793,10 +1797,11 @@ export class UiController {
 
         this.regionalConfigs = regioes;
 
-        const aplicarRegiao = (rawReg) => {
+        const aplicarRegiao = (rawReg, isInitialBoot = false) => {
             const aliasMap = { 'BH': 'MG', 'BSB': 'DF', 'REC': 'PE' };
             const reg = aliasMap[rawReg] || rawReg || 'RJ';
             const config = regioes[reg] || regioes.RJ;
+            this.currentRegional = reg;
 
             localStorage.setItem('rit_selected_regional', reg);
             if (seletor.value !== reg && regioes[seletor.value]) {
@@ -1868,73 +1873,47 @@ export class UiController {
             }
 
             // 3. SINCRONIZAR INTELIGÊNCIA OPERACIONAL E OCORRÊNCIAS DA NOVA UF
-            this.atualizarInformesOTT();
+            if (!isInitialBoot) {
+                this.atualizarInformesOTT();
+            }
 
-            // 4. ATUALIZAR INDICADORES VISUAIS DA UF
+            // 4. ATUALIZAR INDICADORES VISUAIS E CAMADA DE CÂMERAS DA UF
             const camsBadge = document.getElementById('cicc-cams-count');
             const rirCamsCount = document.getElementById('rir-cameras-count');
             const rirOnline = document.getElementById('rir-cameras-online');
             const rirOffline = document.getElementById('rir-cameras-offline');
             const rirDisp = document.getElementById('rir-health-pct');
             const rirStatDisp = document.getElementById('rir-stat-disponibilidade');
+            const selFonteCicc = document.getElementById('seletor-fonte-cameras-cicc');
 
             if (reg === 'RJ') {
-                if (camsBadge) camsBadge.textContent = '4.297';
-                this.carregarRuntimeCameras();
-            } else if (reg === 'SP') {
-                if (camsBadge) camsBadge.textContent = '12';
-                if (rirCamsCount) rirCamsCount.textContent = '12 câmeras';
-                if (rirOnline) rirOnline.textContent = '11 online';
-                if (rirOffline) rirOffline.textContent = '1 offline';
+                if (selFonteCicc) selFonteCicc.disabled = false;
+                if (camsBadge) camsBadge.textContent = '4.310';
+                if (!isInitialBoot) {
+                    this.carregarRuntimeCameras();
+                }
+            } else {
+                if (selFonteCicc) selFonteCicc.disabled = false;
+                const regCams = getRegionalGeoreferencedSources(reg);
+                const totalReg = regCams.length;
+                const onlineReg = regCams.filter(c => c.status !== 'offline').length;
+                const offlineReg = totalReg - onlineReg;
+                const pctReg = totalReg > 0 ? ((onlineReg / totalReg) * 100).toFixed(1) : '100.0';
+                if (camsBadge) camsBadge.textContent = String(totalReg);
+                if (rirCamsCount) rirCamsCount.textContent = `${totalReg} câmeras`;
+                if (rirOnline) rirOnline.textContent = `${onlineReg} online`;
+                if (rirOffline) rirOffline.textContent = `${offlineReg} offline`;
                 if (rirDisp) {
-                    rirDisp.textContent = '91.7%';
+                    rirDisp.textContent = `${pctReg}%`;
                     rirDisp.style.color = '#10b981';
                 }
                 if (rirStatDisp) {
-                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando em SP: 91.7% (11 online de 12 câmeras monitoradas).";
+                    rirStatDisp.title = `Percentual de câmeras disponíveis e comunicando em ${reg}: ${pctReg}% (${onlineReg} online de ${totalReg} câmeras monitoradas).`;
                 }
-            } else if (reg === 'MG') {
-                if (camsBadge) camsBadge.textContent = '8';
-                if (rirCamsCount) rirCamsCount.textContent = '8 câmeras';
-                if (rirOnline) rirOnline.textContent = '7 online';
-                if (rirOffline) rirOffline.textContent = '1 offline';
-                if (rirDisp) {
-                    rirDisp.textContent = '87.5%';
-                    rirDisp.style.color = '#10b981';
-                }
-                if (rirStatDisp) {
-                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando em MG: 87.5% (7 online de 8 câmeras monitoradas).";
-                }
-            } else if (reg === 'ES') {
-                if (camsBadge) camsBadge.textContent = '6';
-                if (rirCamsCount) rirCamsCount.textContent = '6 câmeras';
-                if (rirOnline) rirOnline.textContent = '6 online';
-                if (rirOffline) rirOffline.textContent = '0 offline';
-                if (rirDisp) {
-                    rirDisp.textContent = '100%';
-                    rirDisp.style.color = '#10b981';
-                }
-                if (rirStatDisp) {
-                    rirStatDisp.title = "Percentual de câmeras disponíveis e comunicando no ES: 100% (6 online de 6 câmeras monitoradas).";
-                }
-            } else if (reg === 'DF') {
-                if (camsBadge) camsBadge.textContent = '4';
-                if (rirCamsCount) rirCamsCount.textContent = '4 câmeras';
-                if (rirOnline) rirOnline.textContent = '4 online';
-                if (rirOffline) rirOffline.textContent = '0 offline';
-                if (rirDisp) {
-                    rirDisp.textContent = '100%';
-                    rirDisp.style.color = '#10b981';
-                }
-            } else if (reg === 'PE') {
-                if (camsBadge) camsBadge.textContent = '5';
-                if (rirCamsCount) rirCamsCount.textContent = '5 câmeras';
-                if (rirOnline) rirOnline.textContent = '4 online';
-                if (rirOffline) rirOffline.textContent = '1 offline';
-                if (rirDisp) {
-                    rirDisp.textContent = '80.0%';
-                    rirDisp.style.color = '#10b981';
-                }
+            }
+
+            if (typeof this.applyCameraSourceFilter === 'function') {
+                this.applyCameraSourceFilter(this.currentCameraSourceMode || 'AMBAS', false);
             }
 
             // 5. SINCRONIZAÇÃO DA ABA RIT ALERTA COM A NOVA REGIONAL
@@ -1949,11 +1928,13 @@ export class UiController {
             }
 
             console.log(`[REGIONALIZAÇÃO] Região alterada para: ${reg}`, config);
-            showToast(`Região alterada para ${config.nome}`, 'info');
+            if (!isInitialBoot) {
+                showToast(`Região alterada para ${config.nome}`, 'info');
+            }
         };
 
         seletor.addEventListener('change', (e) => {
-            aplicarRegiao(e.target.value);
+            aplicarRegiao(e.target.value, false);
             this.carregarBaseExistente();
         });
 
@@ -1962,7 +1943,7 @@ export class UiController {
             seletor.value = savedRegional;
         }
 
-        aplicarRegiao(seletor.value);
+        aplicarRegiao(seletor.value, true);
     }
 
     initMapModeToggle() {
@@ -3225,62 +3206,57 @@ export class UiController {
     // CENTRAL INTELIGENTE DE CÂMERAS E OCORRÊNCIAS (CICC / COR RIO)
     // =========================================================================
     async initCentralInteligente() {
-        console.info('[CentralInteligente] Inicializando CCO Agente RIT com paralelismo...');
+        console.info('[CentralInteligente] Inicializando CCO Agente RIT com paralelismo e georreferenciamento multiorigem...');
 
-        // 1. Carregamento Concorrente com Promise.all: Clusters Leves (< 15KB) + Ocorrências de Segurança
-        try {
-            const [clustersData] = await Promise.all([
-                this.camerasGeoService.loadClusters(),
-                this.atualizarInformesOTT(),
-                this.carregarEstatisticasSaudeCameras()
-            ]);
+        const selFonte = document.getElementById('seletor-fonte-cameras-cicc');
+        if (selFonte) {
+            const savedMode = localStorage.getItem('rit_cicc_camera_source_mode');
+            if (savedMode && ['AMBAS', 'OUTRAS_FONTES', 'CAMERAS_RJ'].includes(savedMode)) {
+                this.currentCameraSourceMode = savedMode;
+                selFonte.value = savedMode;
+            } else {
+                this.currentCameraSourceMode = 'AMBAS';
+                selFonte.value = 'AMBAS';
+            }
+            selFonte.addEventListener('change', (e) => {
+                const mode = e.target.value;
+                this.currentCameraSourceMode = mode;
+                localStorage.setItem('rit_cicc_camera_source_mode', mode);
+                this.applyCameraSourceFilter(mode, true);
+            });
+        }
 
+        // 0. Plotagem imediata (0ms) das câmeras Outras Fontes e Destaques Georreferenciados (sem aguardar rede)
+        this.setupFiltrosStatusCameras();
+        this.applyCameraSourceFilter(this.currentCameraSourceMode || 'AMBAS', false);
+
+        // 1. Carregamento Independente: Clusters Leves + Base Municipal Completa (4.297 câmeras)
+        this.camerasGeoService.loadClusters().then(clustersData => {
+            if (clustersData && clustersData.bairroClusters && (!this.municipalCamerasList || this.municipalCamerasList.length === 0)) {
+                this.applyCameraSourceFilter(this.currentCameraSourceMode || 'AMBAS', false);
+            }
+        }).catch(e => console.warn('[CentralInteligente] Clusters load:', e));
+
+        this.camerasGeoService.loadCameras().then(cams => {
+            if (Array.isArray(cams) && cams.length > 0) {
+                this.municipalCamerasList = cams;
+                this.applyCameraSourceFilter(this.currentCameraSourceMode || 'AMBAS', false);
+            }
+        }).catch(e => console.warn('[CentralInteligente] Background cams load:', e));
+
+        // 2. Sincronização Assíncrona de Ocorrências OTT/Fogo Cruzado e Telemetria de Saúde (não bloqueia câmeras)
+        Promise.allSettled([
+            this.atualizarInformesOTT(),
+            this.carregarEstatisticasSaudeCameras(),
+            this.carregarRuntimeCameras()
+        ]).then(() => {
             // Polling de atualização de métricas do Robô CCO a cada 30 segundos
             if (!this._rirStatsInterval) {
                 this._rirStatsInterval = setInterval(() => this.carregarEstatisticasSaudeCameras(), 30000);
             }
+        });
 
-            const clusters = (clustersData && clustersData.bairroClusters) || this.camerasGeoService.getBairroClusters();
-            const totalCount = (clustersData && clustersData.totalCameras) || 4297;
-
-            const badgeEl = document.getElementById('cicc-cams-count');
-            if (badgeEl) badgeEl.textContent = totalCount.toLocaleString('pt-BR');
-
-            if (this.transitoMap) {
-                this.transitoMap.initCamerasLayer(
-                    [],
-                    clusters,
-                    (cam) => this.abrirDetalhesCameraCCO(cam),
-                    (cam) => this.hoverCamera(cam)
-                );
-
-                // Garante que o mapa respeite a UF selecionada se diferente de RJ
-                const currentReg = document.getElementById('seletor-regiao')?.value || 'RJ';
-                if (currentReg !== 'RJ' && this.regionalConfigs?.[currentReg]?.center) {
-                    const c = this.regionalConfigs[currentReg];
-                    this.transitoMap.map.setView(c.center, c.zoom || 11);
-                }
-            }
-
-            // Carrega dados de auditoria operacional em tempo real (Runtime de Vídeo Real)
-            this.carregarRuntimeCameras();
-            this.setupFiltrosStatusCameras();
-
-            // Carrega base completa em background sem bloquear a interface nem a renderização inicial
-            this.camerasGeoService.loadCameras().then(cams => {
-                if (this.transitoMap) {
-                    this.transitoMap.camerasData = cams;
-                    if (this.transitoMap.map && this.transitoMap.map.getZoom() >= 15) {
-                        this.transitoMap._renderCamerasLOD();
-                    }
-                }
-            }).catch(e => console.warn('[CentralInteligente] Background cams load:', e));
-
-        } catch (err) {
-            console.error('[CentralInteligente] Erro na inicialização concorrente da Central:', err);
-        }
-
-        // 2. Ouvintes das Camadas Inteligentes
+        // 3. Ouvintes das Camadas Inteligentes
         document.getElementById('layer-toggle-cameras')?.addEventListener('change', (e) => {
             this.transitoMap?.setLayerVisibility('cameras', e.target.checked);
         });
@@ -3339,6 +3315,8 @@ export class UiController {
             const dock = document.getElementById('cicc-dock-matrix');
             const wrap = document.getElementById('cicc-single-player-wrap');
             if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
+            if (this._frozenStreamCheckInterval) clearInterval(this._frozenStreamCheckInterval);
+            if (this._singlePlayerSnapshotInterval) clearInterval(this._singlePlayerSnapshotInterval);
             if (dock) dock.classList.remove('open');
             if (wrap) wrap.innerHTML = '';
         });
@@ -3405,6 +3383,154 @@ export class UiController {
                 }
             }
         });
+    }
+
+    /**
+     * Aplica filtro de origem das câmeras georreferenciadas na Central de Ocorrências (#mapTransito):
+     * - AMBAS: Outras Fontes (13 câmeras RJ ativas) + CamerasRJ (4.297 câmeras municipais)
+     * - OUTRAS_FONTES: Exclusivamente Outras Fontes (Ecovias Ponte, YouTube Live, UFRJ ZET, RealData, etc.)
+     * - CAMERAS_RJ: Exclusivamente Base Municipal CamerasRJ (COR Rio / CET-Rio)
+     */
+    applyCameraSourceFilter(mode = 'AMBAS', showFeedback = false) {
+        const normalizedMode = ['AMBAS', 'OUTRAS_FONTES', 'CAMERAS_RJ'].includes(mode) ? mode : 'AMBAS';
+        this.currentCameraSourceMode = normalizedMode;
+
+        const currentReg = document.getElementById('seletor-regiao')?.value || this.currentRegional || 'RJ';
+        const aliasMap = { 'BH': 'MG', 'BSB': 'DF', 'REC': 'PE' };
+        const reg = aliasMap[currentReg] || currentReg || 'RJ';
+
+        let activeList = [];
+        let displayTotalCount = 0;
+        const outrasFontesRj = getRjAlternativeSources();
+        const highlightsRj = getRjCamerasRjSources();
+        const hasFullMunicipal = Array.isArray(this.municipalCamerasList) && this.municipalCamerasList.length > 0;
+        const municipalCams = hasFullMunicipal ? this.municipalCamerasList : highlightsRj;
+
+        if (reg === 'RJ') {
+            if (normalizedMode === 'OUTRAS_FONTES') {
+                activeList = [...outrasFontesRj];
+                displayTotalCount = outrasFontesRj.length;
+            } else if (normalizedMode === 'CAMERAS_RJ') {
+                activeList = [...municipalCams];
+                displayTotalCount = hasFullMunicipal ? municipalCams.length : 4297;
+            } else {
+                // AMBAS: Combina Outras Fontes (100% prioritárias) + Base Municipal CamerasRJ
+                const seenIds = new Set();
+                outrasFontesRj.forEach(c => {
+                    seenIds.add(String(c.id));
+                    activeList.push(c);
+                });
+                municipalCams.forEach(c => {
+                    const cid = String(c.id);
+                    if (!seenIds.has(cid)) {
+                        seenIds.add(cid);
+                        activeList.push(c);
+                    }
+                });
+                displayTotalCount = (hasFullMunicipal ? municipalCams.length : 4297) + outrasFontesRj.length;
+            }
+        } else {
+            // Demais UFs (SP, MG, DF, PE, ES)
+            const regSources = getRegionalGeoreferencedSources(reg);
+            if (normalizedMode === 'CAMERAS_RJ') {
+                const govOnly = regSources.filter(c => c.providerCategory === 'CAMERAS_RJ');
+                activeList = govOnly.length > 0 ? govOnly : regSources;
+            } else if (normalizedMode === 'OUTRAS_FONTES') {
+                const altOnly = regSources.filter(c => c.providerCategory === 'OUTRAS_FONTES');
+                activeList = altOnly.length > 0 ? altOnly : regSources;
+            } else {
+                activeList = regSources;
+            }
+            displayTotalCount = activeList.length;
+        }
+
+        // Atualiza contador na barra de camadas
+        const badgeEl = document.getElementById('cicc-cams-count');
+        if (badgeEl) {
+            badgeEl.textContent = displayTotalCount.toLocaleString('pt-BR');
+        }
+
+        // Atualiza telemetria superior conforme fonte selecionada
+        const pctEl = document.getElementById('rir-health-pct');
+        const totalEl = document.getElementById('rir-cameras-count');
+        const onlineEl = document.getElementById('rir-cameras-online');
+        const offlineEl = document.getElementById('rir-cameras-offline');
+        const codecEl = document.getElementById('rir-cameras-codec');
+        const avgTimeEl = document.getElementById('rir-avg-open-time');
+
+        if (reg === 'RJ' && normalizedMode === 'OUTRAS_FONTES') {
+            if (pctEl) {
+                pctEl.innerText = '100%';
+                pctEl.style.color = '#10b981';
+            }
+            if (totalEl) totalEl.innerText = `${outrasFontesRj.length} câmeras (Outras Fontes)`;
+            if (onlineEl) onlineEl.innerText = `${outrasFontesRj.length} online`;
+            if (offlineEl) offlineEl.innerText = '0 offline';
+            if (codecEl) codecEl.innerText = '0 HEVC';
+            if (avgTimeEl) avgTimeEl.innerText = '0.8 s';
+        } else if (reg === 'RJ' && normalizedMode === 'AMBAS') {
+            if (totalEl && totalEl.innerText.includes('Outras Fontes')) {
+                this.carregarRuntimeCameras();
+            }
+        } else if (reg === 'RJ' && normalizedMode === 'CAMERAS_RJ') {
+            if (totalEl && totalEl.innerText.includes('Outras Fontes')) {
+                this.carregarRuntimeCameras();
+            }
+        }
+
+        // Atualiza Seletor de Corredores no RJ incluindo atalhos diretos para as câmeras georreferenciadas de Outras Fontes
+        const selCorredor = document.getElementById('seletor-corredor-rir');
+        const regConfig = this.regionalConfigs?.[reg] || this.regionalConfigs?.RJ;
+        if (selCorredor && regConfig && Array.isArray(regConfig.corredores)) {
+            const currentVal = selCorredor.value;
+            let optionsHtml = `<optgroup label="🛣️ Corredores Estratégicos (${reg})">` +
+                regConfig.corredores.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`).join('') +
+                `</optgroup>`;
+
+            if (reg === 'RJ' && (normalizedMode === 'AMBAS' || normalizedMode === 'OUTRAS_FONTES')) {
+                optionsHtml += `<optgroup label="🟢 Outras Fontes Georreferenciadas (${outrasFontesRj.length} Cams)">` +
+                    outrasFontesRj.map(c => `<option value="CAM_${escapeHtml(c.id)}">📍 ${escapeHtml(c.shortLabel || c.bairro)} — ${escapeHtml(c.nome)}</option>`).join('') +
+                    `</optgroup>`;
+            }
+            selCorredor.innerHTML = optionsHtml;
+            if (currentVal && Array.from(selCorredor.options).some(o => o.value === currentVal)) {
+                selCorredor.value = currentVal;
+            }
+        }
+
+        // Reconstrói índice espacial e clusters para a lista ativa
+        if (this.camerasGeoService) {
+            this.camerasGeoService.cameras = activeList;
+            if (this.camerasGeoService.spatialIndex) {
+                this.camerasGeoService.spatialIndex.buildIndex(activeList);
+            }
+        }
+
+        const dynamicClusters = (this.camerasGeoService && typeof this.camerasGeoService.buildClustersFromList === 'function')
+            ? this.camerasGeoService.buildClustersFromList(activeList)
+            : [];
+        const clustersToUse = (dynamicClusters && dynamicClusters.length > 0)
+            ? dynamicClusters
+            : (this.camerasGeoService?.getBairroClusters() || []);
+
+        if (this.transitoMap) {
+            this.transitoMap.cameraProviderFilter = (reg === 'RJ') ? normalizedMode : 'AMBAS';
+            this.transitoMap.initCamerasLayer(
+                activeList,
+                clustersToUse,
+                (cam) => this.abrirDetalhesCameraCCO(cam),
+                (cam) => this.hoverCamera(cam)
+            );
+        }
+
+        if (showFeedback) {
+            const labelMap = {
+                'AMBAS': `🌐 Ambas as Fontes (${displayTotalCount.toLocaleString('pt-BR')} câmeras: Outras Fontes + CamerasRJ)`,
+                'OUTRAS_FONTES': `🟢 Outras Fontes (${activeList.length} câmeras georreferenciadas ativas)`,
+                'CAMERAS_RJ': `🏛️ Base Municipal CamerasRJ (${displayTotalCount.toLocaleString('pt-BR')} câmeras)`
+            };
+            showToast(`Mapa atualizado: ${labelMap[normalizedMode] || normalizedMode}`, 'info');
+        }
     }
 
     async carregarEstatisticasSaudeCameras() {
@@ -3523,9 +3649,29 @@ export class UiController {
             document.getElementById(c.id)?.addEventListener('change', aplicarFiltros);
         });
 
-        // Ouvinte do Seletor de Corredor
+        // Ouvinte do Seletor de Corredor / Câmera Georreferenciada
         document.getElementById('seletor-corredor-rir')?.addEventListener('change', (e) => {
             const corredor = e.target.value;
+            if (corredor && corredor.startsWith('CAM_')) {
+                const targetId = corredor.replace(/^CAM_/, '');
+                const allCams = [
+                    ...(this.camerasGeoService?.cameras || []),
+                    ...getRjAlternativeSources()
+                ];
+                const cam = allCams.find(c => String(c.id) === String(targetId));
+                if (cam) {
+                    const lat = parseFloat(cam.latitude ?? cam.lat);
+                    const lon = parseFloat(cam.longitude ?? cam.lon);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        this.transitoMap?.map?.flyTo([lat, lon], 15, { duration: 1.0 });
+                        setTimeout(() => {
+                            this.transitoMap?.highlightCamera(cam.id, { lat, lon });
+                            this.abrirDetalhesCameraCCO(cam);
+                        }, 450);
+                    }
+                }
+                return;
+            }
             const reg = document.getElementById('seletor-regiao')?.value || 'RJ';
             const regConfig = this.regionalConfigs?.[reg] || this.regionalConfigs?.RJ;
             const item = regConfig?.corredores?.find(c => c.id === corredor);
@@ -3961,23 +4107,32 @@ export class UiController {
             clearInterval(this._frozenStreamCheckInterval);
             this._frozenStreamCheckInterval = null;
         }
+        if (this._singlePlayerSnapshotInterval) {
+            clearInterval(this._singlePlayerSnapshotInterval);
+            this._singlePlayerSnapshotInterval = null;
+        }
+
+        const isSnapshot = cam.tipoFonte === 'snapshot' || cam.protocol === 'snapshot' || Boolean(cam.proxyUrl || cam.directImageUrl);
+        const isOutrasFontes = cam.providerCategory === 'OUTRAS_FONTES' || isSnapshot || (cam.embedUrl && !String(cam.embedUrl).includes('camerasrj.com.br'));
 
         // Determina tempo dinâmico de watchdog conforme protocolo (Ajuste CCO)
         let watchdogTimeoutMs = 6000; // Padrão WebRTC / WHEP
-        if (cam.tipoFonte === 'snapshot' || cam.protocol === 'snapshot' || (cam.url && cam.url.endsWith('.jpg'))) {
-            watchdogTimeoutMs = 3000; // Snapshots rápidos
-        } else if (cam.tipoFonte === 'portal' || cam.tipoFonte === 'iframe' || (cam.embedUrl && cam.embedUrl.includes('embed'))) {
-            watchdogTimeoutMs = 8000; // Portais e iframes pesados
+        if (isSnapshot) {
+            watchdogTimeoutMs = 6000; // Snapshots c/ fallback
+        } else if (isOutrasFontes || cam.tipoFonte === 'portal' || cam.tipoFonte === 'iframe' || (cam.embedUrl && cam.embedUrl.includes('embed'))) {
+            watchdogTimeoutMs = 9000; // Portais externos e YouTube Live
         }
 
         wrap.innerHTML = `<div style="color:var(--accent); font-size:12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> Estabelecendo conexão de vídeo segura (Watchdog Dinâmico ${watchdogTimeoutMs / 1000}s)...</div>`;
 
         // 4. Atualizar Cabeçalho
+        const ufLabel = cam.regional || (document.getElementById('seletor-regiao')?.value || 'RJ');
+        const originTag = isOutrasFontes ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #10b981; padding:1px 5px; border-radius:3px; font-size:9px; margin-left:6px;">🟢 OUTRAS FONTES</span>` : `<span style="background:rgba(0,209,255,0.15); color:#00d1ff; border:1px solid rgba(0,209,255,0.4); padding:1px 5px; border-radius:3px; font-size:9px; margin-left:6px;">🏛️ CAMERAS RJ</span>`;
         if (subtitle) {
-            subtitle.innerHTML = `CÂMERA AO VIVO — <span style="color:#00d1ff;">#${escapeHtml(cam.id)}</span> ${escapeHtml(cam.nome)} <span style="font-size:9.5px; font-weight:600; color:#94a3b8; text-transform:none; margin-left:8px;">📍 ${escapeHtml(cam.bairro || 'Rio de Janeiro')}, Rio de Janeiro - RJ</span>`;
+            subtitle.innerHTML = `CÂMERA AO VIVO — <span style="color:#00d1ff;">#${escapeHtml(cam.id)}</span> ${escapeHtml(cam.nome)} ${originTag} <span style="font-size:9.5px; font-weight:600; color:#94a3b8; text-transform:none; margin-left:8px;">📍 ${escapeHtml(cam.bairro || 'Centro')} (${escapeHtml(ufLabel)})</span>`;
         }
 
-        const isOnline = cam.status === 'online';
+        const isOnline = cam.status !== 'offline';
         if (livePill) {
             livePill.innerHTML = isOnline 
                 ? '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> CONECTANDO...'
@@ -3987,9 +4142,9 @@ export class UiController {
         // 5. Determinar URL da câmera
         const rawId = parseInt(cam.id, 10);
         let streamUrl = cam.embedUrl || null;
-        let officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
+        let officialUrl = cam.url || (rawId && !isNaN(rawId) ? `https://www.camerasrj.com.br/camera/${rawId}/` : null);
 
-        if (!streamUrl && rawId && !isNaN(rawId)) {
+        if (!streamUrl && !isSnapshot && rawId && !isNaN(rawId)) {
             streamUrl = `https://player.camerasrj.com.br/camera/${rawId}/`;
         }
 
@@ -4002,7 +4157,7 @@ export class UiController {
             }
         }
 
-        // 6. Watchdog Dinâmico por Tipo de Stream (Ajuste CCO: 3s / 6s / 8s)
+        // 6. Watchdog Dinâmico por Tipo de Stream (Ajuste CCO: 3s / 6s / 9s)
         this._streamWatchdogTimer = setTimeout(() => {
             console.warn(`[CÂMERA WATCHDOG] Timeout dinâmico (${watchdogTimeoutMs}ms) atingido para a Câmera #${cam.id}. Acionando failover tático.`);
             if (livePill) {
@@ -4011,35 +4166,80 @@ export class UiController {
             this.exibirIndisponibilidadeCamera(cam, wrap, true);
         }, watchdogTimeoutMs);
 
-        // Monitor de Stream Congelada (>20s sem novo quadro/heartbeat)
+        // Monitor de Stream Congelada (>20s sem novo quadro/heartbeat) — aplicável a players bridge CamerasRJ
         this._lastStreamHeartbeat = Date.now();
-        this._frozenStreamCheckInterval = setInterval(() => {
-            if (Date.now() - this._lastStreamHeartbeat > 20000) {
-                console.warn(`[STREAM CONGELADA] Câmera #${cam.id} estagnada por > 20s. Atualizando status e acionando reconexão...`);
-                if (livePill) {
-                    livePill.innerHTML = `<i class="fa-solid fa-snowflake" style="color:#f59e0b; font-size:7px;"></i> STREAM CONGELADA (>20s)`;
+        if (!isOutrasFontes && !isSnapshot) {
+            this._frozenStreamCheckInterval = setInterval(() => {
+                if (Date.now() - this._lastStreamHeartbeat > 20000) {
+                    console.warn(`[STREAM CONGELADA] Câmera #${cam.id} estagnada por > 20s. Atualizando status e acionando reconexão...`);
+                    if (livePill) {
+                        livePill.innerHTML = `<i class="fa-solid fa-snowflake" style="color:#f59e0b; font-size:7px;"></i> STREAM CONGELADA (>20s)`;
+                    }
+                    const drawerBadge = document.getElementById('cicc-drawer-status-badge');
+                    if (drawerBadge) {
+                        drawerBadge.style.color = '#f59e0b';
+                        drawerBadge.style.background = 'rgba(245,158,11,0.2)';
+                        drawerBadge.style.border = '1px solid #f59e0b';
+                        drawerBadge.innerHTML = '● STREAM CONGELADA';
+                    }
+                    this.exibirIndisponibilidadeCamera(cam, wrap, false, 'STREAM_CONGELADA');
                 }
-                const drawerBadge = document.getElementById('cicc-drawer-status-badge');
-                if (drawerBadge) {
-                    drawerBadge.style.color = '#f59e0b';
-                    drawerBadge.style.background = 'rgba(245,158,11,0.2)';
-                    drawerBadge.style.border = '1px solid #f59e0b';
-                    drawerBadge.innerHTML = '● STREAM CONGELADA';
+            }, 5000);
+        }
+
+        // 7. Probe Rápido de Saúde de Transmissão (em paralelo, apenas para CamerasRJ numéricas)
+        if (!isOutrasFontes && rawId && !isNaN(rawId)) {
+            this.camerasGeoService.probeCameraHealth(cam.id).then(health => {
+                if (health && !health.online && health.latencyMs > 1400) {
+                    console.warn(`[CÂMERA HEALTH] Probe indicou sinal instável/offline para #${cam.id}`);
                 }
-                // Dispara recarga automática ou failover
-                this.exibirIndisponibilidadeCamera(cam, wrap, false, 'STREAM_CONGELADA');
-            }
-        }, 5000);
+            }).catch(() => {});
+        }
 
-        // 7. Probe Rápido de Saúde de Transmissão (em paralelo)
-        this.camerasGeoService.probeCameraHealth(cam.id).then(health => {
-            if (health && !health.online && health.latencyMs > 1400) {
-                console.warn(`[CÂMERA HEALTH] Probe indicou sinal instável/offline para #${cam.id}`);
+        // 8. Renderizar Player Único (Snapshot Direto vs Stream Iframe)
+        if (isSnapshot) {
+            const snapBase = cam.proxyUrl || cam.directImageUrl || cam.url;
+            const sep = snapBase.includes('?') ? '&' : '?';
+            const initialSrc = `${snapBase}${sep}_t=${Date.now()}`;
+            wrap.innerHTML = `
+                <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#020617; position:relative;">
+                    <img id="cicc-single-camera-snapshot" src="${initialSrc}" alt="${escapeHtml(cam.nome)}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;" />
+                    <div style="position:absolute; bottom:8px; right:10px; background:rgba(0,0,0,0.75); color:#34d399; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; border:1px solid rgba(16,185,129,0.4);">
+                        📸 Atualização Automática (${cam.refreshSeconds || 4}s)
+                    </div>
+                </div>
+            `;
+            const snapImg = document.getElementById('cicc-single-camera-snapshot');
+            if (snapImg) {
+                snapImg.onload = () => {
+                    if (this._streamWatchdogTimer) {
+                        clearTimeout(this._streamWatchdogTimer);
+                        this._streamWatchdogTimer = null;
+                    }
+                    this._lastStreamHeartbeat = Date.now();
+                    if (livePill) {
+                        livePill.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO (SNAPSHOT ATIVO)';
+                    }
+                };
+                snapImg.onerror = () => {
+                    if (cam.directImageUrl && snapImg.src.includes('/api/proxy')) {
+                        snapImg.src = `${cam.directImageUrl}?_t=${Date.now()}`;
+                    }
+                };
+                const refreshMs = (cam.refreshSeconds || 4) * 1000;
+                this._singlePlayerSnapshotInterval = setInterval(() => {
+                    if (document.body.contains(snapImg)) {
+                        const base = (cam.directImageUrl && snapImg.src.startsWith('http') && !snapImg.src.includes('/api/proxy'))
+                            ? cam.directImageUrl
+                            : snapBase;
+                        const s = base.includes('?') ? '&' : '?';
+                        snapImg.src = `${base}${s}_t=${Date.now()}`;
+                    } else {
+                        clearInterval(this._singlePlayerSnapshotInterval);
+                    }
+                }, refreshMs);
             }
-        }).catch(() => {});
-
-        // 8. Renderizar Player Único
-        if (streamUrl) {
+        } else if (streamUrl) {
             wrap.innerHTML = `
                 <iframe 
                     id="cicc-single-camera-iframe"
@@ -4053,6 +4253,19 @@ export class UiController {
 
             const iframe = document.getElementById('cicc-single-camera-iframe');
             if (iframe) {
+                iframe.onload = () => {
+                    this._lastStreamHeartbeat = Date.now();
+                    // Para câmeras de Outras Fontes (YouTube, UFRJ, RealData, DER), o onload confirma a conexão ativa
+                    if (isOutrasFontes) {
+                        if (this._streamWatchdogTimer) {
+                            clearTimeout(this._streamWatchdogTimer);
+                            this._streamWatchdogTimer = null;
+                        }
+                        if (livePill) {
+                            livePill.innerHTML = '<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> AO VIVO (SINAL ATIVO)';
+                        }
+                    }
+                };
                 iframe.onerror = () => {
                     if (this._streamWatchdogTimer) clearTimeout(this._streamWatchdogTimer);
                     console.warn('[CÂMERA] Erro no carregamento do iframe', { id: cam.id });
@@ -4067,7 +4280,7 @@ export class UiController {
 
         // 9. Exibir Dock
         dock.classList.add('open');
-        showToast(`Visualizando Câmera #${cam.id} (${cam.bairro}) [Watchdog: ${watchdogTimeoutMs / 1000}s]`, "info");
+        showToast(`Visualizando Câmera #${cam.id} (${cam.bairro || 'CCO'})`, "info");
     }
 
     identifyCorridor(cam) {
@@ -4275,20 +4488,28 @@ export class UiController {
         if (!drawerBody) return;
 
         this.currentSingleCamera = cam;
-        const isOnline = cam.status === 'online';
+        const isOnline = cam.status !== 'offline';
         const isSuspect = !!cam.coordenada_suspeita;
+        const isOutrasFontes = cam.providerCategory === 'OUTRAS_FONTES';
         const color = isOnline ? '#10b981' : '#ef4444';
         const rawId = parseInt(cam.id, 10);
-        const officialUrl = cam.url || (rawId ? `https://www.camerasrj.com.br/camera/${rawId}/` : 'https://www.camerasrj.com.br');
+        const officialUrl = cam.url || (rawId && !isNaN(rawId) ? `https://www.camerasrj.com.br/camera/${rawId}/` : 'https://www.camerasrj.com.br');
+        const lat = parseFloat(cam.latitude ?? cam.lat);
+        const lon = parseFloat(cam.longitude ?? cam.lon);
+        const coordsText = (!isNaN(lat) && !isNaN(lon)) ? `${lat.toFixed(5)}, ${lon.toFixed(5)}` : 'N/D';
+        const originBadgeHtml = isOutrasFontes
+            ? `<div style="font-size:9.5px; font-weight:800; color:#34d399; background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.45); padding:3px 7px; border-radius:4px; margin-bottom:6px; display:inline-block;"><i class="fa-solid fa-satellite-dish"></i> ORIGEM: OUTRAS FONTES (${escapeHtml(cam.sourceProvider || cam.operadora || 'Sinal Direto')})</div>`
+            : `<div style="font-size:9.5px; font-weight:800; color:#00d1ff; background:rgba(0,209,255,0.12); border:1px solid rgba(0,209,255,0.35); padding:3px 7px; border-radius:4px; margin-bottom:6px; display:inline-block;"><i class="fa-solid fa-building-shield"></i> ORIGEM: CAMERAS RJ (${escapeHtml(cam.operadora || 'COR Rio / CET-Rio')})</div>`;
 
         drawerBody.innerHTML = `
-            <div class="cicc-tactical-card" style="border-left:3px solid #00d1ff;">
+            <div class="cicc-tactical-card" style="border-left:3px solid ${isOutrasFontes ? '#10b981' : '#00d1ff'};">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span style="font-size:12px; font-weight:900; color:#00d1ff;">📹 CÂMERA #${cam.id}</span>
+                    <span style="font-size:12px; font-weight:900; color:${isOutrasFontes ? '#34d399' : '#00d1ff'};">📹 CÂMERA #${escapeHtml(String(cam.id))}</span>
                     <span id="cicc-drawer-status-badge" style="font-size:9px; font-weight:800; background:${isOnline ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${color}; padding:2px 6px; border-radius:3px; border: 1px solid ${color};">
-                        ● ${cam.status.toUpperCase()}
+                        ● ${escapeHtml((cam.status || 'online').toUpperCase())}
                     </span>
                 </div>
+                ${originBadgeHtml}<br>
                 ${isSuspect ? `
                     <div style="font-size:9.5px; color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); padding:4px 8px; border-radius:4px; margin-bottom:6px; line-height:1.3;">
                         <i class="fa-solid fa-triangle-exclamation"></i> <b>COORDENADA SUSPEITA (REVISÃO CCO)</b><br>
@@ -4296,25 +4517,26 @@ export class UiController {
                     </div>
                 ` : `
                     <div style="font-size:9px; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:3px; margin-bottom:6px; display:inline-block;">
-                        <i class="fa-solid fa-check"></i> Coordenada Validada na Malha Viária
+                        <i class="fa-solid fa-check"></i> Georreferenciamento Validado (${coordsText})
                     </div>
                 `}
                 <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">
                     ${escapeHtml(cam.nome)}
                 </div>
                 <div style="font-size:10px; color:#cbd5e1; margin-bottom:6px;">
-                    📍 <b>${escapeHtml(cam.bairro)}</b>, Rio de Janeiro - RJ
+                    📍 <b>${escapeHtml(cam.bairro || 'Centro')}</b> — ${escapeHtml(cam.regiao || 'Rio de Janeiro - RJ')}
                 </div>
-                <div style="font-size:9.5px; color:#94a3b8; background:rgba(0,0,0,0.3); padding:6px; border-radius:4px;">
-                    🏢 Operadora: <b>${cam.operadora || 'COR Rio / CET-Rio'}</b><br>
-                    🔭 Campo de Visão: <b>${cam.angulo || 180}° (${cam.angulo >= 360 ? 'PTZ 360' : 'Panorâmica'})</b><br>
+                <div style="font-size:9.5px; color:#94a3b8; background:rgba(0,0,0,0.3); padding:6px; border-radius:4px; line-height:1.45;">
+                    🏢 Operadora / Provedor: <b>${escapeHtml(cam.operadora || cam.sourceProvider || 'COR Rio / CET-Rio')}</b><br>
+                    🌐 Coordenadas GIS: <b>${coordsText}</b><br>
+                    🔭 Campo de Visão: <b>${cam.angulo || 180}° (${(cam.angulo || 180) >= 360 ? 'PTZ 360' : 'Panorâmica'})</b><br>
                     🧭 Orientação / Azimute: <b>${cam.orientacao || 0}°</b><br>
                     📡 Alcance Visual Estimado: <b>${cam.alcance || 500} metros</b>
                 </div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                <button onclick="window.uiController.abrirCameraSelecionada(${JSON.stringify(cam).replace(/"/g, '&quot;')})" class="btn btnPrimary" style="padding:10px; font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button id="btn-cicc-drawer-open-live" class="btn btnPrimary" style="padding:10px; font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
                     <i class="fa-solid fa-video"></i> ABRIR CÂMERA AO VIVO
                 </button>
                 <a href="${officialUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="text-align:center; padding:8px; font-size:11px; color:#00d1ff; border-color:#00d1ff; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
@@ -4322,6 +4544,10 @@ export class UiController {
                 </a>
             </div>
         `;
+
+        document.getElementById('btn-cicc-drawer-open-live')?.addEventListener('click', () => {
+            this.abrirCameraSelecionada(cam);
+        });
 
         document.getElementById('cicc-drawer-ocorrencia')?.classList.add('open');
     }
