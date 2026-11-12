@@ -1513,7 +1513,7 @@
 
   <!-- Barra Superior -->
   <header class="top-bar">
-    <a href="/index.html" class="top-logo">
+    <a href="#visao-360" onclick="goToSlide(0); return false;" class="top-logo" title="Voltar à Visão Executiva 360°">
       <i class="fa-solid fa-route"></i> AGENTE RIT
     </a>
     <div class="top-divider"></div>
@@ -1531,8 +1531,7 @@
       <button class="top-pill nav-quick" onclick="goToSlide(7)" title="Tela 8: Caravanas Inteligentes RJ & SP"><i class="fa-solid fa-bus"></i> CARAVANAS</button>
       <button class="top-pill nav-quick" onclick="goToSlide(8)" title="Tela 9: RIT Fly Inteligência Aérea"><i class="fa-solid fa-plane-departure"></i> RIT FLY</button>
       <button class="top-pill action" id="btn-audio-toggle" onclick="toggleHeroAudio()" title="Ativar/Desativar Som do Vídeo"><span id="audio-icon">🔇</span></button>
-      <a href="/dashboard.html" class="top-pill action"><i class="fa-solid fa-desktop"></i> PAINEL AO VIVO</a>
-      <a href="/index.html" class="top-pill action"><i class="fa-solid fa-arrow-left"></i> INÍCIO</a>
+      <span class="top-pill status" title="Apresentação pública protegida: exibição exclusiva de capturas de tela (prints)"><i class="fa-solid fa-camera"></i> MODO PRINTS</span>
     </div>
   </header>
 
@@ -1552,7 +1551,7 @@
             <span class="homologation-badge-title">AGENTE RIT / CONEXÃO TRANSPORTES</span>
             <span class="homologation-badge-divider">|</span>
             <span class="homologation-badge-text">DO AUTODESENVOLVIMENTO À ARTICULAÇÃO TRANSVERSAL: OPERAÇÃO, DADOS, IA & NEGÓCIOS</span>
-            <span class="homologation-badge-date">OPERAÇÃO 360° AO VIVO</span>
+            <span class="homologation-badge-date">VITRINE EXECUTIVA · PRINTS DE TELA</span>
           </div>
 
           <h1 class="title-hero">
@@ -1811,7 +1810,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-cam">agenterit.com.br / dashboard.html#central-cameras-ocorrencias</div>
+              <div class="mockup-title" id="title-mockup-cam">Agente RIT · Print de Tela — Central de Câmeras & Ocorrências</div>
             </div>
             <div class="mockup-content">
               <div class="carousel-view active" id="view-cam-mapa">
@@ -1845,7 +1844,7 @@
             <button class="view-toggle-btn active" id="btn-alerta-desktop">1. Vias & Rodovias RJ</button>
             <button class="view-toggle-btn" id="btn-alerta-sp">2. Vias & Rodovias SP</button>
             <button class="view-toggle-btn" id="btn-alerta-rodovias">3. Filtro Linha Vermelha</button>
-            <button class="view-toggle-btn" id="btn-alerta-condicoes">4. Quadro Ao Vivo (5 Capitais)</button>
+            <button class="view-toggle-btn" id="btn-alerta-condicoes">4. Quadro Demonstrativo (5 Capitais)</button>
           </div>
 
           <div class="features-list">
@@ -1877,7 +1876,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-alerta">agenterit.com.br / dashboard.html#rit-alerta-rodovias-rj</div>
+              <div class="mockup-title" id="title-mockup-alerta">Agente RIT · Print de Tela — RIT Alerta & Rodovias RJ</div>
             </div>
             <div class="mockup-content">
               <!-- View 1: Novo Painel de Vias e Rodovias RJ -->
@@ -1903,7 +1902,7 @@
                       <button class="cond-tab-btn" onclick="switchConditionsTab('REC')">REC</button>
                       <button class="cond-tab-btn" onclick="switchConditionsTab('BH')">BH</button>
                     </div>
-                    <span class="cond-refresh-tag"><i class="fa-solid fa-circle-notch fa-spin"></i> TELEMETRIA 5 CAPITAIS</span>
+                    <span class="cond-refresh-tag"><i class="fa-solid fa-table"></i> QUADRO ILUSTRATIVO · 5 CAPITAIS</span>
                   </div>
                   <div class="conditions-table-wrap">
                     <table class="conditions-table">
@@ -1976,7 +1975,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agenterit.com.br / dashboard.html#painel-transito-integrado</div>
+              <div class="mockup-title">Agente RIT · Print de Tela — Painel Trânsito Integrado & Rodovias</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba4_painel_integrado.png" alt="Painel Trânsito Integrado" />
@@ -2033,7 +2032,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agenterit.com.br / dashboard.html#cameras-rj-2x2</div>
+              <div class="mockup-title">Agente RIT · Print de Tela — Câmeras em Tempo Real (Mosaico 2x2)</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba5_cameras_rj_2x2.png" alt="Câmeras RJ Mosaico 2x2" />
@@ -2090,7 +2089,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agenterit.com.br / dashboard.html#radar-meteorologico</div>
+              <div class="mockup-title">Agente RIT · Print de Tela — Radar Meteorológico & Prevenção Climática</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/print_aba6_radar_meteorologico.png" alt="Radar Meteorológico RJ" />
@@ -2147,7 +2146,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title">agenterit.com.br / dashboard.html#centro-roteirizacao-custos</div>
+              <div class="mockup-title">Agente RIT · Print de Tela — Centro de Roteirização & Custos Multimodal</div>
             </div>
             <div class="mockup-content">
               <img class="mockup-img" src="assets/apresentacao/rit_roteirizacao_custos.png" alt="Centro de Roteirização e Comparativo Multimodal de Custos" />
@@ -2200,10 +2199,10 @@
             </div>
           </div>
 
-          <div style="margin-top: 12px;">
-            <a href="/caravanas.html" class="btn-action-primary">
-              <i class="fa-solid fa-bus"></i> ACESSAR MÓDULO CARAVANAS AO VIVO <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
+          <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="pillar-chip"><i class="fa-solid fa-bus"></i> 49 Caravanas RJ + SP</span>
+            <span class="pillar-chip"><i class="fa-solid fa-shield-halved"></i> Zero GPS Invasivo · LGPD</span>
+            <span class="pillar-chip"><i class="fa-solid fa-camera"></i> Captura Real de Tela</span>
           </div>
         </div>
 
@@ -2211,7 +2210,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-crv">agenterit.com.br / dashboard.html#caravanas-49-rotas-rj</div>
+              <div class="mockup-title" id="title-mockup-crv">Agente RIT · Print de Tela — Caravanas Inteligentes (49 Rotas RJ)</div>
             </div>
             <div class="mockup-content">
               <div class="carousel-view active" id="view-crv-rotas">
@@ -2294,11 +2293,10 @@
             </div>
           </div>
 
-          <div style="margin-top: 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <a href="/dashboard.html" class="btn-action-primary">
-              <i class="fa-solid fa-plane-departure"></i> ABRIR RIT FLY NO DASHBOARD <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
+          <div style="margin-top: 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="pillar-chip"><i class="fa-solid fa-plane-departure"></i> Radar ADS-B + 8 Hubs METAR</span>
             <span class="pillar-chip"><i class="fa-solid fa-shield-halved"></i> LGPD & Proveniência Transparente</span>
+            <span class="pillar-chip"><i class="fa-solid fa-camera"></i> Captura Real de Tela</span>
           </div>
         </div>
 
@@ -2306,7 +2304,7 @@
           <div class="mockup-wrapper">
             <div class="mockup-bar">
               <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
-              <div class="mockup-title" id="title-mockup-fly">agenterit.com.br / dashboard.html#rit-fly-central-aerea</div>
+              <div class="mockup-title" id="title-mockup-fly">Agente RIT · Print de Tela — RIT Fly Central Aérea Corporativa</div>
             </div>
             <div class="mockup-content">
               <div class="carousel-view active" id="view-fly-radar">
@@ -2689,21 +2687,21 @@
         resetCamViews();
         btnCamMapa.classList.add('active');
         viewCamMapa.classList.add('active');
-        if (titleCam) titleCam.textContent = 'agenterit.com.br / dashboard.html#central-cameras-ocorrencias';
+        if (titleCam) titleCam.textContent = 'Agente RIT · Print de Tela — Central de Câmeras & Ocorrências';
       });
 
       btnCamLive.addEventListener('click', () => {
         resetCamViews();
         btnCamLive.classList.add('active');
         viewCamLive.classList.add('active');
-        if (titleCam) titleCam.textContent = 'agenterit.com.br / dashboard.html#camera-ao-vivo-002425';
+        if (titleCam) titleCam.textContent = 'Agente RIT · Print de Tela — Câmera In-App (Exemplo)';
       });
 
       btnCamExec.addEventListener('click', () => {
         resetCamViews();
         btnCamExec.classList.add('active');
         viewCamExec.classList.add('active');
-        if (titleCam) titleCam.textContent = 'agenterit.com.br / visao-executiva-360-banca-mentoria';
+        if (titleCam) titleCam.textContent = 'Agente RIT · Print de Tela — Visão Executiva 360° (Banca)';
       });
     }
 
@@ -2734,28 +2732,28 @@
         resetAlertaViews();
         btnAlertaDesktop.classList.add('active');
         viewAlertaDesktop.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#rit-alerta-rodovias-rj';
+        if (titleAlerta) titleAlerta.textContent = 'Agente RIT · Print de Tela — RIT Alerta & Rodovias RJ';
       });
 
       btnAlertaSp.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaSp.classList.add('active');
         viewAlertaSp.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#rit-alerta-rodovias-sp';
+        if (titleAlerta) titleAlerta.textContent = 'Agente RIT · Print de Tela — RIT Alerta & Rodovias SP';
       });
 
       btnAlertaRodovias.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaRodovias.classList.add('active');
         viewAlertaRodovias.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / dashboard.html#filtro-linha-vermelha';
+        if (titleAlerta) titleAlerta.textContent = 'Agente RIT · Print de Tela — Filtro Linha Vermelha';
       });
 
       btnAlertaCondicoes.addEventListener('click', () => {
         resetAlertaViews();
         btnAlertaCondicoes.classList.add('active');
         viewAlertaCondicoes.classList.add('active');
-        if (titleAlerta) titleAlerta.textContent = 'agenterit.com.br / data/traffic-conditions.json#quadro-5-capitais';
+        if (titleAlerta) titleAlerta.textContent = 'Agente RIT · Quadro Demonstrativo — 5 Capitais Globo';
       });
     }
 
@@ -2786,28 +2784,28 @@
         resetCrvViews();
         btnCrvRotas.classList.add('active');
         viewCrvRotas.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / dashboard.html#caravanas-49-rotas-rj';
+        if (titleCrv) titleCrv.textContent = 'Agente RIT · Print de Tela — Caravanas Inteligentes (49 Rotas RJ)';
       });
 
       btnCrvDrawer.addEventListener('click', () => {
         resetCrvViews();
         btnCrvDrawer.classList.add('active');
         viewCrvDrawer.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#polo-sp-brooklin';
+        if (titleCrv) titleCrv.textContent = 'Agente RIT · Print de Tela — Caravanas Polo São Paulo (Brooklin)';
       });
 
       btnCrvComp.addEventListener('click', () => {
         resetCrvViews();
         btnCrvComp.classList.add('active');
         viewCrvComp.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#comparativo-google-waze';
+        if (titleCrv) titleCrv.textContent = 'Agente RIT · Print de Tela — Comparativo Google vs Waze';
       });
 
       btnCrvCams.addEventListener('click', () => {
         resetCrvViews();
         btnCrvCams.classList.add('active');
         viewCrvCams.classList.add('active');
-        if (titleCrv) titleCrv.textContent = 'agenterit.com.br / caravanas.html#cameras-no-trajeto';
+        if (titleCrv) titleCrv.textContent = 'Agente RIT · Print de Tela — Câmeras & Risco no Trajeto';
       });
     }
 
@@ -2824,7 +2822,7 @@
         btnFlyDrawer.classList.remove('active');
         viewFlyRadar.classList.add('active');
         viewFlyDrawer.classList.remove('active');
-        if (titleFly) titleFly.textContent = 'agenterit.com.br / dashboard.html#rit-fly-central-aerea';
+        if (titleFly) titleFly.textContent = 'Agente RIT · Print de Tela — RIT Fly Central Aérea Corporativa';
       });
 
       btnFlyDrawer.addEventListener('click', () => {
@@ -2832,17 +2830,16 @@
         btnFlyRadar.classList.remove('active');
         viewFlyDrawer.classList.add('active');
         viewFlyRadar.classList.remove('active');
-        if (titleFly) titleFly.textContent = 'agenterit.com.br / dashboard.html#rit-fly-detalhe-voo-sincronia';
+        if (titleFly) titleFly.textContent = 'Agente RIT · Print de Tela — RIT Fly Detalhe do Voo & Solo';
       });
     }
 
     // =========================================================================
-    // DADOS E TABELA DE CONDIÇÕES OPERACIONAIS (SLIDE 3)
+    // QUADRO DEMONSTRATIVO DE CONDIÇÕES OPERACIONAIS (DADOS ESTÁTICOS - SLIDE 3)
     // =========================================================================
-    let trafficDataCache = null;
     let currentRegion = 'RJ';
 
-    const fallbackTrafficData = {
+    const demoTrafficSnapshot = {
       "RJ": [
         { "via": "Linha Vermelha", "status": "Normal", "tempoAtual": 18, "tempoReferencia": 16, "diferenca": "+2 min" },
         { "via": "Linha Amarela", "status": "Moderado", "tempoAtual": 24, "tempoReferencia": 19, "diferenca": "+5 min" },
@@ -2876,7 +2873,7 @@
 
     function renderTrafficTable(region) {
       currentRegion = region;
-      const data = (trafficDataCache && trafficDataCache[region]) ? trafficDataCache[region] : fallbackTrafficData[region] || [];
+      const data = demoTrafficSnapshot[region] || [];
       const tbody = document.getElementById('conditions-table-body');
       if (!tbody) return;
 
@@ -2908,22 +2905,8 @@
       renderTrafficTable(region);
     }
 
-    function loadTrafficConditions() {
-      fetch('data/traffic-conditions.json')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data) {
-            trafficDataCache = data;
-            renderTrafficTable(currentRegion);
-          }
-        })
-        .catch(() => {
-          renderTrafficTable(currentRegion);
-        });
-    }
-
-    // Inicialização
-    loadTrafficConditions();
+    // Inicialização (modo exclusivamente estático / prints de tela)
+    renderTrafficTable(currentRegion);
     updateCounter();
   </script>
 </body>

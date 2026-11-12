@@ -13,6 +13,67 @@
   <link rel="stylesheet" href="styles/rit-fly.css?v=1.1.0" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="js/auth-constants.js"></script>
+  <script>
+    (function enforceAuthHeadGuard() {
+      const token = (typeof getAuthToken === 'function')
+        ? getAuthToken()
+        : (localStorage.getItem('rit_token') || localStorage.getItem('rig_token'));
+      if (!token) {
+        document.documentElement.style.display = 'none';
+        window.location.replace('/');
+        return;
+      }
+
+      const host = window.location.hostname;
+      const isLocal = (host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:');
+
+      let payload = null;
+      let isJwtStructValid = false;
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          payload = JSON.parse(atob(b64));
+          if (payload && typeof payload.exp === 'number' && payload.exp * 1000 > Date.now()) {
+            isJwtStructValid = true;
+          }
+        }
+      } catch (e) {}
+
+      if (!isLocal && !isJwtStructValid) {
+        if (typeof clearAuthSession === 'function') clearAuthSession();
+        localStorage.removeItem('rit_token');
+        localStorage.removeItem('rig_token');
+        document.documentElement.style.display = 'none';
+        window.location.replace('/');
+        return;
+      }
+
+      if (!isLocal) {
+        document.documentElement.style.visibility = 'hidden';
+        const fallbackTimer = setTimeout(() => {
+          document.documentElement.style.visibility = 'visible';
+        }, 2500);
+        fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        }).then((res) => {
+          clearTimeout(fallbackTimer);
+          if (res.status === 401 || res.status === 403 || res.status === 404) {
+            if (typeof clearAuthSession === 'function') clearAuthSession();
+            localStorage.removeItem('rit_token');
+            localStorage.removeItem('rig_token');
+            document.documentElement.style.display = 'none';
+            window.location.replace('/');
+            return;
+          }
+          document.documentElement.style.visibility = 'visible';
+        }).catch(() => {
+          clearTimeout(fallbackTimer);
+          document.documentElement.style.visibility = 'visible';
+        });
+      }
+    })();
+  </script>
 </head>
 
 <body>
