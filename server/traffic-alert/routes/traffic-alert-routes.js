@@ -123,6 +123,14 @@ const REGIONAL_COORDINATES = {
     }
 };
 
+const {
+    enrichCorridorWithSegments,
+    resolveSegmentSelection,
+    DESTINATION_PRESETS_BY_REGION,
+    resolveProviderSettings,
+    defaultCorridorRouteService
+} = require('../engine/corridor-route-service');
+
 const REGIONAL_CORRIDOR_GEOMETRIES = {
     'RJ': {
         'linha vermelha': [[-22.8130, -43.2480], [-22.8300, -43.2420], [-22.8450, -43.2380], [-22.8800, -43.2350], [-22.9050, -43.2100], [-22.9100, -43.1950]],
@@ -735,6 +743,148 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
      * GET /traffic-conditions
      * Retorna a situação de fluidez dos corredores viários (RJ, SP, BH, BSB, REC).
      */
+    /**
+     * GET /api/traffic-alert/destination-presets
+     * Retorna destinos operacionais sugeridos para cálculo rápido de tempo de percurso por regional.
+     */
+    router.get('/destination-presets', (req, res) => {
+        const rawRegion = req.query.region || req.query.regional || 'RJ';
+        const targetRegion = normalizeRegionKey(rawRegion);
+        const settings = resolveProviderSettings(process.env);
+        return res.json({
+            ok: true,
+            region: targetRegion,
+            presets: DESTINATION_PRESETS_BY_REGION[targetRegion] || [],
+            liveProvidersConfigured: {
+                googleRoutes: settings.google.enabled,
+                tomtomTraffic: settings.tomtom.enabled
+            }
+        });
+    });
+
+    /**
+     * POST /api/traffic-alert/route-estimate
+     * Calcula rota e tempo real/estimado entre um ponto (trecho/sentido) de uma via e um endereço de destino.
+     */
+    router.post('/route-estimate', async (req, res) => {
+        try {
+            const body = req.body || {};
+            const targetRegion = normalizeRegionKey(body.region || 'RJ');
+            const resolvedDest = await defaultCorridorRouteService.resolveDestination(body.destination, targetRegion);
+            if (!resolvedDest) {
+                return res.status(400).json({ ok: false, error: 'Informe um endereço ou coordenadas válidas para o destino.' });
+            }
+
+            let origin = null;
+            let corridorContext = {};
+            if (body.origin && Number.isFinite(Number(body.origin.lat)) && Number.isFinite(Number(body.origin.lng))) {
+                origin = {
+                    lat: Number(body.origin.lat),
+                    lng: Number(body.origin.lng),
+                    label: String(body.origin.label || 'Ponto selecionado').trim()
+                };
+            } else if (body.via) {
+                const matrix = loadTrafficConditionsFromFile();
+                const corridors = matrix[targetRegion] || [];
+                const targetVia = String(body.via).toLowerCase();
+                const matched = corridors.find(c => String(c.via || '').toLowerCase() === targetVia);
+                if (matched) {
+                    const seg = resolveSegmentSelection(matched, targetRegion, body.trechoId, body.sentidoId);
+                    origin = seg.origin;
+                    corridorContext = seg;
+                }
+            }
+
+            if (!origin) {
+                return res.status(400).json({ ok: false, error: 'Origem (via/trecho ou coordenadas) inválida ou não encontrada.' });
+            }
+
+            const estimate = await defaultCorridorRouteService.estimateSingleRoute({
+                origin,
+                destination: resolvedDest,
+                corridorContext,
+                env: process.env
+            });
+
+            return res.json({ ok: true, region: targetRegion, route: estimate });
+        } catch (err) {
+            console.error('[TrafficAlert/Routes] Erro ao calcular rota ponto-a-ponto:', err);
+            return res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
+    /**
+     * POST /api/traffic-alert/corridors-eta
+     * Calcula o tempo de deslocamento a partir do trecho/sentido escolhido de cada via monitorada até o destino.
+     */
+    router.post('/corridors-eta', async (req, res) => {
+        try {
+            const body = req.body || {};
+            const targetRegion = normalizeRegionKey(body.region || 'RJ');
+            const resolvedDest = await defaultCorridorRouteService.resolveDestination(body.destination, targetRegion);
+            if (!resolvedDest) {
+                return res.status(400).json({ ok: false, error: 'Informe um endereço de destino válido para calcular os tempos.' });
+            }
+
+            const matrix = loadTrafficConditionsFromFile();
+            let corridors = matrix[targetRegion] || [];
+            const coordsMap = REGIONAL_COORDINATES[targetRegion] || {};
+            const geomsMap = REGIONAL_CORRIDOR_GEOMETRIES[targetRegion] || {};
+
+            corridors = corridors.map((c, idx) => {
+                const nameKey = (c.via || '').toLowerCase();
+                let pin = null;
+                for (const [k, coords] of Object.entries(coordsMap)) {
+                    if (nameKey.includes(k) || k.includes(nameKey)) {
+                        pin = coords;
+                        break;
+                    }
+                }
+                if (!pin && c.coordinates?.length > 0) {
+                    const mid = c.coordinates[Math.floor(c.coordinates.length / 2)];
+                    pin = { lat: mid[0], lng: mid[1] };
+                }
+                let geom = null;
+                for (const [k, pts] of Object.entries(geomsMap)) {
+                    if (nameKey.includes(k) || k.includes(nameKey)) {
+                        geom = pts;
+                        break;
+                    }
+                }
+                if (!geom) {
+                    geom = c.geometry || c.coordinates || (pin ? [[pin.lat, pin.lng]] : []);
+                }
+                return enrichCorridorWithSegments({
+                    ...c,
+                    id: c.id || `corr-${targetRegion.toLowerCase()}-${idx + 1}`,
+                    region: targetRegion,
+                    name: c.via,
+                    pinLocation: pin,
+                    geometry: geom,
+                    coordinates: geom
+                }, targetRegion);
+            });
+
+            const estimate = await defaultCorridorRouteService.estimateCorridorsToDestination({
+                corridors,
+                region: targetRegion,
+                destination: resolvedDest,
+                selections: body.selections || {},
+                focusVia: body.focusVia || null,
+                env: process.env
+            });
+
+            return res.json({
+                ok: true,
+                region: targetRegion,
+                ...estimate
+            });
+        } catch (err) {
+            console.error('[TrafficAlert/Routes] Erro ao calcular ETA das vias até destino:', err);
+            return res.status(500).json({ ok: false, error: err.message });
+        }
+    });
+
     router.get('/traffic-conditions', async (req, res) => {
         try {
             const rawRegion = req.query.region || req.query.regional || 'RJ';
@@ -763,7 +913,7 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
                     }
                 }
 
-                return {
+                return enrichCorridorWithSegments({
                     ...c,
                     id: c.id || `corr-${targetRegion.toLowerCase()}-${idx + 1}`,
                     region: targetRegion,
@@ -773,7 +923,7 @@ function createTrafficAlertRouter({ repository = null, store = memoryStore } = {
                     pinLocation: pin,
                     geometry: geom,
                     coordinates: geom
-                };
+                }, targetRegion);
             });
 
             // Cálculo dos Novos Indicadores de Trânsito

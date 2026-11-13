@@ -8,7 +8,7 @@ import { PainelTransitoIntegrado } from './PainelTransitoIntegrado.js?v=4.3.0';
 import { CorRio } from './CorRio.js?v=4.3.0';
 import { CentroRoteirizacaoCustos } from './CentroRoteirizacaoCustos.js?v=4.3.0';
 import { DiagnosticoFontes } from './diagnostico-fontes.js?v=4.3.0';
-import { TrafficAlertView } from './traffic-alert/traffic-alert-view.js';
+import { TrafficAlertView } from './traffic-alert/traffic-alert-view.js?v=54';
 import { RitFlyView } from './rit-fly/rit-fly-view.js';
 
 document.addEventListener("DOMContentLoaded", () => {

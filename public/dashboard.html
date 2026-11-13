@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="style.css?v=50" />
-  <link rel="stylesheet" href="styles/traffic-alert.css?v=53" />
+  <link rel="stylesheet" href="styles/traffic-alert.css?v=54" />
   <link rel="stylesheet" href="styles/rit-fly.css?v=1.1.0" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="js/auth-constants.js"></script>
@@ -779,16 +779,47 @@
               </div>
             </div>
 
+            <!-- ENDEREÇO DE DESTINO E CÁLCULO DE TEMPO POR TRECHO / SENTIDO -->
+            <div id="ta-destination-bar" class="ta-destination-bar">
+              <div class="ta-dest-header-row">
+                <label for="ta-destination-input" class="ta-dest-title">
+                  📍 ENDEREÇO DE DESTINO <span class="ta-dest-subtitle">(Tempo real do trecho até o destino)</span>
+                </label>
+                <span id="ta-route-engine-badge" class="ta-route-engine-badge" title="Fonte ativa para cálculo de trajeto e trânsito">
+                  Motor: OSRM + Retenção COR
+                </span>
+              </div>
+              <div class="ta-dest-input-row">
+                <div class="ta-dest-input-wrap">
+                  <input
+                    id="ta-destination-input"
+                    type="text"
+                    class="ta-input ta-dest-input"
+                    placeholder="Ex: Estúdios Globo, Rua Lopes Quintas 303, Galeão..."
+                    autocomplete="off"
+                  />
+                  <div id="ta-destination-autocomplete" class="ta-dest-autocomplete" style="display:none;"></div>
+                </div>
+                <button id="ta-btn-calc-destination" type="button" class="ta-btn-calc-dest" title="Calcular tempo de cada trecho até o destino">
+                  Calcular
+                </button>
+                <button id="ta-btn-clear-destination" type="button" class="ta-btn-clear-dest" title="Limpar endereço de destino" style="display:none;">
+                  ✕
+                </button>
+              </div>
+              <div id="ta-destination-presets" class="ta-dest-presets"></div>
+              <div id="ta-destination-summary" class="ta-dest-summary" style="display:none;"></div>
+            </div>
+
             <div class="ta-corridors-table-container">
               <table class="ta-corridors-table">
                 <thead>
                   <tr>
-                    <th class="ta-th-via" style="text-align: left;">Via</th>
+                    <th class="ta-th-via" style="text-align: left;">Via / Ocorrência</th>
                     <th class="ta-th-status" style="text-align: center;">Status</th>
                     <th class="ta-th-retencao" style="text-align: center;" title="Tempo de retenção em relação ao fluxo normal">Retenção</th>
-                    <th class="ta-th-vel" style="text-align: center;" title="Velocidade média atual">Velocidade</th>
-                    <th class="ta-th-ocorrencia" style="text-align: left;" title="Ocorrência em andamento">Ocorrência</th>
-                    <th class="ta-th-trend" style="text-align: center;" title="Tendência">Tendência</th>
+                    <th class="ta-th-vel" style="text-align: center;" title="Velocidade média atual">Vel.</th>
+                    <th class="ta-th-trend" style="text-align: center;" title="Tendência">Tend.</th>
                     <th class="ta-th-action" style="text-align: center;" title="Focar no mapa">Foco</th>
                   </tr>
                 </thead>
@@ -2013,6 +2044,6 @@
   </div>
 
   <script src="session-manager.js"></script>
-  <script type="module" src="js/main.js?v=4.3.0"></script>
+  <script type="module" src="js/main.js?v=4.3.1"></script>
 </body>
 </html>

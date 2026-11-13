@@ -66,6 +66,80 @@
           -22.85,
           -43.54
         ]
+      ],
+      "trechoPadrao": "penha",
+      "sentidoPadrao": "centro",
+      "trechos": [
+        {
+          "id": "caju",
+          "label": "Caju / São Cristóvão (km 0–4)",
+          "lat": -22.8888,
+          "lng": -43.2218,
+          "congestionWeight": 1.1,
+          "extraDelayMin": 4
+        },
+        {
+          "id": "bonsucesso",
+          "label": "Bonsucesso / Ramos (km 6–10)",
+          "lat": -22.8615,
+          "lng": -43.249,
+          "congestionWeight": 1.05,
+          "extraDelayMin": 2
+        },
+        {
+          "id": "penha",
+          "label": "Penha / Mercado São Sebastião (km 12–16)",
+          "lat": -22.8368,
+          "lng": -43.2775,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "iraja",
+          "label": "Irajá / Trevo das Margaridas (km 17–21)",
+          "lat": -22.8258,
+          "lng": -43.3208,
+          "congestionWeight": 0.85,
+          "extraDelayMin": -3
+        },
+        {
+          "id": "deodoro",
+          "label": "Deodoro / Guadalupe (km 24–29)",
+          "lat": -22.8512,
+          "lng": -43.3835,
+          "congestionWeight": 0.72,
+          "extraDelayMin": -5
+        },
+        {
+          "id": "bangu",
+          "label": "Realengo / Bangu (km 32–38)",
+          "lat": -22.8662,
+          "lng": -43.4555,
+          "congestionWeight": 0.55,
+          "extraDelayMin": -8
+        },
+        {
+          "id": "campo-grande",
+          "label": "Campo Grande / Santa Cruz (km 42–56)",
+          "lat": -22.8825,
+          "lng": -43.5555,
+          "congestionWeight": 0.4,
+          "extraDelayMin": -10
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "centro",
+          "label": "Sentido Centro",
+          "factor": 1.05,
+          "primaryDirection": true
+        },
+        {
+          "id": "santa-cruz",
+          "label": "Sentido Zona Oeste / Santa Cruz",
+          "factor": 0.45,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -125,6 +199,64 @@
           -22.83,
           -43.33
         ]
+      ],
+      "trechoPadrao": "iraja-dutra",
+      "sentidoPadrao": "rio",
+      "trechos": [
+        {
+          "id": "iraja-dutra",
+          "label": "Trevo das Margaridas / Irajá (km 163–167)",
+          "lat": -22.8255,
+          "lng": -43.322,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "pavuna",
+          "label": "Pavuna / São João de Meriti (km 168–173)",
+          "lat": -22.8015,
+          "lng": -43.356,
+          "congestionWeight": 0.9,
+          "extraDelayMin": -1
+        },
+        {
+          "id": "belford-roxo",
+          "label": "Duque de Caxias / Belford Roxo (km 174–179)",
+          "lat": -22.7805,
+          "lng": -43.395,
+          "congestionWeight": 0.78,
+          "extraDelayMin": -3
+        },
+        {
+          "id": "nova-iguacu",
+          "label": "Nova Iguaçu / Mesquita (km 180–186)",
+          "lat": -22.758,
+          "lng": -43.448,
+          "congestionWeight": 0.65,
+          "extraDelayMin": -4
+        },
+        {
+          "id": "seropedica",
+          "label": "Queimados / Seropédica (km 190–208)",
+          "lat": -22.728,
+          "lng": -43.595,
+          "congestionWeight": 0.45,
+          "extraDelayMin": -6
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "rio",
+          "label": "Sentido Rio de Janeiro",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "sp",
+          "label": "Sentido Baixada / São Paulo",
+          "factor": 0.55,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -192,6 +324,64 @@
           -22.91,
           -43.195
         ]
+      ],
+      "trechoPadrao": "fundao",
+      "sentidoPadrao": "centro",
+      "trechos": [
+        {
+          "id": "sao-cristovao",
+          "label": "São Cristóvão / Elevado Paulo de Frontin (km 0–3)",
+          "lat": -22.9055,
+          "lng": -43.214,
+          "congestionWeight": 0.85,
+          "extraDelayMin": -4
+        },
+        {
+          "id": "mare",
+          "label": "Maré / Complexo da Maré (km 4–7)",
+          "lat": -22.864,
+          "lng": -43.2375,
+          "congestionWeight": 0.95,
+          "extraDelayMin": -2
+        },
+        {
+          "id": "fundao",
+          "label": "Acesso Ilha do Fundão / UFRJ (km 8–10)",
+          "lat": -22.8455,
+          "lng": -43.2385,
+          "congestionWeight": 1.05,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "galeao",
+          "label": "Acesso Galeão / Ilha do Governador (km 11–13)",
+          "lat": -22.8285,
+          "lng": -43.2435,
+          "congestionWeight": 0.8,
+          "extraDelayMin": -6
+        },
+        {
+          "id": "duque-caxias",
+          "label": "Vigário Geral / Duque de Caxias (km 14–18)",
+          "lat": -22.8015,
+          "lng": -43.268,
+          "congestionWeight": 0.65,
+          "extraDelayMin": -10
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "centro",
+          "label": "Sentido Centro / Túnel Rebouças",
+          "factor": 1.05,
+          "primaryDirection": true
+        },
+        {
+          "id": "baixada",
+          "label": "Sentido Baixada / Washington Luís",
+          "factor": 0.55,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -259,6 +449,72 @@
           -22.98,
           -43.365
         ]
+      ],
+      "trechoPadrao": "del-castilho",
+      "sentidoPadrao": "barra",
+      "trechos": [
+        {
+          "id": "bonsucesso-fundao",
+          "label": "Fundão / Bonsucesso (Saída 10)",
+          "lat": -22.8595,
+          "lng": -43.2395,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "del-castilho",
+          "label": "Del Castilho / Nova América (Saída 7)",
+          "lat": -22.879,
+          "lng": -43.2715,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "engenho-dentro",
+          "label": "Engenho de Dentro / Méier (Saída 4–5)",
+          "lat": -22.8965,
+          "lng": -43.2925,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "pedagio-covanca",
+          "label": "Praça do Pedágio / Túnel da Covanca",
+          "lat": -22.909,
+          "lng": -43.3145,
+          "congestionWeight": 1.1,
+          "extraDelayMin": 2
+        },
+        {
+          "id": "freguesia",
+          "label": "Pechincha / Freguesia (Saída 1–2)",
+          "lat": -22.936,
+          "lng": -43.337,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "barra-ayrton",
+          "label": "Cidade de Deus / Ayrton Senna (Barra)",
+          "lat": -22.9685,
+          "lng": -43.362,
+          "congestionWeight": 0.95,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "barra",
+          "label": "Sentido Barra / Jacarepaguá",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "fundao",
+          "label": "Sentido Fundão / Ilha do Governador",
+          "factor": 0.9,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -326,6 +582,64 @@
           -23,
           -43.43
         ]
+      ],
+      "trechoPadrao": "curicica-projac",
+      "sentidoPadrao": "recreio",
+      "trechos": [
+        {
+          "id": "deodoro-trans",
+          "label": "Deodoro / Acesso Av. Brasil",
+          "lat": -22.8615,
+          "lng": -43.3925,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "sulacap",
+          "label": "Jardim Sulacap / Magalhães Bastos",
+          "lat": -22.8855,
+          "lng": -43.3945,
+          "congestionWeight": 0.95,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "taquara",
+          "label": "Taquara / Estrada dos Bandeirantes",
+          "lat": -22.9225,
+          "lng": -43.399,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "curicica-projac",
+          "label": "Curicica / Estúdios Globo (Camorim)",
+          "lat": -22.9565,
+          "lng": -43.409,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "recreio-salvador",
+          "label": "Recreio / Av. Salvador Allende",
+          "lat": -22.999,
+          "lng": -43.431,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "recreio",
+          "label": "Sentido Recreio / Barra",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "deodoro",
+          "label": "Sentido Deodoro / Av. Brasil",
+          "factor": 0.95,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -385,6 +699,64 @@
           -22.912,
           -43.215
         ]
+      ],
+      "trechoPadrao": "pres-vargas-rio-branco",
+      "sentidoPadrao": "candelaria",
+      "trechos": [
+        {
+          "id": "pres-vargas-rio-branco",
+          "label": "Av. Pres. Vargas x Av. Rio Branco",
+          "lat": -22.9025,
+          "lng": -43.1795,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "central-brasil",
+          "label": "Central do Brasil / Praça da República",
+          "lat": -22.9045,
+          "lng": -43.1915,
+          "congestionWeight": 0.95,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "praca-maua",
+          "label": "Porto Maravilha / Praça Mauá (Via Binário)",
+          "lat": -22.8965,
+          "lng": -43.1805,
+          "congestionWeight": 0.8,
+          "extraDelayMin": -2
+        },
+        {
+          "id": "aterro-sdu",
+          "label": "Aterro do Flamengo / Aeroporto SDU",
+          "lat": -22.912,
+          "lng": -43.168,
+          "congestionWeight": 0.7,
+          "extraDelayMin": -3
+        },
+        {
+          "id": "lapa-cinelandia",
+          "label": "Cinelândia / Lapa / Rua Mem de Sá",
+          "lat": -22.9118,
+          "lng": -43.1785,
+          "congestionWeight": 1.05,
+          "extraDelayMin": 1
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "candelaria",
+          "label": "Sentido Candelária / Praça XV",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "central",
+          "label": "Sentido Central / Cidade Nova",
+          "factor": 0.85,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -444,6 +816,64 @@
           -23.008,
           -43.31
         ]
+      ],
+      "trechoPadrao": "alvorada",
+      "sentidoPadrao": "zona-sul",
+      "trechos": [
+        {
+          "id": "alvorada",
+          "label": "Terminal Alvorada / Av. Ayrton Senna",
+          "lat": -23.0005,
+          "lng": -43.3655,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "americas-barrashopping",
+          "label": "Av. das Américas / BarraShopping",
+          "lat": -22.999,
+          "lng": -43.3565,
+          "congestionWeight": 1.15,
+          "extraDelayMin": 3
+        },
+        {
+          "id": "gardenia-ayrton",
+          "label": "Av. Ayrton Senna / Gardênia Azul",
+          "lat": -22.968,
+          "lng": -43.3575,
+          "congestionWeight": 1,
+          "extraDelayMin": 1
+        },
+        {
+          "id": "jardim-oceanico",
+          "label": "Jardim Oceânico / Ponte da Joatinga",
+          "lat": -23.0075,
+          "lng": -43.3095,
+          "congestionWeight": 1.2,
+          "extraDelayMin": 4
+        },
+        {
+          "id": "bandeirantes-riocentro",
+          "label": "Estrada dos Bandeirantes / Riocentro",
+          "lat": -22.9765,
+          "lng": -43.4095,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "zona-sul",
+          "label": "Sentido Zona Sul / Joá",
+          "factor": 1.1,
+          "primaryDirection": true
+        },
+        {
+          "id": "recreio",
+          "label": "Sentido Recreio / Vargens",
+          "factor": 0.85,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -503,6 +933,72 @@
           -22.985,
           -43.19
         ]
+      ],
+      "trechoPadrao": "reboucas",
+      "sentidoPadrao": "lagoa",
+      "trechos": [
+        {
+          "id": "reboucas",
+          "label": "Túnel Rebouças / Cosme Velho",
+          "lat": -22.943,
+          "lng": -43.2045,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "jardim-botanico-globo",
+          "label": "Jardim Botânico / Rua Lopes Quintas (Globo)",
+          "lat": -22.9619,
+          "lng": -43.2165,
+          "congestionWeight": 0.95,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "lagoa-cantagalo",
+          "label": "Lagoa Rodrigo de Freitas / Corte do Cantagalo",
+          "lat": -22.9725,
+          "lng": -43.2035,
+          "congestionWeight": 1.05,
+          "extraDelayMin": 2
+        },
+        {
+          "id": "botafogo-enseada",
+          "label": "Praia de Botafogo / Enseada",
+          "lat": -22.948,
+          "lng": -43.1805,
+          "congestionWeight": 1,
+          "extraDelayMin": 1
+        },
+        {
+          "id": "copacabana-princesa-isabel",
+          "label": "Copacabana / Túnel Novo (Princesa Isabel)",
+          "lat": -22.9635,
+          "lng": -43.1755,
+          "congestionWeight": 1.1,
+          "extraDelayMin": 3
+        },
+        {
+          "id": "autoestrada-lag-barra",
+          "label": "Gávea / Autoestrada Lagoa–Barra",
+          "lat": -22.9895,
+          "lng": -43.2525,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "lagoa",
+          "label": "Sentido Lagoa / Barra (Sul)",
+          "factor": 1.05,
+          "primaryDirection": true
+        },
+        {
+          "id": "centro",
+          "label": "Sentido Centro / Aterro (Norte)",
+          "factor": 0.85,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -554,6 +1050,56 @@
           -22.89,
           -43.2
         ]
+      ],
+      "trechoPadrao": "pedagio-niteroi",
+      "sentidoPadrao": "niteroi",
+      "trechos": [
+        {
+          "id": "rampa-rio",
+          "label": "Acessos Rio / Reta do Cais (Gasômetro)",
+          "lat": -22.8895,
+          "lng": -43.2065,
+          "congestionWeight": 0.85,
+          "extraDelayMin": -6
+        },
+        {
+          "id": "vao-central",
+          "label": "Vão Central (Baía de Guanabara)",
+          "lat": -22.8715,
+          "lng": -43.1535,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "mocangue",
+          "label": "Ilha de Mocanguê / Grande Reta",
+          "lat": -22.8725,
+          "lng": -43.1335,
+          "congestionWeight": 1.05,
+          "extraDelayMin": 2
+        },
+        {
+          "id": "pedagio-niteroi",
+          "label": "Praça do Pedágio / Niterói",
+          "lat": -22.8735,
+          "lng": -43.112,
+          "congestionWeight": 1.1,
+          "extraDelayMin": 3
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "niteroi",
+          "label": "Sentido Niterói / Região dos Lagos",
+          "factor": 1.05,
+          "primaryDirection": true
+        },
+        {
+          "id": "rio",
+          "label": "Sentido Rio de Janeiro / Av. Brasil",
+          "factor": 0.5,
+          "primaryDirection": false
+        }
       ]
     }
   ],
@@ -623,6 +1169,48 @@
           -23.528,
           -46.745
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Marginal Tietê",
+          "lat": -23.518,
+          "lng": -46.61,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Pista Central entre Ponte do Limão e Casa Verde",
+          "lat": -23.518,
+          "lng": -46.685,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Marginal Tietê",
+          "lat": -23.528,
+          "lng": -46.745,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -690,6 +1278,48 @@
           -23.645,
           -46.705
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Marginal Pinheiros",
+          "lat": -23.535,
+          "lng": -46.732,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Ponte Eusébio Matoso até Ponte Cidade Jardim",
+          "lat": -23.595,
+          "lng": -46.695,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Marginal Pinheiros",
+          "lat": -23.645,
+          "lng": -46.705,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -757,6 +1387,48 @@
           -23.535,
           -46.515
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Radial Leste",
+          "lat": -23.55,
+          "lng": -46.63,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Viaduto Pacaembu até Metrô Tatuapé",
+          "lat": -23.538,
+          "lng": -46.575,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Radial Leste",
+          "lat": -23.535,
+          "lng": -46.515,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -824,6 +1496,48 @@
           -23.61,
           -46.615
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av dos Bandeirantes",
+          "lat": -23.595,
+          "lng": -46.685,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Viaduto Santo Amaro até Washington Luís",
+          "lat": -23.615,
+          "lng": -46.64,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av dos Bandeirantes",
+          "lat": -23.61,
+          "lng": -46.615,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -883,6 +1597,48 @@
           -23.685,
           -46.565
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Rodovia Anchieta",
+          "lat": -23.605,
+          "lng": -46.605,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 18 ao 23 sentido Baixada",
+          "lat": -23.625,
+          "lng": -46.595,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Rodovia Anchieta",
+          "lat": -23.685,
+          "lng": -46.565,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Baixada",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -942,6 +1698,48 @@
           -23.705,
           -46.615
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Rodovia Imigrantes",
+          "lat": -23.62,
+          "lng": -46.64,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Planalto sem retenções",
+          "lat": -23.645,
+          "lng": -46.635,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Rodovia Imigrantes",
+          "lat": -23.705,
+          "lng": -46.615,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1001,6 +1799,48 @@
           -23.505,
           -46.855
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Castelo Branco",
+          "lat": -23.525,
+          "lng": -46.715,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 19 ao 15 sentido Capital",
+          "lat": -23.515,
+          "lng": -46.775,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Castelo Branco",
+          "lat": -23.505,
+          "lng": -46.855,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Capital",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1060,6 +1900,48 @@
           -23.585,
           -46.835
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Raposo Tavares",
+          "lat": -23.57,
+          "lng": -46.715,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 14 ao 10 sentido Butantã",
+          "lat": -23.575,
+          "lng": -46.765,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Raposo Tavares",
+          "lat": -23.585,
+          "lng": -46.835,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Butantã",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1119,6 +2001,48 @@
           -23.475,
           -46.435
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Ayrton Senna",
+          "lat": -23.515,
+          "lng": -46.565,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Acesso Cumbica desimpedido",
+          "lat": -23.495,
+          "lng": -46.515,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Ayrton Senna",
+          "lat": -23.475,
+          "lng": -46.435,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     }
   ],
@@ -1180,6 +2104,48 @@
           -19.825,
           -43.92
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av Cristiano Machado",
+          "lat": -19.915,
+          "lng": -43.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Viaduto São Francisco até Lagoinha",
+          "lat": -19.875,
+          "lng": -43.925,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av Cristiano Machado",
+          "lat": -19.825,
+          "lng": -43.92,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1247,6 +2213,48 @@
           -19.985,
           -43.955
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Anel Rodoviário",
+          "lat": -19.865,
+          "lng": -43.945,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 538 ao 542 sentido Vitória",
+          "lat": -19.935,
+          "lng": -43.99,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Anel Rodoviário",
+          "lat": -19.985,
+          "lng": -43.955,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Vitória",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1306,6 +2314,48 @@
           -19.85,
           -43.965
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av Antônio Carlos",
+          "lat": -19.91,
+          "lng": -43.94,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Complexo da Lagoinha sentido Pampulha",
+          "lat": -19.87,
+          "lng": -43.955,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av Antônio Carlos",
+          "lat": -19.85,
+          "lng": -43.965,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Pampulha",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1365,6 +2415,48 @@
           -19.945,
           -43.995
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av Amazonas",
+          "lat": -19.918,
+          "lng": -43.938,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Cruzamento com Av. Silva Lobo",
+          "lat": -19.932,
+          "lng": -43.955,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av Amazonas",
+          "lat": -19.945,
+          "lng": -43.995,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1424,6 +2516,48 @@
           -19.945,
           -44.075
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Via Expressa",
+          "lat": -19.925,
+          "lng": -43.975,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Sem gargalos ativos",
+          "lat": -19.935,
+          "lng": -44.025,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Via Expressa",
+          "lat": -19.945,
+          "lng": -44.075,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1483,6 +2617,48 @@
           -20.045,
           -43.955
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — BR-040",
+          "lat": -19.955,
+          "lng": -43.955,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Trevo do BH Shopping",
+          "lat": -19.985,
+          "lng": -43.945,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — BR-040",
+          "lat": -20.045,
+          "lng": -43.955,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1542,6 +2718,48 @@
           -19.835,
           -43.845
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — BR-381",
+          "lat": -19.885,
+          "lng": -43.895,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Acesso a Betim / Fernão Dias",
+          "lat": -19.865,
+          "lng": -43.885,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — BR-381",
+          "lat": -19.835,
+          "lng": -43.845,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1601,6 +2819,48 @@
           -19.928,
           -43.938
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Centro",
+          "lat": -19.921,
+          "lng": -43.94,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Av. Afonso Pena x Praça Sete",
+          "lat": -19.922,
+          "lng": -43.932,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Centro",
+          "lat": -19.928,
+          "lng": -43.938,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1660,6 +2920,48 @@
           -19.845,
           -43.965
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Pampulha",
+          "lat": -19.86,
+          "lng": -43.98,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Entorno do Mineirão livre",
+          "lat": -19.85,
+          "lng": -43.97,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Pampulha",
+          "lat": -19.845,
+          "lng": -43.965,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     }
   ],
@@ -1721,6 +3023,48 @@
           -15.885,
           -47.965
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — EPIA",
+          "lat": -15.745,
+          "lng": -47.925,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Viaduto do Guará ao Park Shopping",
+          "lat": -15.815,
+          "lng": -47.955,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — EPIA",
+          "lat": -15.885,
+          "lng": -47.965,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1780,6 +3124,48 @@
           -15.8,
           -47.865
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Eixo Monumental",
+          "lat": -15.785,
+          "lng": -47.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Esplanada fluindo perfeitamente",
+          "lat": -15.795,
+          "lng": -47.895,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Eixo Monumental",
+          "lat": -15.8,
+          "lng": -47.865,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1839,6 +3225,48 @@
           -15.855,
           -47.935
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Eixão Sul",
+          "lat": -15.795,
+          "lng": -47.89,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Tesourinhas 108 a 114 Sul",
+          "lat": -15.825,
+          "lng": -47.915,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Eixão Sul",
+          "lat": -15.855,
+          "lng": -47.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1898,6 +3326,48 @@
           -15.735,
           -47.875
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Eixão Norte",
+          "lat": -15.795,
+          "lng": -47.89,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Trecho Asa Norte sem gargalos",
+          "lat": -15.765,
+          "lng": -47.88,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Eixão Norte",
+          "lat": -15.735,
+          "lng": -47.875,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -1949,6 +3419,48 @@
           -15.825,
           -47.95
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — EPIG",
+          "lat": -15.795,
+          "lng": -47.925,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Cruzamento Parque da Cidade / Sudoeste",
+          "lat": -15.815,
+          "lng": -47.945,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — EPIG",
+          "lat": -15.825,
+          "lng": -47.95,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2000,6 +3512,48 @@
           -15.885,
           -47.885
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — EPDB",
+          "lat": -15.825,
+          "lng": -47.875,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Ponte das Garças livre",
+          "lat": -15.865,
+          "lng": -47.88,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — EPDB",
+          "lat": -15.885,
+          "lng": -47.885,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2051,6 +3605,48 @@
           -15.828,
           -47.82
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Ponte JK",
+          "lat": -15.82,
+          "lng": -47.835,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Extensão da ponte livre",
+          "lat": -15.826,
+          "lng": -47.825,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Ponte JK",
+          "lat": -15.828,
+          "lng": -47.82,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2110,6 +3706,48 @@
           -15.835,
           -48.055
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Estrada Parque Taguatinga",
+          "lat": -15.815,
+          "lng": -47.965,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Aproximação do Túnel Rei Pelé sentido Taguatinga",
+          "lat": -15.825,
+          "lng": -48.015,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Estrada Parque Taguatinga",
+          "lat": -15.835,
+          "lng": -48.055,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Taguatinga",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2169,6 +3807,48 @@
           -15.935,
           -48.125
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — BR-060",
+          "lat": -15.845,
+          "lng": -48.035,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 12 ao 16 sentido Goiânia",
+          "lat": -15.885,
+          "lng": -48.075,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — BR-060",
+          "lat": -15.935,
+          "lng": -48.125,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Goiânia",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     }
   ],
@@ -2230,6 +3910,48 @@
           -8.068,
           -34.898
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av Agamenon Magalhães",
+          "lat": -8.035,
+          "lng": -34.898,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Viaduto Capitão Temudo até o Derby",
+          "lat": -8.05,
+          "lng": -34.895,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av Agamenon Magalhães",
+          "lat": -8.068,
+          "lng": -34.898,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2289,6 +4011,48 @@
           -8.155,
           -34.912
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Av Boa Viagem",
+          "lat": -8.095,
+          "lng": -34.885,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Orla entre Pina e Parque Dona Lindu",
+          "lat": -8.125,
+          "lng": -34.9,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Av Boa Viagem",
+          "lat": -8.155,
+          "lng": -34.912,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2348,6 +4112,48 @@
           -8.145,
           -34.935
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — BR-101",
+          "lat": -7.985,
+          "lng": -34.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "km 68 ao 73 próximo à Ceasa",
+          "lat": -8.065,
+          "lng": -34.948,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — BR-101",
+          "lat": -8.145,
+          "lng": -34.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2407,6 +4213,48 @@
           -8.085,
           -35.025
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — BR-232",
+          "lat": -8.065,
+          "lng": -34.955,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Acesso Jardim São Paulo / Curado",
+          "lat": -8.075,
+          "lng": -34.965,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — BR-232",
+          "lat": -8.085,
+          "lng": -35.025,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2466,6 +4314,48 @@
           -8.135,
           -34.905
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Via Mangue",
+          "lat": -8.085,
+          "lng": -34.89,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Trecho expresso sem retenção",
+          "lat": -8.105,
+          "lng": -34.895,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Via Mangue",
+          "lat": -8.135,
+          "lng": -34.905,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2525,6 +4415,48 @@
           -8.015,
           -34.885
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — PE-015",
+          "lat": -7.945,
+          "lng": -34.855,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Aproximação Olinda / Paulista",
+          "lat": -7.985,
+          "lng": -34.865,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — PE-015",
+          "lat": -8.015,
+          "lng": -34.885,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2576,6 +4508,48 @@
           -8.058,
           -34.872
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Centro Recife",
+          "lat": -8.065,
+          "lng": -34.885,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Av. Conde da Boa Vista e Cais de Santa Rita",
+          "lat": -8.06,
+          "lng": -34.875,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Centro Recife",
+          "lat": -8.058,
+          "lng": -34.872,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2635,6 +4609,48 @@
           -7.975,
           -34.84
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Olinda",
+          "lat": -8.015,
+          "lng": -34.855,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Av. Pan Nordestina",
+          "lat": -7.995,
+          "lng": -34.845,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Olinda",
+          "lat": -7.975,
+          "lng": -34.84,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     },
     {
@@ -2694,6 +4710,48 @@
           -8.175,
           -34.935
         ]
+      ],
+      "trechoPadrao": "principal",
+      "sentidoPadrao": "principal",
+      "trechos": [
+        {
+          "id": "inicio",
+          "label": "Início — Jaboatão",
+          "lat": -8.125,
+          "lng": -34.915,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "principal",
+          "label": "Prazeres sem retenção",
+          "lat": -8.155,
+          "lng": -34.925,
+          "congestionWeight": 1,
+          "extraDelayMin": 0
+        },
+        {
+          "id": "extremo",
+          "label": "Extremo Op. — Jaboatão",
+          "lat": -8.175,
+          "lng": -34.935,
+          "congestionWeight": 0.9,
+          "extraDelayMin": 0
+        }
+      ],
+      "sentidos": [
+        {
+          "id": "principal",
+          "label": "Sentido Principal (Centro)",
+          "factor": 1,
+          "primaryDirection": true
+        },
+        {
+          "id": "oposto",
+          "label": "Sentido Oposto (Bairro / Saída)",
+          "factor": 0.75,
+          "primaryDirection": false
+        }
       ]
     }
   ]

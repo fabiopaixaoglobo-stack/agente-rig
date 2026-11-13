@@ -560,6 +560,90 @@ export class TrafficAlertMap {
         }
     }
 
+    /**
+     * Limpa a camada de trajeto trecho -> destino no mapa.
+     */
+    clearDestinationRoute() {
+        if (this.destinationRouteLayer) {
+            this.destinationRouteLayer.clearLayers();
+        }
+    }
+
+    /**
+     * Destaca no mapa o trecho selecionado e, se houver destino, traça a rota até o destino.
+     */
+    renderDestinationRoute({ origin, destination = null, routeCoordinates = [], viaName = '', estimatedTotalMin = null, distanceKm = null }) {
+        if (!this.map || typeof L === 'undefined') return;
+        if (!this.destinationRouteLayer) {
+            this.destinationRouteLayer = L.layerGroup().addTo(this.map);
+        }
+        this.destinationRouteLayer.clearLayers();
+
+        if (!origin || !Number.isFinite(Number(origin.lat)) || !Number.isFinite(Number(origin.lng))) return;
+        const oLat = Number(origin.lat);
+        const oLng = Number(origin.lng);
+
+        const originMarker = L.circleMarker([oLat, oLng], {
+            radius: 7,
+            color: '#ffffff',
+            weight: 2,
+            fillColor: '#06b6d4',
+            fillOpacity: 1
+        }).bindPopup(`
+            <div style="font-family:sans-serif; font-size:11px; color:#0f172a;">
+                <strong>PARTIDA — ${this._escapeHtml(viaName || 'TRECHO')}</strong><br>
+                ${this._escapeHtml(origin.label || '')}
+            </div>
+        `);
+        originMarker.addTo(this.destinationRouteLayer);
+
+        if (destination && Number.isFinite(Number(destination.lat)) && Number.isFinite(Number(destination.lng))) {
+            const dLat = Number(destination.lat);
+            const dLng = Number(destination.lng);
+            const linePts = Array.isArray(routeCoordinates) && routeCoordinates.length > 1
+                ? routeCoordinates
+                : [[oLat, oLng], [dLat, dLng]];
+
+            L.polyline(linePts, {
+                color: '#020617',
+                weight: 8,
+                opacity: 0.7
+            }).addTo(this.destinationRouteLayer);
+
+            L.polyline(linePts, {
+                color: '#38bdf8',
+                weight: 4,
+                opacity: 0.95,
+                dashArray: routeCoordinates && routeCoordinates.length > 2 ? null : '6, 6'
+            }).addTo(this.destinationRouteLayer);
+
+            const etaText = estimatedTotalMin ? ` (~${estimatedTotalMin} min${distanceKm ? ` • ${distanceKm} km` : ''})` : '';
+            const destMarker = L.circleMarker([dLat, dLng], {
+                radius: 8,
+                color: '#ffffff',
+                weight: 2,
+                fillColor: '#f97316',
+                fillOpacity: 1
+            }).bindPopup(`
+                <div style="font-family:sans-serif; font-size:11px; color:#0f172a;">
+                    <strong>DESTINO</strong><br>
+                    ${this._escapeHtml(destination.label || destination.address || 'Destino')}${this._escapeHtml(etaText)}
+                </div>
+            `);
+            destMarker.addTo(this.destinationRouteLayer);
+
+            try {
+                const bounds = L.latLngBounds(linePts);
+                this.map.fitBounds(bounds.pad(0.18), { animate: true, maxZoom: 14 });
+            } catch (_) {
+                this.map.setView([oLat, oLng], 12, { animate: true });
+            }
+        } else {
+            this.map.setView([oLat, oLng], 13, { animate: true });
+            originMarker.openPopup();
+        }
+    }
+
     _escapeHtml(str) {
         if (!str) return '';
         return String(str)

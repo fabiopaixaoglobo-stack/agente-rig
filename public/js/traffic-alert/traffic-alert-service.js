@@ -284,4 +284,90 @@ export class TrafficAlertService {
             };
         }
     }
+
+    /**
+     * GET /api/traffic-alert/destination-presets?region=...
+     */
+    async getDestinationPresets(region = 'RJ') {
+        try {
+            const reg = encodeURIComponent(region || 'RJ');
+            const res = await this._fetch(`/destination-presets?region=${reg}`);
+            return {
+                ok: true,
+                presets: res.presets || [],
+                liveProvidersConfigured: res.liveProvidersConfigured || {}
+            };
+        } catch (err) {
+            return { ok: false, error: err.message, presets: [], liveProvidersConfigured: {} };
+        }
+    }
+
+    /**
+     * GET /api/geocode/autocomplete?q=...
+     */
+    async searchAddressSuggestions(query) {
+        const q = String(query || '').trim();
+        if (q.length < 2) return { ok: true, sugestoes: [] };
+        try {
+            const res = await this._fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(q)}`);
+            return { ok: true, sugestoes: Array.isArray(res.sugestoes) ? res.sugestoes : [] };
+        } catch (err) {
+            return { ok: false, error: err.message, sugestoes: [] };
+        }
+    }
+
+    /**
+     * GET /api/geocode/search?q=...
+     */
+    async resolveAddress(query) {
+        const q = String(query || '').trim();
+        if (!q) return { ok: false, error: 'Endereço vazio.' };
+        try {
+            return await this._fetch(`/api/geocode/search?q=${encodeURIComponent(q)}`);
+        } catch (err) {
+            return { ok: false, error: err.message };
+        }
+    }
+
+    /**
+     * POST /api/traffic-alert/corridors-eta
+     */
+    async estimateCorridorsEta({ region = 'RJ', destination, selections = {}, focusVia = null }) {
+        try {
+            return await this._fetch('/corridors-eta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    region: region || 'RJ',
+                    destination,
+                    selections,
+                    focusVia
+                })
+            });
+        } catch (err) {
+            return { ok: false, error: err.message, items: [] };
+        }
+    }
+
+    /**
+     * POST /api/traffic-alert/route-estimate
+     */
+    async estimateSingleRoute({ region = 'RJ', via, trechoId, sentidoId, origin, destination }) {
+        try {
+            return await this._fetch('/route-estimate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    region: region || 'RJ',
+                    via,
+                    trechoId,
+                    sentidoId,
+                    origin,
+                    destination
+                })
+            });
+        } catch (err) {
+            return { ok: false, error: err.message };
+        }
+    }
 }
